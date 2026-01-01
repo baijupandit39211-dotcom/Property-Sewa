@@ -1,5 +1,5 @@
 {
-  "name": "@property-sewa/api",
+  "name": "@property-sewa/api-old",
   "exports": {
     ".": {
       "default": "./src/index.ts"

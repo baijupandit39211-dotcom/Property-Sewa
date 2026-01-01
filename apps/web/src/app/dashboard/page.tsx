@@ -1,25 +1,39 @@
-import { redirect } from "next/navigation";
-import Dashboard from "./dashboard";
-import { headers } from "next/headers";
-import { authClient } from "@/lib/auth-client";
+"use client"
 
-export default async function DashboardPage() {
-	const session = await authClient.getSession({
-		fetchOptions: {
-			headers: await headers(),
-			throw: true,
-		},
-	});
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
-	if (!session?.user) {
-		redirect("/login");
-	}
+type MockRole = "superadmin" | "user"
 
-	return (
-		<div>
-			<h1>Dashboard</h1>
-			<p>Welcome {session.user.name}</p>
-			<Dashboard session={session} />
-		</div>
-	);
+const ROLE_STORAGE_KEY = "ps-role"
+
+export default function DashboardEntryPage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    let storedRole: MockRole | null = null
+
+    try {
+      storedRole = (localStorage.getItem(ROLE_STORAGE_KEY) as MockRole | null) ?? null
+    } catch {
+      storedRole = null
+    }
+
+    const role: MockRole = storedRole === "superadmin" ? "superadmin" : "user"
+    const target =
+      role === "superadmin" ? "/dashboard/superadmin" : "/dashboard/seller"
+
+    router.replace(target)
+  }, [router])
+
+  return (
+    <main className="p-6">
+      <h1 className="text-2xl font-semibold">Redirecting to your dashboard…</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Use <code>localStorage.setItem("ps-role", "superadmin")</code> or{" "}
+        <code>localStorage.setItem("ps-role", "user")</code> in the browser
+        console to control which dashboard opens.
+      </p>
+    </main>
+  )
 }
