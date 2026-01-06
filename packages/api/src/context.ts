@@ -1,6 +1,6 @@
+import { auth } from "@property-sewa/auth";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { fromNodeHeaders } from "better-auth/node";
-import { auth } from "@property-sewa/auth";
 
 export async function createContext(opts: CreateExpressContextOptions) {
 	const session = await auth.api.getSession({

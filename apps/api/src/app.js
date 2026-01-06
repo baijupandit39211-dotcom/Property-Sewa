@@ -20,26 +20,26 @@ app.use(cookieParser());
 // CORS (for Next.js on 3000/3001)
 // ======================
 const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  process.env.CORS_ORIGIN,
+	"http://localhost:3000",
+	"http://localhost:3001",
+	process.env.CORS_ORIGIN,
 ].filter(Boolean);
 
 app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) {
-        return callback(null, true);
-      }
+	cors({
+		origin(origin, callback) {
+			if (!origin) {
+				return callback(null, true);
+			}
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+			if (allowedOrigins.includes(origin)) {
+				return callback(null, true);
+			}
 
-      return callback(null, false);
-    },
-    credentials: true,
-  }),
+			return callback(null, false);
+		},
+		credentials: true,
+	}),
 );
 
 // ======================
@@ -56,8 +56,8 @@ app.use("/auth", authRoutes);
 // ======================
 // Default Route
 // ======================
-app.get("/", (req, res) => {
-  res.send("API is running");
+app.get("/", (_req, res) => {
+	res.send("API is running");
 });
 
 module.exports = app;

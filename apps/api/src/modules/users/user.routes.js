@@ -103,7 +103,12 @@ router.get("/", requireAuth, requireSuperAdmin, userController.getAllUsers);
  *       403:
  *         description: Superadmin only
  */
-router.patch("/:id/role", requireAuth, requireSuperAdmin, userController.updateUserRole);
+router.patch(
+	"/:id/role",
+	requireAuth,
+	requireSuperAdmin,
+	userController.updateUserRole,
+);
 
 /**
  * @openapi
@@ -170,7 +175,12 @@ router.get("/:id", requireAuth, requireSuperAdmin, userController.getUserById);
  *       404:
  *         description: User not found
  */
-router.put("/:id", requireAuth, requireSuperAdmin, userController.updateUserById);
+router.put(
+	"/:id",
+	requireAuth,
+	requireSuperAdmin,
+	userController.updateUserById,
+);
 
 /**
  * @openapi
@@ -197,6 +207,11 @@ router.put("/:id", requireAuth, requireSuperAdmin, userController.updateUserById
  *       404:
  *         description: User not found
  */
-router.delete("/:id", requireAuth, requireSuperAdmin, userController.deleteUserById);
+router.delete(
+	"/:id",
+	requireAuth,
+	requireSuperAdmin,
+	userController.deleteUserById,
+);
 
 module.exports = router;
