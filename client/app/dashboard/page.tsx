@@ -1,29 +1,46 @@
-// app/page.tsx
 "use client";
 
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  Home,
+  Building2,
+  Tag,
+  BriefcaseBusiness,
+  Building,
+  ShieldCheck,
+  BadgeCheck,
+  SlidersHorizontal,
+  CalendarCheck2,
+  Headphones,
+  BarChart3,
+  Search,
+  Heart,
+  ChevronRight,
+  PhoneCall, // ✅ this is the icon you want
+  Moon,
+} from "lucide-react";
 
 type Property = {
   id: string;
   title: string;
   location: string;
   price: string;
-  image: string; // ✅ local public path
+  image: string;
   beds: number;
   baths: number;
   sqft: number;
 };
 
-// ✅ Use YOUR uploaded images from: apps/web/public/images/home/
 const featured: Property[] = [
   {
     id: "p1",
     title: "Luxury Lane Villa",
     location: "Beverly Hills, CA",
     price: "$2,800,000",
-    image: "/images/home/featured-1.jpg",
+    image: "/p1.jpg",
     beds: 5,
     baths: 4,
     sqft: 4100,
@@ -33,177 +50,220 @@ const featured: Property[] = [
     title: "Oak Street Apartment",
     location: "Austin, TX",
     price: "$850,000",
-    image: "/images/home/featured-2.jpg",
+    image: "/p2.jpg",
     beds: 2,
     baths: 2,
-    sqft: 1250,
+    sqft: 1200,
   },
   {
     id: "p3",
     title: "Highrise View Condo",
     location: "Miami, FL",
     price: "$1,200,000",
-    image: "/images/home/featured-3.jpg",
+    image: "/p3.jpg",
     beds: 3,
     baths: 2,
     sqft: 1500,
   },
   {
     id: "p4",
-    title: "Forest Cabin",
+    title: "Forest Cabin Home",
     location: "Aspen, CO",
     price: "$650,000",
-    image: "/images/home/featured-4.jpg",
-    beds: 2,
-    baths: 1,
-    sqft: 980,
+    image: "/p4.jpg",
+    beds: 3,
+    baths: 2,
+    sqft: 2000,
   },
 ];
 
-function Pill({
-  children,
-  active,
-}: {
-  children: React.ReactNode;
-  active?: boolean;
-}) {
-  return (
-    <button
-      className={[
-        "rounded-full px-4 py-2 text-sm font-medium transition",
-        active
-          ? "bg-emerald-600 text-white shadow-sm"
-          : "bg-white/70 text-slate-700 hover:bg-white",
-      ].join(" ")}
-      type="button"
-    >
-      {children}
-    </button>
-  );
+function cn(...c: Array<string | false | null | undefined>) {
+  return c.filter(Boolean).join(" ");
 }
 
-function FeatureCard({
-  icon,
-  title,
-  desc,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}) {
+const fadeUp = {
+  hidden: { opacity: 0, y: 18 },
+  show: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: 0.08 * i, duration: 0.55, ease: "easeOut" },
+  }),
+};
+
+export default function DashboardLandingLike() {
+  const [mode, setMode] = React.useState<"buy" | "rent" | "sell">("buy");
+  const [activePage, setActivePage] = React.useState(1);
+
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_12px_30px_rgba(2,6,23,0.06)]">
-      <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-        {icon}
-      </div>
-      <h4 className="text-base font-semibold text-slate-900">{title}</h4>
-      <p className="mt-1 text-sm leading-6 text-slate-600">{desc}</p>
-    </div>
-  );
-}
+    <div className="min-h-screen bg-white">
+      {/* ✅ NAVBAR (Figma exact gradient + buttons + phone icon) */}
+      <div className="sticky top-0 z-30">
+        <div
+          className="border-b border-white/10"
+          style={{
+            background:
+              "linear-gradient(90deg, #12392B 0%, #37604E 50%, #5B786A 100%)",
+          }}
+        >
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+            {/* Left brand */}
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/15">
+                <Home className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-sm font-semibold tracking-wide text-white">
+                PROPERTY SEWA
+              </span>
+            </div>
 
-function TinyIcon({ d }: { d: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d={d} />
-    </svg>
-  );
-}
+            {/* Center links */}
+            <div className="hidden items-center gap-10 text-sm md:flex">
+              <Link
+                className="text-white hover:text-white transition"
+                href="/properties?type=sale"
+              >
+                For Sale
+              </Link>
+              <Link
+                className="text-white/80 hover:text-white transition"
+                href="/properties?type=rent"
+              >
+                For Rent
+              </Link>
+              <Link
+                className="text-white/80 hover:text-white transition"
+                href="/agents"
+              >
+                Agents
+              </Link>
+            </div>
 
-export default function HomePage() {
-  return (
-    <main className="min-h-screen bg-white text-slate-900">
-      {/* NAVBAR */}
-      <header className="sticky top-0 z-50 border-b border-white/30 bg-emerald-900/60 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/15 text-emerald-200">
-              <TinyIcon d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" />
-            </span>
-            <span className="text-sm font-semibold tracking-wide text-white">
-              PROPERTY SEWA
-            </span>
-          </Link>
+            {/* Right actions (exact like your crop) */}
+            <div className="flex items-center gap-3">
+              {/* Log In: white pill, black text */}
+              <Link
+                href="/login"
+                className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black shadow-sm transition hover:scale-[1.02] active:scale-[0.99]"
+              >
+                Log In
+              </Link>
 
-          <nav className="hidden items-center gap-6 text-sm text-emerald-50/90 md:flex">
-            <Link className="hover:text-white" href="#for-sale">
-              For Sale
-            </Link>
-            <Link className="hover:text-white" href="#for-rent">
-              For Rent
-            </Link>
-            <Link className="hover:text-white" href="#agents">
-              Agents
-            </Link>
-          </nav>
+              {/* Sign Up: neon mint */}
+              <Link
+                href="/signup"
+                className="rounded-full bg-[#1DFF91] px-5 py-2 text-sm font-extrabold text-black shadow-sm transition hover:brightness-95 hover:scale-[1.02] active:scale-[0.99]"
+              >
+                Sign Up
+              </Link>
 
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
-            >
-              Log In
-            </Link>
+              {/* Phone icon: white circle + dark green icon */}
+              <button
+                type="button"
+                aria-label="Call"
+                title="Call"
+                className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm transition hover:scale-[1.02] active:scale-[0.99]"
+              >
+                <PhoneCall className="h-4 w-4 text-[#12392B]" />
+              </button>
 
-            <Link
-              href="/register"
-              className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-emerald-300"
-            >
-              Sign Up
-            </Link>
-
-            <button
-              className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/15"
-              type="button"
-              aria-label="Theme"
-            >
-              <TinyIcon d="M12 3a6 6 0 1 0 9 9 7 7 0 0 1-9-9Z" />
-            </button>
+              {/* optional theme icon (keep if you want) */}
+              <button
+                onClick={() => {}}
+                className="ml-1 grid h-10 w-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/15 transition hover:bg-white/15"
+                aria-label="Theme"
+                title="Theme"
+                type="button"
+              >
+                <Moon className="h-4 w-4 text-white/90" />
+              </button>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-emerald-700 to-emerald-100">
-        {/* dotted texture */}
-        <div className="pointer-events-none absolute inset-0 opacity-25">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.28)_1px,transparent_0)] [background-size:18px_18px]" />
-        </div>
+      <section className="relative overflow-hidden">
+        {/* ✅ Figma-like hero background (your vertical gradient) */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, #012C21 0%, #1DBF85 45%, #A5EFD1 100%)",
+          }}
+        />
 
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-20">
-          {/* left */}
-          <div className="relative z-10">
-            <h1 className="text-4xl font-extrabold leading-tight text-white md:text-5xl">
-              The Modern Way to Find <br className="hidden md:block" />
+        {/* dotted grid */}
+        <div
+          className="absolute inset-0 opacity-[0.14]"
+          style={{
+            backgroundImage:
+              "radial-gradient(rgba(255,255,255,0.45) 1px, transparent 1px)",
+            backgroundSize: "18px 18px",
+          }}
+        />
+
+        {/* soft depth left */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/10 to-transparent" />
+
+        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-20">
+          {/* LEFT */}
+          <div>
+            <motion.h1
+              variants={fadeUp}
+              initial="hidden"
+              animate="show"
+              custom={0}
+              className="text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl"
+            >
+              The Modern Way to
+              <br />
+              Find
+              <br />
               Home
-            </h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-emerald-50/90">
+            </motion.h1>
+
+            <motion.p
+              variants={fadeUp}
+              initial="hidden"
+              animate="show"
+              custom={1}
+              className="mt-6 max-w-xl text-sm text-white/85 sm:text-base"
+            >
               Discover your next chapter with us. Effortless, elegant, and
               exclusively yours.
-            </p>
+            </motion.p>
 
-            {/* search card */}
-            <div className="mt-8 rounded-2xl border border-white/30 bg-white/90 p-4 shadow-[0_20px_60px_rgba(2,6,23,0.25)] backdrop-blur">
+            {/* Search Card */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="show"
+              custom={2}
+              className="mt-10 max-w-xl rounded-2xl bg-white/90 p-4 shadow-xl ring-1 ring-white/30 backdrop-blur"
+            >
+              {/* Tabs */}
               <div className="flex gap-2">
-                <Pill active>Buy</Pill>
-                <Pill>Rent</Pill>
-                <Pill>Sell</Pill>
+                <TabButton active={mode === "buy"} onClick={() => setMode("buy")}>
+                  Buy
+                </TabButton>
+                <TabButton
+                  active={mode === "rent"}
+                  onClick={() => setMode("rent")}
+                >
+                  Rent
+                </TabButton>
+                <TabButton
+                  active={mode === "sell"}
+                  onClick={() => setMode("sell")}
+                >
+                  Sell
+                </TabButton>
               </div>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
-                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3">
-                  <span className="text-slate-400">
-                    <TinyIcon d="M21 21l-4.3-4.3m1.8-4.2a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
-                  </span>
+              {/* Search Row */}
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <div className="flex flex-1 items-center gap-2 rounded-xl bg-white px-4 py-3 ring-1 ring-emerald-100">
+                  <Search className="h-4 w-4 text-emerald-600" />
                   <input
                     className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
                     placeholder="Enter an address, neighborhood, city, or ZIP code"
@@ -211,50 +271,43 @@ export default function HomePage() {
                 </div>
 
                 <button
+                  className={cn(
+                    "rounded-xl px-6 py-3 text-sm font-semibold text-white",
+                    "bg-emerald-500 hover:bg-emerald-600",
+                    "shadow-md shadow-emerald-500/25",
+                    "transition active:scale-[0.98]"
+                  )}
                   type="button"
-                  className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500"
                 >
                   Search
                 </button>
               </div>
 
+              {/* Filters */}
               <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Price Range
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Beds &amp; Baths
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Property Type
-                </button>
+                <Pill>Price Range</Pill>
+                <Pill>Beds &amp; Baths</Pill>
+                <Pill>Property Type</Pill>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-3">
+              {/* Actions */}
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   href="/properties"
-                  className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500"
+                  className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-700 transition active:scale-[0.98]"
                 >
                   Browse Properties
                 </Link>
                 <Link
-                  href="/seller/list-property"
-                  className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50"
+                  href="/properties/new"
+                  className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 transition active:scale-[0.98]"
                 >
                   List Your Property
                 </Link>
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-slate-600">
+              {/* Trust row */}
+              <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500">
                 <span className="inline-flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   Verified Listings
@@ -268,249 +321,189 @@ export default function HomePage() {
                   Top Agents
                 </span>
               </div>
-            </div>
+            </motion.div>
           </div>
 
-          {/* right hero image */}
-          <div className="relative z-10 mx-auto w-full max-w-xl">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-[0_24px_80px_rgba(2,6,23,0.35)]">
-              {/* ✅ LOCAL IMAGE */}
-              <Image
-                src="/images/home/hero-house.png"
-                alt="Modern house"
-                fill
-                className="object-cover"
-                priority
-              />
+          {/* RIGHT (3D House) */}
+          <motion.div
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
+            className="relative"
+          >
+            <div className="relative mx-auto aspect-[1.1/1] w-full max-w-[520px]">
+              <div className="absolute inset-0 rounded-3xl bg-white/10 ring-1 ring-white/15 shadow-2xl" />
+              <div className="absolute -inset-6 rounded-[2.2rem] bg-emerald-200/20 blur-2xl" />
+
+              <motion.div
+                whileHover={{ y: -6, rotate: -0.6 }}
+                transition={{ type: "spring", stiffness: 220, damping: 18 }}
+                className="relative h-full w-full"
+              >
+                <Image
+                  src="/house-3d.png"
+                  alt="3D House"
+                  fill
+                  priority
+                  className="object-contain drop-shadow-[0_28px_28px_rgba(0,0,0,0.25)]"
+                />
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* EASY SECTION */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-center text-2xl font-extrabold text-slate-900 md:text-3xl">
+      {/* Everything should be this easy */}
+      <section className="bg-white py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <motion.h2
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.3 }}
+            className="text-center text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl"
+          >
             Everything should be this easy.
-          </h2>
-          <p className="mt-2 text-center text-sm text-slate-600">
+          </motion.h2>
+          <p className="mt-3 text-center text-sm text-slate-500">
             Three steps. Three minutes.
           </p>
 
           <div className="mt-10 grid gap-4 md:grid-cols-5">
-            {[
-              {
-                title: "Buy a Home",
-                desc: "Find your dream home from thousands of listings.",
-                icon: <TinyIcon d="M3 10.5 12 3l9 7.5V21H3V10.5Z" />,
-              },
-              {
-                title: "Rent a Home",
-                desc: "Discover apartments, condos, and houses for rent.",
-                icon: (
-                  <TinyIcon d="M4 21V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14M9 21v-6h6v6" />
-                ),
-              },
-              {
-                title: "Sell a Home",
-                desc: "Get a free valuation and sell with top agents.",
-                icon: <TinyIcon d="M12 6v12m6-6H6" />,
-              },
-              {
-                title: "Commercial",
-                desc: "Explore office, retail, and industrial properties.",
-                icon: (
-                  <TinyIcon d="M3 21h18M6 21V7m12 14V7M8 9h3m2 0h3M8 12h3m2 0h3M8 15h3m2 0h3" />
-                ),
-              },
-              {
-                title: "New Projects",
-                desc: "Be the first to know about new constructions.",
-                icon: (
-                  <TinyIcon d="M12 2l3 7h7l-5.5 4 2 7-6.5-4.5L5.5 20l2-7L2 9h7l3-7Z" />
-                ),
-              },
-            ].map((c) => (
-              <div
-                key={c.title}
-                className="rounded-2xl border border-slate-100 bg-white p-5 text-center shadow-[0_12px_30px_rgba(2,6,23,0.05)]"
-              >
-                <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                  {c.icon}
-                </div>
-                <h3 className="text-sm font-semibold text-slate-900">
-                  {c.title}
-                </h3>
-                <p className="mt-1 text-xs leading-5 text-slate-600">{c.desc}</p>
-              </div>
-            ))}
+            <MiniCard icon={<Home className="h-5 w-5" />} title="Buy a Home" />
+            <MiniCard
+              icon={<Building2 className="h-5 w-5" />}
+              title="Rent a Home"
+            />
+            <MiniCard icon={<Tag className="h-5 w-5" />} title="Sell a Home" />
+            <MiniCard
+              icon={<BriefcaseBusiness className="h-5 w-5" />}
+              title="Commercial"
+            />
+            <MiniCard
+              icon={<Building className="h-5 w-5" />}
+              title="New Projects"
+            />
           </div>
         </div>
       </section>
 
-      {/* FEATURED PROPERTIES */}
-      <section className="bg-white" id="for-sale">
-        <div className="mx-auto max-w-6xl px-4 pb-16">
-          <div className="flex items-end justify-between gap-3">
+      {/* Featured Properties */}
+      <section className="bg-white pb-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-extrabold text-slate-900">
+              <h3 className="text-2xl font-extrabold tracking-tight text-slate-900">
                 Featured Properties
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
                 Handpicked listings from the best locations, just for you.
               </p>
             </div>
 
             <Link
               href="/properties"
-              className="text-sm font-semibold text-emerald-700 hover:text-emerald-600"
+              className="group inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition"
             >
-              View All →
+              View All{" "}
+              <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </Link>
           </div>
 
-          {/* tabs */}
-          <div className="mt-6 flex gap-2">
-            <button className="rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
-              Popular
-            </button>
-            <button className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
-              Newest
-            </button>
-            <button className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
-              Price
-            </button>
-          </div>
-
-          <div className="mt-6 grid gap-5 md:grid-cols-4">
-            {featured.map((p) => (
-              <Link
+          <div className="mt-8 grid gap-5 md:grid-cols-4">
+            {featured.map((p, i) => (
+              <motion.div
                 key={p.id}
-                href={`/properties/${p.id}`}
-                className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_14px_40px_rgba(2,6,23,0.08)]"
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ duration: 0.5, delay: i * 0.06 }}
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden">
-                  <Image
-                    src={p.image}
-                    alt={p.title}
-                    fill
-                    className="object-cover transition duration-300 group-hover:scale-[1.03]"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm hover:bg-white"
-                    aria-label="Save"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    <TinyIcon d="M12 21s-7-4.4-9.5-8.5C.7 9.3 2.3 6 5.9 6c2 0 3.3 1.1 4.1 2.2C10.8 7.1 12.1 6 14.1 6c3.6 0 5.2 3.3 3.4 6.5C19 16.6 12 21 12 21Z" />
-                  </button>
-                </div>
-
-                <div className="p-4">
-                  <div className="text-lg font-extrabold text-slate-900">
-                    {p.price}
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-slate-800">
-                    {p.title}
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">{p.location}</div>
-
-                  <div className="mt-3 flex items-center gap-3 text-xs text-slate-600">
-                    <span className="inline-flex items-center gap-1">
-                      <TinyIcon d="M7 20V10a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v10" />
-                      {p.beds} bd
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <TinyIcon d="M7 10V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3" />
-                      {p.baths} ba
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <TinyIcon d="M4 8h16M4 16h16M8 4v16M16 4v16" />
-                      {p.sqft} sqft
-                    </span>
-                  </div>
-                </div>
-              </Link>
+                <PropertyCard p={p} />
+              </motion.div>
             ))}
           </div>
 
-          {/* pagination look */}
-          <div className="mt-10 flex items-center justify-center gap-2 text-sm text-slate-500">
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 hover:bg-slate-50">
-              ‹
-            </button>
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 font-semibold text-white">
-              1
-            </span>
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 hover:bg-slate-50">
-              2
-            </button>
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 hover:bg-slate-50">
-              3
-            </button>
-            <span className="px-2">…</span>
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 hover:bg-slate-50">
+          {/* Pagination */}
+          <div className="mt-10 flex items-center justify-center gap-2 text-sm">
+            <PageBtn
+              label="‹"
+              onClick={() => setActivePage((p) => Math.max(1, p - 1))}
+            />
+            {[1, 2, 3].map((n) => (
+              <button
+                key={n}
+                onClick={() => setActivePage(n)}
+                className={cn(
+                  "grid h-9 w-9 place-items-center rounded-full transition",
+                  n === activePage
+                    ? "bg-emerald-500 text-white shadow shadow-emerald-500/25"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                )}
+              >
+                {n}
+              </button>
+            ))}
+            <span className="px-2 text-slate-400">…</span>
+            <button className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
               10
             </button>
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 hover:bg-slate-50">
-              ›
-            </button>
+            <PageBtn
+              label="›"
+              onClick={() => setActivePage((p) => Math.min(10, p + 1))}
+            />
           </div>
         </div>
       </section>
 
-      {/* PARTNER SECTION */}
-      <section className="bg-white" id="agents">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-center text-2xl font-extrabold text-slate-900 md:text-3xl">
+      {/* Partner section */}
+      <section className="bg-emerald-50/40 py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <h3 className="text-center text-3xl font-extrabold tracking-tight text-slate-900">
             Your Partner in Finding a Home
-          </h2>
-          <p className="mt-2 text-center text-sm text-slate-600">
+          </h3>
+          <p className="mt-2 text-center text-sm text-slate-500">
             We provide a complete service for the sale, purchase, or rental of
             real estate.
           </p>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            <FeatureCard
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            <FeatureItem
+              icon={<BadgeCheck className="h-5 w-5" />}
               title="Verified Agents"
               desc="Work with the best and most trusted agents in the industry."
-              icon={<TinyIcon d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4Z" />}
             />
-            <FeatureCard
+            <FeatureItem
+              icon={<ShieldCheck className="h-5 w-5" />}
               title="Transparency Guarantee"
               desc="No hidden fees, clear processes, and honest advice."
-              icon={<TinyIcon d="M12 20h9M12 4h9M4 9h16M4 15h16" />}
             />
-            <FeatureCard
+            <FeatureItem
+              icon={<SlidersHorizontal className="h-5 w-5" />}
               title="Smart Filters"
-              desc="Find the perfect property with advanced filtering options."
-              icon={<TinyIcon d="M4 6h16l-6 7v5l-4 2v-7L4 6Z" />}
+              desc="Find the perfect property with our advanced filtering options."
             />
-            <FeatureCard
+            <FeatureItem
+              icon={<CalendarCheck2 className="h-5 w-5" />}
               title="Instant Viewing Slots"
               desc="Book property viewings instantly at your convenience."
-              icon={
-                <TinyIcon d="M8 7V3m8 4V3M4 11h16M6 21h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z" />
-              }
             />
-            <FeatureCard
+            <FeatureItem
+              icon={<Headphones className="h-5 w-5" />}
               title="24/7 Support"
               desc="Our dedicated support team is here for you anytime."
-              icon={
-                <TinyIcon d="M4 12a8 8 0 0 1 16 0v5a3 3 0 0 1-3 3h-2v-6h2a1 1 0 0 0 1-1v-1a6 6 0 0 0-12 0v1a1 1 0 0 0 1 1h2v6H7a3 3 0 0 1-3-3v-5Z" />
-              }
             />
-            <FeatureCard
+            <FeatureItem
+              icon={<BarChart3 className="h-5 w-5" />}
               title="Market Insights"
               desc="Stay ahead with real-time data and market trends."
-              icon={<TinyIcon d="M4 19V5m0 14h16M8 15l3-3 3 2 4-6" />}
             />
           </div>
 
           <div className="mt-10 flex justify-center">
             <Link
               href="/how-it-works"
-              className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
+              className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-700 transition active:scale-[0.98]"
             >
               How It Works
             </Link>
@@ -518,116 +511,234 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ALERTS CTA */}
-      <section className="bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-400">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2">
+      {/* Get Alerts CTA + Footer */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-[#CFF9E8] via-[#8CF0C9] to-[#17D97B] py-16">
+        <div
+          className="absolute inset-0 opacity-[0.15]"
+          style={{
+            backgroundImage:
+              "radial-gradient(rgba(0,0,0,0.22) 1px, transparent 1px)",
+            backgroundSize: "18px 18px",
+          }}
+        />
+
+        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900">
+            <h3 className="text-3xl font-extrabold tracking-tight text-emerald-950">
               Get Property Alerts
-            </h2>
-            <p className="mt-2 text-sm text-slate-700">
+            </h3>
+            <p className="mt-2 text-sm text-emerald-950/70">
               Be the first to know about new listings that match your criteria.
             </p>
 
-            <div className="mt-6 flex w-full max-w-xl items-center gap-3 rounded-2xl bg-white/70 p-3 shadow-[0_18px_50px_rgba(2,6,23,0.12)] backdrop-blur">
+            <div className="mt-6 flex max-w-xl flex-col gap-3 sm:flex-row">
               <input
-                className="h-11 w-full rounded-xl bg-white px-4 text-sm outline-none ring-1 ring-slate-200 placeholder:text-slate-400"
+                className="h-12 flex-1 rounded-2xl bg-white/90 px-4 text-sm outline-none ring-1 ring-white/50 placeholder:text-slate-400"
                 placeholder="Enter your email address"
-                type="email"
               />
-              <button className="h-11 whitespace-nowrap rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white hover:bg-emerald-500">
+              <button className="h-12 rounded-2xl bg-emerald-950 px-5 text-sm font-semibold text-white hover:bg-emerald-900 transition active:scale-[0.98]">
                 Get Alerts
               </button>
             </div>
 
-            <p className="mt-3 text-xs text-slate-700/80">
+            <p className="mt-2 text-xs text-emerald-950/60">
               No spam. Unsubscribe anytime.
             </p>
           </div>
 
-          <div className="mx-auto w-full max-w-lg">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-[0_24px_80px_rgba(2,6,23,0.25)]">
-              {/* ✅ LOCAL IMAGE */}
+          <div className="relative mx-auto aspect-[1.3/1] w-full max-w-[380px]">
+            <motion.div
+              whileHover={{ y: -6 }}
+              transition={{ type: "spring", stiffness: 220, damping: 18 }}
+              className="relative h-full w-full"
+            >
               <Image
-                src="/images/home/alerts-house.png"
-                alt="Property alerts"
+                src="/house-3d.png"
+                alt="House"
                 fill
-                className="object-cover"
+                className="object-contain drop-shadow-[0_22px_22px_rgba(0,0,0,0.22)]"
               />
-            </div>
+            </motion.div>
           </div>
         </div>
 
-        {/* FOOTER */}
-        <footer className="bg-emerald-500/80">
-          <div className="mx-auto max-w-6xl px-4 py-10">
-            <div className="grid gap-8 md:grid-cols-5">
-              <div className="md:col-span-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-900/20 text-emerald-950">
-                    <TinyIcon d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" />
-                  </span>
-                  <span className="text-sm font-extrabold text-emerald-950">
-                    Property Sewa
-                  </span>
+        <div className="relative mx-auto mt-12 max-w-7xl px-4 sm:px-6">
+          <div className="grid gap-8 border-t border-emerald-950/15 pt-10 md:grid-cols-5">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2">
+                <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-950/10 ring-1 ring-emerald-950/15">
+                  <Home className="h-5 w-5 text-emerald-950" />
                 </div>
-                <p className="mt-3 max-w-sm text-sm text-emerald-950/80">
-                  The modern way to find, buy, rent, and sell your home.
-                </p>
+                <span className="text-sm font-bold text-emerald-950">
+                  Property Sewa
+                </span>
               </div>
-
-              {[
-                { title: "Company", links: ["About Us", "Careers", "Press", "Blog"] },
-                { title: "Explore", links: ["Buy", "Rent", "Sell", "Agents"] },
-                { title: "Support", links: ["Help Center", "Contact Us", "FAQ"] },
-                { title: "Legal", links: ["Terms of Service", "Privacy Policy", "Cookie Policy"] },
-              ].map((col) => (
-                <div key={col.title}>
-                  <h4 className="text-sm font-bold text-emerald-950">
-                    {col.title}
-                  </h4>
-                  <ul className="mt-3 space-y-2 text-sm text-emerald-950/80">
-                    {col.links.map((l) => (
-                      <li key={l}>
-                        <Link href="#" className="hover:text-emerald-950">
-                          {l}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              <p className="mt-3 text-sm text-emerald-950/70">
+                The modern way to find, buy, and sell your home.
+              </p>
+              <p className="mt-8 text-xs text-emerald-950/60">
+                © {new Date().getFullYear()} Property Sewa. All rights reserved.
+              </p>
             </div>
 
-            <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-emerald-900/15 pt-6 text-xs text-emerald-950/80 md:flex-row">
-              <p>© {new Date().getFullYear()} Property Sewa. All rights reserved.</p>
-              <div className="flex items-center gap-3">
-                <Link
-                  href="#"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/40 text-emerald-950 hover:bg-white/60"
-                  aria-label="Social"
-                >
-                  <TinyIcon d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3V2Z" />
-                </Link>
-                <Link
-                  href="#"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/40 text-emerald-950 hover:bg-white/60"
-                  aria-label="Social"
-                >
-                  <TinyIcon d="M16 8a6 6 0 0 1-6 6 6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6Z" />
-                </Link>
-                <Link
-                  href="#"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/40 text-emerald-950 hover:bg-white/60"
-                  aria-label="Social"
-                >
-                  <TinyIcon d="M4 4h16v16H4V4Zm4 12V10m4 6V8m4 8v-4" />
-                </Link>
-              </div>
-            </div>
+            <FooterCol title="Company" links={["About Us", "Careers", "Press", "Blog"]} />
+            <FooterCol title="Explore" links={["Buy", "Rent", "Sell", "Agents"]} />
+            <FooterCol title="Support" links={["Help Center", "Contact Us", "FAQ"]} />
           </div>
-        </footer>
+        </div>
       </section>
-    </main>
+    </div>
+  );
+}
+
+/* ------------------ Small UI pieces ------------------ */
+
+function TabButton({
+  children,
+  active,
+  onClick,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full px-4 py-2 text-sm font-semibold transition",
+        active
+          ? "bg-emerald-600 text-white shadow shadow-emerald-600/25"
+          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition"
+    >
+      {children}
+    </button>
+  );
+}
+
+function MiniCard({ icon, title }: { icon: React.ReactNode; title: string }) {
+  return (
+    <motion.div
+      whileHover={{ y: -6 }}
+      transition={{ type: "spring", stiffness: 240, damping: 16 }}
+      className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 hover:shadow-md"
+    >
+      <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+        {icon}
+      </div>
+      <p className="mt-3 text-sm font-bold text-slate-900">{title}</p>
+      <p className="mt-1 text-xs text-slate-500">
+        Find your dream home from thousands of listings.
+      </p>
+    </motion.div>
+  );
+}
+
+function PropertyCard({ p }: { p: Property }) {
+  return (
+    <Link href={`/properties/${p.id}`} className="group block">
+      <motion.div
+        whileHover={{ y: -8 }}
+        transition={{ type: "spring", stiffness: 240, damping: 18 }}
+        className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 hover:shadow-md"
+      >
+        <div className="relative aspect-[4/3] overflow-hidden">
+          <Image
+            src={p.image}
+            alt={p.title}
+            fill
+            className="object-cover transition duration-500 group-hover:scale-[1.06]"
+          />
+          <button
+            type="button"
+            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-slate-700 shadow-sm ring-1 ring-white/60 opacity-0 transition group-hover:opacity-100"
+            aria-label="Save"
+            onClick={(e) => e.preventDefault()}
+          >
+            <Heart className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-4">
+          <p className="text-lg font-extrabold text-slate-900">{p.price}</p>
+          <p className="mt-1 text-sm font-semibold text-slate-800">{p.title}</p>
+          <p className="mt-1 text-xs text-slate-500">{p.location}</p>
+
+          <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-500">
+            <span>{p.beds} bd</span>
+            <span>•</span>
+            <span>{p.baths} ba</span>
+            <span>•</span>
+            <span>{p.sqft} sqft</span>
+          </div>
+        </div>
+      </motion.div>
+    </Link>
+  );
+}
+
+function FeatureItem({
+  icon,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <motion.div
+      whileHover={{ y: -6 }}
+      transition={{ type: "spring", stiffness: 240, damping: 16 }}
+      className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-emerald-100/50 hover:shadow-md"
+    >
+      <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+        {icon}
+      </div>
+      <p className="mt-3 text-sm font-extrabold text-slate-900">{title}</p>
+      <p className="mt-1 text-sm text-slate-500">{desc}</p>
+    </motion.div>
+  );
+}
+
+function PageBtn({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+      type="button"
+    >
+      {label}
+    </button>
+  );
+}
+
+function FooterCol({ title, links }: { title: string; links: string[] }) {
+  return (
+    <div>
+      <p className="text-sm font-extrabold text-emerald-950">{title}</p>
+      <ul className="mt-3 space-y-2 text-sm text-emerald-950/70">
+        {links.map((l) => (
+          <li key={l}>
+            <a className="hover:text-emerald-950 transition" href="#">
+              {l}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

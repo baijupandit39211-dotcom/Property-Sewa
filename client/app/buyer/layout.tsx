@@ -23,7 +23,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
 
         const role = (res?.user?.role || "").toLowerCase();
 
-        // ✅ Only buyer can stay in /buyer/*
+        // ✅ KEEP YOUR LOGIC EXACTLY
         if (role !== "buyer") {
           if (role === "admin" || role === "superadmin") {
             router.replace("/admin/overview");
@@ -49,7 +49,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
 
   if (checking) {
     return (
-      <div className="min-h-screen grid place-items-center bg-[#f4fbf7]">
+      <div className="grid min-h-screen place-items-center bg-[#F3FBF7]">
         <div className="rounded-2xl bg-white px-6 py-4 shadow-sm ring-1 ring-black/5">
           <div className="text-sm font-semibold text-slate-700">
             Checking buyer access...
@@ -60,11 +60,16 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-emerald-50">
+    <div className="min-h-screen bg-[#F3FBF7]">
       <BuyerHeader />
-      <div className="flex">
-        <BuyerSidebar />
-        <main className="w-full px-10 py-8">{children}</main>
+
+      <div className="mx-auto max-w-[1400px] px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-10 py-8">
+          <BuyerSidebar />
+
+          {/* main content area */}
+          <main className="min-w-0">{children}</main>
+        </div>
       </div>
     </div>
   );
