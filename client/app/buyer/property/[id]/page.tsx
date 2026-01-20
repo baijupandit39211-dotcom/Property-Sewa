@@ -14,6 +14,10 @@ export default function PropertyDetailsPage() {
 
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -25,6 +29,54 @@ export default function PropertyDetailsPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    // Fetch current user info for Contact Agent form
+    apiFetch<{ success: boolean; user: { name: string; email: string } }>("/auth/me")
+      .then((res) => {
+        if (res.success && res.user) {
+          setUser({ name: res.user.name, email: res.user.email });
+        }
+      })
+      .catch(() => {
+        // User not authenticated, but still allow contact
+      });
+  }, []);
+
+  const handleContactAgent = async () => {
+    if (!message.trim()) return;
+    
+    setSubmitting(true);
+    try {
+      console.log("Sending lead request:", {
+        propertyId: id,
+        name: user?.name || "",
+        email: user?.email || "",
+        message: message.trim(),
+      });
+      
+      const response = await apiFetch("/leads", {
+        method: "POST",
+        body: JSON.stringify({
+          propertyId: id,
+          name: user?.name || "",
+          email: user?.email || "",
+          message: message.trim(),
+        }),
+      });
+      
+      console.log("Lead response:", response);
+      
+      setShowModal(false);
+      setMessage("");
+      alert("Message sent successfully! The agent will contact you soon.");
+    } catch (err: any) {
+      console.error("Lead creation error:", err);
+      alert(err.message || "Failed to send message");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-emerald-50">
@@ -111,7 +163,10 @@ export default function PropertyDetailsPage() {
                   <button className="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white">
                     Schedule Visit
                   </button>
-                  <button className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-black/5 hover:bg-emerald-50">
+                  <button 
+                    onClick={() => setShowModal(true)}
+                    className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-black/5 hover:bg-emerald-50"
+                  >
                     Contact Agent
                   </button>
                 </div>
@@ -122,6 +177,46 @@ export default function PropertyDetailsPage() {
           )}
         </main>
       </div>
+
+      {/* Contact Agent Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Contact Agent</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Message
+                </label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  placeholder="I'm interested in this property. Please provide more information..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleContactAgent}
+                disabled={submitting || !message.trim()}
+                className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Sending..." : "Send Message"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

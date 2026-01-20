@@ -16,6 +16,7 @@ export type LoginInput = {
 
 export type GoogleLoginInput = {
   credential?: string;
+  role?: Role; // Include role for Google signup
 };
 
 export type ChangePasswordInput = {

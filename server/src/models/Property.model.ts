@@ -35,7 +35,7 @@ const PropertySchema = new Schema(
 
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "active", "rejected", "draft"],
       default: "pending",
     },
 

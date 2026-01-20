@@ -20,25 +20,25 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const res = await apiFetch<{ success: boolean; user: { role?: string } }>(
-          "/auth/me"
+          "/auth/admin/me"
         );
 
         const role = (res?.user?.role || "").toLowerCase();
         const ok = role === "admin" || role === "superadmin";
 
-        // ✅ Only admin/superadmin can stay in /admin/*
+        // Only admin/superadmin can stay in /admin/*
         if (!ok) {
           if (role === "buyer") {
             router.replace("/buyer/buyer-dashboard");
           } else if (role === "seller" || role === "agent") {
             router.replace("/dashboard");
           } else {
-            router.replace("/login");
+            router.replace("/admin-login");
           }
           return;
         }
       } catch {
-        router.replace("/login");
+        router.replace("/admin-login");
         return;
       } finally {
         if (mounted) setChecking(false);

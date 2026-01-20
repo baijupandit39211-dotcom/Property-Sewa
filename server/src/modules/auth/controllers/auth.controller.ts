@@ -1,12 +1,22 @@
 import type { Request, Response, NextFunction } from "express";
 import authService from "../services/auth.services";
 
-const getCookieOptions = () => ({
-  httpOnly: true as const,
-  sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
-  maxAge: Number(process.env.COOKIE_MAX_AGE_MS) || 7 * 24 * 60 * 60 * 1000,
-});
+const getCookieOptions = () => {
+  const options = {
+    httpOnly: true as const,
+    sameSite: "lax" as const,
+    secure: false, // Always false for localhost development
+    maxAge: Number(process.env.COOKIE_MAX_AGE_MS) || 7 * 24 * 60 * 60 * 1000,
+    path: "/", // Explicitly set path to root
+  };
+  
+  // For production, enable secure flag
+  if (process.env.NODE_ENV === "production") {
+    options.secure = true;
+  }
+  
+  return options;
+};
 
 function setCookie(res: Response, cookieName: string, token: string) {
   res.cookie(cookieName, token, getCookieOptions());
@@ -88,6 +98,16 @@ export async function logout(_req: Request, res: Response, next: NextFunction) {
 }
 
 export async function me(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    const user = await authService.getMe(userId);
+    return res.status(200).json({ success: true, user });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function adminMe(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId as string;
     const user = await authService.getMe(userId);

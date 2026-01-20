@@ -150,7 +150,7 @@ export default function DashboardLandingLike() {
 
               {/* Sign Up: neon mint */}
               <Link
-                href="/signup"
+                href="/register"
                 className="rounded-full bg-[#1DFF91] px-5 py-2 text-sm font-extrabold text-black shadow-sm transition hover:brightness-95 hover:scale-[1.02] active:scale-[0.99]"
               >
                 Sign Up

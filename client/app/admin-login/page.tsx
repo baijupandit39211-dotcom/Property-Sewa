@@ -14,14 +14,17 @@ export default function AdminLoginPage() {
 
   // ✅ If already logged in as admin, redirect directly to admin dashboard
   useEffect(() => {
-    apiFetch<{ user: { role: string } }>("/auth/me")
+    // Check if adminToken exists by calling admin-specific endpoint
+    apiFetch<{ user: { role: string } }>("/auth/admin/me")
       .then((res) => {
         const role = (res?.user?.role || "").toLowerCase();
         if (role === "admin" || role === "superadmin") {
           router.replace("/admin/overview");
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // Admin not authenticated, stay on login page
+      });
   }, [router]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -29,7 +32,7 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const data = await apiFetch<{ user: any }>("/auth/login", {
+      const data = await apiFetch<{ user: any }>("/auth/admin/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });

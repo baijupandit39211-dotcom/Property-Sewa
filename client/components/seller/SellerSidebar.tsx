@@ -31,7 +31,7 @@ export default function SellerSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-16 flex h-[calc(100vh-64px)] w-64 shrink-0 flex-col bg-white shadow-sm ring-1 ring-slate-200">
+    <aside className="flex h-full w-64 flex-col bg-white shadow-sm ring-1 ring-slate-200">
       <nav className="flex flex-col gap-1 px-2 py-4">
         {links.map((link, idx) => {
           const Icon = link.icon;

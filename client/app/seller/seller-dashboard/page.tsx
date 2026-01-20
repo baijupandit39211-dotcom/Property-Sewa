@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -10,18 +11,12 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { apiFetch } from "@/app/lib/api";
 
 const pageEnter = {
   hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as any } },
 };
-
-const statCards = [
-  { title: "Active listings", value: "12", change: "+10%", icon: Home },
-  { title: "Views this week", value: "345", change: "+5%", icon: Eye },
-  { title: "Leads this week", value: "23", change: "+8%", icon: Users },
-  { title: "Scheduled visits", value: "15", change: "+12%", icon: Activity },
-];
 
 const quickActions = [
   {
@@ -57,6 +52,48 @@ const activities = [
 ];
 
 export default function SellerDashboardPage() {
+  const [properties, setProperties] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const response = await apiFetch<{success: boolean; items: any[]}>("/properties/mine");
+        
+        if (response.success) {
+          // Normalize data to ensure safe defaults
+          const normalizedProperties = (response.items || []).map(property => ({
+            ...property,
+            views: property.views || 0,
+            leads: property.leads || 0,
+            status: property.status || 'pending'
+          }));
+          setProperties(normalizedProperties);
+        }
+      } catch (err) {
+        console.error("Failed to fetch properties for dashboard:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
+  // Compute stats from real data
+  const totalListings = properties.length;
+  const pendingCount = properties.filter(p => p.status === "pending").length;
+  const approvedCount = properties.filter(p => p.status === "active").length;
+  const rejectedCount = properties.filter(p => p.status === "rejected").length;
+  const totalViews = properties.reduce((sum, p) => sum + (p.views || 0), 0);
+  const totalLeads = properties.reduce((sum, p) => sum + (p.leads || 0), 0);
+
+  const statCards = [
+    { title: "Total Listings", value: totalListings.toString(), change: "+0%", icon: Home },
+    { title: "Active Listings", value: approvedCount.toString(), change: "+0%", icon: TrendingUp },
+    { title: "Total Views", value: totalViews.toLocaleString(), change: "+0%", icon: Eye },
+    { title: "Total Leads", value: totalLeads.toString(), change: "+0%", icon: Users },
+  ];
   return (
     <motion.main
       initial="hidden"

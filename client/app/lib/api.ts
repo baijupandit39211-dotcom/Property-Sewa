@@ -2,11 +2,13 @@ export type ApiError = {
   message?: string;
 };
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
+// Force localhost:5000 for development
+const API_BASE = "http://localhost:5000";
 
 async function coreFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
+  
+  console.log("API Request:", { method: init.method || "GET", url, hasBody: !!init.body });
 
   const res = await fetch(url, {
     ...init,
@@ -15,13 +17,33 @@ async function coreFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
       ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
       ...(init.headers || {}),
     },
-    credentials: "include", // ✅ cookie auth
+    credentials: "include", // Always include cookies, cannot be overridden
   });
 
-  const data = await res.json().catch(() => ({}));
+  console.log("API Response:", { 
+    status: res.status, 
+    statusText: res.statusText,
+    ok: res.ok,
+    headers: Object.fromEntries(res.headers.entries())
+  });
+
+  let data;
+  let responseText;
+  try {
+    responseText = await res.text();
+    console.log("Raw Response Text:", responseText);
+    data = JSON.parse(responseText);
+  } catch (jsonErr) {
+    console.error("Failed to parse JSON response:", jsonErr);
+    console.error("Response text that failed to parse:", responseText);
+    data = {};
+  }
+
+  console.log("Parsed Response Data:", data);
 
   if (!res.ok) {
     const msg = (data as ApiError)?.message || `Request failed (${res.status})`;
+    console.error("API Error:", { status: res.status, message: msg, data });
     throw new Error(msg);
   }
 

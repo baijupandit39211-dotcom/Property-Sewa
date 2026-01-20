@@ -145,7 +145,7 @@ router.get("/me", requireUserAuth, authController.me);
  *       200: { description: Current admin user }
  *       401: { description: Not authenticated }
  */
-router.get("/admin/me", requireAdminAuth, authController.me);
+router.get("/admin/me", requireAdminAuth, authController.adminMe);
 
 /**
  * @swagger

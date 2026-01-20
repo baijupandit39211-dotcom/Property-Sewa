@@ -52,6 +52,48 @@ export async function createProperty(req: Request, res: Response, next: NextFunc
   }
 }
 
+// GET /properties/mine (seller) - get user's own properties
+export async function getMyProperties(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+
+    const result = await propertyService.getMyProperties(userId, req.query);
+    return res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// GET /properties/mine/:id (seller view own property by id)
+export async function getMyPropertyById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+
+    const property = await propertyService.getMyPropertyById(req.params.id, userId);
+    return res.status(200).json({ success: true, property });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// DELETE /properties/:id (seller) - delete own property
+export async function deleteProperty(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    const propertyId = req.params.id;
+    
+    if (!userId) throw new ApiError(401, "Unauthorized");
+    if (!propertyId) throw new ApiError(400, "Property ID is required");
+
+    const deleted = await propertyService.deleteProperty(propertyId, userId);
+    return res.status(200).json({ success: true, property: deleted });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 // GET /properties (buyer) approved list
 export async function listApproved(req: Request, res: Response, next: NextFunction) {
   try {
@@ -99,6 +141,31 @@ export async function reject(req: Request, res: Response, next: NextFunction) {
   try {
     const adminUserId = req.user?.userId as string;
     const updated = await propertyService.rejectProperty(req.params.id, adminUserId);
+    return res.status(200).json({ success: true, property: updated });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// PATCH /properties/:id (seller edit own property)
+export async function updateProperty(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+
+    // Handle image uploads (optional on edit)
+    const files = (req.files as Express.Multer.File[]) || [];
+    let uploaded: { url: string; publicId: string }[] = [];
+    
+    if (files.length > 0) {
+      uploaded = await Promise.all(files.map((f) => uploadToCloudinary(f.buffer)));
+    }
+
+    const updated = await propertyService.updateProperty(req.params.id, userId, {
+      ...req.body,
+      images: uploaded.length > 0 ? uploaded : undefined,
+    });
+
     return res.status(200).json({ success: true, property: updated });
   } catch (err) {
     return next(err);

@@ -21,21 +21,37 @@ export default function ListingsApprovalPage() {
   async function load() {
     setLoading(true);
     try {
-      const res = await apiFetch<{ items: Property[] }>("/properties/admin/pending");
-      setItems(res.items);
+      const res = await apiFetch<{ success: boolean; items: Property[] }>("/properties/admin/pending");
+      if (res.success) {
+        setItems(res.items || []);
+      }
+    } catch (err) {
+      console.error("Failed to load pending listings:", err);
     } finally {
       setLoading(false);
     }
   }
 
   async function approve(id: string) {
-    await apiFetch(`/properties/admin/${id}/approve`, { method: "PATCH" });
-    await load();
+    try {
+      const res = await apiFetch<{ success: boolean }>(`/properties/admin/${id}/approve`, { method: "PATCH" });
+      if (res.success) {
+        await load();
+      }
+    } catch (err) {
+      console.error("Failed to approve property:", err);
+    }
   }
 
   async function reject(id: string) {
-    await apiFetch(`/properties/admin/${id}/reject`, { method: "PATCH" });
-    await load();
+    try {
+      const res = await apiFetch<{ success: boolean }>(`/properties/admin/${id}/reject`, { method: "PATCH" });
+      if (res.success) {
+        await load();
+      }
+    } catch (err) {
+      console.error("Failed to reject property:", err);
+    }
   }
 
   useEffect(() => {

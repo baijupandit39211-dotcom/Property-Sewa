@@ -82,6 +82,12 @@ async function login({ email, password }: LoginInput) {
 
 async function googleLogin(input: any) {
   const credential = input?.credential;
+  const role = input?.role || "buyer"; // Accept role from client, default to buyer
+  
+  // Validate role - never allow admin roles from client in Google signup
+  const allowedRoles = ["buyer", "seller", "agent"];
+  const validRole = allowedRoles.includes(role) ? role : "buyer";
+  
   if (!credential) throw new ApiError(400, "credential is required");
   if (!process.env.GOOGLE_CLIENT_ID) throw new ApiError(400, "GOOGLE_CLIENT_ID missing in .env");
 
@@ -109,12 +115,16 @@ async function googleLogin(input: any) {
       passwordHash: "",
       address: "",
       phone: "",
-      role: "buyer",
+      role: validRole, // Use validated role for new users
       provider: "google",
       googleId,
       avatar,
     });
   } else {
+    // For existing users, update role if valid role provided and current role is buyer
+    if (user.role === "buyer" && validRole !== "buyer") {
+      user.role = validRole;
+    }
     if (!user.googleId) user.googleId = googleId;
     if (!user.avatar && avatar) user.avatar = avatar;
     await user.save();

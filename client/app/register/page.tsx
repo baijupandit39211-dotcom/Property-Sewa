@@ -40,16 +40,17 @@ function passwordScore(pw: string) {
 function routeByRole(role: string | undefined) {
   const r = (role || "").toLowerCase();
 
-  // ✅ Admin goes to admin dashboard now
+  // Admin goes to admin dashboard
   if (r === "admin" || r === "superadmin") return "/admin/overview";
 
-  // buyer
+  // Buyer goes to buyer dashboard
   if (r === "buyer") return "/buyer/buyer-dashboard";
 
-  // seller/agent (keep your existing path)
-  if (r === "seller" || r === "agent") return "/dashboard";
+  // Seller/Agent goes to seller dashboard
+  if (r === "seller" || r === "agent") return "/seller/seller-dashboard";
 
-  return "/buyer/buyer-dashboard";
+  // If role is missing or invalid, redirect to login
+  return "/login";
 }
 
 export default function RegisterPage() {
@@ -80,7 +81,10 @@ export default function RegisterPage() {
           try {
             const data = await apiFetch<{ user: any }>("/auth/google", {
               method: "POST",
-              body: JSON.stringify({ credential: resp.credential }),
+              body: JSON.stringify({ 
+                credential: resp.credential,
+                role, // Include selected role for Google signup
+              }),
             });
 
             router.push(routeByRole(data?.user?.role));
