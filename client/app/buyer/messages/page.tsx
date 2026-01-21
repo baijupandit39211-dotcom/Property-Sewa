@@ -18,6 +18,8 @@ type Lead = {
   message: string;
   status: string;
   createdAt: string;
+  latestVisitStatus?: "requested" | "confirmed" | "rejected" | "rescheduled" | "completed";
+  latestVisitDate?: string;
 };
 
 export default function BuyerMessagesPage() {
@@ -43,7 +45,24 @@ export default function BuyerMessagesPage() {
     fetchInquiries();
   }, []);
 
-  const getStatusColor = (status: string) => {
+  const getVisitStatusColor = (status: string) => {
+    switch (status) {
+      case "requested":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "confirmed":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "rejected":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "rescheduled":
+        return "bg-amber-100 text-amber-800 border-amber-200";
+      case "completed":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getInquiryStatusColor = (status: string) => {
     switch (status) {
       case "new":
         return "bg-blue-100 text-blue-800 border-blue-200";
@@ -53,6 +72,24 @@ export default function BuyerMessagesPage() {
         return "bg-green-100 text-green-800 border-green-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getDisplayStatus = (lead: Lead) => {
+    if (lead.latestVisitStatus) {
+      return {
+        type: "visit",
+        status: lead.latestVisitStatus,
+        color: getVisitStatusColor(lead.latestVisitStatus),
+        label: lead.latestVisitStatus.charAt(0).toUpperCase() + lead.latestVisitStatus.slice(1)
+      };
+    } else {
+      return {
+        type: "inquiry",
+        status: lead.status,
+        color: getInquiryStatusColor(lead.status),
+        label: lead.status.charAt(0).toUpperCase() + lead.status.slice(1)
+      };
     }
   };
 
@@ -102,36 +139,46 @@ export default function BuyerMessagesPage() {
                     </td>
                   </tr>
                 ) : (
-                  leads.map((lead) => (
-                    <tr 
-                      key={lead._id} 
-                      className="hover:bg-slate-50 cursor-pointer"
-                      onClick={() => router.push(`/buyer/messages/${lead._id}`)}
-                    >
-                      <td className="px-4 py-4">
-                        <div>
-                          <p className="font-medium text-slate-900">{lead.propertyId?.title || "Unknown Property"}</p>
-                          <p className="text-sm text-slate-600">{lead.propertyId?.location || "Unknown Location"}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="max-w-xs">
-                          <p className="text-sm text-slate-600 line-clamp-3">{lead.message}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(lead.status)}`}>
-                          {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-slate-600">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-3 w-3" />
-                          <span>{new Date(lead.createdAt).toLocaleDateString()}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  leads.map((lead) => {
+                    const displayStatus = getDisplayStatus(lead);
+                    return (
+                      <tr 
+                        key={lead._id} 
+                        className="hover:bg-slate-50 cursor-pointer"
+                        onClick={() => router.push(`/buyer/messages/${lead._id}`)}
+                      >
+                        <td className="px-4 py-4">
+                          <div>
+                            <p className="font-medium text-slate-900">{lead.propertyId?.title || "Unknown Property"}</p>
+                            <p className="text-sm text-slate-600">{lead.propertyId?.location || "Unknown Location"}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="max-w-xs">
+                            <p className="text-sm text-slate-600 line-clamp-3">{lead.message}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${displayStatus.color}`}>
+                              {displayStatus.label}
+                            </span>
+                            {displayStatus.type === "visit" && (
+                              <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                                Visit
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-slate-600">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3 w-3" />
+                            <span>{new Date(lead.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

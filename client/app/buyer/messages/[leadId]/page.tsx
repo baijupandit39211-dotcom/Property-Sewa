@@ -33,10 +33,23 @@ type Message = {
   createdAt: string;
 };
 
+type Visit = {
+  _id: string;
+  propertyId: string;
+  status: "requested" | "confirmed" | "rejected" | "rescheduled" | "completed";
+  requestedDate: string;
+  actualDate?: string;
+  createdAt: string;
+};
+
+type LeadWithVisit = Lead & {
+  visit?: Visit;
+};
+
 export default function BuyerMessageDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [lead, setLead] = useState<Lead | null>(null);
+  const [lead, setLead] = useState<LeadWithVisit | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -50,7 +63,24 @@ export default function BuyerMessageDetailPage() {
         const leadResponse = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/my-inquiries");
         if (leadResponse.success) {
           const leadData = leadResponse.items.find(l => l._id === params.leadId);
-          setLead(leadData || null);
+          if (leadData) {
+            // Try to fetch visit for this lead's property
+            try {
+              const visitResponse = await apiFetch<{ success: boolean; items: Visit[] }>(`/visits/my-visits?propertyId=${leadData.propertyId._id}`);
+              if (visitResponse.success && visitResponse.items.length > 0) {
+                // Find the most recent visit for this property
+                const visit = visitResponse.items
+                  .filter(v => v.propertyId === leadData.propertyId._id)
+                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+                setLead({ ...leadData, visit });
+              } else {
+                setLead(leadData);
+              }
+            } catch (err) {
+              // If visit fetch fails, just set lead without visit
+              setLead(leadData);
+            }
+          }
         }
 
         // Fetch messages
@@ -69,6 +99,54 @@ export default function BuyerMessageDetailPage() {
       fetchData();
     }
   }, [params.leadId]);
+
+  const getVisitStatusColor = (status: string) => {
+    switch (status) {
+      case "requested":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "confirmed":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "rejected":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "rescheduled":
+        return "bg-amber-100 text-amber-800 border-amber-200";
+      case "completed":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getInquiryStatusColor = (status: string) => {
+    switch (status) {
+      case "new":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "contacted":
+        return "bg-amber-100 text-amber-800 border-amber-200";
+      case "closed":
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getDisplayStatus = (lead: LeadWithVisit) => {
+    if (lead.visit) {
+      return {
+        type: "visit",
+        status: lead.visit.status,
+        color: getVisitStatusColor(lead.visit.status),
+        label: lead.visit.status.charAt(0).toUpperCase() + lead.visit.status.slice(1)
+      };
+    } else {
+      return {
+        type: "inquiry",
+        status: lead.status,
+        color: getInquiryStatusColor(lead.status),
+        label: lead.status.charAt(0).toUpperCase() + lead.status.slice(1)
+      };
+    }
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,13 +238,16 @@ export default function BuyerMessageDetailPage() {
 
                 <div>
                   <p className="text-sm text-slate-600">Status</p>
-                  <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${
-                    lead.status === "new" ? "bg-blue-100 text-blue-800 border-blue-200" :
-                    lead.status === "contacted" ? "bg-amber-100 text-amber-800 border-amber-200" :
-                    "bg-green-100 text-green-800 border-green-200"
-                  }`}>
-                    {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${getDisplayStatus(lead).color}`}>
+                      {getDisplayStatus(lead).label}
+                    </span>
+                    {getDisplayStatus(lead).type === "visit" && (
+                      <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                        Visit
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div>

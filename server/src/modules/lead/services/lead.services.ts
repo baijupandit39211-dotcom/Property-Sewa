@@ -1,5 +1,6 @@
 import Property from "../../../models/Property.model";
 import Lead from "../../../models/Lead.model";
+import Visit from "../../../models/Visit.model";
 import { ApiError } from "../../../utils/apiError";
 
 export interface CreateLeadInput {
@@ -57,7 +58,33 @@ async function getLeadsByBuyer(buyerId: string) {
     })
     .sort({ createdAt: -1 });
 
-  return leads;
+  // For each lead, find the most recent visit for that property
+  const leadsWithVisitStatus = await Promise.all(
+    leads.map(async (lead) => {
+      try {
+        // Find the most recent visit for this buyer and property
+        const latestVisit = await Visit.findOne({
+          buyerId: buyerId,
+          propertyId: lead.propertyId._id
+        })
+        .sort({ createdAt: -1 });
+
+        // Convert lead to plain object and add visit info
+        const leadObj: any = lead.toObject();
+        if (latestVisit) {
+          leadObj.latestVisitStatus = latestVisit.status;
+          leadObj.latestVisitDate = latestVisit.createdAt;
+        }
+        
+        return leadObj;
+      } catch (err) {
+        // If visit lookup fails, return lead without visit info
+        return lead.toObject();
+      }
+    })
+  );
+
+  return leadsWithVisitStatus;
 }
 
 export default {
