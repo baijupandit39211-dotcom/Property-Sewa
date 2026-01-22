@@ -13,13 +13,28 @@ declare global {
 }
 
 function loadGoogleScript(): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     if (window.google?.accounts?.id) return resolve();
+
+    // Prevent adding the script multiple times
+    const existing = document.querySelector(
+      'script[src="https://accounts.google.com/gsi/client"]'
+    ) as HTMLScriptElement | null;
+
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () =>
+        reject(new Error("Google script failed to load"))
+      );
+      return;
+    }
+
     const s = document.createElement("script");
     s.src = "https://accounts.google.com/gsi/client";
     s.async = true;
     s.defer = true;
     s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Google script failed to load"));
     document.head.appendChild(s);
   });
 }
@@ -69,39 +84,53 @@ export default function RegisterPage() {
   const googleBtnRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
+    let cancelled = false;
+
     (async () => {
-      await loadGoogleScript();
+      try {
+        await loadGoogleScript();
+        if (cancelled) return;
 
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-      if (!clientId || !googleBtnRef.current) return;
+        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+        if (!clientId || !googleBtnRef.current) return;
 
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (resp: any) => {
-          try {
-            const data = await apiFetch<{ user: any }>("/auth/google", {
-              method: "POST",
-              body: JSON.stringify({ 
-                credential: resp.credential,
-                role, // Include selected role for Google signup
-              }),
-            });
+        // ✅ Clear container to avoid duplicate Google button
+        googleBtnRef.current.innerHTML = "";
 
-            router.push(routeByRole(data?.user?.role));
-          } catch (e: any) {
-            alert(e?.message || "Google signup failed");
-          }
-        },
-      });
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: async (resp: any) => {
+            try {
+              const data = await apiFetch<{ user: any }>("/auth/google", {
+                method: "POST",
+                body: JSON.stringify({
+                  credential: resp.credential,
+                  role, // ✅ always latest selected role
+                }),
+              });
 
-      window.google.accounts.id.renderButton(googleBtnRef.current, {
-        theme: "outline",
-        size: "large",
-        width: 380,
-        text: "signup_with",
-      });
+              router.push(routeByRole(data?.user?.role));
+            } catch (e: any) {
+              alert(e?.message || "Google signup failed");
+            }
+          },
+        });
+
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: "outline",
+          size: "large",
+          width: 380,
+          text: "signup_with",
+        });
+      } catch (e) {
+        // optional: show a message if Google script fails
+      }
     })();
-  }, [router]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, role]); // ✅ IMPORTANT: include role
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,7 +225,6 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/admin-login")}
-
                   className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-700 ring-1 ring-emerald-200 hover:bg-emerald-50"
                 >
                   Admin

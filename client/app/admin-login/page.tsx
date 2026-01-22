@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "../lib/api";
+import { apiFetch, apiFetchSafe } from "../lib/api"; // ✅ add apiFetchSafe
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -12,19 +12,16 @@ export default function AdminLoginPage() {
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
-  // ✅ If already logged in as admin, redirect directly to admin dashboard
+  // ✅ Silent session check (no console error if not logged in)
   useEffect(() => {
-    // Check if adminToken exists by calling admin-specific endpoint
-    apiFetch<{ user: { role: string } }>("/auth/admin/me")
+    apiFetchSafe<{ user: { role: string } }>("/auth/admin/me")
       .then((res) => {
         const role = (res?.user?.role || "").toLowerCase();
         if (role === "admin" || role === "superadmin") {
           router.replace("/admin/overview");
         }
       })
-      .catch(() => {
-        // Admin not authenticated, stay on login page
-      });
+      .catch(() => {});
   }, [router]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -44,7 +41,6 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // ✅ Redirect to admin dashboard
       router.push("/admin/overview");
     } catch (err: any) {
       alert(err?.message || "Admin login failed");
@@ -55,33 +51,25 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[#f4fbf7]">
-      {/* Header */}
       <header className="border-b border-white/10 bg-[#2f5d46]">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="text-lg font-extrabold text-white">
             PROPERTY SEWA
           </Link>
-
           <div className="text-sm font-semibold text-white/90">Admin Login</div>
         </div>
       </header>
 
-      {/* Main */}
       <main className="mx-auto max-w-3xl px-6 py-20">
         <div className="rounded-3xl bg-white p-10 shadow-sm ring-1 ring-emerald-200">
-          <h1 className="text-3xl font-extrabold text-slate-900">
-            Admin Access
-          </h1>
+          <h1 className="text-3xl font-extrabold text-slate-900">Admin Access</h1>
           <p className="mt-2 text-sm text-emerald-700">
             Login to access admin dashboard
           </p>
 
           <form onSubmit={onSubmit} className="mt-10 space-y-6">
-            {/* Email */}
             <div>
-              <label className="text-sm font-semibold text-slate-700">
-                Email
-              </label>
+              <label className="text-sm font-semibold text-slate-700">Email</label>
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -92,11 +80,8 @@ export default function AdminLoginPage() {
               />
             </div>
 
-            {/* Password */}
             <div>
-              <label className="text-sm font-semibold text-slate-700">
-                Password
-              </label>
+              <label className="text-sm font-semibold text-slate-700">Password</label>
               <input
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -107,7 +92,6 @@ export default function AdminLoginPage() {
               />
             </div>
 
-            {/* Login Button */}
             <button
               disabled={loading}
               type="submit"
@@ -116,7 +100,6 @@ export default function AdminLoginPage() {
               {loading ? "Logging in..." : "Login to Admin Dashboard"}
             </button>
 
-            {/* Back to user login */}
             <div className="pt-2 text-center">
               <Link
                 href="/login"
