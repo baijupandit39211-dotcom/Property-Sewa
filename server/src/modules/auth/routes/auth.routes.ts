@@ -59,7 +59,7 @@ router.post("/register", authController.register);
 router.post("/login", authController.login);
 
 /**
- * ✅ NEW: Admin login (sets adminToken cookie)
+ * ✅ Admin login (sets adminToken cookie)
  *
  * @swagger
  * /auth/admin/login:
@@ -169,5 +169,51 @@ router.get("/admin/me", requireAdminAuth, authController.adminMe);
  *       200: { description: Password changed }
  */
 router.patch("/change-password", requireUserAuth, authController.changePassword);
+
+/**
+ * ✅ Forgot password (send reset link email)
+ *
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Send reset password email (does not reveal if email exists)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, example: "john@mail.com" }
+ *     responses:
+ *       200: { description: OK }
+ */
+router.post("/forgot-password", authController.forgotPassword);
+
+/**
+ * ✅ Reset password (using token from email)
+ *
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Reset password using token from email
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, password]
+ *             properties:
+ *               token: { type: string, example: "reset_token_from_email" }
+ *               password: { type: string, example: "NewPass@1234" }
+ *     responses:
+ *       200: { description: Password updated }
+ *       400: { description: Token invalid/expired }
+ */
+router.post("/reset-password", authController.resetPassword);
 
 export default router;

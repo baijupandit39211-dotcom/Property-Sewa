@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt, { type Secret, type SignOptions } from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import crypto from "crypto";
 
 import User from "../../../models/User.model";
 import { ApiError } from "../../../utils/apiError";
@@ -41,7 +42,14 @@ function safeUser(u: any) {
   };
 }
 
-async function register({ name, email, password, address, phone, role }: RegisterInput) {
+async function register({
+  name,
+  email,
+  password,
+  address,
+  phone,
+  role,
+}: RegisterInput) {
   if (!name || !email || !password) {
     throw new ApiError(400, "name, email, password are required");
   }
@@ -65,13 +73,18 @@ async function register({ name, email, password, address, phone, role }: Registe
 }
 
 async function login({ email, password }: LoginInput) {
-  if (!email || !password) throw new ApiError(400, "email and password are required");
+  if (!email || !password) {
+    throw new ApiError(400, "email and password are required");
+  }
 
   const user = await User.findOne({ email });
   if (!user) throw new ApiError(400, "Invalid email or password");
 
   if (user.provider === "google") {
-    throw new ApiError(400, "This account uses Google login. Please sign in with Google.");
+    throw new ApiError(
+      400,
+      "This account uses Google login. Please sign in with Google."
+    );
   }
 
   const isMatch = await bcrypt.compare(password, user.passwordHash || "");
@@ -82,14 +95,16 @@ async function login({ email, password }: LoginInput) {
 
 async function googleLogin(input: any) {
   const credential = input?.credential;
-  const role = input?.role || "buyer"; // Accept role from client, default to buyer
-  
-  // Validate role - never allow admin roles from client in Google signup
+  const role = input?.role || "buyer";
+
+  // ✅ Only allow normal roles from client (never admin roles)
   const allowedRoles = ["buyer", "seller", "agent"];
   const validRole = allowedRoles.includes(role) ? role : "buyer";
-  
+
   if (!credential) throw new ApiError(400, "credential is required");
-  if (!process.env.GOOGLE_CLIENT_ID) throw new ApiError(400, "GOOGLE_CLIENT_ID missing in .env");
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    throw new ApiError(400, "GOOGLE_CLIENT_ID missing in .env");
+  }
 
   const ticket = await googleClient.verifyIdToken({
     idToken: credential,
@@ -115,13 +130,12 @@ async function googleLogin(input: any) {
       passwordHash: "",
       address: "",
       phone: "",
-      role: validRole, // Use validated role for new users
+      role: validRole,
       provider: "google",
       googleId,
       avatar,
     });
   } else {
-    // For existing users, update role if valid role provided and current role is buyer
     if (user.role === "buyer" && validRole !== "buyer") {
       user.role = validRole;
     }
@@ -159,6 +173,79 @@ async function changePassword(userId: string, body: any) {
   await user.save();
 
   return { message: "Password changed successfully" };
+}
+
+/**
+ * ✅ Forgot password:
+ * - Always returns ok (doesn't leak email existence)
+ * - Stores sha256(token) + expiry in DB
+ * - Controller will send email if rawToken exists
+ */
+async function forgotPassword(emailRaw: string) {
+  const email = String(emailRaw || "").trim().toLowerCase();
+  if (!email) throw new ApiError(400, "email is required");
+
+  const user = await User.findOne({ email });
+
+  // ✅ Always OK (security)
+  if (!user) return { ok: true };
+
+  // ✅ If google account, do not reset here (still return OK)
+  if (user.provider === "google") return { ok: true };
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  const minutes = Number(process.env.RESET_PASSWORD_EXPIRES_MIN || 15);
+  const expiresAt = new Date(Date.now() + minutes * 60 * 1000);
+
+  // ✅ these fields must exist in your User schema
+  user.resetPasswordTokenHash = tokenHash;
+  user.resetPasswordExpiresAt = expiresAt;
+  await user.save();
+
+  return {
+    ok: true,
+    rawToken,
+    expiresMinutes: minutes,
+    user: safeUser(user),
+  };
+}
+
+/**
+ * ✅ Reset password:
+ * - Validates token by hashing it and matching DB
+ * - Checks expiry
+ * - Updates passwordHash
+ * - Clears reset fields
+ */
+async function resetPassword(tokenRaw: string, newPassword: string) {
+  const token = String(tokenRaw || "").trim();
+  const password = String(newPassword || "");
+
+  if (!token || !password) {
+    throw new ApiError(400, "token and password are required");
+  }
+  if (password.length < 8) {
+    throw new ApiError(400, "Password must be at least 8 characters");
+  }
+
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordTokenHash: tokenHash,
+    resetPasswordExpiresAt: { $gt: new Date() },
+  });
+
+  if (!user) throw new ApiError(400, "Token expired or invalid");
+
+  user.passwordHash = await bcrypt.hash(password, 10);
+  user.resetPasswordTokenHash = "";
+  user.resetPasswordExpiresAt = null;
+
+  await user.save();
+
+  return { ok: true };
 }
 
 async function initSuperAdmin(input: any) {
@@ -199,4 +286,8 @@ export default {
   getMe,
   changePassword,
   initSuperAdmin,
+
+  // ✅ NEW
+  forgotPassword,
+  resetPassword,
 };
