@@ -14,16 +14,6 @@ type MeResponse = {
   };
 };
 
-function getInitials(name?: string) {
-  if (!name) return "?";
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((n) => n[0].toUpperCase())
-    .join("");
-}
-
 export default function BuyerHeader() {
   const router = useRouter();
   const [user, setUser] = useState<MeResponse["user"] | null>(null);
@@ -34,6 +24,7 @@ export default function BuyerHeader() {
       .catch(() => {});
   }, []);
 
+  // ✅ KEEP LOGOUT LOGIC EXACTLY
   const logout = async () => {
     try {
       await apiFetch("/auth/logout", { method: "POST" });
@@ -44,62 +35,53 @@ export default function BuyerHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-50 h-[76px] bg-[#2D5A47]">
-      <div className="mx-auto flex h-full max-w-[1400px] items-center justify-between px-6">
-        {/* Brand */}
+    <header className="h-16 bg-[#2F6B4A] shadow-md">
+      <div className="mx-auto flex h-full items-center justify-between px-6 text-white">
+        {/* Left: Brand */}
         <div className="flex items-center gap-3">
-          <div className="flex flex-col gap-1">
-            <span className="block h-2 w-6 rounded-full bg-[#1DBF85]" />
-            <span className="block h-2 w-6 rounded-full bg-[#1DBF85] opacity-80" />
-            <span className="block h-2 w-6 rounded-full bg-[#1DBF85] opacity-60" />
+          <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10">
+            <div className="flex flex-col gap-[5px]">
+              <span className="h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
+              <span className="h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
+              <span className="h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
+            </div>
           </div>
-          <div className="text-lg font-extrabold tracking-[0.10em] text-white">
+          <span className="text-sm font-extrabold tracking-[0.18em]">
             PROPERTY SEWA
-          </div>
+          </span>
         </div>
 
-        {/* Right side */}
+        {/* Right: Search + icons */}
         <div className="flex items-center gap-3">
-          {/* Search (UI only) */}
-          <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 transition focus-within:bg-white/12">
-            <Search className="h-4 w-4 text-white" />
+          <div className="hidden items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 md:flex">
+            <Search className="h-4 w-4 text-slate-500" />
             <input
               placeholder="Search"
-              className="w-[240px] bg-transparent text-sm text-white outline-none placeholder:text-white/70"
+              className="w-[180px] bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
             />
           </div>
 
-          {/* Bell */}
           <button
-            className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/10 transition hover:-translate-y-[1px] hover:bg-white/12 active:translate-y-0"
+            className="grid h-10 w-10 place-items-center rounded-lg bg-white text-slate-700 ring-1 ring-white/30 transition hover:scale-[1.02]"
             aria-label="Notifications"
           >
-            <Bell className="h-5 w-5 text-white" />
+            <Bell className="h-4 w-4" />
           </button>
 
-          {/* User chip (same data, UI only) */}
-          {user && (
-            <>
-              <span className="hidden sm:inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/15">
-                {user.role.toUpperCase()}
-              </span>
+          {/* Avatar (matches screenshot small circle) */}
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-white text-slate-700 ring-1 ring-white/30">
+            <span className="text-sm font-extrabold">
+              {user?.name?.slice(0, 1)?.toUpperCase() || "U"}
+            </span>
+          </div>
 
-              <div className="hidden md:block text-sm font-semibold text-white/90">
-                {user.name}
-              </div>
-
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-sm font-bold text-white ring-1 ring-white/15">
-                {getInitials(user.name)}
-              </div>
-
-              <button
-                onClick={logout}
-                className="ml-1 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#0B1F18] transition hover:-translate-y-[1px] hover:bg-white/90 active:translate-y-0"
-              >
-                Logout
-              </button>
-            </>
-          )}
+          {/* Keep logout button if you want it visible (you said don’t change buttons) */}
+          <button
+            onClick={logout}
+            className="hidden rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-800 ring-1 ring-white/30 transition hover:scale-[1.02] lg:inline-flex"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </header>

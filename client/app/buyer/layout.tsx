@@ -60,16 +60,21 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-[#F3FBF7]">
-      <BuyerHeader />
+    // ✅ critical: lock overall scroll and allow ONLY main scroll
+    <div className="h-screen overflow-hidden bg-[#F3FBF7]">
+      {/* ✅ fixed header */}
+      <div className="fixed inset-x-0 top-0 z-50">
+        <BuyerHeader />
+      </div>
 
-      <div className="mx-auto max-w-[1400px] px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-10 py-8">
-          <BuyerSidebar />
+      {/* ✅ fixed sidebar + scrollable main */}
+      <div className="pt-16">
+        <BuyerSidebar />
 
-          {/* main content area */}
-          <main className="min-w-0">{children}</main>
-        </div>
+        {/* main content scroll only */}
+        <main className="ml-64 h-[calc(100vh-64px)] overflow-y-auto px-8 py-7">
+          {children}
+        </main>
       </div>
     </div>
   );

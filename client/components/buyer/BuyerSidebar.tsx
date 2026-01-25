@@ -10,107 +10,80 @@ import {
   Bell,
   MessageCircle,
   HelpCircle,
-  MessageSquareText,
+  Flag,
 } from "lucide-react";
 
-const menuItems = [
+const links = [
   { label: "Dashboard", href: "/buyer/buyer-dashboard", icon: LayoutDashboard },
   { label: "Search Properties", href: "/buyer/search-properties", icon: Search },
   { label: "Wishlist / Saved Properties", href: "/buyer/wishlist", icon: Bookmark },
   { label: "Compare Properties", href: "/buyer/compare", icon: Scale },
   { label: "Alerts / Notifications", href: "/buyer/alerts", icon: Bell },
-  { label: "My Inquiries", href: "/buyer/messages", icon: MessageCircle },
+  { label: "Messages / Chat", href: "/buyer/messages", icon: MessageCircle },
 ];
 
-const bottomItems = [
-  { label: "Help", href: "/help", icon: HelpCircle },
-  { label: "Feedback", href: "/feedback", icon: MessageSquareText },
+const bottomLinks = [
+  { label: "Help", href: "/buyer/help", icon: HelpCircle },
+  { label: "Feedback", href: "/buyer/feedback", icon: Flag },
 ];
 
 export default function BuyerSidebar() {
   const pathname = usePathname();
+  const active = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <aside className="w-[300px] shrink-0">
-      {/* Sticky sidebar (below header) */}
-      <div className="sticky top-[92px]">
-        <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
-          {/* Logo block */}
-          <div className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#1DBF85]">
-                <span className="h-7 w-7 rounded-full bg-[#2D5A47]" />
-              </div>
-              <div className="leading-tight font-extrabold text-[#0B1F18]">
-                <div>PROPERTY</div>
-                <div>SEWA</div>
-              </div>
-            </div>
-          </div>
+    <aside
+      className="
+        fixed left-0 top-16 z-40
+        h-[calc(100vh-64px)]
+        w-64
+        bg-white
+        border-r border-slate-200
+        flex flex-col
+      "
+    >
+      {/* ✅ NO extra card / NO outer gap */}
+      <nav className="flex flex-col gap-1 px-3 py-4">
+        {links.map((item) => {
+          const Icon = item.icon;
+          const isActive = active(item.href);
 
-          {/* Nav */}
-          <nav className="px-4 pb-4">
-            <div className="space-y-2">
-              {menuItems.map((item) => {
-                const active =
-                  pathname === item.href || pathname.startsWith(item.href + "/");
-                const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={[
+                "flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition",
+                isActive
+                  ? "bg-[#2C6B45] text-white"
+                  : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800",
+              ].join(" ")}
+            >
+              <Icon className="h-5 w-5" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={[
-                      "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition",
-                      "hover:translate-x-1",
-                      active
-                        ? "bg-[#2D5A47] text-white shadow-[0_10px_24px_rgba(45,90,71,0.18)]"
-                        : "text-[#0B1F18]/80 hover:bg-black/5",
-                    ].join(" ")}
-                  >
-                    <Icon
-                      className={[
-                        "h-5 w-5 transition",
-                        active ? "text-white" : "text-[#0B1F18]/70 group-hover:text-[#0B1F18]",
-                      ].join(" ")}
-                    />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-
-          {/* Bottom (NO absolute now) */}
-          <div className="border-t border-black/5 p-4">
-            <div className="space-y-2">
-              {bottomItems.map((item) => {
-                const active = pathname === item.href;
-                const Icon = item.icon;
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={[
-                      "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition",
-                      "hover:translate-x-1",
-                      active
-                        ? "bg-[#2D5A47] text-white"
-                        : "text-[#0B1F18]/80 hover:bg-black/5",
-                    ].join(" ")}
-                  >
-                    <Icon
-                      className={[
-                        "h-5 w-5 transition",
-                        active ? "text-white" : "text-[#0B1F18]/70 group-hover:text-[#0B1F18]",
-                      ].join(" ")}
-                    />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
+      {/* bottom */}
+      <div className="mt-auto px-3 pb-4">
+        <div className="border-t border-slate-200 pt-4">
+          <div className="space-y-1">
+            {bottomLinks.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800"
+                >
+                  <Icon className="h-5 w-5" />
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
