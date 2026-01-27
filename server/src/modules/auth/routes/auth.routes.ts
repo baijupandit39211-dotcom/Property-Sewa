@@ -12,6 +12,12 @@ const router = Router();
  */
 
 /**
+ * =========================
+ * Public Auth
+ * =========================
+ */
+
+/**
  * @swagger
  * /auth/register:
  *   post:
@@ -105,6 +111,14 @@ router.post("/admin/login", authController.adminLogin);
 router.post("/google", authController.googleLogin);
 
 /**
+ * =========================
+ * Session / Profile
+ * =========================
+ */
+
+/**
+ * ✅ Logout current user (clears accessToken + adminToken)
+ *
  * @swagger
  * /auth/logout:
  *   post:
@@ -148,6 +162,12 @@ router.get("/me", requireUserAuth, authController.me);
 router.get("/admin/me", requireAdminAuth, authController.adminMe);
 
 /**
+ * =========================
+ * Password Management
+ * =========================
+ */
+
+/**
  * @swagger
  * /auth/change-password:
  *   patch:
@@ -167,6 +187,7 @@ router.get("/admin/me", requireAdminAuth, authController.adminMe);
  *               newPassword: { type: string }
  *     responses:
  *       200: { description: Password changed }
+ *       401: { description: Not authenticated }
  */
 router.patch("/change-password", requireUserAuth, authController.changePassword);
 

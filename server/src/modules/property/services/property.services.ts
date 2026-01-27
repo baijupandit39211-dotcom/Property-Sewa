@@ -4,28 +4,85 @@ import Property from "../../../models/Property.model";
 type CreatePropertyInput = {
   title: string;
   description?: string;
+
   price: number;
   currency?: string;
+
   location: string;
   address?: string;
+
   beds?: number;
   baths?: number;
   sqft?: number;
+
   propertyType?: string;
-  listingType?: string;
+  listingType?: "buy" | "rent";
+
+  furnishing?: "unfurnished" | "semi" | "full";
+  availabilityDate?: Date | null;
+  monthlyRent?: number;
+  deposit?: number;
+
+  // ✅ NEW
+  advanceAmount?: number;
+
+  yearBuilt?: number;
+  floor?: number;
+  totalFloors?: number;
+
+  facing?: "east" | "west" | "north" | "south";
+  roadAccessFt?: number;
+  landmark?: string;
+
+  amenities?: string[];
+
   createdBy: string;
   images: { url: string; publicId: string }[];
 };
 
+function toNumberIfPresent(v: any) {
+  if (v === undefined || v === null || v === "") return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function validateListing(input: {
+  listingType?: "buy" | "rent";
+  price?: number;
+  monthlyRent?: number;
+}) {
+  const listingType = input.listingType || "buy";
+
+  if (listingType === "buy") {
+    if (!input.price || Number(input.price) <= 0) {
+      throw new ApiError(400, "price must be > 0 for sale listings");
+    }
+  }
+
+  if (listingType === "rent") {
+    if (!input.monthlyRent || Number(input.monthlyRent) <= 0) {
+      throw new ApiError(400, "monthlyRent must be > 0 for rental listings");
+    }
+  }
+
+  return listingType;
+}
+
 async function createProperty(input: CreatePropertyInput) {
-  const { title, price, location, createdBy, images } = input;
+  const { title, location, images } = input;
 
   if (!title || !location) throw new ApiError(400, "title and location are required");
-  if (!price || Number(price) <= 0) throw new ApiError(400, "price must be > 0");
   if (!images || images.length === 0) throw new ApiError(400, "At least one image is required");
+
+  const listingType = validateListing({
+    listingType: input.listingType,
+    price: input.price,
+    monthlyRent: input.monthlyRent,
+  });
 
   const p = await Property.create({
     ...input,
+    listingType,
     status: "pending",
   });
 
@@ -35,9 +92,7 @@ async function createProperty(input: CreatePropertyInput) {
 async function getMyProperties(userId: string, query: any) {
   const q: any = { createdBy: userId };
 
-  if (query?.location) {
-    q.location = { $regex: String(query.location), $options: "i" };
-  }
+  if (query?.location) q.location = { $regex: String(query.location), $options: "i" };
   if (query?.listingType) q.listingType = query.listingType;
   if (query?.status) q.status = query.status;
 
@@ -64,7 +119,8 @@ async function getMyProperties(userId: string, query: any) {
 async function deleteProperty(propertyId: string, userId: string) {
   const property = await Property.findById(propertyId);
   if (!property) throw new ApiError(404, "Property not found");
-  if (property.createdBy.toString() !== userId) throw new ApiError(403, "You can only delete your own properties");
+  if (property.createdBy.toString() !== userId)
+    throw new ApiError(403, "You can only delete your own properties");
 
   await Property.findByIdAndDelete(propertyId);
   return property;
@@ -73,9 +129,7 @@ async function deleteProperty(propertyId: string, userId: string) {
 async function listApproved(query: any) {
   const q: any = { status: "active" };
 
-  if (query?.location) {
-    q.location = { $regex: String(query.location), $options: "i" };
-  }
+  if (query?.location) q.location = { $regex: String(query.location), $options: "i" };
   if (query?.listingType) q.listingType = query.listingType;
 
   const minPrice = query?.minPrice ? Number(query.minPrice) : null;
@@ -131,28 +185,81 @@ async function rejectProperty(id: string, adminUserId: string) {
 async function updateProperty(id: string, userId: string, updates: any) {
   const property = await Property.findById(id);
   if (!property) throw new ApiError(404, "Property not found");
-  
-  // Ensure only owner can edit
+
   if (property.createdBy.toString() !== userId) {
     throw new ApiError(403, "You can only edit your own properties");
   }
 
-  // Update fields
-  const allowedFields = ['title', 'description', 'price', 'currency', 'location', 'address', 'beds', 'baths', 'sqft', 'propertyType', 'listingType'];
-  allowedFields.forEach(key => {
+  const allowedFields = [
+    "title",
+    "description",
+    "price",
+    "currency",
+    "location",
+    "address",
+    "beds",
+    "baths",
+    "sqft",
+    "propertyType",
+    "listingType",
+
+    "furnishing",
+    "availabilityDate",
+    "monthlyRent",
+    "deposit",
+
+    // ✅ NEW
+    "advanceAmount",
+
+    "yearBuilt",
+    "floor",
+    "totalFloors",
+    "facing",
+    "roadAccessFt",
+    "landmark",
+    "amenities",
+  ];
+
+  allowedFields.forEach((key) => {
     if (updates[key] !== undefined) {
+      if (
+        [
+          "price",
+          "beds",
+          "baths",
+          "sqft",
+          "monthlyRent",
+          "deposit",
+          "advanceAmount",
+          "yearBuilt",
+          "floor",
+          "totalFloors",
+          "roadAccessFt",
+        ].includes(key)
+      ) {
+        const n = toNumberIfPresent(updates[key]);
+        if (n !== undefined) (property as any)[key] = n;
+        return;
+      }
+
       (property as any)[key] = updates[key];
     }
   });
 
-  // Handle images if provided
+  // ✅ validate after applying (so you can change listingType safely)
+  validateListing({
+    listingType: (property as any).listingType,
+    price: (property as any).price,
+    monthlyRent: (property as any).monthlyRent,
+  });
+
   if (updates.images && updates.images.length > 0) {
     property.images = updates.images;
   }
 
-  // Reset status to pending for re-approval
+  // reset approval
   property.status = "pending";
-  property.approvedBy = undefined;
+  property.approvedBy = null as any;
 
   await property.save();
   return property;

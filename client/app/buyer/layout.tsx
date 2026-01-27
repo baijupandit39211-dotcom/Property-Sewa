@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 
 import BuyerHeader from "@/components/buyer/BuyerHeader";
@@ -9,7 +9,6 @@ import BuyerSidebar from "@/components/buyer/BuyerSidebar";
 
 export default function BuyerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [checking, setChecking] = React.useState(true);
 
   React.useEffect(() => {
@@ -34,7 +33,8 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
           }
           return;
         }
-      } catch {
+      } catch (e: any) {
+        console.log("BuyerLayout auth failed:", e?.message);
         router.replace("/login");
         return;
       } finally {
@@ -45,7 +45,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
     return () => {
       mounted = false;
     };
-  }, [router, pathname]);
+  }, [router]);
 
   if (checking) {
     return (
@@ -60,18 +60,14 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    // ✅ critical: lock overall scroll and allow ONLY main scroll
     <div className="h-screen overflow-hidden bg-[#F3FBF7]">
-      {/* ✅ fixed header */}
       <div className="fixed inset-x-0 top-0 z-50">
         <BuyerHeader />
       </div>
 
-      {/* ✅ fixed sidebar + scrollable main */}
       <div className="pt-16">
         <BuyerSidebar />
 
-        {/* main content scroll only */}
         <main className="ml-64 h-[calc(100vh-64px)] overflow-y-auto px-8 py-7">
           {children}
         </main>

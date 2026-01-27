@@ -9,24 +9,28 @@ export function notFound(req: Request, _res: Response, next: NextFunction) {
   next(err);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function errorHandler(err: AppError, req: Request, res: Response, _next: NextFunction) {
-  const status = err.statusCode || 500;
+export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
+  const status = Number(err?.statusCode) || 500;
+
+  const message =
+    err?.message ||
+    (typeof err === "string" ? err : "") ||
+    "Server Error";
 
   logger.error("\n==================== API ERROR ====================");
   logger.error("Time:", new Date().toISOString());
   logger.error("Route:", req.method, req.originalUrl);
   logger.error("Status:", status);
-  logger.error("Message:", err.message);
-  if (err.stack) logger.error("Stack:\n", err.stack);
+  logger.error("Message:", message);
+  if (err?.stack) logger.error("Stack:\n", err.stack);
   logger.error("Body:", req.body);
   logger.error("Query:", req.query);
   logger.error("Params:", req.params);
   logger.error("===================================================\n");
 
-  res.status(status).json({
+  return res.status(status).json({
     success: false,
-    message: err.message || "Server Error",
-    ...(process.env.NODE_ENV !== "production" ? { stack: err.stack } : {}),
+    message,
+    ...(process.env.NODE_ENV !== "production" ? { stack: err?.stack } : {}),
   });
 }

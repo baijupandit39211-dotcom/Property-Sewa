@@ -54,14 +54,17 @@ async function register({
     throw new ApiError(400, "name, email, password are required");
   }
 
-  const existing = await User.findOne({ email });
+  // ✅ FIX: normalize email (trim + lowercase) to avoid login mismatch
+  const normalizedEmail = String(email).trim().toLowerCase();
+
+  const existing = await User.findOne({ email: normalizedEmail });
   if (existing) throw new ApiError(400, "Email already exists");
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await User.create({
     name,
-    email,
+    email: normalizedEmail, // ✅ store normalized
     passwordHash: hashedPassword,
     address: address || "",
     phone: phone || "",
@@ -77,7 +80,10 @@ async function login({ email, password }: LoginInput) {
     throw new ApiError(400, "email and password are required");
   }
 
-  const user = await User.findOne({ email });
+  // ✅ FIX: normalize email (trim + lowercase) to match how user is stored
+  const normalizedEmail = String(email).trim().toLowerCase();
+
+  const user = await User.findOne({ email: normalizedEmail });
   if (!user) throw new ApiError(400, "Invalid email or password");
 
   if (user.provider === "google") {
@@ -115,7 +121,7 @@ async function googleLogin(input: any) {
   if (!payload) throw new ApiError(400, "Invalid Google token");
 
   const googleId = payload.sub || "";
-  const email = payload.email || "";
+  const email = (payload.email || "").trim().toLowerCase(); // ✅ normalize google email too
   const name = payload.name || "Google User";
   const avatar = payload.picture || "";
 
@@ -256,17 +262,19 @@ async function initSuperAdmin(input: any) {
     throw new ApiError(400, "email and password are required");
   }
 
+  const normalizedEmail = String(email).trim().toLowerCase(); // ✅ normalize here too
+
   const existingAdmin = await User.findOne({ role: "superadmin" });
   if (existingAdmin) throw new ApiError(400, "Super admin already initialized");
 
-  const existingEmail = await User.findOne({ email });
+  const existingEmail = await User.findOne({ email: normalizedEmail });
   if (existingEmail) throw new ApiError(400, "Email already exists");
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const admin = await User.create({
     name: "Super Admin",
-    email,
+    email: normalizedEmail,
     passwordHash: hashedPassword,
     address: "",
     phone: "",

@@ -17,4 +17,7 @@ export function requireRoles(roles: string[]) {
   };
 }
 
+// ✅ alias so your payment.routes.ts can import requireRole
+export const requireRole = requireRoles;
+
 export const requireAdminRole = requireRoles(["admin", "superadmin"]);

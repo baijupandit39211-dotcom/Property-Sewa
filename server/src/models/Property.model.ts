@@ -5,10 +5,11 @@ const PropertySchema = new Schema(
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
 
-    price: { type: Number, required: true },
+    // price usable for both buy/rent
+    price: { type: Number, default: 0 },
     currency: { type: String, default: "USD" },
 
-    location: { type: String, required: true }, // e.g. Kathmandu, Nepal
+    location: { type: String, required: true },
     address: { type: String, default: "" },
 
     beds: { type: Number, default: 0 },
@@ -25,6 +26,43 @@ const PropertySchema = new Schema(
       enum: ["buy", "rent"],
       default: "buy",
     },
+
+    furnishing: {
+      type: String,
+      enum: ["unfurnished", "semi", "full"],
+      default: null,
+    },
+
+    availabilityDate: { type: Date, default: null },
+    monthlyRent: { type: Number, default: 0 },
+    deposit: { type: Number, default: 0 },
+
+    // booking/advance
+    advanceAmount: { type: Number, default: 0 },
+
+    // ✅ reservation state (FIXES TS ERROR)
+    reservationStatus: {
+      type: String,
+      enum: ["none", "reserved", "paid", "cancelled", "expired"],
+      default: "none",
+    },
+    reservedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    reservedUntil: { type: Date, default: null },
+
+    yearBuilt: { type: Number, default: 0 },
+    floor: { type: Number, default: 0 },
+    totalFloors: { type: Number, default: 0 },
+
+    facing: {
+      type: String,
+      enum: ["east", "west", "north", "south"],
+      default: null,
+    },
+
+    roadAccessFt: { type: Number, default: 0 },
+    landmark: { type: String, default: "" },
+
+    amenities: [{ type: String, default: [] }],
 
     images: [
       {

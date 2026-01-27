@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 
-import AdminHeader from "@/components/buyer/admin/AdminHeader";
-import AdminSidebar from "@/components/buyer/admin/AdminSidebar";
+import AdminHeader from "@/components/admin/AdminHeader";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
