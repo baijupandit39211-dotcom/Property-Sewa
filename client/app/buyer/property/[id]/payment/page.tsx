@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Lock, CheckCircle2 } from "lucide-react";
 
 type Gateway = "khalti" | "esewa";
 
@@ -15,15 +15,14 @@ export default function PaymentPage() {
 
   const [property, setProperty] = useState<any>(null);
   const [amount, setAmount] = useState<number>(0);
-
-  // ✅ default gateway to esewa (so it won't fail due to missing Khalti key)
   const [gateway, setGateway] = useState<Gateway>("esewa");
+
+  const [meId, setMeId] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
   const [payLoading, setPayLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ fallback calc (same logic idea as backend)
   const computedFallback = useMemo(() => {
     if (!property) return 0;
 
@@ -38,7 +37,7 @@ export default function PaymentPage() {
     }
 
     const price = Number(property?.price || 0);
-    return price > 0 ? Math.round(price * 0.02) : 0; // 2% fallback
+    return price > 0 ? Math.round(price * 0.02) : 0;
   }, [property]);
 
   useEffect(() => {
@@ -47,20 +46,28 @@ export default function PaymentPage() {
         setError("");
         setLoading(true);
 
-        const res = await apiFetch<{ success: boolean; property: any }>(
-          `/properties/${propertyId}`
-        );
+        // get me (for reservation ownership)
+        try {
+          const meRes = await apiFetch<{ success: boolean; user: any }>("/auth/me");
+          if (meRes?.success) {
+            setMeId(String(meRes?.user?._id || meRes?.user?.id || ""));
+          }
+        } catch {
+          // ignore
+        }
 
-        if (!res?.success || !res?.property) {
+        const res = await apiFetch<any>(`/properties/${propertyId}`);
+        const p = res?.property || res?.data?.property || res?.data || res;
+
+        if (!res?.success && !p) {
           setError("Property not found");
           setProperty(null);
           return;
         }
 
-        setProperty(res.property);
+        setProperty(p);
 
-        // ✅ DB advance first
-        const adv = Number(res.property?.advanceAmount || 0);
+        const adv = Number(p?.advanceAmount || 0);
         setAmount(adv > 0 ? adv : 0);
       } catch (e: any) {
         setError(e?.message || "Failed to load payment details");
@@ -73,9 +80,28 @@ export default function PaymentPage() {
   const currency = property?.currency || "Rs";
   const finalAmount = amount > 0 ? amount : computedFallback;
 
+  // ✅ reservation guards
+  const reservationStatus = String(property?.reservationStatus || "none").toLowerCase();
+  const reservedBy = property?.reservedBy ? String(property.reservedBy) : "";
+  const reservedUntil = property?.reservedUntil ? new Date(property.reservedUntil).getTime() : 0;
+
+  const isReserved = reservationStatus === "reserved";
+  const isPaid = reservationStatus === "paid";
+  const isMine = !!meId && !!reservedBy && meId === reservedBy;
+
+  const notExpired = !reservedUntil || reservedUntil > Date.now();
+  const reservedByOther = isReserved && !isMine && notExpired;
+
+  const blocked = isPaid || reservedByOther;
+
   const startPayment = async () => {
     try {
       if (!propertyId) return;
+
+      if (blocked) {
+        setError("This property is already reserved. You cannot pay again.");
+        return;
+      }
 
       if (!finalAmount || finalAmount <= 0) {
         setError("Advance amount is not set for this property.");
@@ -85,7 +111,6 @@ export default function PaymentPage() {
       setPayLoading(true);
       setError("");
 
-      // ✅ initiate payment on backend
       const res = await apiFetch<any>("/payments/initiate", {
         method: "POST",
         body: JSON.stringify({ propertyId, gateway }),
@@ -93,10 +118,7 @@ export default function PaymentPage() {
 
       if (!res?.success) throw new Error(res?.message || "Failed to initiate payment");
 
-      // ✅ eSewa: redirect with form-post
       if (gateway === "esewa") {
-        // ✅ uat.esewa.com.np is not reachable (NXDOMAIN in your screenshot)
-        // Use rc-epay test endpoint:
         const epayUrl =
           process.env.NEXT_PUBLIC_ESEWA_EPAY_URL ||
           "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
@@ -121,7 +143,6 @@ export default function PaymentPage() {
         return;
       }
 
-      // ✅ Khalti: only skeleton (requires real integration + verify)
       alert(
         `Khalti initiated.\nPaymentId: ${res.paymentId}\n\nNext step: integrate Khalti checkout redirect/popup, then call /payments/khalti/verify with paymentId + pidx/transaction_id`
       );
@@ -160,6 +181,45 @@ export default function PaymentPage() {
     );
   }
 
+  // ✅ Blocked UI
+  if (blocked) {
+    return (
+      <main className="mx-auto w-full max-w-3xl px-6 py-10">
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+
+        <div className="mt-6 rounded-3xl bg-white p-6 ring-1 ring-black/5">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-slate-100 p-2">
+              {isPaid ? <CheckCircle2 className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
+            </div>
+            <div>
+              <div className="text-lg font-extrabold text-slate-900">
+                {isPaid ? "Property Reserved" : "Property Reserved Temporarily"}
+              </div>
+              <div className="mt-1 text-sm text-slate-600">
+                {isPaid
+                  ? "This property is already paid/reserved. You can’t pay again."
+                  : "This property is reserved by another user. Please try later."}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => router.push(`/buyer/property/${propertyId}`)}
+            className="mt-5 w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700"
+          >
+            View Property
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
       <button
@@ -175,9 +235,14 @@ export default function PaymentPage() {
             <div>
               <h1 className="text-2xl font-extrabold text-slate-900">Pay Advance</h1>
               <p className="mt-1 text-sm text-slate-600">
-                Property:{" "}
-                <span className="font-semibold text-slate-900">{property?.title}</span>
+                Property: <span className="font-semibold text-slate-900">{property?.title}</span>
               </p>
+
+              {isReserved && isMine && (
+                <p className="mt-2 text-xs font-semibold text-amber-700">
+                  ⏳ Reserved by you. Complete payment to confirm.
+                </p>
+              )}
             </div>
 
             <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-800 ring-1 ring-emerald-200">
@@ -191,18 +256,11 @@ export default function PaymentPage() {
               {currency} {Number(finalAmount || 0).toLocaleString()}
             </div>
 
-            {Number(finalAmount || 0) <= 0 && (
-              <div className="mt-3 rounded-xl bg-white p-3 text-sm text-slate-600 ring-1 ring-slate-200">
-                This property doesn’t have an advance amount set yet.
-              </div>
-            )}
-
             <div className="mt-2 text-xs text-slate-500">
               Reservation auto-expires if payment is not completed within 24 hours.
             </div>
           </div>
 
-          {/* ✅ Gateway selector */}
           <div className="mt-6">
             <div className="text-sm font-extrabold text-slate-900">Choose Gateway</div>
 

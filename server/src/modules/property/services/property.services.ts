@@ -23,7 +23,6 @@ type CreatePropertyInput = {
   monthlyRent?: number;
   deposit?: number;
 
-  // ✅ NEW
   advanceAmount?: number;
 
   yearBuilt?: number;
@@ -109,7 +108,11 @@ async function getMyProperties(userId: string, query: any) {
   const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
-    Property.find(q).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Property.find(q)
+      .populate("createdBy", "name phone email role")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
     Property.countDocuments(q),
   ]);
 
@@ -145,7 +148,11 @@ async function listApproved(query: any) {
   const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
-    Property.find(q).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Property.find(q)
+      .populate("createdBy", "name phone email role")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
     Property.countDocuments(q),
   ]);
 
@@ -153,13 +160,37 @@ async function listApproved(query: any) {
 }
 
 async function getApprovedById(id: string) {
-  const p = await Property.findOne({ _id: id, status: "active" });
+  const p = await Property.findOne({ _id: id, status: "active" }).populate(
+    "createdBy",
+    "name phone email role"
+  );
+
   if (!p) throw new ApiError(404, "Property not found");
   return p;
 }
 
+// ✅ NEW: preview any status if owner (or admin in middleware can call too)
+async function previewById(id: string, userId: string) {
+  const p = await Property.findById(id).populate("createdBy", "name phone email role");
+  if (!p) throw new ApiError(404, "Property not found");
+
+  // owner can preview any status
+  if (p.createdBy && (p.createdBy as any)._id) {
+    const ownerId = String((p.createdBy as any)._id);
+    if (ownerId === String(userId)) return p;
+  } else {
+    // fallback if not populated for some reason
+    if (String(p.createdBy) === String(userId)) return p;
+  }
+
+  // not owner → block
+  throw new ApiError(403, "You are not allowed to preview this property");
+}
+
 async function listPending() {
-  return Property.find({ status: "pending" }).sort({ createdAt: -1 });
+  return Property.find({ status: "pending" })
+    .populate("createdBy", "name phone email role")
+    .sort({ createdAt: -1 });
 }
 
 async function approveProperty(id: string, adminUserId: string) {
@@ -208,7 +239,6 @@ async function updateProperty(id: string, userId: string, updates: any) {
     "monthlyRent",
     "deposit",
 
-    // ✅ NEW
     "advanceAmount",
 
     "yearBuilt",
@@ -246,7 +276,6 @@ async function updateProperty(id: string, userId: string, updates: any) {
     }
   });
 
-  // ✅ validate after applying (so you can change listingType safely)
   validateListing({
     listingType: (property as any).listingType,
     price: (property as any).price,
@@ -257,7 +286,7 @@ async function updateProperty(id: string, userId: string, updates: any) {
     property.images = updates.images;
   }
 
-  // reset approval
+  // reset approval after edit
   property.status = "pending";
   property.approvedBy = null as any;
 
@@ -266,7 +295,10 @@ async function updateProperty(id: string, userId: string, updates: any) {
 }
 
 async function getMyPropertyById(id: string, userId: string) {
-  const property = await Property.findOne({ _id: id, createdBy: userId });
+  const property = await Property.findOne({ _id: id, createdBy: userId }).populate(
+    "createdBy",
+    "name phone email role"
+  );
   if (!property) throw new ApiError(404, "Property not found");
   return property;
 }
@@ -278,6 +310,7 @@ export default {
   deleteProperty,
   listApproved,
   getApprovedById,
+  previewById,
   listPending,
   approveProperty,
   rejectProperty,

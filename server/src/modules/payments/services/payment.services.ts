@@ -6,7 +6,7 @@ function calcAdvanceAmount(property: any) {
   const explicit = Number(property.advanceAmount || 0);
   if (explicit > 0) return explicit;
 
-  if (property.listingType === "rent") {
+  if (String(property.listingType || "").toLowerCase() === "rent") {
     const dep = Number(property.deposit || 0);
     if (dep > 0) return dep;
     const mr = Number(property.monthlyRent || 0);
@@ -25,7 +25,7 @@ export async function initiatePayment(params: {
   const property = await Property.findOne({ _id: params.propertyId, status: "active" });
   if (!property) throw new ApiError(404, "Property not found");
 
-  // If someone else reserved and it's not expired
+  // Block if someone else reserved and not expired
   if (
     property.reservationStatus === "reserved" &&
     property.reservedUntil &&
@@ -36,22 +36,25 @@ export async function initiatePayment(params: {
     throw new ApiError(409, "This property is already reserved by another user");
   }
 
-  // If already paid
+  // Block if already paid
   if (property.reservationStatus === "paid") {
     throw new ApiError(409, "This property is already paid/reserved");
   }
 
   const amount = calcAdvanceAmount(property);
-  if (!amount || amount <= 0) throw new ApiError(400, "Advance amount is not set for this property");
+  if (!amount || amount <= 0) {
+    throw new ApiError(400, "Advance amount is not set for this property");
+  }
 
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-  // cancel old pending payments from same buyer/property if you want (optional)
+  // Cancel old pending payments from same buyer/property (optional but good)
   await Payment.updateMany(
     { propertyId: property._id, buyerId: params.buyerId, status: "pending" },
     { $set: { status: "cancelled" } }
   );
 
+  // Create payment
   const payment = await Payment.create({
     propertyId: property._id,
     buyerId: params.buyerId,
@@ -61,7 +64,7 @@ export async function initiatePayment(params: {
     expiresAt,
   });
 
-  // mark property reserved
+  // Reserve property for buyer
   property.reservationStatus = "reserved";
   property.reservedBy = params.buyerId as any;
   property.reservedUntil = expiresAt;
@@ -72,29 +75,56 @@ export async function initiatePayment(params: {
 
 export async function markPaid(params: {
   paymentId: string;
-  buyerId: string; // ✅ security
+  buyerId: string;
   gatewayRef?: any;
 }) {
   const payment = await Payment.findById(params.paymentId);
   if (!payment) throw new ApiError(404, "Payment not found");
 
-  // ✅ security: only owner can confirm
+  // security: only owner can confirm
   if (String(payment.buyerId) !== String(params.buyerId)) {
     throw new ApiError(403, "Not allowed");
   }
 
+  // already paid -> ok
   if (payment.status === "paid") return payment;
 
+  // only pending can become paid
   if (payment.status !== "pending") {
     throw new ApiError(409, `Payment is ${payment.status}`);
   }
 
+  // expired
   if (payment.expiresAt.getTime() < Date.now()) {
     payment.status = "expired";
     await payment.save();
     throw new ApiError(410, "Payment expired");
   }
 
+  const property = await Property.findById(payment.propertyId);
+  if (!property) throw new ApiError(404, "Property not found");
+
+  // prevent race: if property reserved by someone else and not expired
+  if (
+    property.reservationStatus === "reserved" &&
+    property.reservedUntil &&
+    property.reservedUntil.getTime() > Date.now() &&
+    property.reservedBy &&
+    String(property.reservedBy) !== String(payment.buyerId)
+  ) {
+    throw new ApiError(409, "Property is reserved by another user");
+  }
+
+  // if property already paid by someone else
+  if (
+    property.reservationStatus === "paid" &&
+    property.reservedBy &&
+    String(property.reservedBy) !== String(payment.buyerId)
+  ) {
+    throw new ApiError(409, "Property already paid by another user");
+  }
+
+  // mark payment paid
   payment.status = "paid";
 
   if (payment.gateway === "khalti") {
@@ -106,14 +136,11 @@ export async function markPaid(params: {
 
   await payment.save();
 
-  // set property paid
-  const property = await Property.findById(payment.propertyId);
-  if (property) {
-    property.reservationStatus = "paid";
-    property.reservedBy = payment.buyerId as any;
-    property.reservedUntil = null;
-    await property.save();
-  }
+  // mark property paid
+  property.reservationStatus = "paid";
+  property.reservedBy = payment.buyerId as any;
+  property.reservedUntil = null;
+  await property.save();
 
   return payment;
 }
@@ -122,7 +149,6 @@ export async function cancelReservation(params: { propertyId: string }) {
   const property = await Property.findById(params.propertyId);
   if (!property) throw new ApiError(404, "Property not found");
 
-  // cancel any pending payments for this property
   await Payment.updateMany(
     { propertyId: property._id, status: "pending" },
     { $set: { status: "cancelled" } }

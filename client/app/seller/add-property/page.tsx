@@ -3,7 +3,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
-import { X, Star, UploadCloud } from "lucide-react";
+import {
+  X,
+  Star,
+  UploadCloud,
+  Copy,
+  ExternalLink,
+  ClipboardPaste,
+  Wand2,
+} from "lucide-react";
 
 const MAX_IMAGES = 6;
 
@@ -22,13 +30,34 @@ const AMENITIES = [
 
 type Amenity = (typeof AMENITIES)[number];
 
+function clampCoverIndex(len: number, nextIndex: number) {
+  if (len <= 0) return 0;
+  if (nextIndex < 0) return 0;
+  if (nextIndex >= len) return 0;
+  return nextIndex;
+}
+
+// ✅ Extract lat,lng from google url containing .../@27.66,85.33,17z
+function extractLatLngFromGoogleUrl(url: string) {
+  const m = url.match(/@(-?\d+(\.\d+)?),(-?\d+(\.\d+)?)/);
+  if (!m) return null;
+  return { lat: m[1], lng: m[3] };
+}
+
+// ✅ Accept coordinates "lat,lng"
+function isLatLng(value: string) {
+  return /^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$/.test(value);
+}
+
 export default function SellerAddPropertyPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ keep your original fields
+  // ✅ show created property id
+  const [createdPropertyId, setCreatedPropertyId] = useState<string>("");
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -42,20 +71,20 @@ export default function SellerAddPropertyPage() {
     propertyType: "house",
     listingType: "buy",
 
-    // ✅ extra fields (optional)
-    furnishing: "unfurnished", // unfurnished | semi | full
-    availabilityDate: "", // YYYY-MM-DD
-    monthlyRent: "", // rent only
-    deposit: "", // rent only
+    furnishing: "unfurnished",
+    availabilityDate: "",
+    monthlyRent: "",
+    deposit: "",
 
-    // ✅ NEW: advance/booking amount (optional)
     advanceAmount: "",
 
     yearBuilt: "",
     floor: "",
     totalFloors: "",
-    facing: "east", // east|west|north|south
+    facing: "east",
     roadAccessFt: "",
+
+    // ✅ store google location as: "lat,lng" OR a link
     landmark: "",
   });
 
@@ -63,20 +92,21 @@ export default function SellerAddPropertyPage() {
   const [images, setImages] = useState<File[]>([]);
   const [coverIndex, setCoverIndex] = useState<number>(0);
 
-  // ✅ previews (object URLs)
-  const previews = useMemo(() => {
-    return images.map((f) => URL.createObjectURL(f));
-  }, [images]);
+  const previews = useMemo(
+    () => images.map((f) => URL.createObjectURL(f)),
+    [images]
+  );
 
-  // ✅ prevent memory leak: revoke on unmount / images change
   useEffect(() => {
-    return () => {
-      previews.forEach((u) => URL.revokeObjectURL(u));
-    };
+    return () => previews.forEach((u) => URL.revokeObjectURL(u));
   }, [previews]);
 
+  const isRent = formData.listingType === "rent";
+
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -87,48 +117,114 @@ export default function SellerAddPropertyPage() {
     );
   };
 
-  const clampCoverIndex = (len: number, nextIndex: number) => {
-    if (len <= 0) return 0;
-    if (nextIndex < 0) return 0;
-    if (nextIndex >= len) return 0;
-    return nextIndex;
-  };
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-
     const picked = Array.from(e.target.files);
-
-    // limit to 6 total
     const combined = [...images, ...picked].slice(0, MAX_IMAGES);
     setImages(combined);
-
-    // keep coverIndex valid
     setCoverIndex((prev) => clampCoverIndex(combined.length, prev));
-
-    // reset input so selecting the same file again works
     e.target.value = "";
   };
 
   const removeImage = (idx: number) => {
     setImages((prev) => {
       const next = prev.filter((_, i) => i !== idx);
-
       setCoverIndex((current) => {
         if (next.length === 0) return 0;
         if (idx === current) return 0;
         if (idx < current) return clampCoverIndex(next.length, current - 1);
         return clampCoverIndex(next.length, current);
       });
-
       return next;
     });
+  };
+
+  const openGoogleMapsPicker = () => {
+    const qRaw = `${formData.address || ""} ${formData.location || ""}`.trim();
+    const q = encodeURIComponent(qRaw || "Kathmandu");
+    const url = `https://www.google.com/maps/search/?api=1&query=${q}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const pasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) return;
+      setFormData((p) => ({ ...p, landmark: text }));
+    } catch {
+      // ignore
+    }
+  };
+
+  const copyText = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      // ignore
+    }
+  };
+
+  // ✅ Convert link → lat,lng (best for buyer embed)
+  const convertLandmarkToLatLng = () => {
+    const raw = String(formData.landmark || "").trim();
+    if (!raw) return;
+
+    // already lat,lng
+    if (isLatLng(raw)) return;
+
+    // try extract from google url with @lat,lng
+    if (raw.startsWith("http")) {
+      const ll = extractLatLngFromGoogleUrl(raw);
+      if (ll) {
+        setFormData((p) => ({ ...p, landmark: `${ll.lat},${ll.lng}` }));
+        return;
+      }
+    }
+
+    alert(
+      "Could not extract coordinates.\n\nTip: Open Maps → Share → Copy link. The link must contain @lat,lng."
+    );
+  };
+
+  const resetAfterSuccess = () => {
+    setFormData({
+      title: "",
+      description: "",
+      price: "",
+      currency: "USD",
+      location: "",
+      address: "",
+      beds: "",
+      baths: "",
+      sqft: "",
+      propertyType: "house",
+      listingType: "buy",
+
+      furnishing: "unfurnished",
+      availabilityDate: "",
+      monthlyRent: "",
+      deposit: "",
+
+      advanceAmount: "",
+
+      yearBuilt: "",
+      floor: "",
+      totalFloors: "",
+      facing: "east",
+      roadAccessFt: "",
+
+      landmark: "",
+    });
+    setAmenities([]);
+    setImages([]);
+    setCoverIndex(0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setCreatedPropertyId("");
 
     try {
       if (images.length === 0) {
@@ -139,54 +235,74 @@ export default function SellerAddPropertyPage() {
 
       const formDataToSend = new FormData();
 
-      // ✅ append original + extra fields (only if not empty)
+      // add text fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value === "" || value === null || value === undefined) return;
         formDataToSend.append(key, value);
       });
 
-      // numeric safety
+      // force numbers
       formDataToSend.set("price", String(Number(formData.price || 0)));
       formDataToSend.set("beds", String(Number(formData.beds || 0)));
       formDataToSend.set("baths", String(Number(formData.baths || 0)));
       formDataToSend.set("sqft", String(Number(formData.sqft || 0)));
+      formDataToSend.set(
+        "advanceAmount",
+        String(Number(formData.advanceAmount || 0))
+      );
 
-      // ✅ NEW numeric safety: advance amount
-      // If your backend doesn't have this field yet, it will ignore it (or you can remove this line).
-      formDataToSend.set("advanceAmount", String(Number(formData.advanceAmount || 0)));
-
-      // rent-only numeric safety (optional)
       if (formData.listingType === "rent") {
-        formDataToSend.set("monthlyRent", String(Number(formData.monthlyRent || 0)));
+        formDataToSend.set(
+          "monthlyRent",
+          String(Number(formData.monthlyRent || 0))
+        );
         formDataToSend.set("deposit", String(Number(formData.deposit || 0)));
+      } else {
+        formDataToSend.delete("monthlyRent");
+        formDataToSend.delete("deposit");
+        formDataToSend.delete("availabilityDate");
       }
 
-      // ✅ amenities as JSON string
+      // amenities
       if (amenities.length > 0) {
         formDataToSend.set("amenities", JSON.stringify(amenities));
       }
 
-      // cover index
-      formDataToSend.set("coverIndex", String(clampCoverIndex(images.length, coverIndex)));
-
-      // ✅ images (cover image will be first in order)
-      const ordered = images.slice();
-      const safeCover = clampCoverIndex(ordered.length, coverIndex);
-
-      const cover = ordered.splice(safeCover, 1)[0];
-      const finalImages = cover ? [cover, ...ordered] : ordered;
-
-      finalImages.forEach((image) => formDataToSend.append("images", image));
-
-      const response = await apiFetch<{ success: boolean; property: any }>(
-        "/properties",
-        { method: "POST", body: formDataToSend }
+      // cover index (backend optional)
+      formDataToSend.set(
+        "coverIndex",
+        String(clampCoverIndex(images.length, coverIndex))
       );
 
+      // images order: cover first
+      const ordered = images.slice();
+      const safeCover = clampCoverIndex(ordered.length, coverIndex);
+      const cover = ordered.splice(safeCover, 1)[0];
+      const finalImages = cover ? [cover, ...ordered] : ordered;
+      finalImages.forEach((image) => formDataToSend.append("images", image));
+
+      const response = await apiFetch<any>("/properties", {
+        method: "POST",
+        body: formDataToSend,
+      });
+
       if (response?.success) {
-        router.push("/seller/my-properties");
+        const created =
+          response?.property ||
+          response?.data?.property ||
+          response?.data ||
+          response?.item ||
+          response?.result;
+
+        const id = created?._id || created?.id || response?.propertyId || "";
+        if (!id) {
+          setError("Created but could not read Property ID from response.");
+        } else {
+          setCreatedPropertyId(String(id));
+          // resetAfterSuccess();
+        }
       } else {
-        setError("Failed to create property");
+        setError(response?.message || "Failed to create property");
       }
     } catch (err: any) {
       setError(err?.message || "Failed to create property");
@@ -195,7 +311,9 @@ export default function SellerAddPropertyPage() {
     }
   };
 
-  const isRent = formData.listingType === "rent";
+  const landmarkValue = String(formData.landmark || "").trim();
+  const landmarkIsLink = landmarkValue.startsWith("http");
+  const landmarkIsCoord = isLatLng(landmarkValue);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-50 px-4 py-8 sm:px-6">
@@ -224,6 +342,65 @@ export default function SellerAddPropertyPage() {
         {error && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
+          </div>
+        )}
+
+        {/* ✅ Success section showing Property ID */}
+        {createdPropertyId && (
+          <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-extrabold text-emerald-900">
+                  Property Created Successfully ✅
+                </div>
+                <div className="mt-1 text-sm text-slate-700">
+                  Property ID:{" "}
+                  <span className="font-mono font-bold">{createdPropertyId}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => copyText(createdPropertyId)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy ID
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(`/seller/edit-property/${createdPropertyId}`)
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Edit Now
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(`/buyer/property/${createdPropertyId}?preview=1`)
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50"
+                  title="Open buyer property details page"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View as Buyer
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => router.push("/seller/my-properties")}
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-bold text-white hover:bg-slate-800"
+                >
+                  Go to My Properties
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -359,7 +536,9 @@ export default function SellerAddPropertyPage() {
           {/* Specs */}
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-800">Beds</label>
+              <label className="block text-sm font-semibold text-slate-800">
+                Beds
+              </label>
               <input
                 type="number"
                 name="beds"
@@ -371,7 +550,9 @@ export default function SellerAddPropertyPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-800">Baths</label>
+              <label className="block text-sm font-semibold text-slate-800">
+                Baths
+              </label>
               <input
                 type="number"
                 name="baths"
@@ -383,7 +564,9 @@ export default function SellerAddPropertyPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-800">Sqft</label>
+              <label className="block text-sm font-semibold text-slate-800">
+                Sqft
+              </label>
               <input
                 type="number"
                 name="sqft"
@@ -520,7 +703,9 @@ export default function SellerAddPropertyPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-800">Floor</label>
+              <label className="block text-sm font-semibold text-slate-800">
+                Floor
+              </label>
               <input
                 type="number"
                 name="floor"
@@ -550,7 +735,9 @@ export default function SellerAddPropertyPage() {
 
           <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
             <div>
-              <label className="block text-sm font-semibold text-slate-800">Facing</label>
+              <label className="block text-sm font-semibold text-slate-800">
+                Facing
+              </label>
               <select
                 name="facing"
                 value={formData.facing}
@@ -580,19 +767,77 @@ export default function SellerAddPropertyPage() {
               />
             </div>
 
+            {/* Google Map */}
             <div>
               <label className="block text-sm font-semibold text-slate-800">
-                Landmark (optional)
+                Google Map (optional)
               </label>
-              <input
-                type="text"
-                name="landmark"
-                value={formData.landmark}
-                onChange={handleChange}
-                disabled={loading}
-                placeholder="e.g., near City Mall"
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
-              />
+
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  name="landmark"
+                  value={formData.landmark}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="Paste Google Maps share link OR lat,lng"
+                  className="block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                />
+
+                <button
+                  type="button"
+                  onClick={openGoogleMapsPicker}
+                  disabled={loading}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
+                  title="Open Google Maps and pick the exact location"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Pick
+                </button>
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={pasteFromClipboard}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-60"
+                  title="Paste copied Google Maps link"
+                >
+                  <ClipboardPaste className="h-4 w-4" />
+                  Paste
+                </button>
+
+                {/* ✅ Convert link -> lat,lng */}
+                <button
+                  type="button"
+                  onClick={convertLandmarkToLatLng}
+                  disabled={loading || !landmarkValue || landmarkIsCoord}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                  title="Convert a Google Maps link to coordinates (lat,lng)"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  Convert to lat,lng
+                </button>
+
+                {landmarkIsLink && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.open(formData.landmark, "_blank", "noopener,noreferrer")
+                    }
+                    className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Preview link
+                  </button>
+                )}
+
+                <p className="text-xs text-slate-500">
+                  Best: store coordinates like <b>27.6663,85.3302</b> for perfect
+                  embed map on buyer page.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -671,14 +916,12 @@ export default function SellerAddPropertyPage() {
                       key={`${src}-${idx}`}
                       className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={src}
                         alt={`upload-${idx}`}
                         className="h-28 w-full object-cover"
                       />
 
-                      {/* cover badge */}
                       <button
                         type="button"
                         onClick={() => setCoverIndex(idx)}
@@ -695,7 +938,6 @@ export default function SellerAddPropertyPage() {
                         {idx === coverIndex ? "Cover" : "Set"}
                       </button>
 
-                      {/* remove */}
                       <button
                         type="button"
                         onClick={() => removeImage(idx)}

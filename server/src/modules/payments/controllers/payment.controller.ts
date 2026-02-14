@@ -2,29 +2,22 @@ import type { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { ApiError } from "../../../utils/apiError";
 import * as paymentService from "../services/payment.services";
+import Payment from "../../../models/Payment.model";
+import Property from "../../../models/Property.model";
 
 const KHALTI_SECRET_KEY = process.env.KHALTI_SECRET_KEY || "";
 
-// ✅ eSewa v2 configs
+// eSewa v2 configs
 const ESEWA_PRODUCT_CODE =
-  process.env.ESEWA_PRODUCT_CODE ||
-  process.env.ESEWA_MERCHANT_CODE ||
-  "";
+  process.env.ESEWA_PRODUCT_CODE || process.env.ESEWA_MERCHANT_CODE || "";
 
 const ESEWA_SECRET_KEY = process.env.ESEWA_SECRET_KEY || "";
-
 const FRONTEND_BASE = process.env.FRONTEND_BASE || "http://localhost:3000";
-
 
 function hmacBase64(message: string, secret: string) {
   return crypto.createHmac("sha256", secret).update(message).digest("base64");
 }
 
-/**
- * ✅ eSewa v2 signature format:
- * message = "total_amount=XX.XX,transaction_uuid=UUID,product_code=PCODE"
- * signed_field_names = "total_amount,transaction_uuid,product_code"
- */
 function buildEsewaSignature(params: {
   total_amount: string;
   transaction_uuid: string;
@@ -54,9 +47,6 @@ export async function initiate(req: Request, res: Response, next: NextFunction) 
       gateway,
     });
 
-    // ---------------------------
-    // ✅ KHALTI (skeleton)
-    // ---------------------------
     if (gateway === "khalti") {
       if (!KHALTI_SECRET_KEY) throw new ApiError(500, "KHALTI_SECRET_KEY missing");
 
@@ -69,17 +59,11 @@ export async function initiate(req: Request, res: Response, next: NextFunction) 
       });
     }
 
-    // ---------------------------
-    // ✅ ESEWA v2 (SIGNED FORM)
-    // ---------------------------
     if (gateway === "esewa") {
       if (!ESEWA_PRODUCT_CODE) throw new ApiError(500, "ESEWA_PRODUCT_CODE missing");
       if (!ESEWA_SECRET_KEY) throw new ApiError(500, "ESEWA_SECRET_KEY missing");
 
-      // ✅ must be unique per transaction (Mongo _id is perfect)
       const transaction_uuid = String(payment._id);
-
-      // ✅ send as strings with 2 decimals
       const total_amount = Number(amount).toFixed(2);
 
       const success_url = `${FRONTEND_BASE}/buyer/payment/esewa/success?pid=${transaction_uuid}`;
@@ -99,7 +83,6 @@ export async function initiate(req: Request, res: Response, next: NextFunction) 
         amount,
         expiresAt,
         esewa: {
-          // ✅ eSewa v2 required fields
           amount: total_amount,
           tax_amount: "0.00",
           total_amount,
@@ -129,35 +112,83 @@ export async function khaltiVerify(req: Request, res: Response, next: NextFuncti
     const { paymentId, pidx, transaction_id } = req.body as any;
     if (!paymentId) throw new ApiError(400, "paymentId is required");
 
-    // ✅ TODO: verify with khalti, then markPaid
-    const paid = await paymentService.markPaid({
+    const payment = await paymentService.markPaid({
       paymentId,
       buyerId,
       gatewayRef: { pidx, transaction_id },
     });
 
-    return res.status(200).json({ success: true, payment: paid });
+    const property = await Property.findById(payment.propertyId);
+
+    return res.status(200).json({
+      success: true,
+      payment,
+      property,
+      propertyId: String(property?._id || ""),
+      reservationStatus: property?.reservationStatus,
+    });
   } catch (err) {
     next(err);
   }
 }
 
+/**
+ * ✅ FIXED: no longer requires refId
+ * Accepts:
+ * - { paymentId } OR { pid }
+ * - optional { data } (if you choose to forward eSewa callback payload)
+ */
 export async function esewaVerify(req: Request, res: Response, next: NextFunction) {
   try {
     const buyerId = req.user?.userId;
     if (!buyerId) throw new ApiError(401, "Unauthorized");
 
-    const { paymentId, refId } = req.body as any;
-    if (!paymentId || !refId) throw new ApiError(400, "paymentId and refId are required");
+    const body = (req.body || {}) as any;
+    const data = body.data ?? null;
 
-    // ✅ TODO: verify with eSewa status API, then markPaid
-    const paid = await paymentService.markPaid({
+    const paymentId =
+      String(body.paymentId || "").trim() ||
+      String(body.pid || "").trim() ||
+      String(data?.transaction_uuid || "").trim() ||
+      String(data?.transactionUuid || "").trim();
+
+    if (!paymentId) {
+      throw new ApiError(
+        400,
+        "Missing paymentId/pid. Send { paymentId } or { pid } (or include data.transaction_uuid)."
+      );
+    }
+
+    // optional refId (best effort)
+    const refId =
+      body.refId ||
+      body.reference_id ||
+      data?.refId ||
+      data?.reference_id ||
+      data?.referenceId ||
+      "";
+
+    // ensure payment exists
+    const existing = await Payment.findById(paymentId);
+    if (!existing) throw new ApiError(404, "Payment not found");
+
+    // TODO: call real eSewa status API here, then only markPaid if success
+    const payment = await paymentService.markPaid({
       paymentId,
       buyerId,
       gatewayRef: { refId },
     });
 
-    return res.status(200).json({ success: true, payment: paid });
+    const property = await Property.findById(payment.propertyId);
+
+    return res.status(200).json({
+      success: true,
+      message: "eSewa payment marked paid (status API verify TODO).",
+      payment,
+      property,
+      propertyId: String(property?._id || ""),
+      reservationStatus: property?.reservationStatus,
+    });
   } catch (err) {
     next(err);
   }

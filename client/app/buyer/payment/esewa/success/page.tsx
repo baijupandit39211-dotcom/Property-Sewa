@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, ArrowLeft } from "lucide-react";
+import { apiFetch } from "@/app/lib/api";
+import { CheckCircle2, ArrowLeft, ShieldCheck } from "lucide-react";
 
 function safeJsonParse<T = any>(str: string | null): T | null {
   if (!str) return null;
@@ -13,33 +14,121 @@ function safeJsonParse<T = any>(str: string | null): T | null {
   }
 }
 
+function decodeEsewaData(dataParam: string | null) {
+  if (!dataParam) return null;
+
+  // 1) JSON directly
+  const asJson = safeJsonParse(dataParam);
+  if (asJson) return asJson;
+
+  // 2) decodeURIComponent then JSON
+  try {
+    const decoded = decodeURIComponent(dataParam);
+    const asJson2 = safeJsonParse(decoded);
+    if (asJson2) return asJson2;
+  } catch {
+    // ignore
+  }
+
+  // 3) base64 -> json (best-effort)
+  try {
+    const b64 = atob(dataParam);
+    return safeJsonParse(b64) || { raw: b64 };
+  } catch {
+    return { raw: dataParam };
+  }
+}
+
+/**
+ * ✅ IMPORTANT FIX:
+ * Sometimes pid becomes: "PAYMENT_ID?data=xxxx" or "PAYMENT_ID&data=xxxx"
+ * We must strip anything after ? or &
+ */
+function cleanPid(raw: string) {
+  if (!raw) return "";
+  return raw.split("?")[0].split("&")[0].trim();
+}
+
 export default function EsewaSuccessPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const pid = sp.get("pid") || ""; // you are sending pid in success_url
-  const dataParam = sp.get("data"); // eSewa sometimes sends this
-  const decodedData = useMemo(() => {
-    if (!dataParam) return null;
+  const pidRaw = sp.get("pid") || ""; // from success_url
+  const dataParam = sp.get("data");
 
-    // some gateways send urlencoded/base64/json — try common options safely
-    // 1) JSON directly
-    const asJson = safeJsonParse(dataParam);
-    if (asJson) return asJson;
+  const decodedData = useMemo(() => decodeEsewaData(dataParam), [dataParam]);
 
-    // 2) decodeURIComponent then JSON
-    const decoded = decodeURIComponent(dataParam);
-    const asJson2 = safeJsonParse(decoded);
-    if (asJson2) return asJson2;
+  // ✅ always work with a clean payment id
+  const paymentId = useMemo(() => {
+    // Prefer transaction_uuid if present in decoded data (more reliable)
+    const fromData =
+      (decodedData as any)?.transaction_uuid ||
+      (decodedData as any)?.transactionUuid ||
+      "";
 
-    // 3) base64 -> json (best-effort)
-    try {
-      const b64 = atob(dataParam);
-      return safeJsonParse(b64) || { raw: b64 };
-    } catch {
-      return { raw: dataParam };
-    }
-  }, [dataParam]);
+    const cleanedPid = cleanPid(pidRaw);
+
+    return String(fromData || cleanedPid || "").trim();
+  }, [pidRaw, decodedData]);
+
+  // ✅ verify call states
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState("");
+  const [verifyErr, setVerifyErr] = useState("");
+
+  useEffect(() => {
+    // ✅ verify only if we have paymentId
+    if (!paymentId) return;
+
+    let mounted = true;
+
+    (async () => {
+      try {
+        setVerifying(true);
+        setVerified(false);
+        setVerifyErr("");
+        setVerifyMsg("");
+
+        // ✅ Call backend verify endpoint
+        // Your backend supports:
+        // POST /payments/esewa/verify { paymentId } OR { pid }
+        const res = await apiFetch<any>("/payments/esewa/verify", {
+          method: "POST",
+          body: JSON.stringify({
+            // ✅ send clean ObjectId
+            paymentId,
+
+            // optional debug (backend can ignore)
+            data: decodedData ?? null,
+          }),
+        });
+
+        if (!mounted) return;
+
+        if (res?.success) {
+          setVerified(true);
+          setVerifyMsg(
+            res?.message || "Payment verified successfully. Property reserved."
+          );
+        } else {
+          setVerified(false);
+          setVerifyErr(res?.message || "Verification failed.");
+        }
+      } catch (e: any) {
+        if (!mounted) return;
+        setVerified(false);
+        setVerifyErr(e?.message || "Verification failed.");
+      } finally {
+        if (!mounted) return;
+        setVerifying(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [paymentId, decodedData]);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -55,21 +144,81 @@ export default function EsewaSuccessPage() {
         <div className="flex items-start gap-3">
           <CheckCircle2 className="h-7 w-7 text-emerald-600" />
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900">Payment Success</h1>
+            <h1 className="text-2xl font-extrabold text-slate-900">
+              Payment Success
+            </h1>
             <p className="mt-1 text-sm text-slate-600">
               Your payment was successful. We’ll confirm and reserve the property.
             </p>
           </div>
         </div>
 
+        {/* pid raw + cleaned */}
         <div className="mt-6 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-          <div className="text-xs font-semibold text-slate-500">Payment ID (pid)</div>
-          <div className="mt-1 break-all text-sm font-bold text-slate-900">{pid || "—"}</div>
+          <div className="text-xs font-semibold text-slate-500">
+            Payment ID (clean)
+          </div>
+          <div className="mt-1 break-all text-sm font-bold text-slate-900">
+            {paymentId || "—"}
+          </div>
+
+          {/* optional debug */}
+          {pidRaw && pidRaw !== paymentId && (
+            <div className="mt-2 text-[11px] text-slate-500">
+              Raw pid: <span className="break-all">{pidRaw}</span>
+            </div>
+          )}
         </div>
 
+        {/* verification status */}
+        <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-emerald-700" />
+            <div className="text-xs font-extrabold text-slate-900">
+              Verification Status
+            </div>
+          </div>
+
+          <div className="mt-2 text-sm">
+            {verifying && (
+              <div className="flex items-center gap-2 text-slate-700">
+                <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-r-2 border-emerald-600" />
+                Verifying payment with server...
+              </div>
+            )}
+
+            {!verifying && verified && (
+              <div className="font-semibold text-emerald-700">
+                ✅ Verified & Reserved
+                {verifyMsg ? (
+                  <div className="mt-1 text-xs font-medium text-slate-600">
+                    {verifyMsg}
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {!verifying && !verified && verifyErr && (
+              <div className="font-semibold text-red-600">
+                ❌ Not Verified
+                <div className="mt-1 text-xs font-medium text-slate-600">
+                  {verifyErr}
+                </div>
+              </div>
+            )}
+
+            {!verifying && !verified && !verifyErr && (
+              <div className="text-slate-600">Waiting for verification...</div>
+            )}
+          </div>
+        </div>
+
+        {/* debug data */}
         {decodedData && (
           <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-            <div className="text-xs font-semibold text-slate-500">Gateway Data</div>
+            <div className="text-xs font-semibold text-slate-500">
+              Gateway Data
+            </div>
             <pre className="mt-2 max-h-60 overflow-auto text-xs text-slate-700">
               {JSON.stringify(decodedData, null, 2)}
             </pre>
@@ -93,7 +242,7 @@ export default function EsewaSuccessPage() {
         </div>
 
         <p className="mt-4 text-xs text-slate-500">
-          Note: This page is UI-only unless you also call your backend verify endpoint.
+          This page calls your backend verify endpoint automatically.
         </p>
       </div>
     </main>

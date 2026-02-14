@@ -3,38 +3,91 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
-import { ArrowLeft, UploadCloud, X, Star } from "lucide-react";
+import {
+  ArrowLeft,
+  UploadCloud,
+  X,
+  Star,
+  ExternalLink,
+  ClipboardPaste,
+} from "lucide-react";
 
 type Property = {
   _id: string;
   title: string;
-  description: string;
+  description?: string;
   price: number;
-  currency: string;
+  currency?: string;
   location: string;
-  address: string;
-  beds: number;
-  baths: number;
-  sqft: number;
-  propertyType: string;
-  listingType: string;
-  status: string;
+  address?: string;
+
+  beds?: number;
+  baths?: number;
+  sqft?: number;
+
+  propertyType?: string;
+  listingType?: string;
+  status?: string;
+
+  furnishing?: "unfurnished" | "semi" | "full";
+  availabilityDate?: string;
+  monthlyRent?: number;
+  deposit?: number;
+  advanceAmount?: number;
+
+  yearBuilt?: number;
+  floor?: number;
+  totalFloors?: number;
+  facing?: "east" | "west" | "north" | "south";
+  roadAccessFt?: number;
+
+  // stored as landmark in backend (we label it Google Map)
+  landmark?: string;
+
+  amenities?: string[];
+
   images: { url: string; publicId: string }[];
 };
 
 const MAX_IMAGES = 6;
 
+const AMENITIES = [
+  "Parking",
+  "Water",
+  "Electricity Backup",
+  "Security",
+  "Lift",
+  "Wifi",
+  "AC",
+  "Balcony",
+  "Garden",
+  "Gym",
+] as const;
+
+type Amenity = (typeof AMENITIES)[number];
+
+function clampCoverIndex(len: number, nextIndex: number) {
+  if (len <= 0) return 0;
+  if (nextIndex < 0) return 0;
+  if (nextIndex >= len) return 0;
+  return nextIndex;
+}
+
 export default function SellerEditPropertyPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const id = String(params?.id || "");
 
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const [images, setImages] = useState<File[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
+
+  const [amenities, setAmenities] = useState<Amenity[]>([]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -48,82 +101,156 @@ export default function SellerEditPropertyPage() {
     sqft: "",
     propertyType: "house",
     listingType: "buy",
+
+    furnishing: "unfurnished",
+    availabilityDate: "",
+    monthlyRent: "",
+    deposit: "",
+    advanceAmount: "",
+
+    yearBuilt: "",
+    floor: "",
+    totalFloors: "",
+    facing: "east",
+    roadAccessFt: "",
+
+    landmark: "", // UI label: Google Map link
   });
 
-  // ✅ previews for newly added images
-  const previews = useMemo(() => {
-    return images.map((f) => URL.createObjectURL(f));
-  }, [images]);
+  const previews = useMemo(
+    () => images.map((f) => URL.createObjectURL(f)),
+    [images]
+  );
 
   useEffect(() => {
-    return () => {
-      previews.forEach((u) => URL.revokeObjectURL(u));
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => previews.forEach((u) => URL.revokeObjectURL(u));
   }, [previews]);
 
   useEffect(() => {
     const fetchProperty = async () => {
+      setLoading(true);
+      setError("");
+
       try {
+        // ✅ adjust endpoint to your backend
         const response = await apiFetch<{ success: boolean; property: Property }>(
-          `/properties/mine/${params.id}`
+          `/properties/mine/${id}`
         );
 
-        if (response.success) {
-          setProperty(response.property);
-          setFormData({
-            title: response.property.title || "",
-            description: response.property.description || "",
-            price: String(response.property.price ?? ""),
-            currency: response.property.currency || "USD",
-            location: response.property.location || "",
-            address: response.property.address || "",
-            beds: String(response.property.beds ?? ""),
-            baths: String(response.property.baths ?? ""),
-            sqft: String(response.property.sqft ?? ""),
-            propertyType: response.property.propertyType || "house",
-            listingType: response.property.listingType || "buy",
-          });
-        } else {
+        if (!response?.success || !response?.property) {
           setError("Failed to load property");
+          setProperty(null);
+          setLoading(false);
+          return;
         }
+
+        const p = response.property;
+        setProperty(p);
+
+        // amenities
+        const nextAmenities = Array.isArray(p.amenities)
+          ? (p.amenities.filter(Boolean).map(String) as Amenity[])
+          : [];
+        setAmenities(nextAmenities);
+
+        setFormData({
+          title: p.title || "",
+          description: p.description || "",
+          price: String(p.price ?? ""),
+          currency: p.currency || "USD",
+          location: p.location || "",
+          address: p.address || "",
+
+          beds: String(p.beds ?? ""),
+          baths: String(p.baths ?? ""),
+          sqft: String(p.sqft ?? ""),
+
+          propertyType: p.propertyType || "house",
+          listingType: p.listingType || "buy",
+
+          furnishing: (p.furnishing as any) || "unfurnished",
+          availabilityDate: (p.availabilityDate || "").slice(0, 10),
+          monthlyRent: String(p.monthlyRent ?? ""),
+          deposit: String(p.deposit ?? ""),
+          advanceAmount: String(p.advanceAmount ?? ""),
+
+          yearBuilt: String(p.yearBuilt ?? ""),
+          floor: String(p.floor ?? ""),
+          totalFloors: String(p.totalFloors ?? ""),
+          facing: (p.facing as any) || "east",
+          roadAccessFt: String(p.roadAccessFt ?? ""),
+
+          landmark: p.landmark || "",
+        });
       } catch (err: any) {
         setError(err?.message || "Failed to load property");
+        setProperty(null);
       } finally {
         setLoading(false);
       }
     };
 
-    if (params?.id) fetchProperty();
-  }, [params?.id]);
+    if (id) fetchProperty();
+  }, [id]);
+
+  const isRent = formData.listingType === "rent";
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const toggleAmenity = (a: Amenity) => {
+    setAmenities((prev) =>
+      prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]
+    );
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-
     const picked = Array.from(e.target.files);
     const combined = [...images, ...picked].slice(0, MAX_IMAGES);
 
     setImages(combined);
-    if (coverIndex >= combined.length) setCoverIndex(0);
+    setCoverIndex((prev) => clampCoverIndex(combined.length, prev));
 
-    // reset so selecting same file again works
     e.target.value = "";
   };
 
-  const removeImage = (index: number) => {
+  const removeImage = (idx: number) => {
     setImages((prev) => {
-      const next = prev.filter((_, i) => i !== index);
+      const next = prev.filter((_, i) => i !== idx);
 
-      if (next.length === 0) {
-        setCoverIndex(0);
-      } else if (index === coverIndex) {
-        setCoverIndex(0);
-      } else if (index < coverIndex) {
-        setCoverIndex((c) => Math.max(0, c - 1));
-      }
+      setCoverIndex((current) => {
+        if (next.length === 0) return 0;
+        if (idx === current) return 0;
+        if (idx < current) return clampCoverIndex(next.length, current - 1);
+        return clampCoverIndex(next.length, current);
+      });
 
       return next;
     });
+  };
+
+  // ✅ Google Maps helpers
+  const openGoogleMapsPicker = () => {
+    const qRaw = `${formData.address || ""} ${formData.location || ""}`.trim();
+    const q = encodeURIComponent(qRaw || "Kathmandu");
+    const url = `https://www.google.com/maps/search/?api=1&query=${q}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const pasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) return;
+      setFormData((p) => ({ ...p, landmark: text }));
+    } catch {
+      // ignore
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,35 +261,73 @@ export default function SellerEditPropertyPage() {
     try {
       const formDataToSend = new FormData();
 
-      // ✅ append all text fields
+      // append only non-empty fields
       Object.entries(formData).forEach(([key, value]) => {
+        if (value === "" || value === null || value === undefined) return;
         formDataToSend.append(key, value);
       });
 
-      // ✅ numeric safety (same style as your add page)
+      // numeric safety
       formDataToSend.set("price", String(Number(formData.price || 0)));
       formDataToSend.set("beds", String(Number(formData.beds || 0)));
       formDataToSend.set("baths", String(Number(formData.baths || 0)));
       formDataToSend.set("sqft", String(Number(formData.sqft || 0)));
 
-      // ✅ if user added new images, put cover first (buyers see first image)
-      if (images.length > 0) {
-        const ordered = images.slice();
-        const cover = ordered.splice(coverIndex, 1)[0];
-        const finalImages = [cover, ...ordered];
-        finalImages.forEach((img) => formDataToSend.append("images", img));
-      }
-
-      const response = await apiFetch<{ success: boolean; property: any }>(
-        `/properties/${params.id}`,
-        {
-          method: "PATCH",
-          body: formDataToSend,
-        }
+      formDataToSend.set(
+        "advanceAmount",
+        String(Number(formData.advanceAmount || 0))
+      );
+      formDataToSend.set("yearBuilt", String(Number(formData.yearBuilt || 0)));
+      formDataToSend.set("floor", String(Number(formData.floor || 0)));
+      formDataToSend.set(
+        "totalFloors",
+        String(Number(formData.totalFloors || 0))
+      );
+      formDataToSend.set(
+        "roadAccessFt",
+        String(Number(formData.roadAccessFt || 0))
       );
 
-      if (response.success) {
-        router.push(`/seller/property/${params.id}`);
+      if (formData.listingType === "rent") {
+        formDataToSend.set(
+          "monthlyRent",
+          String(Number(formData.monthlyRent || 0))
+        );
+        formDataToSend.set("deposit", String(Number(formData.deposit || 0)));
+      } else {
+        // clean rent-only fields if switching to buy
+        formDataToSend.delete("monthlyRent");
+        formDataToSend.delete("deposit");
+        formDataToSend.delete("availabilityDate");
+      }
+
+      // amenities
+      if (amenities.length > 0) {
+        formDataToSend.set("amenities", JSON.stringify(amenities));
+      } else {
+        // if you want to clear amenities on backend, uncomment:
+        // formDataToSend.set("amenities", JSON.stringify([]));
+      }
+
+      // new images (cover first)
+      if (images.length > 0) {
+        const ordered = images.slice();
+        const safeCover = clampCoverIndex(ordered.length, coverIndex);
+        const cover = ordered.splice(safeCover, 1)[0];
+        const finalImages = cover ? [cover, ...ordered] : ordered;
+
+        finalImages.forEach((img) => formDataToSend.append("images", img));
+        formDataToSend.set("coverIndex", String(safeCover));
+      }
+
+      const response = await apiFetch<{ success: boolean; property?: any }>(
+        `/properties/${id}`,
+        { method: "PATCH", body: formDataToSend }
+      );
+
+      if (response?.success) {
+        // ✅ redirect path (change to your actual page)
+        router.push(`/seller/property/${id}`);
       } else {
         setError("Failed to update property");
       }
@@ -207,6 +372,7 @@ export default function SellerEditPropertyPage() {
         <div className="sticky top-0 z-10 -mx-4 mb-6 border-b border-slate-200 bg-white/75 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6">
           <div className="flex items-center justify-between gap-4">
             <button
+              type="button"
               onClick={() => router.back()}
               className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
             >
@@ -215,7 +381,9 @@ export default function SellerEditPropertyPage() {
             </button>
 
             <div className="text-right">
-              <div className="text-sm font-extrabold text-slate-900">Edit Property</div>
+              <div className="text-sm font-extrabold text-slate-900">
+                Edit Property
+              </div>
               <div className="text-xs text-slate-600">
                 Update details & upload new images.
               </div>
@@ -246,11 +414,10 @@ export default function SellerEditPropertyPage() {
                 </label>
                 <input
                   type="text"
+                  name="title"
                   required
                   value={formData.title}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, title: e.target.value }))
-                  }
+                  onChange={handleChange}
                   disabled={saving}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
                   placeholder="Beautiful 3BHK House"
@@ -263,15 +430,95 @@ export default function SellerEditPropertyPage() {
                 </label>
                 <input
                   type="text"
+                  name="location"
                   required
                   value={formData.location}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, location: e.target.value }))
-                  }
+                  onChange={handleChange}
                   disabled={saving}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
                   placeholder="Kathmandu, Nepal"
                 />
+              </div>
+            </div>
+
+            {/* Address + Google Map */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  placeholder="123 Main Street"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Google Map (optional)
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    name="landmark"
+                    value={formData.landmark}
+                    onChange={handleChange}
+                    disabled={saving}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    placeholder="Paste Google Maps share link here"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={openGoogleMapsPicker}
+                    disabled={saving}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
+                    title="Open Google Maps and pick the exact location"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Pick
+                  </button>
+                </div>
+
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={pasteFromClipboard}
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-60"
+                    title="Paste copied Google Maps link"
+                  >
+                    <ClipboardPaste className="h-4 w-4" />
+                    Paste from clipboard
+                  </button>
+
+                  {formData.landmark?.startsWith("http") && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.open(
+                          formData.landmark,
+                          "_blank",
+                          "noopener,noreferrer"
+                        )
+                      }
+                      className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Preview
+                    </button>
+                  )}
+                </div>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Tip: Pick → Share → copy link → Paste.
+                </p>
               </div>
             </div>
 
@@ -281,10 +528,9 @@ export default function SellerEditPropertyPage() {
                 Description
               </label>
               <textarea
+                name="description"
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, description: e.target.value }))
-                }
+                onChange={handleChange}
                 rows={5}
                 disabled={saving}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
@@ -292,24 +538,22 @@ export default function SellerEditPropertyPage() {
               />
             </div>
 
-            {/* Price and Currency */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Price / Currency / Advance */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-800">
                   Price *
                 </label>
                 <input
                   type="number"
+                  name="price"
                   required
                   min={0}
                   step="0.01"
                   value={formData.price}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, price: e.target.value }))
-                  }
+                  onChange={handleChange}
                   disabled={saving}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
-                  placeholder="500000"
                 />
               </div>
 
@@ -318,37 +562,53 @@ export default function SellerEditPropertyPage() {
                   Currency
                 </label>
                 <select
+                  name="currency"
                   value={formData.currency}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, currency: e.target.value }))
-                  }
+                  onChange={handleChange}
                   disabled={saving}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
                 >
                   <option value="USD">USD</option>
                   <option value="NPR">NPR</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
+                  <option value="INR">INR</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Advance Amount
+                </label>
+                <input
+                  type="number"
+                  name="advanceAmount"
+                  min={0}
+                  step="0.01"
+                  value={formData.advanceAmount}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  placeholder="0"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Booking amount buyer pays (optional).
+                </p>
               </div>
             </div>
 
-            {/* Property Details */}
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {/* Specs + Type */}
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-800">
                   Bedrooms
                 </label>
                 <input
                   type="number"
+                  name="beds"
                   min={0}
                   value={formData.beds}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, beds: e.target.value }))
-                  }
+                  onChange={handleChange}
                   disabled={saving}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
-                  placeholder="3"
                 />
               </div>
 
@@ -358,31 +618,27 @@ export default function SellerEditPropertyPage() {
                 </label>
                 <input
                   type="number"
+                  name="baths"
                   min={0}
                   value={formData.baths}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, baths: e.target.value }))
-                  }
+                  onChange={handleChange}
                   disabled={saving}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
-                  placeholder="2"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-800">
-                  Square Feet
+                  Sqft
                 </label>
                 <input
                   type="number"
+                  name="sqft"
                   min={0}
                   value={formData.sqft}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, sqft: e.target.value }))
-                  }
+                  onChange={handleChange}
                   disabled={saving}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
-                  placeholder="1200"
                 />
               </div>
 
@@ -391,10 +647,9 @@ export default function SellerEditPropertyPage() {
                   Property Type
                 </label>
                 <select
+                  name="propertyType"
                   value={formData.propertyType}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, propertyType: e.target.value }))
-                  }
+                  onChange={handleChange}
                   disabled={saving}
                   className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
                 >
@@ -402,45 +657,212 @@ export default function SellerEditPropertyPage() {
                   <option value="apartment">Apartment</option>
                   <option value="condo">Condo</option>
                   <option value="land">Land</option>
-                  <option value="office">Office</option>
-                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Listing Type
+                </label>
+                <select
+                  name="listingType"
+                  value={formData.listingType}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                >
+                  <option value="buy">For Sale</option>
+                  <option value="rent">For Rent</option>
                 </select>
               </div>
             </div>
 
-            {/* Address */}
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-800">
-                Address
-              </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, address: e.target.value }))
-                }
-                disabled={saving}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
-                placeholder="123 Main Street, Kathmandu"
-              />
+            {/* Furnishing + Facing */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Furnishing
+                </label>
+                <select
+                  name="furnishing"
+                  value={formData.furnishing}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                >
+                  <option value="unfurnished">Unfurnished</option>
+                  <option value="semi">Semi Furnished</option>
+                  <option value="full">Fully Furnished</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Facing
+                </label>
+                <select
+                  name="facing"
+                  value={formData.facing}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                >
+                  <option value="east">East</option>
+                  <option value="west">West</option>
+                  <option value="north">North</option>
+                  <option value="south">South</option>
+                </select>
+              </div>
             </div>
 
-            {/* Listing Type */}
+            {/* Floors / YearBuilt / Road */}
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Year Built
+                </label>
+                <input
+                  type="number"
+                  name="yearBuilt"
+                  min={0}
+                  value={formData.yearBuilt}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Floor
+                </label>
+                <input
+                  type="number"
+                  name="floor"
+                  min={0}
+                  value={formData.floor}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Total Floors
+                </label>
+                <input
+                  type="number"
+                  name="totalFloors"
+                  min={0}
+                  value={formData.totalFloors}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-semibold text-slate-800">
+                  Road Access (ft)
+                </label>
+                <input
+                  type="number"
+                  name="roadAccessFt"
+                  min={0}
+                  value={formData.roadAccessFt}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                />
+              </div>
+            </div>
+
+            {/* Rent-only */}
+            {isRent && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                <div className="mb-3 text-sm font-semibold text-emerald-900">
+                  Rent Details
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800">
+                      Monthly Rent
+                    </label>
+                    <input
+                      type="number"
+                      name="monthlyRent"
+                      min={0}
+                      value={formData.monthlyRent}
+                      onChange={handleChange}
+                      disabled={saving}
+                      className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800">
+                      Deposit
+                    </label>
+                    <input
+                      type="number"
+                      name="deposit"
+                      min={0}
+                      value={formData.deposit}
+                      onChange={handleChange}
+                      disabled={saving}
+                      className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800">
+                      Availability Date
+                    </label>
+                    <input
+                      type="date"
+                      name="availabilityDate"
+                      value={formData.availabilityDate}
+                      onChange={handleChange}
+                      disabled={saving}
+                      className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ✅ Amenities */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-800">
-                Listing Type
-              </label>
-              <select
-                value={formData.listingType}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, listingType: e.target.value }))
-                }
-                disabled={saving}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
-              >
-                <option value="buy">For Sale</option>
-                <option value="rent">For Rent</option>
-              </select>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-semibold text-slate-800">
+                  Amenities
+                </label>
+                <span className="text-xs text-slate-500">
+                  {amenities.length} selected
+                </span>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                {AMENITIES.map((a) => {
+                  const active = amenities.includes(a);
+                  return (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() => toggleAmenity(a)}
+                      disabled={saving}
+                      className={[
+                        "rounded-xl border px-3 py-2 text-sm font-semibold transition",
+                        active
+                          ? "border-emerald-300 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-100"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                        saving ? "opacity-60" : "",
+                      ].join(" ")}
+                    >
+                      {a}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Images */}
@@ -451,7 +873,7 @@ export default function SellerEditPropertyPage() {
                     Add New Images (Optional)
                   </label>
                   <p className="mt-1 text-xs text-slate-500">
-                    You can upload up to {MAX_IMAGES} images. Choose a cover for the new uploads.
+                    Upload up to {MAX_IMAGES}. Choose a cover for new uploads.
                   </p>
                 </div>
                 <div className="text-xs text-slate-500">
@@ -481,12 +903,11 @@ export default function SellerEditPropertyPage() {
                   </span>
                 </label>
 
-                {/* New image previews */}
                 {images.length > 0 && (
                   <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
                     {previews.map((src, idx) => (
                       <div
-                        key={src}
+                        key={`${src}-${idx}`}
                         className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -526,7 +947,6 @@ export default function SellerEditPropertyPage() {
                   </div>
                 )}
 
-                {/* Existing images */}
                 {property?.images?.length ? (
                   <div className="mt-6">
                     <p className="mb-2 text-sm font-semibold text-slate-800">
@@ -544,8 +964,8 @@ export default function SellerEditPropertyPage() {
                       ))}
                     </div>
                     <p className="mt-2 text-xs text-slate-500">
-                      (This page shows current images. Removing old images needs a backend
-                      endpoint like DELETE /properties/:id/images/:publicId.)
+                      Removing old images needs backend endpoint like DELETE
+                      /properties/:id/images/:publicId.
                     </p>
                   </div>
                 ) : null}

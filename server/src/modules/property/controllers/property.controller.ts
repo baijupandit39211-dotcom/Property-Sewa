@@ -45,7 +45,6 @@ function toDateOrNull(v: any) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-// ✅ reorder uploaded array using coverIndex if you want (safe)
 function applyCoverIndexOrder<T>(arr: T[], coverIndexRaw: any) {
   const coverIndex = Number(coverIndexRaw);
   if (!Number.isFinite(coverIndex)) return arr;
@@ -57,7 +56,7 @@ function applyCoverIndexOrder<T>(arr: T[], coverIndexRaw: any) {
   return [cover, ...copy];
 }
 
-// POST /properties (seller/agent) - multipart form-data with images[]
+// POST /properties
 export async function createProperty(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId as string;
@@ -66,10 +65,7 @@ export async function createProperty(req: Request, res: Response, next: NextFunc
     const files = (req.files as Express.Multer.File[]) || [];
     if (!files.length) throw new ApiError(400, "Images are required");
 
-    // upload all first
     const uploadedRaw = await Promise.all(files.map((f) => uploadToCloudinary(f.buffer)));
-
-    // ✅ if FE sends coverIndex, reorder
     const uploaded = applyCoverIndexOrder(uploadedRaw, req.body?.coverIndex);
 
     const body = req.body || {};
@@ -79,7 +75,6 @@ export async function createProperty(req: Request, res: Response, next: NextFunc
       title: body.title,
       description: body.description,
 
-      // ✅ keep price (sale price OR base price). FE always sends it.
       price: toNumber(body.price, 0),
       currency: body.currency || body.currentcy || "USD",
 
@@ -98,7 +93,6 @@ export async function createProperty(req: Request, res: Response, next: NextFunc
       monthlyRent: toNumber(body.monthlyRent, 0),
       deposit: toNumber(body.deposit, 0),
 
-      // ✅ NEW
       advanceAmount: toNumber(body.advanceAmount, 0),
 
       yearBuilt: toNumber(body.yearBuilt, 0),
@@ -115,13 +109,14 @@ export async function createProperty(req: Request, res: Response, next: NextFunc
       images: uploaded,
     });
 
+    // ✅ return property id reliably (frontend already handles response.property._id)
     return res.status(201).json({ success: true, property: created });
   } catch (err) {
     return next(err);
   }
 }
 
-// GET /properties/mine (seller)
+// GET /properties/mine
 export async function getMyProperties(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId as string;
@@ -134,7 +129,7 @@ export async function getMyProperties(req: Request, res: Response, next: NextFun
   }
 }
 
-// GET /properties/mine/:id (seller)
+// GET /properties/mine/:id
 export async function getMyPropertyById(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId as string;
@@ -147,7 +142,20 @@ export async function getMyPropertyById(req: Request, res: Response, next: NextF
   }
 }
 
-// DELETE /properties/:id (seller)
+// ✅ GET /properties/preview/:id (seller preview pending)
+export async function previewById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+
+    const property = await propertyService.previewById(req.params.id, userId);
+    return res.status(200).json({ success: true, property });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// DELETE /properties/:id
 export async function deleteProperty(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId as string;
@@ -163,7 +171,7 @@ export async function deleteProperty(req: Request, res: Response, next: NextFunc
   }
 }
 
-// GET /properties (buyer) approved list
+// GET /properties (buyer list approved)
 export async function listApproved(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await propertyService.listApproved(req.query);
@@ -173,7 +181,7 @@ export async function listApproved(req: Request, res: Response, next: NextFuncti
   }
 }
 
-// GET /properties/:id (buyer) approved details
+// GET /properties/:id (buyer approved)
 export async function getApprovedById(req: Request, res: Response, next: NextFunction) {
   try {
     const property = await propertyService.getApprovedById(req.params.id);
@@ -183,7 +191,7 @@ export async function getApprovedById(req: Request, res: Response, next: NextFun
   }
 }
 
-// ADMIN: GET /properties/admin/pending
+// ADMIN
 export async function listPending(req: Request, res: Response, next: NextFunction) {
   try {
     const items = await propertyService.listPending();
@@ -193,7 +201,6 @@ export async function listPending(req: Request, res: Response, next: NextFunctio
   }
 }
 
-// ADMIN: PATCH /properties/admin/:id/approve
 export async function approve(req: Request, res: Response, next: NextFunction) {
   try {
     const adminUserId = req.user?.userId as string;
@@ -204,7 +211,6 @@ export async function approve(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-// ADMIN: PATCH /properties/admin/:id/reject
 export async function reject(req: Request, res: Response, next: NextFunction) {
   try {
     const adminUserId = req.user?.userId as string;
@@ -215,7 +221,7 @@ export async function reject(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-// PATCH /properties/:id (seller edit own property)
+// PATCH /properties/:id
 export async function updateProperty(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId as string;
@@ -241,7 +247,6 @@ export async function updateProperty(req: Request, res: Response, next: NextFunc
       updates.availabilityDate = toDateOrNull(updates.availabilityDate);
     }
 
-    // ✅ numeric normalize (so strings from multipart won't break)
     const numericKeys = [
       "price",
       "beds",

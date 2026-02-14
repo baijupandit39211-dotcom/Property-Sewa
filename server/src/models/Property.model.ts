@@ -30,7 +30,7 @@ const PropertySchema = new Schema(
     furnishing: {
       type: String,
       enum: ["unfurnished", "semi", "full"],
-      default: null,
+      default: "unfurnished",
     },
 
     availabilityDate: { type: Date, default: null },
@@ -40,7 +40,7 @@ const PropertySchema = new Schema(
     // booking/advance
     advanceAmount: { type: Number, default: 0 },
 
-    // ✅ reservation state (FIXES TS ERROR)
+    // reservation state
     reservationStatus: {
       type: String,
       enum: ["none", "reserved", "paid", "cancelled", "expired"],
@@ -56,13 +56,16 @@ const PropertySchema = new Schema(
     facing: {
       type: String,
       enum: ["east", "west", "north", "south"],
-      default: null,
+      default: "east",
     },
 
     roadAccessFt: { type: Number, default: 0 },
+
+    // ✅ google map share link (seller UI uses "landmark")
     landmark: { type: String, default: "" },
 
-    amenities: [{ type: String, default: [] }],
+    // ✅ proper array default
+    amenities: { type: [String], default: [] },
 
     images: [
       {

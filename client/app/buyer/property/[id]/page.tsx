@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import {
   Send,
@@ -15,13 +15,24 @@ import {
   X,
   Heart,
   Share2,
-  Home,
-  Building2,
-  Sofa,
   BadgeCheck,
   Phone,
   CreditCard,
+  ExternalLink,
 } from "lucide-react";
+
+const AMENITIES = [
+  "Parking",
+  "Water",
+  "Electricity Backup",
+  "Security",
+  "Lift",
+  "Wifi",
+  "AC",
+  "Balcony",
+  "Garden",
+  "Gym",
+] as const;
 
 const WISHLIST_KEY = "property-sewa:wishlist:v1";
 
@@ -43,7 +54,33 @@ const hasValue = (v: any) =>
   String(v).trim() !== "" &&
   String(v).trim() !== "0";
 
-// ✅ Reusable UI: seller मा जे field आउँछ, buyer detail मा पनि यही component ले देखाउँछ
+// ✅ format helper
+function money(currency: string | undefined, value: any) {
+  const c = currency || "Rs";
+  const n = Number(value || 0);
+  return `${c} ${n.toLocaleString()}`;
+}
+
+// ✅ coords helper (lat,lng)
+function isLatLng(v: string) {
+  return /^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$/.test(v);
+}
+function parseLatLng(v: string) {
+  const [latRaw, lngRaw] = v.split(",");
+  const lat = String(latRaw || "").trim();
+  const lng = String(lngRaw || "").trim();
+  if (!lat || !lng) return null;
+  if (Number.isNaN(Number(lat)) || Number.isNaN(Number(lng))) return null;
+  return { lat, lng };
+}
+
+// ✅ Extract coords from google url containing .../@lat,lng
+function extractLatLngFromGoogleUrl(url: string) {
+  const m = url.match(/@(-?\d+(\.\d+)?),(-?\d+(\.\d+)?)/);
+  if (!m) return null;
+  return { lat: m[1], lng: m[3] };
+}
+
 function BuyerPropertyDetailsView({
   property,
   paramsId,
@@ -88,14 +125,16 @@ function BuyerPropertyDetailsView({
     message: "",
   });
 
-  // ✅ Images (seller coverIndex logic: seller code sends cover first, so images[0] is cover)
+  // ✅ Normalize images
   const images: string[] = useMemo(() => {
-    const arr = (property?.images || []).map((x: any) => x?.url).filter(Boolean);
+    const arr = (property?.images || [])
+      .map((x: any) => x?.url)
+      .filter(Boolean);
     if (arr.length > 0) return arr;
     return ["https://via.placeholder.com/1200x700?text=No+Image"];
   }, [property]);
 
-  // ✅ Amenities safe reads (seller sends JSON string)
+  // ✅ Amenities safe read (array or json string)
   const amenities: string[] = useMemo(() => {
     const a = property?.amenities;
     if (!a) return [];
@@ -108,10 +147,11 @@ function BuyerPropertyDetailsView({
     }
   }, [property]);
 
-  // ✅ Seller contact (from backend: property.seller or propertyResponse.seller)
-  const seller = property?.seller || null;
+  // ✅ seller info: support multiple shapes
+  const seller =
+    property?.seller || property?.createdBy || property?.owner || null;
 
-  // ✅ On first mount: set hero image
+  // ✅ first image as active
   useEffect(() => {
     const firstImg =
       images?.[0] || "https://via.placeholder.com/1200x700?text=No+Image";
@@ -119,18 +159,19 @@ function BuyerPropertyDetailsView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [property?._id]);
 
-  // ✅ Auto fill user
+  // ✅ Auto-fill user
   useEffect(() => {
     (async () => {
       try {
         const userResponse = await apiFetch<{ success: boolean; user: any }>(
           "/auth/me"
         );
-        if (userResponse.success) {
+        if (userResponse?.success) {
           setFormData((prev) => ({
             ...prev,
-            name: userResponse.user.name || "",
-            email: userResponse.user.email || "",
+            name: userResponse?.user?.name || "",
+            email: userResponse?.user?.email || "",
+            phone: userResponse?.user?.phone || prev.phone || "",
           }));
         }
       } catch {
@@ -139,14 +180,14 @@ function BuyerPropertyDetailsView({
     })();
   }, []);
 
-  // ✅ Similar properties
+  // ✅ Similar properties (UI-only)
   useEffect(() => {
     (async () => {
       try {
         const list = await apiFetch<{ success: boolean; items: any[] }>(
           "/properties?limit=12"
         );
-        if (list.success) {
+        if (list?.success) {
           const items = (list.items || []).filter(
             (p) => String(p?._id) !== String(paramsId)
           );
@@ -170,7 +211,8 @@ function BuyerPropertyDetailsView({
     setWishlisted(Array.isArray(ids) ? ids.includes(id) : false);
   }, [property?._id]);
 
-  const isRent = property?.listingType === "rent";
+  const listingType = String(property?.listingType || "").toLowerCase();
+  const isRent = listingType === "rent";
 
   // ✅ Wishlist toggle (localStorage)
   const toggleWishlist = () => {
@@ -197,7 +239,9 @@ function BuyerPropertyDetailsView({
         ? window.location.href
         : `/buyer/property/${property?._id}`;
 
-    const text = `${property?.title || "Property"} — ${property?.location || ""}`;
+    const text = `${property?.title || "Property"} — ${
+      property?.location || ""
+    }`;
 
     try {
       if ((navigator as any)?.share) {
@@ -229,26 +273,31 @@ function BuyerPropertyDetailsView({
     setSuccess(false);
 
     try {
-      const response = await apiFetch<{ success: boolean; lead: any }>("/leads", {
-        method: "POST",
-        body: JSON.stringify({
-          propertyId: property._id,
-          ...formData,
-        }),
-      });
+      const response = await apiFetch<{ success: boolean; lead: any }>(
+        "/leads",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            propertyId: property._id,
+            ...formData,
+          }),
+        }
+      );
 
-      if (response.success) {
+      if (response?.success) {
         setSuccess(true);
         setFormData((prev) => ({ ...prev, message: "" }));
+      } else {
+        setError("Failed to send inquiry");
       }
     } catch (err: any) {
-      setError(err.message || "Failed to send inquiry");
+      setError(err?.message || "Failed to send inquiry");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ✅ Contact Agent works (scroll to inquiry)
+  // ✅ Contact Agent works (scroll)
   const handleContactAgent = () => {
     inquiryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setTimeout(() => {
@@ -259,7 +308,7 @@ function BuyerPropertyDetailsView({
     }, 250);
   };
 
-  // ✅ Schedule Visit modal open (KEEP)
+  // ✅ Schedule Visit open (KEEP)
   const handleOpenSchedule = () => {
     setScheduleError("");
     setScheduleSuccess(false);
@@ -275,7 +324,9 @@ function BuyerPropertyDetailsView({
       preferredTime: prev.preferredTime || "10:00",
       message:
         prev.message ||
-        `Hi, I'd like to schedule a visit for "${property?.title || "this property"}".`,
+        `Hi, I'd like to schedule a visit for "${
+          property?.title || "this property"
+        }".`,
     }));
 
     setOpenSchedule(true);
@@ -310,21 +361,23 @@ function BuyerPropertyDetailsView({
         }
       );
 
-      if (res.success) {
+      if (res?.success) {
         setScheduleSuccess(true);
         setTimeout(() => setOpenSchedule(false), 900);
       } else {
-        setScheduleError(res.message || "Failed to schedule visit.");
+        setScheduleError(res?.message || "Failed to schedule visit.");
       }
     } catch (err: any) {
-      setScheduleError(err.message || "Failed to schedule visit.");
+      setScheduleError(err?.message || "Failed to schedule visit.");
     } finally {
       setScheduleLoading(false);
     }
   };
 
   function getUniqueSimilarImage(p: any, used: Set<string>) {
-    const urls: string[] = (p?.images || []).map((x: any) => x?.url).filter(Boolean);
+    const urls: string[] = (p?.images || [])
+      .map((x: any) => x?.url)
+      .filter(Boolean);
     for (const u of urls) {
       if (!used.has(u)) {
         used.add(u);
@@ -337,39 +390,82 @@ function BuyerPropertyDetailsView({
   const usedSimilarImgs = new Set<string>();
   if (activeImg) usedSimilarImgs.add(activeImg);
 
-  // ✅ show flags (seller add-property fields)
   const showBeds = hasValue(property?.beds);
   const showBaths = hasValue(property?.baths);
   const showSqft = hasValue(property?.sqft);
 
-  const showFurnishing = hasValue(property?.furnishing);
-  const showYearBuilt = hasValue(property?.yearBuilt);
-  const showFloor = hasValue(property?.floor);
-  const showTotalFloors = hasValue(property?.totalFloors);
-  const showFacing = hasValue(property?.facing);
-  const showRoad = hasValue(property?.roadAccessFt);
-  const showLandmark = hasValue(property?.landmark);
+  // ✅ Google Map stored in landmark (supports coords or link)
+  const showGoogleMap = hasValue(property?.landmark);
+  const googleMapRaw = String(property?.landmark || "").trim();
 
-  const showAvailability = isRent && hasValue(property?.availabilityDate);
+  // ✅ resolve map type
+  const mapCoords =
+    isLatLng(googleMapRaw)
+      ? parseLatLng(googleMapRaw)
+      : googleMapRaw.startsWith("http")
+      ? extractLatLngFromGoogleUrl(googleMapRaw)
+      : null;
+
+  // ✅ embed url (works for both)
+  const mapEmbedUrl = useMemo(() => {
+    if (!showGoogleMap) return "";
+    if (mapCoords?.lat && mapCoords?.lng) {
+      const q = encodeURIComponent(`${mapCoords.lat},${mapCoords.lng}`);
+      return `https://www.google.com/maps?q=${q}&z=16&output=embed`;
+    }
+    if (googleMapRaw.startsWith("http")) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(
+        googleMapRaw
+      )}&output=embed`;
+    }
+    return "";
+  }, [showGoogleMap, googleMapRaw, mapCoords?.lat, mapCoords?.lng]);
+
   const showMonthlyRent = isRent && hasValue(property?.monthlyRent);
   const showDeposit = isRent && hasValue(property?.deposit);
+  const showAvailability = isRent && hasValue(property?.availabilityDate);
 
-  const showExtraDetails =
-    showFurnishing ||
-    showYearBuilt ||
-    showFloor ||
-    showTotalFloors ||
-    showFacing ||
-    showRoad ||
-    showLandmark ||
-    showAvailability ||
-    showDeposit;
+  const showAdvance = hasValue(property?.advanceAmount);
+
+  const openGoogleMap = () => {
+    if (mapCoords?.lat && mapCoords?.lng) {
+      const q = encodeURIComponent(`${mapCoords.lat},${mapCoords.lng}`);
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${q}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+      return;
+    }
+
+    if (googleMapRaw && googleMapRaw.startsWith("http")) {
+      window.open(googleMapRaw, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    const q = encodeURIComponent(
+      `${property?.address || ""} ${property?.location || ""}`.trim() ||
+        "Kathmandu"
+    );
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${q}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  // ✅ pay advance button
+  const goToPayment = () => {
+    if (!property?._id) return;
+    router.push(`/buyer/property/${property._id}/payment`);
+  };
 
   return (
     <main className="w-full min-w-0 px-6 py-8 sm:px-10">
       {/* top action buttons */}
       <div className="mb-4 flex justify-end gap-3">
         <button
+          type="button"
           onClick={toggleWishlist}
           className={[
             "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition",
@@ -383,6 +479,7 @@ function BuyerPropertyDetailsView({
         </button>
 
         <button
+          type="button"
           onClick={shareProperty}
           className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800"
         >
@@ -403,7 +500,9 @@ function BuyerPropertyDetailsView({
 
             <div className="absolute left-5 top-5 flex items-center gap-2">
               <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-900 ring-1 ring-black/10">
-                {property?.status ? String(property.status).toUpperCase() : "FEATURED"}
+                {property?.status
+                  ? String(property.status).toUpperCase()
+                  : "FEATURED"}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/95 px-3 py-1 text-xs font-semibold text-white ring-1 ring-emerald-700/40">
                 <BadgeCheck className="h-4 w-4" />
@@ -471,21 +570,34 @@ function BuyerPropertyDetailsView({
             {property?.title || "Property"}
           </h1>
 
+          {property?.propertyCode && (
+            <div className="mt-2 inline-flex items-center rounded-full bg-white px-4 py-1.5 text-xs font-extrabold text-slate-900 ring-1 ring-slate-200">
+              Property ID:
+              <span className="ml-2 font-mono text-emerald-700">
+                {property.propertyCode}
+              </span>
+            </div>
+          )}
+
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <div className="text-3xl font-extrabold text-emerald-700">
-              {property?.currency || "Rs"} {Number(property?.price || 0).toLocaleString()}
+              {money(property?.currency, property?.price)}
             </div>
 
-            {/* ✅ Rent chip ONLY if rent + monthlyRent exists */}
             {isRent && showMonthlyRent && (
               <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200">
-                For Rent · Monthly {property.currency || "Rs"}{" "}
-                {Number(property.monthlyRent || 0).toLocaleString()}
+                For Rent · Monthly {money(property?.currency, property?.monthlyRent)}
+              </span>
+            )}
+
+            {showAdvance && (
+              <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-slate-200">
+                Booking Advance: {money(property?.currency, property?.advanceAmount)}
               </span>
             )}
           </div>
 
-          {/* ✅ Chips ONLY if value exists */}
+          {/* Chips */}
           <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-700">
             {showBeds && (
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 ring-1 ring-slate-200">
@@ -511,7 +623,58 @@ function BuyerPropertyDetailsView({
             </span>
           </div>
 
-          {/* ✅ Listing Overview */}
+          {/* ✅ Google Map Card */}
+          <div className="mt-6 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-extrabold text-slate-900">
+                  Google Map
+                </div>
+                <div className="mt-1 text-xs text-slate-600">
+                  Open the exact location on Google Maps.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={openGoogleMap}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-extrabold text-white hover:bg-emerald-800"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open Map
+              </button>
+            </div>
+
+            {showGoogleMap ? (
+              <>
+                <div className="mt-3 break-all rounded-xl bg-slate-50 p-3 text-xs text-slate-700 ring-1 ring-slate-200">
+                  {googleMapRaw}
+                  {mapCoords?.lat && mapCoords?.lng && (
+                    <div className="mt-1 text-[11px] font-semibold text-emerald-800">
+                      Detected coordinates: {mapCoords.lat},{mapCoords.lng}
+                    </div>
+                  )}
+                </div>
+
+                {mapEmbedUrl && (
+                  <div className="mt-4 overflow-hidden rounded-2xl ring-1 ring-slate-200">
+                    <iframe
+                      title="map"
+                      src={mapEmbedUrl}
+                      className="h-[260px] w-full"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600 ring-1 ring-slate-200">
+                No Google Map provided. (We will open map by address/location.)
+              </div>
+            )}
+          </div>
+
+          {/* Listing Overview */}
           <div className="mt-6 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
             <div className="flex items-center justify-between">
               <div className="text-sm font-extrabold text-slate-900">
@@ -524,246 +687,161 @@ function BuyerPropertyDetailsView({
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Title</div>
-                <div className="mt-1 text-sm font-extrabold text-slate-900">
-                  {property?.title || "—"}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">Price</div>
                 <div className="mt-1 text-sm font-extrabold text-emerald-800">
-                  {property?.currency || "Rs"}{" "}
-                  {Number(property?.price || 0).toLocaleString()}
+                  {money(property?.currency, property?.price)}
                 </div>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Location</div>
+                <div className="text-xs font-semibold text-slate-500">
+                  Booking Advance
+                </div>
+                <div className="mt-1 text-sm font-extrabold text-slate-900">
+                  {showAdvance
+                    ? money(property?.currency, property?.advanceAmount)
+                    : "—"}
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                <div className="text-xs font-semibold text-slate-500">
+                  Location
+                </div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
                   {property?.location || "—"}
                 </div>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Address</div>
+                <div className="text-xs font-semibold text-slate-500">
+                  Address
+                </div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
                   {property?.address || "—"}
                 </div>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Beds</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.beds) ? property?.beds : "—"}
+                <div className="text-xs font-semibold text-slate-500">
+                  Furnishing
                 </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Baths</div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.baths) ? property?.baths : "—"}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Sqft</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.sqft) ? property?.sqft : "—"}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Property Type</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {property?.propertyType ? String(property.propertyType) : "—"}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Listing Type</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {property?.listingType ? String(property.listingType) : "—"}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Furnishing</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.furnishing) ? property?.furnishing : "—"}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Year Built</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.yearBuilt) ? property?.yearBuilt : "—"}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Floor</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.floor) ? property?.floor : "—"}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Total Floors</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.totalFloors) ? property?.totalFloors : "—"}
+                  {hasValue(property?.furnishing)
+                    ? String(property.furnishing)
+                    : "—"}
                 </div>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">Facing</div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.facing) ? property?.facing : "—"}
+                  {hasValue(property?.facing) ? String(property.facing) : "—"}
                 </div>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Road Access (ft)</div>
+                <div className="text-xs font-semibold text-slate-500">Floor</div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.roadAccessFt) ? property?.roadAccessFt : "—"}
+                  {hasValue(property?.floor) ? property.floor : "—"}
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                <div className="text-xs font-semibold text-slate-500">
+                  Total Floors
+                </div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">
+                  {hasValue(property?.totalFloors) ? property.totalFloors : "—"}
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                <div className="text-xs font-semibold text-slate-500">
+                  Year Built
+                </div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">
+                  {hasValue(property?.yearBuilt) ? property.yearBuilt : "—"}
                 </div>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200 sm:col-span-2">
-                <div className="text-xs font-semibold text-slate-500">Landmark</div>
+                <div className="text-xs font-semibold text-slate-500">
+                  Road Access (ft)
+                </div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.landmark) ? property?.landmark : "—"}
+                  {hasValue(property?.roadAccessFt) ? property.roadAccessFt : "—"}
                 </div>
               </div>
             </div>
 
+            {/* rent info block */}
+            {isRent && (showMonthlyRent || showDeposit || showAvailability) && (
+              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                <div className="mb-3 text-sm font-extrabold text-emerald-900">
+                  Rent Details
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+                    <div className="text-xs font-semibold text-slate-500">
+                      Monthly Rent
+                    </div>
+                    <div className="mt-1 text-sm font-extrabold text-slate-900">
+                      {showMonthlyRent
+                        ? money(property?.currency, property?.monthlyRent)
+                        : "—"}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+                    <div className="text-xs font-semibold text-slate-500">
+                      Deposit
+                    </div>
+                    <div className="mt-1 text-sm font-extrabold text-slate-900">
+                      {showDeposit
+                        ? money(property?.currency, property?.deposit)
+                        : "—"}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+                    <div className="text-xs font-semibold text-slate-500">
+                      Available From
+                    </div>
+                    <div className="mt-1 text-sm font-extrabold text-slate-900">
+                      {showAvailability
+                        ? String(property?.availabilityDate).slice(0, 10)
+                        : "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="mt-4 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-              <div className="text-xs font-semibold text-slate-500">Description</div>
+              <div className="text-xs font-semibold text-slate-500">
+                Description
+              </div>
               <div className="mt-1 text-sm leading-6 text-slate-700">
                 {property?.description || "—"}
               </div>
             </div>
           </div>
 
-          {/* Cards */}
-          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-            {(property?.propertyType || property?.listingType) && (
-              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                <div className="text-sm font-extrabold text-slate-900">Property Info</div>
-                <div className="mt-2 space-y-2 text-sm text-slate-700">
-                  {property?.propertyType && (
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-2">
-                        <Home className="h-4 w-4 text-emerald-700" />
-                        Type
-                      </span>
-                      <span className="font-semibold capitalize">{property?.propertyType}</span>
-                    </div>
-                  )}
-                  {property?.listingType && (
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-emerald-700" />
-                        Listing
-                      </span>
-                      <span className="font-semibold capitalize">{property?.listingType}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {showExtraDetails && (
-              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                <div className="text-sm font-extrabold text-slate-900">Extra Details</div>
-                <div className="mt-2 space-y-2 text-sm text-slate-700">
-                  {showFurnishing && (
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-2">
-                        <Sofa className="h-4 w-4 text-emerald-700" />
-                        Furnishing
-                      </span>
-                      <span className="font-semibold capitalize">{property.furnishing}</span>
-                    </div>
-                  )}
-                  {showYearBuilt && (
-                    <div className="flex items-center justify-between">
-                      <span>Year Built</span>
-                      <span className="font-semibold">{property.yearBuilt}</span>
-                    </div>
-                  )}
-                  {showFloor && (
-                    <div className="flex items-center justify-between">
-                      <span>Floor</span>
-                      <span className="font-semibold">{property.floor}</span>
-                    </div>
-                  )}
-                  {showTotalFloors && (
-                    <div className="flex items-center justify-between">
-                      <span>Total Floors</span>
-                      <span className="font-semibold">{property.totalFloors}</span>
-                    </div>
-                  )}
-                  {showFacing && (
-                    <div className="flex items-center justify-between">
-                      <span>Facing</span>
-                      <span className="font-semibold capitalize">{property.facing}</span>
-                    </div>
-                  )}
-                  {showRoad && (
-                    <div className="flex items-center justify-between">
-                      <span>Road Access (ft)</span>
-                      <span className="font-semibold">{property.roadAccessFt}</span>
-                    </div>
-                  )}
-                  {showLandmark && (
-                    <div className="flex items-center justify-between">
-                      <span>Landmark</span>
-                      <span className="font-semibold">{property.landmark}</span>
-                    </div>
-                  )}
-                  {showAvailability && (
-                    <div className="flex items-center justify-between">
-                      <span>Available From</span>
-                      <span className="font-semibold">{property.availabilityDate}</span>
-                    </div>
-                  )}
-                  {showDeposit && (
-                    <div className="flex items-center justify-between">
-                      <span>Deposit</span>
-                      <span className="font-semibold">
-                        {property.currency || "Rs"}{" "}
-                        {Number(property.deposit || 0).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Amenities */}
           <div className="mt-6 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-extrabold text-slate-900">Amenities</div>
+              <div className="text-sm font-extrabold text-slate-900">
+                Amenities
+              </div>
               <div className="text-xs font-semibold text-slate-500">
                 {amenities.length} selected
               </div>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {[
-                "Parking",
-                "Water",
-                "Electricity Backup",
-                "Security",
-                "Lift",
-                "Wifi",
-                "AC",
-                "Balcony",
-                "Garden",
-                "Gym",
-              ].map((a) => {
+              {AMENITIES.map((a) => {
                 const enabled = amenities.includes(a);
                 return (
                   <div
@@ -797,6 +875,7 @@ function BuyerPropertyDetailsView({
           {/* Actions */}
           <div className="mt-8 flex flex-wrap justify-end gap-3">
             <button
+              type="button"
               onClick={handleOpenSchedule}
               className="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
             >
@@ -804,6 +883,7 @@ function BuyerPropertyDetailsView({
             </button>
 
             <button
+              type="button"
               onClick={handleContactAgent}
               className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-black/5 hover:bg-emerald-50"
             >
@@ -812,7 +892,9 @@ function BuyerPropertyDetailsView({
           </div>
 
           {/* Similar properties */}
-          <h3 className="mt-10 text-xl font-extrabold text-slate-900">Similar Properties</h3>
+          <h3 className="mt-10 text-xl font-extrabold text-slate-900">
+            Similar Properties
+          </h3>
 
           <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {(similar.length ? similar : []).map((p) => {
@@ -833,8 +915,9 @@ function BuyerPropertyDetailsView({
                       {p.title}
                     </div>
                     <div className="mt-2 text-xs font-semibold text-emerald-700">
-                      {(p.currency || "Rs")} {Number(p.price || 0).toLocaleString()} ·{" "}
-                      {p.beds || 0} Beds · {p.baths || 0} Baths · {p.sqft || 0} sqft
+                      {(p.currency || "Rs")}{" "}
+                      {Number(p.price || 0).toLocaleString()} · {p.beds || 0} Beds
+                      · {p.baths || 0} Baths · {p.sqft || 0} sqft
                     </div>
                     <div className="mt-1 text-xs text-slate-600 line-clamp-1">
                       {p.address || p.location || ""}
@@ -855,11 +938,15 @@ function BuyerPropertyDetailsView({
         {/* Right sticky panel */}
         <aside className="lg:col-span-4">
           <div className="sticky top-6 space-y-4">
-            {/* ✅ NEW: Contact Agent Card + Pay Advance */}
+            {/* Contact Agent Card + Pay Advance */}
             <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-extrabold text-slate-900">Contact Agent</h3>
-                <span className="text-xs font-semibold text-slate-500">Seller/Agent</span>
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  Contact Agent
+                </h3>
+                <span className="text-xs font-semibold text-slate-500">
+                  Seller/Agent
+                </span>
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -897,9 +984,10 @@ function BuyerPropertyDetailsView({
                   </button>
                 )}
 
+                {/* Pay Advance */}
                 <button
                   type="button"
-                  onClick={() => router.push(`/buyer/property/${property?._id}/payment`)}
+                  onClick={goToPayment}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-900 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-950"
                 >
                   <CreditCard className="h-4 w-4" />
@@ -907,8 +995,20 @@ function BuyerPropertyDetailsView({
                 </button>
 
                 <p className="text-xs text-slate-500">
-                  Reservation expires automatically if payment is not completed within 24 hours.
+                  Reservation expires automatically if payment is not completed
+                  within 24 hours.
                 </p>
+
+                {showAdvance && (
+                  <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-700 ring-1 ring-slate-200">
+                    <div className="font-extrabold text-slate-900">
+                      Advance Amount
+                    </div>
+                    <div className="mt-1">
+                      {money(property?.currency, property?.advanceAmount)}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -924,7 +1024,8 @@ function BuyerPropertyDetailsView({
               {success && (
                 <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-4">
                   <p className="text-sm font-semibold text-green-800">
-                    Your inquiry has been sent successfully! The seller will contact you soon.
+                    Your inquiry has been sent successfully! The seller will
+                    contact you soon.
                   </p>
                 </div>
               )}
@@ -946,7 +1047,10 @@ function BuyerPropertyDetailsView({
                       required
                       value={formData.name}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, name: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
                       }
                       className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="Your full name"
@@ -962,7 +1066,10 @@ function BuyerPropertyDetailsView({
                       required
                       value={formData.email}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, email: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
                       }
                       className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="your.email@example.com"
@@ -977,7 +1084,10 @@ function BuyerPropertyDetailsView({
                       type="tel"
                       value={formData.phone}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          phone: e.target.value,
+                        }))
                       }
                       className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="+977 98XXXXXXXX"
@@ -994,7 +1104,10 @@ function BuyerPropertyDetailsView({
                       rows={4}
                       value={formData.message}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, message: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          message: e.target.value,
+                        }))
                       }
                       className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="I'm interested in this property..."
@@ -1034,6 +1147,7 @@ function BuyerPropertyDetailsView({
                 Schedule a Visit
               </h3>
               <button
+                type="button"
                 onClick={() => setOpenSchedule(false)}
                 className="grid h-9 w-9 place-items-center rounded-xl hover:bg-slate-100"
                 aria-label="Close"
@@ -1121,6 +1235,7 @@ function BuyerPropertyDetailsView({
 
             <div className="mt-5 flex gap-3">
               <button
+                type="button"
                 onClick={() => setOpenSchedule(false)}
                 className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
@@ -1128,9 +1243,10 @@ function BuyerPropertyDetailsView({
               </button>
 
               <button
+                type="button"
                 onClick={submitScheduleVisit}
                 disabled={scheduleLoading}
-                className="flex-1 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {scheduleLoading ? "Sending..." : "Request Visit"}
               </button>
@@ -1145,6 +1261,9 @@ function BuyerPropertyDetailsView({
 export default function PropertyDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const preview = searchParams?.get("preview") === "1";
 
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -1154,25 +1273,43 @@ export default function PropertyDetailsPage() {
     const fetchData = async () => {
       try {
         setFatalError("");
+        setLoading(true);
 
-        const propertyResponse = await apiFetch<{ success: boolean; property: any }>(
-          `/properties/${params.id}`
+        const qs = preview ? "?preview=1" : "";
+        const propertyResponse = await apiFetch<any>(
+          `/properties/${params.id}${qs}`
         );
 
-        if (propertyResponse.success) {
-          setProperty(propertyResponse.property);
+        // ✅ support multiple backend response shapes
+        const p =
+          propertyResponse?.property ||
+          propertyResponse?.data?.property ||
+          propertyResponse?.data ||
+          propertyResponse?.item ||
+          propertyResponse;
+
+        if (propertyResponse?.success === false) {
+          setFatalError(propertyResponse?.message || "Property not found");
+          setProperty(null);
+          return;
+        }
+
+        if (p && (p._id || p.id)) {
+          setProperty(p);
         } else {
           setFatalError("Property not found");
+          setProperty(null);
         }
       } catch (err: any) {
-        setFatalError(err.message || "Failed to load data");
+        setFatalError(err?.message || "Failed to load data");
+        setProperty(null);
       } finally {
         setLoading(false);
       }
     };
 
-    if (params.id) fetchData();
-  }, [params.id]);
+    if (params?.id) fetchData();
+  }, [params?.id, preview]);
 
   if (loading) {
     return (
@@ -1191,6 +1328,7 @@ export default function PropertyDetailsPage() {
         <div className="text-center">
           <p className="text-red-600">{fatalError}</p>
           <button
+            type="button"
             onClick={() => router.back()}
             className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700"
           >
@@ -1201,5 +1339,5 @@ export default function PropertyDetailsPage() {
     );
   }
 
-  return <BuyerPropertyDetailsView property={property} paramsId={params.id} />;
+  return <BuyerPropertyDetailsView property={property} paramsId={params?.id} />;
 }

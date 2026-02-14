@@ -8,7 +8,6 @@ import { apiFetch } from "@/app/lib/api";
 import AdminHeader from "@/components/admin/AdminHeader";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
-
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -26,7 +25,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         const role = (res?.user?.role || "").toLowerCase();
         const ok = role === "admin" || role === "superadmin";
 
-        // Only admin/superadmin can stay in /admin/*
         if (!ok) {
           if (role === "buyer") {
             router.replace("/buyer/buyer-dashboard");
@@ -63,11 +61,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4fbf7]">
+    <div className="h-screen bg-[#f4fbf7] overflow-hidden">
+      {/* Fixed Header */}
       <AdminHeader />
-      <div className="flex">
+
+      {/* Body Area */}
+      <div className="flex h-[calc(100vh-64px)]">
+        {/* Fixed Sidebar */}
         <AdminSidebar />
-        <main className="w-full px-10 py-8">{children}</main>
+
+        {/* Scrollable Content */}
+        <main className="w-full overflow-y-auto px-10 py-8">
+          {children}
+        </main>
       </div>
     </div>
   );

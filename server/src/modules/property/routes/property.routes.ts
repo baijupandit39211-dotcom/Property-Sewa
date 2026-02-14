@@ -15,6 +15,9 @@ router.get("/mine", requireUserAuth, propertyController.getMyProperties);
 // seller: get my property by id (MUST be before "/:id")
 router.get("/mine/:id", requireUserAuth, propertyController.getMyPropertyById);
 
+// ✅ PREVIEW route (seller can view pending in buyer-style page if needed)
+router.get("/preview/:id", requireUserAuth, propertyController.previewById);
+
 // ✅ admin routes MUST be before "/:id"
 router.get("/admin/pending", requireAdminAuth, requireAdminRole, propertyController.listPending);
 router.patch("/admin/:id/approve", requireAdminAuth, requireAdminRole, propertyController.approve);
