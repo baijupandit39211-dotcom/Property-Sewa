@@ -54,8 +54,27 @@ const activities = [
 export default function SellerDashboardPage() {
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userLoading, setUserLoading] = useState(true);
+  const [userName, setUserName] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
 
   useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const me = await apiFetch<{ success: boolean; user?: { name?: string; email?: string } }>(
+          "/auth/me"
+        );
+        if (me?.user) {
+          setUserName(me.user.name || "");
+          setUserEmail(me.user.email || "");
+        }
+      } catch (err) {
+        console.error("Failed to fetch current user:", err);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
     const fetchProperties = async () => {
       try {
         const response = await apiFetch<{success: boolean; items: any[]}>("/properties/mine");
@@ -78,6 +97,7 @@ export default function SellerDashboardPage() {
     };
 
     fetchProperties();
+    fetchMe();
   }, []);
 
   // Compute stats from real data
@@ -102,9 +122,13 @@ export default function SellerDashboardPage() {
       className="w-full min-w-0 max-w-6xl space-y-10 mx-auto"
     >
       <header className="space-y-2">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-          Welcome back, Sarah
-        </h1>
+        {!userLoading ? (
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+            Welcome back, {userName || userEmail || "User"}
+          </h1>
+        ) : (
+          <div className="h-8 w-56 animate-pulse rounded-xl bg-slate-200" />
+        )}
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

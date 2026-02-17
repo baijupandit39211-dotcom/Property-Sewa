@@ -1,9 +1,28 @@
 "use client";
 
-import React from "react";
-import { Bell, Search, User } from "lucide-react";
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Bell, Search, LogOut } from "lucide-react";
+import { logoutUser } from "@/app/lib/auth";
 
 export default function SellerHeader() {
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await logoutUser();
+    } catch (err) {
+      console.error("Logout failed", err);
+    } finally {
+      setLoggingOut(false);
+      router.replace("/login");
+      router.refresh();
+    }
+  };
+
   return (
     <header className="flex h-16 items-center justify-between bg-[#2F6B4A] px-6 text-white shadow-md">
       <div className="flex items-center gap-3">
@@ -28,9 +47,21 @@ export default function SellerHeader() {
         <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]">
           <Bell className="h-4 w-4" />
         </button>
-        <div className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30">
-          <User className="h-4 w-4" />
-        </div>
+        <Link
+          href="/seller/profile"
+          className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
+          aria-label="Seller profile"
+        >
+          <span className="text-sm font-extrabold">S</span>
+        </Link>
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <LogOut className="h-4 w-4" />
+          {loggingOut ? "Logging out..." : "Logout"}
+        </button>
       </div>
     </header>
   );

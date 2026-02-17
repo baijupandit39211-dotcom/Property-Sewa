@@ -6,18 +6,17 @@ import { sendWelcomeEmail, sendResetPasswordEmail } from "../../../services/emai
  * Cookie options for SETTING cookies
  */
 const getCookieOptions = () => {
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+  const sameSite = isProd ? ("none" as const) : ("lax" as const);
   const options = {
     httpOnly: true as const,
-    sameSite: "lax" as const,
-    secure: false, // false for localhost
+    sameSite,
+    secure: isProd,
     maxAge: Number(process.env.COOKIE_MAX_AGE_MS) || 7 * 24 * 60 * 60 * 1000,
     path: "/",
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
   };
-
-  if (process.env.NODE_ENV === "production") {
-    options.secure = true;
-  }
-
   return options;
 };
 
@@ -25,17 +24,16 @@ const getCookieOptions = () => {
  * Cookie options for CLEARING cookies (NO maxAge)
  */
 const getClearCookieOptions = () => {
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+  const sameSite = isProd ? ("none" as const) : ("lax" as const);
   const options = {
     httpOnly: true as const,
-    sameSite: "lax" as const,
-    secure: false,
+    sameSite,
+    secure: isProd,
     path: "/",
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
   };
-
-  if (process.env.NODE_ENV === "production") {
-    options.secure = true;
-  }
-
   return options;
 };
 

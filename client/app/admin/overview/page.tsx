@@ -20,6 +20,7 @@ import {
   Clock,
   DollarSign,
   ArrowUpRight,
+  Sparkles,
 } from "lucide-react";
 
 type Property = {
@@ -136,9 +137,16 @@ async function tryPropertyMount<T>(
   }
 }
 
-function CardShell({ children }: { children: React.ReactNode }) {
+function CardShell({ children, tone = "slate" }: { children: React.ReactNode; tone?: "slate" | "emerald" | "sky" }) {
+  const ring =
+    tone === "emerald"
+      ? "border-emerald-100 shadow-emerald-100/60"
+      : tone === "sky"
+        ? "border-sky-100 shadow-sky-100/60"
+        : "border-slate-200 shadow-slate-100";
+
   return (
-    <div className="rounded-3xl bg-white ring-1 ring-zinc-200 shadow-sm">
+    <div className={`rounded-2xl border bg-white shadow-sm ${ring}`}>
       {children}
     </div>
   );
@@ -151,7 +159,6 @@ function StatCard({
   icon: Icon,
   accent = "emerald",
   subtitle,
-  bgImage = false,
 }: {
   title: string;
   value: string;
@@ -159,41 +166,30 @@ function StatCard({
   icon: any;
   accent?: "emerald" | "slate";
   subtitle?: string;
-  bgImage?: boolean;
 }) {
-  const accentRing =
-    accent === "emerald" ? "ring-emerald-100 bg-emerald-50" : "ring-zinc-200 bg-zinc-100";
-
+  // Dark forest card styling (UI-only)
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-white p-5 ring-1 ring-zinc-200 shadow-sm">
-      {/* soft glow */}
-      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-emerald-200/40 blur-2xl" />
+    <div className="relative overflow-hidden rounded-2xl border border-emerald-900/60 bg-[#1f3b2d] shadow-sm shadow-emerald-900/40">
+      <div className="pointer-events-none absolute -right-12 -top-10 h-28 w-28 rounded-full bg-emerald-700/25 blur-3xl" />
+      <div className="pointer-events-none absolute -left-14 -bottom-14 h-24 w-24 rounded-full bg-emerald-500/20 blur-2xl" />
 
-      {/* optional “image overlay” feel like reference */}
-      {bgImage ? (
-        <div className="pointer-events-none absolute inset-0 opacity-[0.06]">
-          <div className="h-full w-full bg-gradient-to-br from-zinc-900 to-transparent" />
-        </div>
-      ) : null}
-
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-center justify-between p-5">
         <div>
-          <p className="text-xs font-semibold text-zinc-500">{title}</p>
-          <p className="mt-2 text-3xl font-extrabold text-zinc-900">{value}</p>
-
+          <p className="text-xs font-semibold text-emerald-100/90">{title}</p>
+          <p className="mt-2 text-3xl font-extrabold text-white">{value}</p>
           <div className="mt-2 flex items-center gap-2">
             {delta ? (
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700">
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-300">
                 <ArrowUpRight className="h-4 w-4" />
                 {delta}
               </span>
             ) : null}
-            {subtitle ? <span className="text-xs text-zinc-500">{subtitle}</span> : null}
+            {subtitle ? <span className="text-xs text-emerald-100/80">{subtitle}</span> : null}
           </div>
         </div>
 
-        <div className={`rounded-2xl p-3 ring-1 ${accentRing}`}>
-          <Icon className="h-5 w-5 text-emerald-700" />
+        <div className="rounded-xl bg-white/10 p-3 ring-1 ring-emerald-700/50">
+          <Icon className="h-5 w-5 text-emerald-100" />
         </div>
       </div>
     </div>
@@ -334,54 +330,64 @@ export default function AdminOverviewPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-56 rounded-xl bg-zinc-200/60" />
+        <div className="h-8 w-56 rounded-xl bg-slate-200/70" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-3xl bg-white ring-1 ring-zinc-200 shadow-sm" />
+            <div key={i} className="h-28 rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm" />
           ))}
         </div>
-        <div className="h-80 rounded-3xl bg-white ring-1 ring-zinc-200 shadow-sm" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="h-64 rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm" />
+          <div className="h-64 rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm" />
+        </div>
+        <div className="h-80 rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm" />
       </div>
     );
   }
 
   if (err) {
     return (
-      <div className="rounded-3xl bg-white p-6 ring-1 ring-zinc-200">
-        <div className="text-lg font-extrabold text-zinc-900">Dashboard Error</div>
-        <p className="mt-2 text-sm text-zinc-600">{err}</p>
-        <p className="mt-2 text-xs text-zinc-500">
-          Check NEXT_PUBLIC_API_URL and whether routes mount at /properties or /api/properties.
-        </p>
-      </div>
+      <CardShell>
+        <div className="p-6">
+          <div className="text-lg font-extrabold text-slate-900">Dashboard Error</div>
+          <p className="mt-2 text-sm text-slate-600">{err}</p>
+          <p className="mt-2 text-xs text-slate-500">
+            Check NEXT_PUBLIC_API_URL and whether routes mount at /properties or /api/properties.
+          </p>
+        </div>
+      </CardShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* title */}
-      <div className="flex items-end justify-between gap-4">
+    <div className="space-y-8 bg-gradient-to-br from-slate-50 via-white to-emerald-50/60 p-1">
+      {/* Header */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900">Admin Dashboard</h1>
-          <p className="mt-1 text-sm text-zinc-500">Admin / Dashboard</p>
+          <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 shadow-sm">
+            <Sparkles className="h-3.5 w-3.5" /> Overview
+          </div>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">
+            Admin Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">Admin / Dashboard</p>
         </div>
         <button
           onClick={load}
-          className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-zinc-900 ring-1 ring-zinc-200 hover:bg-zinc-50"
+          className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-emerald-600 transition hover:bg-emerald-700"
         >
           Refresh
         </button>
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Users"
           value="—"
           delta="8.1%"
           icon={Users}
           subtitle="Total Users"
-          bgImage
         />
         <StatCard
           title="Active Listings"
@@ -389,57 +395,98 @@ export default function AdminOverviewPage() {
           delta="18.2%"
           icon={Home}
           subtitle="Active Listings"
-          bgImage
         />
         <StatCard
           title="Pending Approvals"
           value={fmt(pendingRows.length)}
           icon={Clock}
-          subtitle="Pending Approvals"
+          subtitle="Awaiting review"
         />
         <StatCard
           title="Total Revenue"
           value={`$${money(totalRevenue)}`}
           delta="6.4%"
           icon={DollarSign}
-          subtitle="Revenue"
-          bgImage
+          subtitle="Derived from activity"
         />
+      </div>
 
-        <CardShell>
-          <div className="p-5">
-            <div className="text-sm font-extrabold text-zinc-900">Weekly Activity</div>
-            <div className="mt-3 h-20">
+      {/* Charts row */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <CardShell tone="emerald">
+          <div className="flex items-start justify-between px-5 py-4">
+            <div>
+              <div className="text-lg font-extrabold text-slate-900">Visitors & Leads</div>
+              <div className="text-xs text-slate-500">Derived from approvals vs pending</div>
+            </div>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+              Last 8 weeks
+            </span>
+          </div>
+          <div className="px-2 pb-5 sm:px-4">
+            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={weeklyActivity}>
-                  <Line type="monotone" dataKey="v1" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="v2" strokeWidth={2} dot={false} />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="v1" strokeWidth={3} stroke="#10b981" dot={false} />
+                  <Line type="monotone" dataKey="v2" strokeWidth={3} stroke="#0ea5e9" dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
         </CardShell>
+
+        <CardShell tone="sky">
+          <div className="flex items-start justify-between px-5 py-4">
+            <div>
+              <div className="text-lg font-extrabold text-slate-900">Revenue Trend</div>
+              <div className="text-xs text-slate-500">Placeholder until payments are wired</div>
+            </div>
+            <button className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+              View All
+            </button>
+          </div>
+          <div className="px-2 pb-5 sm:px-4">
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={revenueData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="#10b981" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-3 text-xs text-slate-500">
+              Tip: connect payments to show real revenue.
+            </div>
+          </div>
+        </CardShell>
       </div>
 
-      {/* main grid like reference */}
+      {/* Main content grid */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-        {/* Left: pending approvals */}
-        <div className="xl:col-span-8 space-y-6">
+        {/* Left column */}
+        <div className="space-y-6 xl:col-span-8">
           <CardShell>
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
               <div>
-                <h2 className="text-lg font-extrabold text-zinc-900">Listings Pending Approval</h2>
-                <p className="mt-1 text-xs text-zinc-500">Admin can approve/reject listings.</p>
+                <h2 className="text-lg font-extrabold text-slate-900">Listings Pending Approval</h2>
+                <p className="mt-1 text-xs text-slate-500">Admin can approve/reject listings.</p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setTab("all")}
                   className={[
-                    "rounded-xl px-3 py-1.5 text-sm font-semibold ring-1",
+                    "rounded-xl px-3 py-1.5 text-sm font-semibold ring-1 transition",
                     tab === "all"
-                      ? "bg-emerald-600 text-white ring-emerald-600"
-                      : "bg-white text-zinc-700 ring-zinc-200 hover:bg-zinc-50",
+                      ? "bg-emerald-600 text-white ring-emerald-600 shadow-sm"
+                      : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50",
                   ].join(" ")}
                 >
                   All ({pendingRows.length})
@@ -448,10 +495,10 @@ export default function AdminOverviewPage() {
                 <button
                   onClick={() => setTab("residential")}
                   className={[
-                    "rounded-xl px-3 py-1.5 text-sm font-semibold ring-1",
+                    "rounded-xl px-3 py-1.5 text-sm font-semibold ring-1 transition",
                     tab === "residential"
-                      ? "bg-emerald-600 text-white ring-emerald-600"
-                      : "bg-white text-zinc-700 ring-zinc-200 hover:bg-zinc-50",
+                      ? "bg-emerald-600 text-white ring-emerald-600 shadow-sm"
+                      : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50",
                   ].join(" ")}
                 >
                   Residential ({countsByKind.res || 0})
@@ -460,10 +507,10 @@ export default function AdminOverviewPage() {
                 <button
                   onClick={() => setTab("commercial")}
                   className={[
-                    "rounded-xl px-3 py-1.5 text-sm font-semibold ring-1",
+                    "rounded-xl px-3 py-1.5 text-sm font-semibold ring-1 transition",
                     tab === "commercial"
-                      ? "bg-emerald-600 text-white ring-emerald-600"
-                      : "bg-white text-zinc-700 ring-zinc-200 hover:bg-zinc-50",
+                      ? "bg-emerald-600 text-white ring-emerald-600 shadow-sm"
+                      : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50",
                   ].join(" ")}
                 >
                   Commercial ({countsByKind.com || 0})
@@ -475,7 +522,7 @@ export default function AdminOverviewPage() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="border-t border-zinc-100 bg-zinc-50/70 text-xs font-semibold text-zinc-600">
+                <thead className="border-t border-slate-100 bg-slate-50/80 text-xs font-semibold text-slate-600">
                   <tr>
                     <th className="px-5 py-3">Property</th>
                     <th className="px-5 py-3">Seller</th>
@@ -483,12 +530,12 @@ export default function AdminOverviewPage() {
                     <th className="px-5 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100">
+                <tbody className="divide-y divide-slate-100">
                   {filteredPending.map((p) => (
-                    <tr key={p.id} className="hover:bg-zinc-50/60">
+                    <tr key={p.id} className="transition hover:bg-slate-50/70">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-12 w-16 overflow-hidden rounded-xl ring-1 ring-zinc-200 bg-zinc-100">
+                          <div className="h-12 w-16 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
                             {p.image ? (
                               <img
                                 src={p.image}
@@ -498,28 +545,28 @@ export default function AdminOverviewPage() {
                             ) : null}
                           </div>
                           <div>
-                            <div className="font-bold text-zinc-900">{p.title}</div>
-                            <div className="text-xs text-emerald-700">✓ {p.location}</div>
+                            <div className="font-bold text-slate-900">{p.title}</div>
+                            <div className="text-xs font-semibold text-emerald-700">✓ {p.location}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="font-semibold text-zinc-900">{p.sellerName}</div>
-                        <div className="text-xs text-zinc-500">Seller</div>
+                        <div className="font-semibold text-slate-900">{p.sellerName}</div>
+                        <div className="text-xs text-slate-500">Seller</div>
                       </td>
-                      <td className="px-5 py-4 text-zinc-600">{p.date}</td>
+                      <td className="px-5 py-4 text-slate-600">{p.date}</td>
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => approve(p.id)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
                           >
                             <CheckCircle2 className="h-4 w-4" />
                             Approve
                           </button>
                           <button
                             onClick={() => reject(p.id)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700 ring-1 ring-red-200 hover:bg-red-100"
+                            className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700 ring-1 ring-red-200 transition hover:bg-red-100"
                           >
                             <XCircle className="h-4 w-4" />
                             Reject
@@ -531,7 +578,7 @@ export default function AdminOverviewPage() {
 
                   {filteredPending.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-zinc-500">
+                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-slate-500">
                         No listings in this category.
                       </td>
                     </tr>
@@ -541,39 +588,42 @@ export default function AdminOverviewPage() {
             </div>
           </CardShell>
 
-          {/* Left-bottom: “Listings & Leads” placeholder panel like reference */}
-          <CardShell>
+          <CardShell tone="sky">
             <div className="flex items-center justify-between px-5 py-4">
               <div>
-                <div className="text-lg font-extrabold text-zinc-900">Listings & Leads</div>
-                <div className="mt-1 text-xs text-zinc-500">You can plug leads endpoints here next.</div>
+                <div className="text-lg font-extrabold text-slate-900">Listings & Leads</div>
+                <div className="mt-1 text-xs text-slate-500">
+                  You can plug leads endpoints here next.
+                </div>
               </div>
-              <span className="rounded-xl bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 ring-1 ring-zinc-200">
+              <span className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
                 Last 7 days
               </span>
             </div>
 
-            <div className="px-5 pb-5 text-sm text-zinc-600">
-              When you paste your lead routes (`server/src/modules/lead/routes/lead.routes.ts`) I will show:
-              Recent Leads + Reported listings + transactions list exactly like the reference.
+            <div className="px-5 pb-5 text-sm text-slate-600">
+              When you paste your lead routes (`server/src/modules/lead/routes/lead.routes.ts`) I will
+              show: Recent Leads + Reported listings + transactions list exactly like the reference.
             </div>
           </CardShell>
         </div>
 
-        {/* Right column like reference: revenue chart + small cards */}
-        <div className="xl:col-span-4 space-y-6">
-          <CardShell>
+        {/* Right column */}
+        <div className="space-y-6 xl:col-span-4">
+          <CardShell tone="emerald">
             <div className="flex items-center justify-between px-5 py-4">
               <div>
-                <div className="text-lg font-extrabold text-zinc-900">Revenue</div>
-                <div className="mt-1 text-xs text-zinc-500">Derived from activity (replace with payments later)</div>
+                <div className="text-lg font-extrabold text-slate-900">Revenue</div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Derived from activity (replace with payments later)
+                </div>
               </div>
-              <button className="rounded-xl bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-100">
+              <button className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50">
                 View All
               </button>
             </div>
 
-            <div className="px-5 pb-5">
+            <div className="px-2 pb-5 sm:px-4">
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={revenueData}>
@@ -581,11 +631,11 @@ export default function AdminOverviewPage() {
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]} fill="#10b981" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-3 text-xs text-zinc-500">
+              <div className="mt-3 text-xs text-slate-500">
                 Tip: paste payment routes and we’ll show real total revenue.
               </div>
             </div>
@@ -593,25 +643,25 @@ export default function AdminOverviewPage() {
 
           <CardShell>
             <div className="flex items-center justify-between px-5 py-4">
-              <div className="text-lg font-extrabold text-zinc-900">Reports</div>
-              <button className="rounded-xl bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-100">
+              <div className="text-lg font-extrabold text-slate-900">Reports</div>
+              <button className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100">
                 View All
               </button>
             </div>
 
-            <div className="px-5 pb-5 text-sm text-zinc-600">
-              After we connect lead + payment routes, this section will list:
-              recent reports, transactions, and flagged listings like the reference.
+            <div className="px-5 pb-5 text-sm text-slate-600">
+              After we connect lead + payment routes, this section will list: recent reports,
+              transactions, and flagged listings like the reference.
             </div>
           </CardShell>
 
-          <CardShell>
+          <CardShell tone="emerald">
             <div className="p-5">
-              <div className="text-sm font-extrabold text-zinc-900">Revenue Summary</div>
-              <div className="mt-2 text-2xl font-extrabold text-zinc-900">
+              <div className="text-sm font-extrabold text-slate-900">Revenue Summary</div>
+              <div className="mt-2 text-2xl font-extrabold text-slate-900">
                 ${money(totalRevenue)}
               </div>
-              <div className="mt-1 text-xs text-zinc-500">Derived; replace with payments module</div>
+              <div className="mt-1 text-xs text-slate-500">Derived; replace with payments module</div>
             </div>
           </CardShell>
         </div>

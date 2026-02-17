@@ -19,10 +19,19 @@ const UserSchema = new Schema(
       default: "buyer",
     },
 
+    status: {
+      type: String,
+      enum: ["active", "inactive", "suspended"],
+      default: "active",
+      index: true,
+    },
+
     passwordHash: { type: String, default: "" },
     googleId: { type: String, default: "" },
     address: { type: String, default: "" },
     phone: { type: String, default: "" },
+    company: { type: String, default: "" },
+    bio: { type: String, default: "" },
 
     // ✅ NEW: reset password fields
     resetPasswordTokenHash: { type: String, default: "" },

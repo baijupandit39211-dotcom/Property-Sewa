@@ -19,6 +19,7 @@ import {
   Phone,
   CreditCard,
   ExternalLink,
+  Banknote, // ✅ ADD
 } from "lucide-react";
 
 const AMENITIES = [
@@ -79,6 +80,42 @@ function extractLatLngFromGoogleUrl(url: string) {
   const m = url.match(/@(-?\d+(\.\d+)?),(-?\d+(\.\d+)?)/);
   if (!m) return null;
   return { lat: m[1], lng: m[3] };
+}
+
+/**
+ * ✅ Availability logic (YOUR RULES)
+ * Available ✅  -> reservationStatus none/cancelled/expired OR reservedUntil already passed OR invalid/missing date
+ * Reserved 🟡   -> reservationStatus === "reserved" AND reservedUntil > now (must be valid future)
+ * Booked 🔴     -> reservationStatus === "paid"
+ */
+type Availability = "available" | "reserved" | "booked";
+
+// ✅ safer date parse: invalid -> 0
+function toTime(v: any) {
+  const t = new Date(v).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+function getAvailability(p: any): Availability {
+  const rs = String(p?.reservationStatus || "none").toLowerCase();
+  const until = p?.reservedUntil ? toTime(p.reservedUntil) : 0;
+  const now = Date.now();
+  const hasValidUntil = until > 0;
+
+  // 🔴 Booked
+  if (rs === "paid") return "booked";
+
+  // 🟡 Reserved ONLY if reserved + valid future reservedUntil
+  if (rs === "reserved" && hasValidUntil && until > now) return "reserved";
+
+  // ✅ Everything else -> available (including invalid/missing/past reservedUntil)
+  return "available";
+}
+
+function formatReservedUntil(p: any) {
+  const t = p?.reservedUntil ? new Date(p.reservedUntil).getTime() : 0;
+  if (!Number.isFinite(t) || t <= Date.now()) return "";
+  return new Date(t).toLocaleString();
 }
 
 function BuyerPropertyDetailsView({
@@ -150,6 +187,16 @@ function BuyerPropertyDetailsView({
   // ✅ seller info: support multiple shapes
   const seller =
     property?.seller || property?.createdBy || property?.owner || null;
+
+  // ✅ Availability (YOUR RULES) - UI only
+  const availability = useMemo(() => getAvailability(property), [property]);
+  const reservedUntilText = useMemo(
+    () => formatReservedUntil(property),
+    [property]
+  );
+  const isAvailable = availability === "available";
+  const isReserved = availability === "reserved";
+  const isBooked = availability === "booked";
 
   // ✅ first image as active
   useEffect(() => {
@@ -454,10 +501,16 @@ function BuyerPropertyDetailsView({
     );
   };
 
-  // ✅ pay advance button
+  // ✅ pay advance button (KEEP)
   const goToPayment = () => {
     if (!property?._id) return;
     router.push(`/buyer/property/${property._id}/payment`);
+  };
+
+  // ✅ NEW: go to COD page (functional)
+  const goToCOD = () => {
+    if (!property?._id) return;
+    router.push(`/buyer/property/${property._id}/reserve-cod`);
   };
 
   return (
@@ -498,12 +551,29 @@ function BuyerPropertyDetailsView({
               className="h-[420px] w-full object-cover"
             />
 
-            <div className="absolute left-5 top-5 flex items-center gap-2">
+            <div className="absolute left-5 top-5 flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-900 ring-1 ring-black/10">
                 {property?.status
                   ? String(property.status).toUpperCase()
                   : "FEATURED"}
               </span>
+
+              {isAvailable && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/95 px-3 py-1 text-xs font-semibold text-white ring-1 ring-emerald-700/40">
+                  ✅ Available
+                </span>
+              )}
+              {isReserved && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/95 px-3 py-1 text-xs font-semibold text-white ring-1 ring-amber-600/40">
+                  🟡 Reserved
+                </span>
+              )}
+              {isBooked && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-600/95 px-3 py-1 text-xs font-semibold text-white ring-1 ring-rose-700/40">
+                  🔴 Booked
+                </span>
+              )}
+
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/95 px-3 py-1 text-xs font-semibold text-white ring-1 ring-emerald-700/40">
                 <BadgeCheck className="h-4 w-4" />
                 Verified
@@ -560,6 +630,26 @@ function BuyerPropertyDetailsView({
               </div>
             </div>
           </div>
+
+          {(isReserved || isBooked) && (
+            <div
+              className={[
+                "mt-4 rounded-2xl px-4 py-3 text-sm ring-1",
+                isReserved
+                  ? "border-amber-200 bg-amber-50 text-amber-900 ring-amber-200"
+                  : "border-rose-200 bg-rose-50 text-rose-900 ring-rose-200",
+              ].join(" ")}
+            >
+              {isReserved ? (
+                <>
+                  ⏳ This property is currently reserved
+                  {reservedUntilText ? ` until ${reservedUntilText}` : ""}.
+                </>
+              ) : (
+                <>⛔ This property has been booked (confirmed).</>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -586,13 +676,15 @@ function BuyerPropertyDetailsView({
 
             {isRent && showMonthlyRent && (
               <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200">
-                For Rent · Monthly {money(property?.currency, property?.monthlyRent)}
+                For Rent · Monthly{" "}
+                {money(property?.currency, property?.monthlyRent)}
               </span>
             )}
 
             {showAdvance && (
               <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-slate-200">
-                Booking Advance: {money(property?.currency, property?.advanceAmount)}
+                Booking Advance:{" "}
+                {money(property?.currency, property?.advanceAmount)}
               </span>
             )}
           </div>
@@ -647,12 +739,7 @@ function BuyerPropertyDetailsView({
             {showGoogleMap ? (
               <>
                 <div className="mt-3 break-all rounded-xl bg-slate-50 p-3 text-xs text-slate-700 ring-1 ring-slate-200">
-                  {googleMapRaw}
-                  {mapCoords?.lat && mapCoords?.lng && (
-                    <div className="mt-1 text-[11px] font-semibold text-emerald-800">
-                      Detected coordinates: {mapCoords.lat},{mapCoords.lng}
-                    </div>
-                  )}
+                  {String(property?.landmark || "").trim()}
                 </div>
 
                 {mapEmbedUrl && (
@@ -681,13 +768,16 @@ function BuyerPropertyDetailsView({
                 Listing Overview
               </div>
               <span className="text-xs font-semibold text-slate-500">
-                {property?.propertyType || "—"} · {property?.listingType || "—"}
+                {property?.propertyType || "—"} ·{" "}
+                {property?.listingType || "—"}
               </span>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Price</div>
+                <div className="text-xs font-semibold text-slate-500">
+                  Price
+                </div>
                 <div className="mt-1 text-sm font-extrabold text-emerald-800">
                   {money(property?.currency, property?.price)}
                 </div>
@@ -734,14 +824,18 @@ function BuyerPropertyDetailsView({
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Facing</div>
+                <div className="text-xs font-semibold text-slate-500">
+                  Facing
+                </div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
                   {hasValue(property?.facing) ? String(property.facing) : "—"}
                 </div>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold text-slate-500">Floor</div>
+                <div className="text-xs font-semibold text-slate-500">
+                  Floor
+                </div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
                   {hasValue(property?.floor) ? property.floor : "—"}
                 </div>
@@ -770,54 +864,59 @@ function BuyerPropertyDetailsView({
                   Road Access (ft)
                 </div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {hasValue(property?.roadAccessFt) ? property.roadAccessFt : "—"}
+                  {hasValue(property?.roadAccessFt)
+                    ? property.roadAccessFt
+                    : "—"}
                 </div>
               </div>
             </div>
 
             {/* rent info block */}
-            {isRent && (showMonthlyRent || showDeposit || showAvailability) && (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
-                <div className="mb-3 text-sm font-extrabold text-emerald-900">
-                  Rent Details
+            {String(property?.listingType || "").toLowerCase() === "rent" &&
+              (hasValue(property?.monthlyRent) ||
+                hasValue(property?.deposit) ||
+                hasValue(property?.availabilityDate)) && (
+                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                  <div className="mb-3 text-sm font-extrabold text-emerald-900">
+                    Rent Details
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+                      <div className="text-xs font-semibold text-slate-500">
+                        Monthly Rent
+                      </div>
+                      <div className="mt-1 text-sm font-extrabold text-slate-900">
+                        {hasValue(property?.monthlyRent)
+                          ? money(property?.currency, property?.monthlyRent)
+                          : "—"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+                      <div className="text-xs font-semibold text-slate-500">
+                        Deposit
+                      </div>
+                      <div className="mt-1 text-sm font-extrabold text-slate-900">
+                        {hasValue(property?.deposit)
+                          ? money(property?.currency, property?.deposit)
+                          : "—"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+                      <div className="text-xs font-semibold text-slate-500">
+                        Available From
+                      </div>
+                      <div className="mt-1 text-sm font-extrabold text-slate-900">
+                        {hasValue(property?.availabilityDate)
+                          ? String(property?.availabilityDate).slice(0, 10)
+                          : "—"}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
-                    <div className="text-xs font-semibold text-slate-500">
-                      Monthly Rent
-                    </div>
-                    <div className="mt-1 text-sm font-extrabold text-slate-900">
-                      {showMonthlyRent
-                        ? money(property?.currency, property?.monthlyRent)
-                        : "—"}
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
-                    <div className="text-xs font-semibold text-slate-500">
-                      Deposit
-                    </div>
-                    <div className="mt-1 text-sm font-extrabold text-slate-900">
-                      {showDeposit
-                        ? money(property?.currency, property?.deposit)
-                        : "—"}
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
-                    <div className="text-xs font-semibold text-slate-500">
-                      Available From
-                    </div>
-                    <div className="mt-1 text-sm font-extrabold text-slate-900">
-                      {showAvailability
-                        ? String(property?.availabilityDate).slice(0, 10)
-                        : "—"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
 
             <div className="mt-4 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
               <div className="text-xs font-semibold text-slate-500">
@@ -898,7 +997,7 @@ function BuyerPropertyDetailsView({
 
           <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {(similar.length ? similar : []).map((p) => {
-              const img = getUniqueSimilarImage(p, usedSimilarImgs);
+              const img = getUniqueSimilarImage(p, new Set<string>());
               return (
                 <a
                   key={p._id}
@@ -938,7 +1037,7 @@ function BuyerPropertyDetailsView({
         {/* Right sticky panel */}
         <aside className="lg:col-span-4">
           <div className="sticky top-6 space-y-4">
-            {/* Contact Agent Card + Pay Advance */}
+            {/* Contact Agent Card + Pay Advance + COD */}
             <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-extrabold text-slate-900">
@@ -951,14 +1050,18 @@ function BuyerPropertyDetailsView({
 
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                  <div className="text-xs font-semibold text-slate-500">Name</div>
+                  <div className="text-xs font-semibold text-slate-500">
+                    Name
+                  </div>
                   <div className="mt-1 text-sm font-extrabold text-slate-900">
                     {seller?.name || "Not provided"}
                   </div>
                 </div>
 
                 <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                  <div className="text-xs font-semibold text-slate-500">Phone</div>
+                  <div className="text-xs font-semibold text-slate-500">
+                    Phone
+                  </div>
                   <div className="mt-1 text-sm font-extrabold text-slate-900">
                     {seller?.phone || "Not provided"}
                   </div>
@@ -984,22 +1087,79 @@ function BuyerPropertyDetailsView({
                   </button>
                 )}
 
-                {/* Pay Advance */}
+                {/* ✅ KEEP: Pay Advance (unchanged logic) */}
                 <button
                   type="button"
-                  onClick={goToPayment}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-900 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-950"
+                  onClick={() => {
+                    if (!isAvailable) return;
+                    goToPayment();
+                  }}
+                  disabled={!isAvailable}
+                  className={[
+                    "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold text-white transition",
+                    isAvailable
+                      ? "bg-emerald-900 hover:bg-emerald-950"
+                      : isReserved
+                      ? "bg-amber-500/80 cursor-not-allowed opacity-90"
+                      : "bg-rose-600/80 cursor-not-allowed opacity-90",
+                  ].join(" ")}
                 >
                   <CreditCard className="h-4 w-4" />
-                  Pay Advance
+                  {isAvailable
+                    ? "Pay Advance (Online)"
+                    : isReserved
+                    ? "Reserved (Payment Locked)"
+                    : "Booked (Payment Locked)"}
                 </button>
 
+                {/* ✅ NEW: Reserve with COD (functional) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isAvailable) return;
+                    goToCOD();
+                  }}
+                  disabled={!isAvailable}
+                  className={[
+                    "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold transition ring-1",
+                    isAvailable
+                      ? "bg-white text-emerald-900 ring-emerald-200 hover:bg-emerald-50"
+                      : isReserved
+                      ? "bg-amber-50 text-amber-900 ring-amber-200 cursor-not-allowed opacity-90"
+                      : "bg-rose-50 text-rose-900 ring-rose-200 cursor-not-allowed opacity-90",
+                  ].join(" ")}
+                >
+                  <Banknote className="h-4 w-4" />
+                  {isAvailable ? "Reserve with COD (Pay Later)" : "COD Locked"}
+                </button>
+
+                {isReserved && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    🟡 This property is reserved
+                    {reservedUntilText ? ` until ${reservedUntilText}` : ""}.
+                    <div className="mt-1 text-xs text-amber-800/80">
+                      Please try again later.
+                    </div>
+                  </div>
+                )}
+
+                {isBooked && (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+                    🔴 This property has been booked (confirmed).
+                    <div className="mt-1 text-xs text-rose-800/80">
+                      Explore similar properties below.
+                    </div>
+                  </div>
+                )}
+
+                {/* ✅ Better copy (does not change logic) */}
                 <p className="text-xs text-slate-500">
-                  Reservation expires automatically if payment is not completed
-                  within 24 hours.
+                  Online payment: reservation expires if payment is not completed
+                  within 24 hours. COD: reservation must be confirmed in person
+                  (shorter expiry).
                 </p>
 
-                {showAdvance && (
+                {hasValue(property?.advanceAmount) && (
                   <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-700 ring-1 ring-slate-200">
                     <div className="font-extrabold text-slate-900">
                       Advance Amount
@@ -1280,7 +1440,6 @@ export default function PropertyDetailsPage() {
           `/properties/${params.id}${qs}`
         );
 
-        // ✅ support multiple backend response shapes
         const p =
           propertyResponse?.property ||
           propertyResponse?.data?.property ||

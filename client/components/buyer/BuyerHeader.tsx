@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import { Bell, Search } from "lucide-react";
@@ -68,12 +69,16 @@ export default function BuyerHeader() {
             <Bell className="h-4 w-4" />
           </button>
 
-          {/* Avatar (matches screenshot small circle) */}
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-white text-slate-700 ring-1 ring-white/30">
+          {/* Avatar (matches screenshot small circle) now links to profile */}
+          <Link
+            href="/buyer/profile"
+            className="grid h-10 w-10 place-items-center rounded-lg bg-white text-slate-700 ring-1 ring-white/30 transition hover:scale-[1.02]"
+            aria-label="Buyer profile"
+          >
             <span className="text-sm font-extrabold">
-              {user?.name?.slice(0, 1)?.toUpperCase() || "U"}
+              {user?.name?.slice(0, 1)?.toUpperCase() || "B"}
             </span>
-          </div>
+          </Link>
 
           {/* Keep logout button if you want it visible (you said don’t change buttons) */}
           <button

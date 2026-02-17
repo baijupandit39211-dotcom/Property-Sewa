@@ -10,6 +10,9 @@ import sellerAnalyticsRoutes from "../modules/analytics/routes/seller.analytics.
 
 // ✅ Payments
 import paymentRoutes from "../modules/payments/routes/payment.routes";
+import reservationRoutes from "../modules/reservation/routes/reservation.routes";
+import adminUserRoutes from "../modules/admin-users/routes/adminUser.routes";
+import userRoutes from "../modules/users/routes/user.routes";
 
 const router = Router();
 
@@ -35,5 +38,11 @@ router.use("/analytics", sellerAnalyticsRoutes);
 
 // Payments
 router.use("/payments", paymentRoutes);
+router.use("/reservations", reservationRoutes);
+router.use("/api/reservations", reservationRoutes); // alias for frontend /api prefix
+router.use("/admin/users", adminUserRoutes);
+router.use("/api/admin/users", adminUserRoutes); // alias with /api prefix
+router.use("/users", userRoutes);
+router.use("/api/users", userRoutes); // alias for frontend /api prefix
 
 export default router;

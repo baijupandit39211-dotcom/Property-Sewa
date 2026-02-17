@@ -1,8 +1,9 @@
 import { ApiError } from "../../../utils/apiError";
 import Property from "../../../models/Property.model";
 import Payment from "../../../models/Payment.model";
+import Reservation from "../../../models/Reservation.model";
 
-function calcAdvanceAmount(property: any) {
+export function calcAdvanceAmount(property: any) {
   const explicit = Number(property.advanceAmount || 0);
   if (explicit > 0) return explicit;
 
@@ -168,6 +169,11 @@ export async function autoExpireReservations() {
   await Payment.updateMany(
     { status: "pending", expiresAt: { $lt: now } },
     { $set: { status: "expired" } }
+  );
+
+  await Reservation.updateMany(
+    { reservationStatus: "REQUESTED", holdExpiresAt: { $lt: now } },
+    { $set: { reservationStatus: "EXPIRED" } }
   );
 
   const expiredProps = await Property.find({
