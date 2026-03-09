@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt, { type JwtPayload, type Secret } from "jsonwebtoken";
+import User from "../../../models/User.model";
 
 type JwtPayloadShape = JwtPayload & {
   userId: string;
@@ -18,7 +19,7 @@ function verify(token: string) {
 }
 
 /** ✅ User auth (buyer/seller/agent) uses accessToken only */
-export function requireUserAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireUserAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const cookieName = process.env.COOKIE_NAME || "accessToken";
     const token = req.cookies?.[cookieName];
@@ -28,11 +29,23 @@ export function requireUserAuth(req: Request, res: Response, next: NextFunction)
     }
 
     const decoded = verify(token);
+    const user = await User.findById(decoded.userId).select("_id email role status").lean();
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    const status = String(user.status || "active").toLowerCase();
+    if (status === "suspended") {
+      return res.status(403).json({ success: false, message: "Your account is suspended" });
+    }
+    if (status === "inactive" || status === "archived") {
+      return res.status(403).json({ success: false, message: "Your account is archived" });
+    }
 
     req.user = {
-      userId: String(decoded.userId),
-      email: decoded.email,
-      role: decoded.role,
+      userId: String(user._id),
+      email: user.email,
+      role: user.role,
     };
 
     return next();
@@ -42,7 +55,7 @@ export function requireUserAuth(req: Request, res: Response, next: NextFunction)
 }
 
 /** ✅ Admin auth uses adminToken only */
-export function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const adminCookie = process.env.ADMIN_COOKIE_NAME || "adminToken";
     const token = req.cookies?.[adminCookie];
@@ -52,11 +65,23 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
     }
 
     const decoded = verify(token);
+    const user = await User.findById(decoded.userId).select("_id email role status").lean();
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Admin authentication required" });
+    }
+
+    const status = String(user.status || "active").toLowerCase();
+    if (status === "suspended") {
+      return res.status(403).json({ success: false, message: "Your account is suspended" });
+    }
+    if (status === "inactive" || status === "archived") {
+      return res.status(403).json({ success: false, message: "Your account is archived" });
+    }
 
     req.user = {
-      userId: String(decoded.userId),
-      email: decoded.email,
-      role: decoded.role,
+      userId: String(user._id),
+      email: user.email,
+      role: user.role,
     };
 
     return next();

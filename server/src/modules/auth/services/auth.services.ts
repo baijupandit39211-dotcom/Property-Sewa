@@ -42,6 +42,16 @@ function safeUser(u: any) {
   };
 }
 
+function assertUserIsActive(user: any) {
+  const status = String(user?.status || "active").toLowerCase();
+  if (status === "suspended") {
+    throw new ApiError(403, "Your account is suspended");
+  }
+  if (status === "inactive" || status === "archived") {
+    throw new ApiError(403, "Your account is archived");
+  }
+}
+
 async function register({
   name,
   email,
@@ -85,6 +95,7 @@ async function login({ email, password }: LoginInput) {
 
   const user = await User.findOne({ email: normalizedEmail });
   if (!user) throw new ApiError(400, "Invalid email or password");
+  assertUserIsActive(user);
 
   if (user.provider === "google") {
     throw new ApiError(
@@ -142,6 +153,7 @@ async function googleLogin(input: any) {
       avatar,
     });
   } else {
+    assertUserIsActive(user);
     if (user.role === "buyer" && validRole !== "buyer") {
       user.role = validRole;
     }

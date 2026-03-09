@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import AdActionsMenu from "@/app/property/[id]/_components/AdActionsMenu";
 import {
   Send,
   MapPin,
@@ -14,7 +15,6 @@ import {
   Clock,
   X,
   Heart,
-  Share2,
   BadgeCheck,
   Phone,
   CreditCard,
@@ -279,33 +279,6 @@ function BuyerPropertyDetailsView({
     }
   };
 
-  // ✅ Share
-  const shareProperty = async () => {
-    const url =
-      typeof window !== "undefined"
-        ? window.location.href
-        : `/buyer/property/${property?._id}`;
-
-    const text = `${property?.title || "Property"} — ${
-      property?.location || ""
-    }`;
-
-    try {
-      if ((navigator as any)?.share) {
-        await (navigator as any).share({
-          title: property?.title || "Property",
-          text,
-          url,
-        });
-      } else {
-        await navigator.clipboard.writeText(url);
-        alert("Link copied!");
-      }
-    } catch {
-      // ignore
-    }
-  };
-
   // ✅ Inquiry submit (KEEP)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -510,7 +483,7 @@ function BuyerPropertyDetailsView({
   // ✅ NEW: go to COD page (functional)
   const goToCOD = () => {
     if (!property?._id) return;
-    router.push(`/buyer/property/${property._id}/reserve-cod`);
+    router.push(`/buyer/property/${property._id}/advance-payment`);
   };
 
   return (
@@ -531,14 +504,11 @@ function BuyerPropertyDetailsView({
           {wishlisted ? "Saved" : "Add to Wishlist"}
         </button>
 
-        <button
-          type="button"
-          onClick={shareProperty}
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800"
-        >
-          <Share2 className="h-4 w-4" />
-          Share
-        </button>
+        <AdActionsMenu
+          adId={property?._id}
+          title={property?.title}
+          location={property?.location || property?.address}
+        />
       </div>
 
       {/* HERO */}

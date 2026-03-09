@@ -21,10 +21,11 @@ const UserSchema = new Schema(
 
     status: {
       type: String,
-      enum: ["active", "inactive", "suspended"],
+      enum: ["active", "suspended", "archived", "inactive"],
       default: "active",
       index: true,
     },
+    archivedAt: { type: Date, default: null },
 
     passwordHash: { type: String, default: "" },
     googleId: { type: String, default: "" },

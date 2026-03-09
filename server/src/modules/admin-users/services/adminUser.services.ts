@@ -2,8 +2,11 @@ import { ApiError } from "../../../utils/apiError";
 import User from "../../../models/User.model";
 import AuditLog from "../../../models/AuditLog.model";
 
-const ALLOWED_STATUSES = ["active", "inactive", "suspended"] as const;
+const ALLOWED_STATUSES = ["active", "archived", "suspended"] as const;
 const ALLOWED_ROLES = ["buyer", "seller", "agent", "admin", "superadmin"] as const;
+const SAFE_USER_FIELDS =
+  "_id name email avatar provider role status archivedAt phone address company bio createdAt updatedAt";
+const MAX_LEN = 500;
 
 type Actor = { userId: string; role: string };
 
@@ -19,6 +22,56 @@ function cannotTouchSuperAdmin(actorRole: string, targetRole: string) {
   return actorRole !== "superadmin" && targetRole === "superadmin";
 }
 
+function normalizeStatus(status?: string) {
+  const value = String(status || "").toLowerCase();
+  if (value === "inactive") return "archived";
+  return value;
+}
+
+function statusQuery(status?: string) {
+  const normalized = normalizeStatus(status);
+  if (!normalized) return undefined;
+  if (normalized === "archived") {
+    return { $in: ["archived", "inactive"] };
+  }
+  return normalized;
+}
+
+function toSafeUser(user: any) {
+  if (!user) return user;
+
+  const source = typeof user.toObject === "function" ? user.toObject() : user;
+  return {
+    _id: source._id,
+    name: source.name || "",
+    email: source.email || "",
+    avatar: source.avatar || "",
+    provider: source.provider || "",
+    role: source.role || "buyer",
+    status: normalizeStatus(source.status) || "active",
+    archivedAt: source.archivedAt || null,
+    phone: source.phone || "",
+    address: source.address || "",
+    company: source.company || "",
+    bio: source.bio || "",
+    createdAt: source.createdAt,
+    updatedAt: source.updatedAt,
+  };
+}
+
+function sanitizeString(value: any, max = MAX_LEN) {
+  if (value === undefined || value === null) return undefined;
+  const text = String(value).trim();
+  if (!text) return "";
+  return text.slice(0, max);
+}
+
+function normalizeEmail(value: any) {
+  if (value === undefined || value === null) return undefined;
+  const text = String(value).trim().toLowerCase();
+  return text || "";
+}
+
 export async function listUsers(params: {
   search?: string;
   role?: string;
@@ -31,31 +84,56 @@ export async function listUsers(params: {
   const limit = Math.min(100, Math.max(1, Number(params.limit || 20)));
   const skip = (page - 1) * limit;
 
-  const q: any = {};
+  const baseQuery: any = {};
+  const listQuery: any = {};
 
   if (search) {
-    q.$or = [
+    baseQuery.$or = [
       { name: { $regex: search, $options: "i" } },
       { email: { $regex: search, $options: "i" } },
       { phone: { $regex: search, $options: "i" } },
     ];
   }
 
-  if (role) q.role = normalizeRole(role);
-  if (status) q.status = normalizeRole(status);
+  if (role) baseQuery.role = normalizeRole(role);
+  Object.assign(listQuery, baseQuery);
+  if (status) {
+    const query = statusQuery(status);
+    if (query) listQuery.status = query;
+  }
 
-  const [items, total] = await Promise.all([
-    User.find(q).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-    User.countDocuments(q),
+  const [items, total, totalBase, active, archived, suspended] = await Promise.all([
+    User.find(listQuery)
+      .select(SAFE_USER_FIELDS)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    User.countDocuments(listQuery),
+    User.countDocuments(baseQuery),
+    User.countDocuments({ ...baseQuery, status: "active" }),
+    User.countDocuments({ ...baseQuery, status: { $in: ["archived", "inactive"] } }),
+    User.countDocuments({ ...baseQuery, status: "suspended" }),
   ]);
 
-  return { items, total, page, limit };
+  return {
+    items: items.map((item) => toSafeUser(item)),
+    total,
+    page,
+    limit,
+    stats: {
+      total: totalBase,
+      active,
+      archived,
+      suspended,
+    },
+  };
 }
 
 export async function getUserById(id: string) {
-  const user = await User.findById(id).lean();
+  const user = await User.findById(id).select(SAFE_USER_FIELDS).lean();
   if (!user) throw new ApiError(404, "User not found");
-  return user;
+  return toSafeUser(user);
 }
 
 export async function updateStatus(params: {
@@ -70,7 +148,7 @@ export async function updateStatus(params: {
   assertActor(actor);
 
   const actorRole = normalizeRole(actor.role);
-  const status = normalizeRole(params.status);
+  const status = normalizeStatus(params.status);
 
   if (!ALLOWED_STATUSES.includes(status as any)) {
     throw new ApiError(400, "Invalid status");
@@ -90,6 +168,11 @@ export async function updateStatus(params: {
 
   const before = user.status;
   user.status = status as any;
+  if (status === "archived") {
+    user.archivedAt = new Date();
+  } else {
+    user.archivedAt = null;
+  }
   await user.save();
 
   await AuditLog.create({
@@ -97,12 +180,16 @@ export async function updateStatus(params: {
     actorId: actor.userId,
     targetUserId,
     reason: params.reason || "",
-    metadata: { before, after: status },
+    metadata: {
+      before: normalizeStatus(before) || before,
+      after: status,
+      archivedAt: user.archivedAt,
+    },
     ip: params.ip || "",
     userAgent: params.userAgent || "",
   });
 
-  return user.toObject();
+  return toSafeUser(user);
 }
 
 export async function updateRole(params: {
@@ -147,5 +234,76 @@ export async function updateRole(params: {
     userAgent: params.userAgent || "",
   });
 
-  return user.toObject();
+  return toSafeUser(user);
+}
+
+export async function updateUserDetails(params: {
+  actor: Actor;
+  targetUserId: string;
+  body: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    company?: string;
+    bio?: string;
+  };
+  reason?: string;
+  ip?: string;
+  userAgent?: string;
+}) {
+  const { actor, targetUserId, body } = params;
+  assertActor(actor);
+
+  const actorRole = normalizeRole(actor.role);
+  const user = await User.findById(targetUserId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const targetRole = normalizeRole(user.role);
+  if (cannotTouchSuperAdmin(actorRole, targetRole)) {
+    throw new ApiError(403, "Admins cannot modify a superadmin");
+  }
+
+  const nextEmail = normalizeEmail(body.email);
+  if (nextEmail !== undefined) {
+    if (!nextEmail) throw new ApiError(400, "Email is required");
+    const existing = await User.findOne({ email: nextEmail, _id: { $ne: targetUserId } });
+    if (existing) throw new ApiError(400, "Email already exists");
+    user.email = nextEmail;
+  }
+
+  const updates = {
+    name: sanitizeString(body.name, 120),
+    phone: sanitizeString(body.phone, 40),
+    address: sanitizeString(body.address, 200),
+    company: sanitizeString(body.company, 160),
+    bio: sanitizeString(body.bio, 500),
+  };
+
+  if (updates.name !== undefined) user.name = updates.name;
+  if (updates.phone !== undefined) user.phone = updates.phone;
+  if (updates.address !== undefined) user.address = updates.address;
+  if (updates.company !== undefined) user.company = updates.company;
+  if (updates.bio !== undefined) user.bio = updates.bio;
+
+  await user.save();
+
+  await AuditLog.create({
+    action: "user.profile.updated",
+    actorId: actor.userId,
+    targetUserId,
+    reason: params.reason || "",
+    metadata: {
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      address: user.address,
+      company: user.company,
+      bio: user.bio,
+    },
+    ip: params.ip || "",
+    userAgent: params.userAgent || "",
+  });
+
+  return toSafeUser(user);
 }

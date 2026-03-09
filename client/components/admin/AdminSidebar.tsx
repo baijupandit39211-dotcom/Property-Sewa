@@ -53,7 +53,10 @@ function Section({ title, items }: { title: string; items: Item[] }) {
             key={it.href}
             href={it.href}
             label={it.label}
-            active={pathname === it.href}
+            active={
+              pathname === it.href ||
+              (it.href !== "/admin/overview" && pathname.startsWith(`${it.href}/`))
+            }
           />
         ))}
       </div>
@@ -77,7 +80,7 @@ export default function AdminSidebar() {
           { label: "Users Management", href: "/admin/users" },
           { label: "Listings Approval", href: "/admin/listings-approval" },
           { label: "Recent Activity", href: "/admin/recent-activity" },
-          { label: "Leads", href: "/admin/leads" },
+          { label: "Reports", href: "/admin/reports" },
           { label: "Settings", href: "/admin/settings" },
         ]}
       />

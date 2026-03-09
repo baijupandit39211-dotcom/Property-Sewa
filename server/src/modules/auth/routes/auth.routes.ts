@@ -190,6 +190,7 @@ router.get("/admin/me", requireAdminAuth, authController.adminMe);
  *       401: { description: Not authenticated }
  */
 router.patch("/change-password", requireUserAuth, authController.changePassword);
+router.patch("/admin/change-password", requireAdminAuth, authController.changePassword);
 
 /**
  * ✅ Forgot password (send reset link email)

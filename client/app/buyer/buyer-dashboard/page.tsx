@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import {
   BookmarkCheck,
   ChevronLeft,
@@ -16,6 +16,8 @@ import {
 
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
+import AdActionsMenu from "@/app/property/[id]/_components/AdActionsMenu";
+import ReportAdModal from "@/app/property/[id]/_components/ReportAdModal";
 
 type ListResponse = {
   success: boolean;
@@ -48,9 +50,13 @@ function writeIds(key: string, ids: string[]) {
   localStorage.setItem(key, JSON.stringify({ ids }));
 }
 
-const pageEnter = {
+const pageEnter: Variants = {
   hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+  },
 };
 
 /** ---------- UI: toast ---------- */
@@ -77,6 +83,10 @@ export default function BuyerDashboardPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [reportModal, setReportModal] = useState<{ open: boolean; adId: string | null }>({
+    open: false,
+    adId: null,
+  });
 
   // ✅ toast popup
   const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
@@ -163,6 +173,10 @@ export default function BuyerDashboardPage() {
   const recommended = useMemo(() => properties.slice(4, 7), [properties]);
   const recent = useMemo(() => properties.slice(0, 2), [properties]);
 
+  const handleOpenReport = (input: { adId?: string | null }) => {
+    setReportModal({ open: true, adId: input.adId || null });
+  };
+
   return (
     <motion.main
       initial="hidden"
@@ -170,6 +184,11 @@ export default function BuyerDashboardPage() {
       variants={pageEnter}
       className="w-full min-w-0 space-y-10"
     >
+      <ReportAdModal
+        adId={reportModal.adId}
+        open={reportModal.open}
+        onClose={() => setReportModal({ open: false, adId: null })}
+      />
       <Toast show={toast.show} text={toast.text} />
 
       {/* ✅ Hero */}
@@ -250,6 +269,7 @@ export default function BuyerDashboardPage() {
               compareOn={compareSet.has(p._id)}
               comparePop={!!comparePopIds[p._id]}
               onToggleCompare={() => toggleCompare(p._id)}
+              onReport={handleOpenReport}
             />
           ))}
         </div>
@@ -276,6 +296,7 @@ export default function BuyerDashboardPage() {
               compareOn={compareSet.has(p._id)}
               comparePop={!!comparePopIds[p._id]}
               onToggleCompare={() => toggleCompare(p._id)}
+              onReport={handleOpenReport}
             />
           ))}
         </div>
@@ -414,6 +435,7 @@ function PropertyCard({
   compareOn,
   comparePop,
   onToggleCompare,
+  onReport,
 }: {
   p: Property;
   showMeta: boolean;
@@ -424,6 +446,7 @@ function PropertyCard({
   compareOn: boolean;
   comparePop: boolean;
   onToggleCompare: () => void;
+  onReport: (input: { adId?: string | null; title?: string; location?: string }) => void;
 }) {
   return (
     <motion.div
@@ -452,6 +475,23 @@ function PropertyCard({
         {compareOn ? "Comparing" : "Compare"}
       </button>
 
+      {/* Kebab menu */}
+      <div
+        className="absolute right-3 top-3 z-20"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <AdActionsMenu
+          adId={p._id}
+          title={p.title}
+          location={p.location || p.address}
+          variant="icon"
+          onReport={onReport}
+        />
+      </div>
+
       {/* Wishlist icon */}
       <button
         type="button"
@@ -461,7 +501,7 @@ function PropertyCard({
           onToggleWish();
         }}
         className={[
-          "absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full ring-1 transition active:scale-95",
+          "absolute left-3 top-14 z-10 grid h-10 w-10 place-items-center rounded-full ring-1 transition active:scale-95",
           wishSaved
             ? "bg-emerald-600 text-white ring-emerald-600"
             : "bg-white/90 text-slate-700 ring-black/10 hover:bg-white",
@@ -470,9 +510,7 @@ function PropertyCard({
         title={wishSaved ? "Saved" : "Save"}
         aria-label="Toggle wishlist"
       >
-        <Heart
-          className={["h-5 w-5", wishSaved ? "fill-white" : ""].join(" ")}
-        />
+        <Heart className={["h-5 w-5", wishSaved ? "fill-white" : ""].join(" ")} />
       </button>
 
       <a

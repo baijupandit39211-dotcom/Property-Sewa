@@ -213,6 +213,16 @@ async function rejectProperty(id: string, adminUserId: string) {
   return p;
 }
 
+async function restoreProperty(id: string, adminUserId: string) {
+  const p = await Property.findById(id);
+  if (!p) throw new ApiError(404, "Property not found");
+
+  p.status = "active";
+  p.approvedBy = adminUserId as any;
+  await p.save();
+  return p;
+}
+
 async function updateProperty(id: string, userId: string, updates: any) {
   const property = await Property.findById(id);
   if (!property) throw new ApiError(404, "Property not found");
@@ -314,5 +324,6 @@ export default {
   listPending,
   approveProperty,
   rejectProperty,
+  restoreProperty,
   updateProperty,
 };

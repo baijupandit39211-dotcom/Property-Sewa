@@ -3,8 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -15,12 +13,12 @@ import {
 import {
   CheckCircle2,
   XCircle,
-  Users,
   Home,
   Clock,
   DollarSign,
   ArrowUpRight,
   Sparkles,
+  ShieldAlert,
 } from "lucide-react";
 
 type Property = {
@@ -58,6 +56,40 @@ type PendingRow = {
   sellerName: string;
   date: string;
   kind?: "residential" | "commercial" | "other";
+};
+
+type ReportRow = {
+  _id: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+  message?: string;
+  remarks?: string;
+  property?: { title?: string; location?: string };
+  propertyId?: { title?: string; location?: string };
+  adId?: { title?: string; location?: string };
+  reporter?: { name?: string };
+  reporterId?: { name?: string };
+};
+
+type ModerationStats = {
+  total: number;
+  pending: number;
+  reviewed: number;
+  actionTaken: number;
+  rejected: number;
+  byReason: Array<{ reason: string; count: number }>;
+  recent: ReportRow[];
+};
+
+const EMPTY_REPORT_STATS: ModerationStats = {
+  total: 0,
+  pending: 0,
+  reviewed: 0,
+  actionTaken: 0,
+  rejected: 0,
+  byReason: [],
+  recent: [],
 };
 
 function fmt(n: number) {
@@ -137,6 +169,44 @@ async function tryPropertyMount<T>(
   }
 }
 
+async function getReportStats<T>(base: string): Promise<T> {
+  const a = `${base}/api/admin/reports/stats`;
+  const b = `${base}/admin/reports/stats`;
+
+  try {
+    return await getJSON<T>(a);
+  } catch {
+    return await getJSON<T>(b);
+  }
+}
+
+function pickReportProperty(report: ReportRow) {
+  return report.property || report.propertyId || report.adId;
+}
+
+function pickReportReporter(report: ReportRow) {
+  return report.reporter || report.reporterId;
+}
+
+function pickReportMessage(report: ReportRow) {
+  return report.message || report.remarks || "";
+}
+
+function formatReportStatus(status: string) {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatReportDate(value?: string) {
+  if (!value) return "Unknown";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
+}
+
 function CardShell({ children, tone = "slate" }: { children: React.ReactNode; tone?: "slate" | "emerald" | "sky" }) {
   const ring =
     tone === "emerald"
@@ -205,25 +275,20 @@ export default function AdminOverviewPage() {
 
   const [approvedCount, setApprovedCount] = useState(0);
   const [pendingRows, setPendingRows] = useState<PendingRow[]>([]);
+  const [reportStats, setReportStats] = useState<ModerationStats>(EMPTY_REPORT_STATS);
 
   // UI state
   const [tab, setTab] = useState<"all" | "residential" | "commercial">("all");
 
-  // “Weekly Activity” (derived, still not dummy random)
-  const weeklyActivity = useMemo(() => {
-    const a = approvedCount;
-    const p = pendingRows.length;
-    return [
-      { name: "Sice", v1: Math.max(0, Math.floor(a * 0.12)), v2: Math.max(0, Math.floor(p * 0.12)) },
-      { name: "Wodes", v1: Math.max(0, Math.floor(a * 0.16)), v2: Math.max(0, Math.floor(p * 0.16)) },
-      { name: "Toa", v1: Math.max(0, Math.floor(a * 0.13)), v2: Math.max(0, Math.floor(p * 0.13)) },
-      { name: "Hinking", v1: Math.max(0, Math.floor(a * 0.18)), v2: Math.max(0, Math.floor(p * 0.18)) },
-      { name: "Selak", v1: Math.max(0, Math.floor(a * 0.15)), v2: Math.max(0, Math.floor(p * 0.15)) },
-      { name: "Matins", v1: Math.max(0, Math.floor(a * 0.21)), v2: Math.max(0, Math.floor(p * 0.21)) },
-      { name: "Melp", v1: Math.max(0, Math.floor(a * 0.17)), v2: Math.max(0, Math.floor(p * 0.17)) },
-      { name: "Neg", v1: Math.max(0, Math.floor(a * 0.14)), v2: Math.max(0, Math.floor(p * 0.14)) },
-    ];
-  }, [approvedCount, pendingRows.length]);
+  const moderationChartData = useMemo(
+    () => [
+      { name: "Pending", value: reportStats.pending },
+      { name: "Reviewed", value: reportStats.reviewed },
+      { name: "Action", value: reportStats.actionTaken },
+      { name: "Rejected", value: reportStats.rejected },
+    ],
+    [reportStats]
+  );
 
   // Revenue bar (derived from real counts)
   const revenueData = useMemo(() => {
@@ -266,7 +331,12 @@ export default function AdminOverviewPage() {
     setErr(null);
 
     try {
-      const approved = await tryPropertyMount<any>(API_BASE, "/", "GET");
+      const [approved, pending, reportResponse] = await Promise.all([
+        tryPropertyMount<any>(API_BASE, "/", "GET"),
+        tryPropertyMount<any>(API_BASE, "/admin/pending", "GET"),
+        getReportStats<any>(API_BASE),
+      ]);
+
       const approvedList: Property[] = Array.isArray(approved)
         ? approved
         : Array.isArray(approved?.data)
@@ -275,9 +345,8 @@ export default function AdminOverviewPage() {
             ? approved.items
             : [];
 
-      setApprovedCount(approvedList.length);
+      setApprovedCount(Number(approved?.total || approvedList.length));
 
-      const pending = await tryPropertyMount<any>(API_BASE, "/admin/pending", "GET");
       const pendingList: Property[] = Array.isArray(pending)
         ? pending
         : Array.isArray(pending?.data)
@@ -297,6 +366,7 @@ export default function AdminOverviewPage() {
       }));
 
       setPendingRows(rows);
+      setReportStats(reportResponse?.stats || reportResponse || EMPTY_REPORT_STATS);
     } catch (e: any) {
       setErr(e?.message ?? "Dashboard load failed");
     } finally {
@@ -383,11 +453,11 @@ export default function AdminOverviewPage() {
       {/* KPI row */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          title="Total Users"
-          value="—"
-          delta="8.1%"
-          icon={Users}
-          subtitle="Total Users"
+          title="Total Reports"
+          value={fmt(reportStats.total)}
+          delta={`${fmt(reportStats.pending)} pending`}
+          icon={ShieldAlert}
+          subtitle="Moderation volume"
         />
         <StatCard
           title="Active Listings"
@@ -416,24 +486,23 @@ export default function AdminOverviewPage() {
         <CardShell tone="emerald">
           <div className="flex items-start justify-between px-5 py-4">
             <div>
-              <div className="text-lg font-extrabold text-slate-900">Visitors & Leads</div>
-              <div className="text-xs text-slate-500">Derived from approvals vs pending</div>
+              <div className="text-lg font-extrabold text-slate-900">Moderation Status</div>
+              <div className="text-xs text-slate-500">Current reports grouped by moderation state</div>
             </div>
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
-              Last 8 weeks
+              Live queue
             </span>
           </div>
           <div className="px-2 pb-5 sm:px-4">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={weeklyActivity}>
+                <BarChart data={moderationChartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Line type="monotone" dataKey="v1" strokeWidth={3} stroke="#10b981" dot={false} />
-                  <Line type="monotone" dataKey="v2" strokeWidth={3} stroke="#0ea5e9" dot={false} />
-                </LineChart>
+                  <Bar dataKey="value" radius={[10, 10, 4, 4]} fill="#10b981" />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
@@ -591,19 +660,57 @@ export default function AdminOverviewPage() {
           <CardShell tone="sky">
             <div className="flex items-center justify-between px-5 py-4">
               <div>
-                <div className="text-lg font-extrabold text-slate-900">Listings & Leads</div>
+                <div className="text-lg font-extrabold text-slate-900">Recent Reports</div>
                 <div className="mt-1 text-xs text-slate-500">
-                  You can plug leads endpoints here next.
+                  Latest listing moderation items from the reports queue.
                 </div>
               </div>
               <span className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                Last 7 days
+                Last 5 reports
               </span>
             </div>
 
-            <div className="px-5 pb-5 text-sm text-slate-600">
-              When you paste your lead routes (`server/src/modules/lead/routes/lead.routes.ts`) I will
-              show: Recent Leads + Reported listings + transactions list exactly like the reference.
+            <div className="px-5 pb-5">
+              <div className="space-y-3">
+                {reportStats.recent.slice(0, 5).map((report) => {
+                  const property = pickReportProperty(report);
+                  const reporter = pickReportReporter(report);
+                  return (
+                    <div
+                      key={report._id}
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-semibold text-slate-900">
+                            {property?.title || "Untitled listing"}
+                          </div>
+                          <div className="mt-1 text-sm text-slate-500">
+                            {report.reason}
+                          </div>
+                          <div className="mt-2 text-xs text-slate-400">
+                            Reporter: {reporter?.name || "Unknown"} · {formatReportDate(report.createdAt)}
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                          {formatReportStatus(report.status)}
+                        </span>
+                      </div>
+                      {pickReportMessage(report) ? (
+                        <div className="mt-3 text-sm text-slate-500">
+                          {pickReportMessage(report)}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+
+                {reportStats.recent.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                    No reports have been submitted yet.
+                  </div>
+                ) : null}
+              </div>
             </div>
           </CardShell>
         </div>
@@ -644,14 +751,29 @@ export default function AdminOverviewPage() {
           <CardShell>
             <div className="flex items-center justify-between px-5 py-4">
               <div className="text-lg font-extrabold text-slate-900">Reports</div>
-              <button className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100">
-                View All
-              </button>
+              <LinkLike href="/admin/reports" label="View All" />
             </div>
 
-            <div className="px-5 pb-5 text-sm text-slate-600">
-              After we connect lead + payment routes, this section will list: recent reports,
-              transactions, and flagged listings like the reference.
+            <div className="px-5 pb-5">
+              <div className="space-y-3">
+                {reportStats.byReason.slice(0, 4).map((row) => (
+                  <div
+                    key={row.reason}
+                    className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-3"
+                  >
+                    <span className="text-sm font-semibold text-slate-700">{row.reason}</span>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                      {row.count}
+                    </span>
+                  </div>
+                ))}
+
+                {reportStats.byReason.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500">
+                    Reason trends will appear once reports are submitted.
+                  </div>
+                ) : null}
+              </div>
             </div>
           </CardShell>
 

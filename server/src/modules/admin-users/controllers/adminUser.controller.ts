@@ -78,3 +78,33 @@ export async function updateRole(req: Request, res: Response, next: NextFunction
     return next(err);
   }
 }
+
+export async function updateUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const actor = {
+      userId: String(req.user?.userId || ""),
+      role: String(req.user?.role || ""),
+    };
+    if (!actor.userId) throw new ApiError(401, "Authentication required");
+
+    const updated = await adminUserService.updateUserDetails({
+      actor,
+      targetUserId: req.params.id,
+      body: {
+        name: req.body?.name,
+        email: req.body?.email,
+        phone: req.body?.phone,
+        address: req.body?.address,
+        company: req.body?.company,
+        bio: req.body?.bio,
+      },
+      reason: String(req.body?.reason || ""),
+      ip: req.ip,
+      userAgent: String(req.headers["user-agent"] || ""),
+    });
+
+    return res.status(200).json({ success: true, user: updated });
+  } catch (err) {
+    return next(err);
+  }
+}

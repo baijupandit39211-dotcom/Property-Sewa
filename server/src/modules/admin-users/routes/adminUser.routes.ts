@@ -11,6 +11,14 @@ router.get("/", requireAdminAuth, requireRoles(["admin", "superadmin"]), adminUs
 // GET /admin/users/:id
 router.get("/:id", requireAdminAuth, requireRoles(["admin", "superadmin"]), adminUserController.getUser);
 
+// PATCH /admin/users/:id
+router.patch(
+  "/:id",
+  requireAdminAuth,
+  requireRoles(["admin", "superadmin"]),
+  adminUserController.updateUser
+);
+
 // PATCH /admin/users/:id/status
 router.patch(
   "/:id/status",
