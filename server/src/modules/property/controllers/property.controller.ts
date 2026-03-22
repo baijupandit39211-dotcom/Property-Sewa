@@ -194,8 +194,8 @@ export async function getApprovedById(req: Request, res: Response, next: NextFun
 // ADMIN
 export async function listPending(req: Request, res: Response, next: NextFunction) {
   try {
-    const items = await propertyService.listPending();
-    return res.status(200).json({ success: true, items });
+    const result = await propertyService.listPending(req.query);
+    return res.status(200).json({ success: true, ...result });
   } catch (err) {
     return next(err);
   }

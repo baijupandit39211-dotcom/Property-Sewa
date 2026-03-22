@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 type MeResponse = {
   success: boolean;
@@ -62,12 +63,10 @@ export default function BuyerHeader() {
             />
           </div>
 
-          <button
-            className="grid h-10 w-10 place-items-center rounded-lg bg-white text-slate-700 ring-1 ring-white/30 transition hover:scale-[1.02]"
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
+          <NotificationBell
+            notificationsPageHref="/buyer/notifications"
+            buttonClassName="grid h-10 w-10 place-items-center rounded-lg bg-white text-slate-700 ring-1 ring-white/30 transition hover:scale-[1.02]"
+          />
 
           {/* Avatar (matches screenshot small circle) now links to profile */}
           <Link

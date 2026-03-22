@@ -11,10 +11,12 @@ import sellerAnalyticsRoutes from "../modules/analytics/routes/seller.analytics.
 // ✅ Payments
 import paymentRoutes from "../modules/payments/routes/payment.routes";
 import reservationRoutes from "../modules/reservation/routes/reservation.routes";
+import adminOverviewRoutes from "../modules/admin-overview/routes/adminOverview.routes";
 import adminUserRoutes from "../modules/admin-users/routes/adminUser.routes";
 import adminSettingsRoutes from "../modules/admin-settings/routes/adminSettings.routes";
 import userRoutes from "../modules/users/routes/user.routes";
 import reportRoutes, { adminRouter as adminReportRoutes } from "../modules/reports/report.routes";
+import notificationRoutes from "../modules/notifications/routes/notification.routes";
 
 const router = Router();
 
@@ -42,6 +44,8 @@ router.use("/analytics", sellerAnalyticsRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/reservations", reservationRoutes);
 router.use("/api/reservations", reservationRoutes); // alias for frontend /api prefix
+router.use("/admin/overview", adminOverviewRoutes);
+router.use("/api/admin/overview", adminOverviewRoutes);
 router.use("/admin/users", adminUserRoutes);
 router.use("/api/admin/users", adminUserRoutes); // alias with /api prefix
 router.use("/admin/settings", adminSettingsRoutes);
@@ -52,5 +56,6 @@ router.use("/reports", reportRoutes);
 router.use("/api/reports", reportRoutes); // alias for frontend /api prefix
 router.use("/api/admin/reports", adminReportRoutes); // admin reports
 router.use("/admin/reports", adminReportRoutes);
+router.use("/notifications", notificationRoutes);
 
 export default router;

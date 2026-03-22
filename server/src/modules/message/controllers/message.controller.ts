@@ -3,6 +3,7 @@ import { ApiError } from "../../../utils/apiError";
 import Lead from "../../../models/Lead.model";
 import messageService from "../services/message.services";
 import emailService from "../services/email.services";
+import notificationService from "../../notifications/services/notification.services";
 
 // GET /messages/:leadId (requireUserAuth)
 export async function getMessagesByLead(req: Request, res: Response, next: NextFunction) {
@@ -34,15 +35,21 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
     let senderRole: "seller" | "buyer";
     let sellerId: string;
     let buyerId: string;
+    let receiverId: string | null = null;
+    let receiverRole: "seller" | "buyer" | null = null;
     
     if (lead.sellerId.toString() === userId) {
       senderRole = "seller";
       sellerId = userId;
       buyerId = lead.buyerId?.toString() || "";
+      receiverId = buyerId || null;
+      receiverRole = buyerId ? "buyer" : null;
     } else if (lead.buyerId?.toString() === userId) {
       senderRole = "buyer";
       sellerId = lead.sellerId.toString();
       buyerId = userId;
+      receiverId = sellerId;
+      receiverRole = "seller";
     } else {
       throw new ApiError(403, "You can only send messages for your own leads");
     }
@@ -53,6 +60,56 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
       senderRole,
       text,
     });
+
+    if (receiverId && receiverRole) {
+      const propertyTitle = (lead.propertyId as any)?.title || "Property";
+      const notificationLink =
+        receiverRole === "seller"
+          ? "/seller/messages"
+          : `/buyer/messages/${req.params.leadId}`;
+
+      try {
+        console.log("[messages] creating notification for new message", {
+          leadId: req.params.leadId,
+          messageId: String(message._id),
+          senderId: userId,
+          senderRole,
+          receiverId,
+          receiverRole,
+          notificationLink,
+        });
+
+        await notificationService.createNotification({
+          recipientId: receiverId,
+          recipientRole: receiverRole,
+          actorId: userId,
+          type: "message.new",
+          category: "message",
+          title: "New message received",
+          body: `You received a new message about ${propertyTitle}.`,
+          data: {
+            leadId: req.params.leadId,
+            messageId: String(message._id),
+            propertyId: lead.propertyId ? String((lead.propertyId as any)?._id || lead.propertyId) : null,
+            senderRole,
+            previewText: text,
+          },
+          entityType: "lead",
+          entityId: req.params.leadId,
+          link: notificationLink,
+          priority: "medium",
+          deliveryChannels: ["in_app"],
+        });
+
+        console.log("[messages] notification creation completed", {
+          leadId: req.params.leadId,
+          messageId: String(message._id),
+          receiverId,
+        });
+      } catch (notificationError) {
+        console.error("Failed to create message notification:", notificationError);
+      }
+    }
 
     // Send email notification to seller if buyer sends message
     if (senderRole === "buyer" && sellerId) {

@@ -4,6 +4,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Bell,
   CalendarClock,
   Home,
   Inbox,
@@ -19,6 +20,7 @@ const links = [
   { label: "Leads / Inquiries", href: "/seller/leads", icon: PhoneIncoming },
   { label: "Visit Scheduling / Calendar", href: "/seller/visit-scheduling", icon: CalendarClock },
   { label: "Messages / Chat", href: "/seller/messages", icon: MessageSquare },
+  { label: "Notifications", href: "/seller/notifications", icon: Bell },
   { label: "Analytics / Reports", href: "/seller/analytics", icon: BarChart3 },
 ];
 

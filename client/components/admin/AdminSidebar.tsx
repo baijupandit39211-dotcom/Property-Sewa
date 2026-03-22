@@ -2,104 +2,141 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
+import {
+  Activity,
+  ClipboardCheck,
+  Flag,
+  HelpCircle,
+  LayoutDashboard,
+  MessageSquare,
+  Settings,
+  SquarePlus,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
-type Item = {
+type LinkItem = {
   label: string;
   href: string;
+  icon: LucideIcon;
 };
 
-function NavItem({
-  href,
-  label,
-  active,
-}: {
-  href: string;
+type ActionItem = {
   label: string;
-  active: boolean;
-}) {
+  icon: LucideIcon;
+};
+
+const navigationItems: LinkItem[] = [
+  { label: "Dashboard", href: "/admin/overview", icon: LayoutDashboard },
+  { label: "Add Property", href: "/admin/add-property", icon: SquarePlus },
+  { label: "Users Management", href: "/admin/users", icon: Users },
+  { label: "Listings Approval", href: "/admin/listings-approval", icon: ClipboardCheck },
+  { label: "Recent Activity", href: "/admin/recent-activity", icon: Activity },
+  { label: "Reports", href: "/admin/reports", icon: Flag },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
+];
+
+const supportItems: ActionItem[] = [
+  { label: "Help and Docs", icon: HelpCircle },
+  { label: "Feedback", icon: MessageSquare },
+];
+
+function isActivePath(pathname: string, href: string) {
   return (
-    <Link
-      href={href}
-      className={[
-        "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition",
-        active
-          ? "bg-emerald-900 text-white"
-          : "text-slate-700 hover:bg-emerald-50",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "h-2 w-2 rounded-full",
-          active ? "bg-emerald-300" : "bg-emerald-200",
-        ].join(" ")}
-      />
-      {label}
-    </Link>
+    pathname === href ||
+    (href !== "/admin/overview" && pathname.startsWith(`${href}/`))
   );
 }
 
-function Section({ title, items }: { title: string; items: Item[] }) {
-  const pathname = usePathname();
-
+function BrandMark() {
   return (
-    <div className="mt-6">
-      <div className="px-2 text-xs font-extrabold uppercase tracking-wider text-slate-400">
-        {title}
-      </div>
-      <div className="mt-3 space-y-2">
-        {items.map((it) => (
-          <NavItem
-            key={it.href}
-            href={it.href}
-            label={it.label}
-            active={
-              pathname === it.href ||
-              (it.href !== "/admin/overview" && pathname.startsWith(`${it.href}/`))
-            }
-          />
-        ))}
-      </div>
+    <div className="relative h-12 w-12 shrink-0 rounded-2xl bg-white/10">
+      <span className="absolute left-[15px] top-[12px] h-1.5 w-5 rounded-full bg-emerald-300" />
+      <span className="absolute left-[15px] top-[20px] h-1.5 w-5 rounded-full bg-emerald-200" />
+      <span className="absolute left-[15px] top-[28px] h-1.5 w-5 rounded-full bg-emerald-300" />
     </div>
   );
 }
 
-export default function AdminSidebar() {
+function SidebarLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: LinkItem & { active: boolean }) {
   return (
-    <aside className="min-h-[calc(100vh-64px)] w-[280px] border-r bg-white px-4 py-6">
-      <Section
-        title="Dashboard"
-        items={[{ label: "Dashboard / Overview", href: "/admin/overview" }]}
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={[
+        "group flex items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-semibold transition-colors",
+        active
+          ? "bg-[#316249] text-white shadow-sm"
+          : "text-slate-700 hover:bg-emerald-50 hover:text-[#316249]",
+      ].join(" ")}
+    >
+      <Icon
+        className={[
+          "h-5 w-5 shrink-0",
+          active ? "text-white" : "text-slate-600 group-hover:text-[#316249]",
+        ].join(" ")}
+        strokeWidth={2}
       />
+      <span className="truncate leading-none">{label}</span>
+    </Link>
+  );
+}
 
-      {/* ✅ Management label */}
-      <Section
-        title="Management"
-        items={[
-          { label: "Add Property", href: "/admin/add-property" }, // ✅ NEW
-          { label: "Users Management", href: "/admin/users" },
-          { label: "Listings Approval", href: "/admin/listings-approval" },
-          { label: "Recent Activity", href: "/admin/recent-activity" },
-          { label: "Reports", href: "/admin/reports" },
-          { label: "Settings", href: "/admin/settings" },
-        ]}
-      />
+function SidebarAction({ label, icon: Icon }: ActionItem) {
+  return (
+    <button
+      type="button"
+      className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-[15px] font-semibold text-slate-700 transition-colors hover:bg-emerald-50 hover:text-[#316249]"
+    >
+      <Icon className="h-5 w-5 shrink-0 text-slate-600 group-hover:text-[#316249]" strokeWidth={2} />
+      <span className="truncate leading-none">{label}</span>
+    </button>
+  );
+}
 
-      <div className="mt-10 space-y-2">
-        <div className="px-2 text-xs font-extrabold uppercase tracking-wider text-slate-400">
-          Support
+export default function AdminSidebar() {
+  const pathname = usePathname();
+
+  return (
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-slate-200 bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="border-b border-emerald-900/10 bg-[#316249] px-4 py-4">
+        <div className="flex items-center gap-3">
+          <BrandMark />
+          <div className="min-w-0">
+            <div className="truncate text-base font-extrabold tracking-[0.12em] text-white">
+              PROPERTY SEWA
+            </div>
+            <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-100/85">
+              Super Admin
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex flex-1 flex-col px-2 py-4">
+        <div className="space-y-1">
+          {navigationItems.map((item) => (
+            <SidebarLink
+              key={item.href}
+              {...item}
+              active={isActivePath(pathname, item.href)}
+            />
+          ))}
         </div>
 
-        <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-emerald-50">
-          <span className="h-2 w-2 rounded-full bg-emerald-200" />
-          Help and Docs
-        </button>
-
-        <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-emerald-50">
-          <span className="h-2 w-2 rounded-full bg-emerald-200" />
-          Feedback
-        </button>
-      </div>
+        <div className="mt-auto border-t border-slate-200 px-0 pt-6">
+          <div className="space-y-1">
+            {supportItems.map((item) => (
+              <SidebarAction key={item.label} {...item} />
+            ))}
+          </div>
+        </div>
+      </nav>
     </aside>
   );
 }

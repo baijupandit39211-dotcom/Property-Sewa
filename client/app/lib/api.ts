@@ -9,7 +9,7 @@ export type ApiError = {
  * Force localhost:5000 for development
  * (Keep your setup as-is)
  */
-const API_BASE = "http://localhost:5000";
+export const API_BASE = "http://localhost:5000";
 
 /**
  * Parse helper: tries JSON first, otherwise returns null

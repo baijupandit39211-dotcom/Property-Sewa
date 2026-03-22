@@ -187,10 +187,82 @@ async function previewById(id: string, userId: string) {
   throw new ApiError(403, "You are not allowed to preview this property");
 }
 
-async function listPending() {
-  return Property.find({ status: "pending" })
-    .populate("createdBy", "name phone email role")
-    .sort({ createdAt: -1 });
+function buildPendingSort(sort?: string) {
+  const value = String(sort || "newest").toLowerCase();
+  if (value === "oldest") return { createdAt: 1 as const };
+  if (value === "price_low") return { price: 1 as const, createdAt: -1 as const };
+  if (value === "price_high") return { price: -1 as const, createdAt: -1 as const };
+  return { createdAt: -1 as const };
+}
+
+async function listPending(query: any = {}) {
+  const page = Math.max(1, Number(query?.page || 1));
+  const limit = Math.min(50, Math.max(1, Number(query?.limit || 12)));
+  const skip = (page - 1) * limit;
+
+  const filter: any = { status: "pending" };
+  const search = String(query?.search || "").trim();
+  const listingType = String(query?.listingType || "").trim().toLowerCase();
+  const propertyType = String(query?.propertyType || "").trim().toLowerCase();
+
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { location: { $regex: search, $options: "i" } },
+      { address: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  if (listingType && listingType !== "all") {
+    filter.listingType = listingType;
+  }
+
+  if (propertyType && propertyType !== "all") {
+    filter.propertyType = propertyType;
+  }
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const [items, total, totalPending, activeCount, rejectedCount, buyCount, rentCount, recentCount, byTypeRaw] =
+    await Promise.all([
+      Property.find(filter)
+        .populate("createdBy", "name phone email role")
+        .sort(buildPendingSort(query?.sort))
+        .skip(skip)
+        .limit(limit),
+      Property.countDocuments(filter),
+      Property.countDocuments({ status: "pending" }),
+      Property.countDocuments({ status: "active" }),
+      Property.countDocuments({ status: "rejected" }),
+      Property.countDocuments({ status: "pending", listingType: "buy" }),
+      Property.countDocuments({ status: "pending", listingType: "rent" }),
+      Property.countDocuments({ status: "pending", createdAt: { $gte: sevenDaysAgo } }),
+      Property.aggregate([
+        { $match: { status: "pending" } },
+        { $group: { _id: "$propertyType", count: { $sum: 1 } } },
+        { $sort: { count: -1, _id: 1 } },
+      ]),
+    ]);
+
+  return {
+    items,
+    total,
+    page,
+    limit,
+    stats: {
+      totalPending,
+      active: activeCount,
+      rejected: rejectedCount,
+      buy: buyCount,
+      rent: rentCount,
+      recent: recentCount,
+      byType: byTypeRaw.map((row: any) => ({
+        type: String(row?._id || "other"),
+        count: Number(row?.count || 0),
+      })),
+    },
+  };
 }
 
 async function approveProperty(id: string, adminUserId: string) {

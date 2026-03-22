@@ -21,6 +21,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^6.10.1",
     "puppeteer": "^24.37.2",
+    "socket.io": "^4.8.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },

@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Search, LogOut } from "lucide-react";
+import { Search, LogOut } from "lucide-react";
 import { logoutUser } from "@/app/lib/auth";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default function SellerHeader() {
   const router = useRouter();
@@ -44,9 +45,10 @@ export default function SellerHeader() {
             className="w-[220px] bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
           />
         </div>
-        <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]">
-          <Bell className="h-4 w-4" />
-        </button>
+        <NotificationBell
+          notificationsPageHref="/seller/notifications"
+          buttonClassName="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
+        />
         <Link
           href="/seller/profile"
           className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"

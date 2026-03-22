@@ -18,7 +18,7 @@ const links = [
   { label: "Search Properties", href: "/buyer/search-properties", icon: Search },
   { label: "Wishlist / Saved Properties", href: "/buyer/wishlist", icon: Bookmark },
   { label: "Compare Properties", href: "/buyer/compare", icon: Scale },
-  { label: "Alerts / Notifications", href: "/buyer/alerts", icon: Bell },
+  { label: "Alerts / Notifications", href: "/buyer/notifications", icon: Bell },
   { label: "Messages / Chat", href: "/buyer/messages", icon: MessageCircle },
 ];
 
