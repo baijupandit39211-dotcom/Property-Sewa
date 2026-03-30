@@ -185,6 +185,30 @@ async function updateVisit(visitId: string, userId: string, updates: UpdateVisit
     throw new ApiError(403, "Only seller can update visit details");
   }
 
+  const nextDate = updates.actualDate || visit.actualDate || visit.requestedDate;
+  const nextTime = updates.actualTime || visit.actualTime || visit.preferredTime;
+  const nextStatus = updates.status || visit.status;
+
+  if ((nextStatus === "confirmed" || nextStatus === "rescheduled") && (!nextDate || !nextTime)) {
+    throw new ApiError(400, "A date and time are required for scheduled visits");
+  }
+
+  if (nextDate && nextTime && (nextStatus === "confirmed" || nextStatus === "rescheduled")) {
+    const conflictingVisit = await Visit.findOne({
+      _id: { $ne: visit._id },
+      propertyId: visit.propertyId,
+      status: { $in: ["confirmed", "rescheduled"] },
+      $or: [
+        { actualDate: nextDate, actualTime: nextTime },
+        { requestedDate: nextDate, preferredTime: nextTime, status: "requested" },
+      ],
+    });
+
+    if (conflictingVisit) {
+      throw new ApiError(400, "This time slot is already booked for the property");
+    }
+  }
+
   // Update visit
   Object.assign(visit, updates);
   await visit.save();

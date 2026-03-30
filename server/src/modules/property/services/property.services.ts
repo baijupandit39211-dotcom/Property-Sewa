@@ -1,5 +1,6 @@
 import { ApiError } from "../../../utils/apiError";
 import Property from "../../../models/Property.model";
+import { Types } from "mongoose";
 
 type CreatePropertyInput = {
   title: string;
@@ -32,6 +33,14 @@ type CreatePropertyInput = {
   facing?: "east" | "west" | "north" | "south";
   roadAccessFt?: number;
   landmark?: string;
+  offerCategory?: "none" | "dashain" | "latest" | "hot" | "limited_time";
+  offerTitle?: string;
+  offerDescription?: string;
+  offerBadge?: string;
+  offerDiscountType?: "none" | "percentage" | "fixed";
+  offerDiscountValue?: number;
+  offerValidUntil?: Date | null;
+  offerActive?: boolean;
 
   amenities?: string[];
 
@@ -43,6 +52,17 @@ function toNumberIfPresent(v: any) {
   if (v === undefined || v === null || v === "") return undefined;
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildApprovedSort(sort?: string) {
+  const value = String(sort || "").trim().toLowerCase();
+  if (value === "price_asc") return { price: 1 as const, createdAt: -1 as const };
+  if (value === "price_desc") return { price: -1 as const, createdAt: -1 as const };
+  return { createdAt: -1 as const };
 }
 
 function validateListing(input: {
@@ -131,6 +151,28 @@ async function deleteProperty(propertyId: string, userId: string) {
 
 async function listApproved(query: any) {
   const q: any = { status: "active" };
+  const search = String(query?.search || "").trim();
+  const ids = String(query?.ids || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => Types.ObjectId.isValid(id));
+
+  if (ids.length > 0) {
+    q._id = { $in: ids.map((id) => new Types.ObjectId(id)) };
+  }
+
+  if (search) {
+    const safeSearch = escapeRegex(search);
+    q.$or = [
+      { title: { $regex: safeSearch, $options: "i" } },
+      { description: { $regex: safeSearch, $options: "i" } },
+      { location: { $regex: safeSearch, $options: "i" } },
+      { address: { $regex: safeSearch, $options: "i" } },
+      { propertyType: { $regex: safeSearch, $options: "i" } },
+      { landmark: { $regex: safeSearch, $options: "i" } },
+      { amenities: { $regex: safeSearch, $options: "i" } },
+    ];
+  }
 
   if (query?.location) q.location = { $regex: String(query.location), $options: "i" };
   if (query?.listingType) q.listingType = query.listingType;
@@ -150,7 +192,7 @@ async function listApproved(query: any) {
   const [items, total] = await Promise.all([
     Property.find(q)
       .populate("createdBy", "name phone email role")
-      .sort({ createdAt: -1 })
+      .sort(buildApprovedSort(query?.sort))
       .skip(skip)
       .limit(limit),
     Property.countDocuments(q),
@@ -330,6 +372,14 @@ async function updateProperty(id: string, userId: string, updates: any) {
     "roadAccessFt",
     "landmark",
     "amenities",
+    "offerCategory",
+    "offerTitle",
+    "offerDescription",
+    "offerBadge",
+    "offerDiscountType",
+    "offerDiscountValue",
+    "offerValidUntil",
+    "offerActive",
   ];
 
   allowedFields.forEach((key) => {
@@ -347,6 +397,7 @@ async function updateProperty(id: string, userId: string, updates: any) {
           "floor",
           "totalFloors",
           "roadAccessFt",
+          "offerDiscountValue",
         ].includes(key)
       ) {
         const n = toNumberIfPresent(updates[key]);

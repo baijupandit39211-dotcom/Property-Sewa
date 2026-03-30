@@ -61,6 +61,11 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
       text,
     });
 
+    if (senderRole === "seller" && lead.status === "new") {
+      lead.status = "contacted";
+      await lead.save();
+    }
+
     if (receiverId && receiverRole) {
       const propertyTitle = (lead.propertyId as any)?.title || "Property";
       const notificationLink =

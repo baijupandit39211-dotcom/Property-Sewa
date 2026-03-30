@@ -45,6 +45,16 @@ function toDateOrNull(v: any) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function toBoolean(v: any) {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "string") {
+    const normalized = v.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return false;
+}
+
 function applyCoverIndexOrder<T>(arr: T[], coverIndexRaw: any) {
   const coverIndex = Number(coverIndexRaw);
   if (!Number.isFinite(coverIndex)) return arr;
@@ -102,6 +112,14 @@ export async function createProperty(req: Request, res: Response, next: NextFunc
       facing: body.facing,
       roadAccessFt: toNumber(body.roadAccessFt, 0),
       landmark: body.landmark,
+      offerCategory: body.offerCategory || "none",
+      offerTitle: body.offerTitle,
+      offerDescription: body.offerDescription,
+      offerBadge: body.offerBadge,
+      offerDiscountType: body.offerDiscountType || "none",
+      offerDiscountValue: toNumber(body.offerDiscountValue, 0),
+      offerValidUntil: toDateOrNull(body.offerValidUntil),
+      offerActive: toBoolean(body.offerActive),
 
       amenities: parseAmenities(body.amenities),
 
@@ -246,6 +264,12 @@ export async function updateProperty(req: Request, res: Response, next: NextFunc
     if (updates.availabilityDate !== undefined) {
       updates.availabilityDate = toDateOrNull(updates.availabilityDate);
     }
+    if (updates.offerValidUntil !== undefined) {
+      updates.offerValidUntil = toDateOrNull(updates.offerValidUntil);
+    }
+    if (updates.offerActive !== undefined) {
+      updates.offerActive = toBoolean(updates.offerActive);
+    }
 
     const numericKeys = [
       "price",
@@ -259,6 +283,7 @@ export async function updateProperty(req: Request, res: Response, next: NextFunc
       "totalFloors",
       "roadAccessFt",
       "advanceAmount",
+      "offerDiscountValue",
     ];
     for (const k of numericKeys) {
       if (updates[k] !== undefined) updates[k] = toNumber(updates[k], 0);

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import AdActionsMenu from "@/app/property/[id]/_components/AdActionsMenu";
+import OfferBadge from "@/components/offers/OfferBadge";
 import {
   Send,
   MapPin,
@@ -34,19 +35,6 @@ const AMENITIES = [
   "Garden",
   "Gym",
 ] as const;
-
-const WISHLIST_KEY = "property-sewa:wishlist:v1";
-
-function readWishlist(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(WISHLIST_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-function writeWishlist(ids: string[]) {
-  localStorage.setItem(WISHLIST_KEY, JSON.stringify(ids));
-}
 
 // ✅ helper: only show fields if value is real (not "", null, undefined, "0")
 const hasValue = (v: any) =>
@@ -116,6 +104,55 @@ function formatReservedUntil(p: any) {
   const t = p?.reservedUntil ? new Date(p.reservedUntil).getTime() : 0;
   if (!Number.isFinite(t) || t <= Date.now()) return "";
   return new Date(t).toLocaleString();
+}
+
+function formatOfferDiscount(p: any) {
+  const type = String(p?.offerDiscountType || "none").toLowerCase();
+  const value = Number(p?.offerDiscountValue || 0);
+  if (!value || value <= 0) return "";
+  if (type === "percentage") return `${value}% off`;
+  if (type === "fixed") return `${p?.currency || "Rs"} ${value.toLocaleString()} off`;
+  return "";
+}
+
+function formatOfferExpiry(value: any) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function getOfferExpiryState(value: any) {
+  if (!value) return null;
+  const target = new Date(value);
+  if (Number.isNaN(target.getTime())) return null;
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  const diffDays = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { text: "Offer expired", tone: "rose" as const };
+  }
+  if (diffDays === 0) {
+    return { text: "Ends today", tone: "amber" as const };
+  }
+  if (diffDays <= 2) {
+    return {
+      text: `Ends in ${diffDays} day${diffDays === 1 ? "" : "s"}`,
+      tone: "amber" as const,
+    };
+  }
+  return { text: `Ends in ${diffDays} days`, tone: "emerald" as const };
+}
+
+function isOfferActive(value: any) {
+  return value === true || String(value).toLowerCase() === "true";
 }
 
 function BuyerPropertyDetailsView({
@@ -253,29 +290,41 @@ function BuyerPropertyDetailsView({
   // ✅ wishlist state
   useEffect(() => {
     if (!property?._id) return;
-    const ids = readWishlist();
-    const id = String(property._id);
-    setWishlisted(Array.isArray(ids) ? ids.includes(id) : false);
+
+    (async () => {
+      try {
+        const res = await apiFetch<{ success: boolean; saved: boolean }>(
+          `/wishlist/check/${property._id}`
+        );
+        setWishlisted(!!res?.saved);
+      } catch {
+        setWishlisted(false);
+      }
+    })();
   }, [property?._id]);
 
   const listingType = String(property?.listingType || "").toLowerCase();
   const isRent = listingType === "rent";
 
   // ✅ Wishlist toggle (localStorage)
-  const toggleWishlist = () => {
+  const toggleWishlist = async () => {
     if (!property?._id) return;
 
     const id = String(property._id);
-    const ids = readWishlist();
 
-    if (ids.includes(id)) {
-      const next = ids.filter((x) => x !== id);
-      writeWishlist(next);
-      setWishlisted(false);
-    } else {
-      const next = [id, ...ids].slice(0, 200);
-      writeWishlist(next);
-      setWishlisted(true);
+    try {
+      if (wishlisted) {
+        await apiFetch(`/wishlist/${id}`, { method: "DELETE" });
+        setWishlisted(false);
+      } else {
+        await apiFetch("/wishlist", {
+          method: "POST",
+          body: JSON.stringify({ propertyId: id }),
+        });
+        setWishlisted(true);
+      }
+    } catch {
+      // ignore
     }
   };
 
@@ -446,6 +495,13 @@ function BuyerPropertyDetailsView({
   const showAvailability = isRent && hasValue(property?.availabilityDate);
 
   const showAdvance = hasValue(property?.advanceAmount);
+  const showOffer = isOfferActive(property?.offerActive);
+  const offerDiscountText = useMemo(() => formatOfferDiscount(property), [property]);
+  const offerExpiryText = useMemo(() => formatOfferExpiry(property?.offerValidUntil), [property?.offerValidUntil]);
+  const offerExpiryState = useMemo(
+    () => getOfferExpiryState(property?.offerValidUntil),
+    [property?.offerValidUntil]
+  );
 
   const openGoogleMap = () => {
     if (mapCoords?.lat && mapCoords?.lng) {
@@ -487,17 +543,18 @@ function BuyerPropertyDetailsView({
   };
 
   return (
-    <main className="w-full min-w-0 px-6 py-8 sm:px-10">
+    <main className="min-h-screen w-full min-w-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.10),transparent_22%),linear-gradient(180deg,#f4fff9_0%,#eefbf5_100%)] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+      <div className="mx-auto max-w-7xl">
       {/* top action buttons */}
-      <div className="mb-4 flex justify-end gap-3">
+      <div className="mb-5 flex flex-wrap justify-end gap-3">
         <button
           type="button"
           onClick={toggleWishlist}
           className={[
-            "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition",
+            "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-semibold shadow-sm ring-1 transition",
             wishlisted
-              ? "bg-rose-600 text-white hover:bg-rose-700"
-              : "bg-emerald-700 text-white hover:bg-emerald-800",
+              ? "bg-rose-600 text-white ring-rose-600 hover:bg-rose-700"
+              : "bg-emerald-700 text-white ring-emerald-700 hover:bg-emerald-800",
           ].join(" ")}
         >
           <Heart className="h-4 w-4" />
@@ -512,9 +569,9 @@ function BuyerPropertyDetailsView({
       </div>
 
       {/* HERO */}
-      <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8">
-          <div className="relative overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5">
+          <div className="relative overflow-hidden rounded-[32px] border border-emerald-100/80 bg-white shadow-[0_24px_70px_-36px_rgba(16,185,129,0.35)] ring-1 ring-emerald-100/70">
             <img
               src={activeImg || images[0]}
               alt={property?.title || "Property"}
@@ -548,9 +605,17 @@ function BuyerPropertyDetailsView({
                 <BadgeCheck className="h-4 w-4" />
                 Verified
               </span>
+
+              {showOffer && (
+                <OfferBadge
+                  category={property?.offerCategory}
+                  active={property?.offerActive}
+                  label={property?.offerBadge || property?.offerTitle}
+                />
+              )}
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/65 to-transparent p-6">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent p-6 sm:p-7">
               <h2 className="text-xl font-extrabold text-white">
                 {property?.title || "Property"}
               </h2>
@@ -569,10 +634,10 @@ function BuyerPropertyDetailsView({
                 type="button"
                 onClick={() => setActiveImg(url)}
                 className={[
-                  "group overflow-hidden rounded-2xl bg-white ring-1 transition",
+                  "group overflow-hidden rounded-[24px] border bg-white transition",
                   url === activeImg
-                    ? "ring-emerald-500 shadow-md"
-                    : "ring-black/10 hover:ring-emerald-300 hover:shadow-sm",
+                    ? "border-emerald-400 shadow-[0_16px_36px_-24px_rgba(16,185,129,0.45)] ring-2 ring-emerald-200"
+                    : "border-emerald-100 ring-1 ring-black/5 hover:border-emerald-300 hover:shadow-sm",
                 ].join(" ")}
                 title="View image"
               >
@@ -585,7 +650,7 @@ function BuyerPropertyDetailsView({
             ))}
           </div>
 
-          <div className="mt-5 rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-200">
+          <div className="mt-5 rounded-[28px] border border-emerald-200 bg-[linear-gradient(180deg,#f4fff8_0%,#ecfdf5_100%)] p-5 shadow-sm ring-1 ring-emerald-100">
             <div className="flex items-start gap-3">
               <div className="mt-0.5 rounded-xl bg-emerald-600 p-2 text-white">
                 <ShieldCheck className="h-4 w-4" />
@@ -604,7 +669,7 @@ function BuyerPropertyDetailsView({
           {(isReserved || isBooked) && (
             <div
               className={[
-                "mt-4 rounded-2xl px-4 py-3 text-sm ring-1",
+                "mt-4 rounded-[24px] px-4 py-3 text-sm shadow-sm ring-1",
                 isReserved
                   ? "border-amber-200 bg-amber-50 text-amber-900 ring-amber-200"
                   : "border-rose-200 bg-rose-50 text-rose-900 ring-rose-200",
@@ -626,12 +691,13 @@ function BuyerPropertyDetailsView({
       {/* DETAILS + RIGHT PANEL */}
       <section className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="lg:col-span-8">
+          <div className="rounded-[32px] border border-emerald-100/80 bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,118,110,0.35)] ring-1 ring-emerald-100/70 sm:p-7">
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
             {property?.title || "Property"}
           </h1>
 
           {property?.propertyCode && (
-            <div className="mt-2 inline-flex items-center rounded-full bg-white px-4 py-1.5 text-xs font-extrabold text-slate-900 ring-1 ring-slate-200">
+            <div className="mt-3 inline-flex items-center rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-extrabold text-slate-900 ring-1 ring-emerald-200">
               Property ID:
               <span className="ml-2 font-mono text-emerald-700">
                 {property.propertyCode}
@@ -639,10 +705,18 @@ function BuyerPropertyDetailsView({
             </div>
           )}
 
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <div className="text-3xl font-extrabold text-emerald-700">
               {money(property?.currency, property?.price)}
             </div>
+
+            {showOffer && (
+              <OfferBadge
+                category={property?.offerCategory}
+                active={property?.offerActive}
+                label={property?.offerBadge || property?.offerTitle}
+              />
+            )}
 
             {isRent && showMonthlyRent && (
               <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200">
@@ -659,8 +733,157 @@ function BuyerPropertyDetailsView({
             )}
           </div>
 
+          <div className="mt-5 rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fffb_100%)] p-5 shadow-sm ring-1 ring-emerald-100/70">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+                    Buyer Action Summary
+                  </div>
+                  <h3 className="mt-2 text-xl font-extrabold tracking-tight text-slate-900">
+                    Main next step for this property
+                  </h3>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span
+                    className={[
+                      "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ring-1",
+                      isAvailable
+                        ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                        : isReserved
+                        ? "bg-amber-50 text-amber-800 ring-amber-200"
+                        : "bg-rose-50 text-rose-800 ring-rose-200",
+                    ].join(" ")}
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    {isAvailable
+                      ? "Available to proceed"
+                      : isReserved
+                      ? "Temporarily reserved"
+                      : "Currently booked"}
+                  </span>
+
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-800 ring-1 ring-slate-200">
+                    <BadgeCheck className="h-4 w-4 text-emerald-700" />
+                    Verified listing
+                  </span>
+
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-800 ring-1 ring-slate-200">
+                    <Phone className="h-4 w-4 text-emerald-700" />
+                    Seller contact ready
+                  </span>
+                </div>
+
+                <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                  {isAvailable
+                    ? "This property is open for buyer action. Start with a visit if you want to inspect first, or continue to reservation and payment from the action panel."
+                    : isReserved
+                    ? "This property is reserved right now. Your best next step is to contact the seller or send an inquiry while you monitor availability."
+                    : "This property is already booked. You can still contact the seller for context or continue exploring similar options below."}
+                </p>
+              </div>
+
+              <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[280px]">
+                <button
+                  type="button"
+                  onClick={isAvailable ? handleOpenSchedule : handleContactAgent}
+                  className={[
+                    "inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-extrabold text-white transition",
+                    isAvailable
+                      ? "bg-emerald-700 hover:bg-emerald-800"
+                      : isReserved
+                      ? "bg-amber-500 hover:bg-amber-600"
+                      : "bg-slate-900 hover:bg-slate-800",
+                  ].join(" ")}
+                >
+                  <Calendar className="h-4 w-4" />
+                  {isAvailable
+                    ? "Primary CTA: Schedule Visit"
+                    : isReserved
+                    ? "Primary CTA: Contact Seller"
+                    : "Primary CTA: Send Inquiry"}
+                </button>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  <button
+                    type="button"
+                    onClick={handleContactAgent}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50"
+                  >
+                    <Send className="h-4 w-4 text-emerald-700" />
+                    Secondary: Inquiry
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={toggleWishlist}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50"
+                  >
+                    <Heart className={["h-4 w-4", wishlisted ? "fill-rose-500 text-rose-500" : "text-emerald-700"].join(" ")} />
+                    {wishlisted ? "Saved to wishlist" : "Secondary: Save property"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {showOffer && (
+            <div className="mt-4 rounded-[28px] border border-emerald-200 bg-[linear-gradient(180deg,rgba(236,253,245,0.92)_0%,rgba(209,250,229,0.72)_100%)] p-5 ring-1 ring-emerald-100">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-extrabold text-emerald-900">
+                    {property?.offerTitle || "Special Property Offer"}
+                  </div>
+                  {property?.offerDescription ? (
+                    <div className="mt-2 max-w-2xl text-sm leading-6 text-emerald-900/80">
+                      {property.offerDescription}
+                    </div>
+                  ) : null}
+                </div>
+
+                <OfferBadge
+                  category={property?.offerCategory}
+                  active={property?.offerActive}
+                  label={property?.offerBadge || property?.offerTitle}
+                />
+              </div>
+
+              {(offerDiscountText || offerExpiryText) && (
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {offerDiscountText ? (
+                    <div className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 ring-1 ring-emerald-200">
+                      Discount: <span className="font-extrabold text-emerald-800">{offerDiscountText}</span>
+                    </div>
+                  ) : null}
+
+                  {offerExpiryText ? (
+                    <div className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 ring-1 ring-emerald-200">
+                      Valid Until: <span className="font-extrabold text-emerald-800">{offerExpiryText}</span>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              {offerExpiryState ? (
+                <div
+                  className={[
+                    "mt-3 text-xs font-semibold",
+                    offerExpiryState.tone === "emerald"
+                      ? "text-emerald-700"
+                      : offerExpiryState.tone === "amber"
+                      ? "text-amber-700"
+                      : "text-rose-700",
+                  ].join(" ")}
+                >
+                  {offerExpiryState.text}
+                </div>
+              ) : null}
+            </div>
+          )}
+
           {/* Chips */}
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-700">
+          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-700">
             {showBeds && (
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 ring-1 ring-slate-200">
                 <BedDouble className="h-4 w-4 text-emerald-700" />
@@ -686,20 +909,38 @@ function BuyerPropertyDetailsView({
           </div>
 
           {/* ✅ Google Map Card */}
-          <div className="mt-6 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-extrabold text-slate-900">
-                  Google Map
+          <div className="mt-6 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-3">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                    Location & Map
+                  </div>
+                  <div className="mt-2 text-lg font-extrabold text-slate-900">
+                    Review the property location on Google Maps
+                  </div>
+                  <div className="mt-1 text-sm leading-6 text-slate-600">
+                    Check the map preview below to understand the surrounding area, then open
+                    Google Maps for directions and a more precise street-level view.
+                  </div>
                 </div>
-                <div className="mt-1 text-xs text-slate-600">
-                  Open the exact location on Google Maps.
+
+                <div className="flex flex-wrap gap-2">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Map reference shared with this listing
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                    <MapPin className="h-3.5 w-3.5 text-emerald-700" />
+                    Use Open Map for live Google Maps directions
+                  </div>
                 </div>
               </div>
+
               <button
                 type="button"
                 onClick={openGoogleMap}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-extrabold text-white hover:bg-emerald-800"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-emerald-800"
               >
                 <ExternalLink className="h-4 w-4" />
                 Open Map
@@ -708,12 +949,23 @@ function BuyerPropertyDetailsView({
 
             {showGoogleMap ? (
               <>
-                <div className="mt-3 break-all rounded-xl bg-slate-50 p-3 text-xs text-slate-700 ring-1 ring-slate-200">
-                  {String(property?.landmark || "").trim()}
+                <div className="mt-4 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Shared map link / landmark
+                  </div>
+                  <div className="mt-2 break-all text-xs leading-6 text-slate-700">
+                    {String(property?.landmark || "").trim()}
+                  </div>
                 </div>
 
-                {mapEmbedUrl && (
-                  <div className="mt-4 overflow-hidden rounded-2xl ring-1 ring-slate-200">
+                <div className="mt-3 text-xs text-slate-500">
+                  If the embedded preview looks approximate, use{" "}
+                  <span className="font-semibold text-slate-700">Open Map</span> to verify the
+                  exact route directly in Google Maps.
+                </div>
+
+                <div className="mt-4 overflow-hidden rounded-2xl ring-1 ring-slate-200">
+                  {mapEmbedUrl && (
                     <iframe
                       title="map"
                       src={mapEmbedUrl}
@@ -721,8 +973,8 @@ function BuyerPropertyDetailsView({
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                     />
-                  </div>
-                )}
+                  )}
+                </div>
               </>
             ) : (
               <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600 ring-1 ring-slate-200">
@@ -732,7 +984,7 @@ function BuyerPropertyDetailsView({
           </div>
 
           {/* Listing Overview */}
-          <div className="mt-6 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+          <div className="mt-6 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between">
               <div className="text-sm font-extrabold text-slate-900">
                 Listing Overview
@@ -744,7 +996,7 @@ function BuyerPropertyDetailsView({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   Price
                 </div>
@@ -753,7 +1005,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   Booking Advance
                 </div>
@@ -764,7 +1016,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   Location
                 </div>
@@ -773,7 +1025,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   Address
                 </div>
@@ -782,7 +1034,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   Furnishing
                 </div>
@@ -793,7 +1045,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   Facing
                 </div>
@@ -802,7 +1054,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   Floor
                 </div>
@@ -811,7 +1063,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   Total Floors
                 </div>
@@ -820,7 +1072,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   Year Built
                 </div>
@@ -829,7 +1081,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200 sm:col-span-2">
+              <div className="rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200 sm:col-span-2">
                 <div className="text-xs font-semibold text-slate-500">
                   Road Access (ft)
                 </div>
@@ -846,13 +1098,13 @@ function BuyerPropertyDetailsView({
               (hasValue(property?.monthlyRent) ||
                 hasValue(property?.deposit) ||
                 hasValue(property?.availabilityDate)) && (
-                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                <div className="mt-4 rounded-[24px] border border-emerald-200 bg-emerald-50/60 p-4">
                   <div className="mb-3 text-sm font-extrabold text-emerald-900">
                     Rent Details
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+                    <div className="rounded-2xl bg-white p-3.5 ring-1 ring-emerald-200">
                       <div className="text-xs font-semibold text-slate-500">
                         Monthly Rent
                       </div>
@@ -863,7 +1115,7 @@ function BuyerPropertyDetailsView({
                       </div>
                     </div>
 
-                    <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+                    <div className="rounded-2xl bg-white p-3.5 ring-1 ring-emerald-200">
                       <div className="text-xs font-semibold text-slate-500">
                         Deposit
                       </div>
@@ -874,7 +1126,7 @@ function BuyerPropertyDetailsView({
                       </div>
                     </div>
 
-                    <div className="rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+                    <div className="rounded-2xl bg-white p-3.5 ring-1 ring-emerald-200">
                       <div className="text-xs font-semibold text-slate-500">
                         Available From
                       </div>
@@ -888,7 +1140,7 @@ function BuyerPropertyDetailsView({
                 </div>
               )}
 
-            <div className="mt-4 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+            <div className="mt-4 rounded-2xl bg-slate-50 p-3.5 ring-1 ring-slate-200">
               <div className="text-xs font-semibold text-slate-500">
                 Description
               </div>
@@ -899,7 +1151,7 @@ function BuyerPropertyDetailsView({
           </div>
 
           {/* Amenities */}
-          <div className="mt-6 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+          <div className="mt-6 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between">
               <div className="text-sm font-extrabold text-slate-900">
                 Amenities
@@ -916,7 +1168,7 @@ function BuyerPropertyDetailsView({
                   <div
                     key={a}
                     className={[
-                      "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold ring-1",
+                  "flex items-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-semibold ring-1",
                       enabled
                         ? "bg-emerald-50 text-emerald-900 ring-emerald-200"
                         : "bg-slate-50 text-slate-500 ring-slate-200",
@@ -935,7 +1187,7 @@ function BuyerPropertyDetailsView({
             </div>
 
             {amenities.length === 0 && (
-              <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600 ring-1 ring-slate-200">
+              <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-sm text-slate-600 ring-1 ring-slate-200">
                 No amenities selected.
               </div>
             )}
@@ -961,9 +1213,26 @@ function BuyerPropertyDetailsView({
           </div>
 
           {/* Similar properties */}
-          <h3 className="mt-10 text-xl font-extrabold text-slate-900">
-            Similar Properties
-          </h3>
+          <div className="mt-10 rounded-2xl border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 ring-1 ring-emerald-100/80">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="max-w-2xl">
+                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                  More Options
+                </div>
+                <h3 className="mt-2 text-xl font-extrabold text-slate-900">
+                  Similar properties worth reviewing next
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  These listings may be relevant because they are currently active and can help you
+                  compare pricing, layout, and location before making a final decision.
+                </p>
+              </div>
+
+              <div className="inline-flex items-center rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                Suggested alternatives
+              </div>
+            </div>
+          </div>
 
           <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {(similar.length ? similar : []).map((p) => {
@@ -972,7 +1241,7 @@ function BuyerPropertyDetailsView({
                 <a
                   key={p._id}
                   href={`/buyer/property/${p._id}`}
-                  className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition hover:shadow-md"
+                  className="group overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-[0_20px_40px_-28px_rgba(16,185,129,0.35)]"
                 >
                   <img
                     src={img}
@@ -997,10 +1266,11 @@ function BuyerPropertyDetailsView({
             })}
 
             {similar.length === 0 && (
-              <div className="rounded-2xl bg-white p-5 text-sm text-slate-600 ring-1 ring-black/5">
+              <div className="rounded-[28px] bg-white p-5 text-sm text-slate-600 shadow-sm ring-1 ring-black/5">
                 No similar properties found right now.
               </div>
             )}
+          </div>
           </div>
         </div>
 
@@ -1008,7 +1278,7 @@ function BuyerPropertyDetailsView({
         <aside className="lg:col-span-4">
           <div className="sticky top-6 space-y-4">
             {/* Contact Agent Card + Pay Advance + COD */}
-            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div className="rounded-[28px] bg-white p-6 shadow-[0_20px_55px_-40px_rgba(15,23,42,0.35)] ring-1 ring-slate-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-extrabold text-slate-900">
                   Contact Agent
@@ -1018,22 +1288,46 @@ function BuyerPropertyDetailsView({
                 </span>
               </div>
 
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                  <div className="text-xs font-semibold text-slate-500">
-                    Name
+              <div className="mt-4 rounded-[24px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                      Verified Contact
+                    </div>
+                    <div className="mt-2 text-lg font-extrabold tracking-tight text-slate-900">
+                      {seller?.name || "Not provided"}
+                    </div>
+                    <div className="mt-1 text-sm font-medium text-slate-500">
+                      {seller?.role ? String(seller.role).replace(/^./, (c) => c.toUpperCase()) : "Seller / Agent"}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm font-extrabold text-slate-900">
-                    {seller?.name || "Not provided"}
-                  </div>
+
+                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200">
+                    <BadgeCheck className="h-4 w-4" />
+                    Verified seller
+                  </span>
                 </div>
 
-                <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                  <div className="text-xs font-semibold text-slate-500">
-                    Phone
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  <div className="rounded-2xl bg-white p-3.5 ring-1 ring-slate-200">
+                    <div className="text-xs font-semibold text-slate-500">
+                      Phone
+                    </div>
+                    <div className="mt-1 text-sm font-extrabold text-slate-900">
+                      {seller?.phone || "Not provided"}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm font-extrabold text-slate-900">
-                    {seller?.phone || "Not provided"}
+
+                  <div className="rounded-2xl bg-white p-3.5 ring-1 ring-slate-200">
+                    <div className="text-xs font-semibold text-slate-500">
+                      Trust
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-800">
+                      Active agent profile
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      Usually responds within a few hours
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1042,7 +1336,7 @@ function BuyerPropertyDetailsView({
                 {seller?.phone ? (
                   <a
                     href={`tel:${seller.phone}`}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-700"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-700"
                   >
                     <Phone className="h-4 w-4" />
                     Call Agent
@@ -1051,7 +1345,7 @@ function BuyerPropertyDetailsView({
                   <button
                     type="button"
                     onClick={handleContactAgent}
-                    className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-700"
+                    className="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-700"
                   >
                     Contact via Inquiry
                   </button>
@@ -1066,7 +1360,7 @@ function BuyerPropertyDetailsView({
                   }}
                   disabled={!isAvailable}
                   className={[
-                    "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold text-white transition",
+                    "inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-extrabold text-white transition",
                     isAvailable
                       ? "bg-emerald-900 hover:bg-emerald-950"
                       : isReserved
@@ -1091,7 +1385,7 @@ function BuyerPropertyDetailsView({
                   }}
                   disabled={!isAvailable}
                   className={[
-                    "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold transition ring-1",
+                    "inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-extrabold transition ring-1",
                     isAvailable
                       ? "bg-white text-emerald-900 ring-emerald-200 hover:bg-emerald-50"
                       : isReserved
@@ -1104,7 +1398,7 @@ function BuyerPropertyDetailsView({
                 </button>
 
                 {isReserved && (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                     🟡 This property is reserved
                     {reservedUntilText ? ` until ${reservedUntilText}` : ""}.
                     <div className="mt-1 text-xs text-amber-800/80">
@@ -1114,7 +1408,7 @@ function BuyerPropertyDetailsView({
                 )}
 
                 {isBooked && (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
                     🔴 This property has been booked (confirmed).
                     <div className="mt-1 text-xs text-rose-800/80">
                       Explore similar properties below.
@@ -1130,7 +1424,7 @@ function BuyerPropertyDetailsView({
                 </p>
 
                 {hasValue(property?.advanceAmount) && (
-                  <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-700 ring-1 ring-slate-200">
+                  <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-700 ring-1 ring-slate-200">
                     <div className="font-extrabold text-slate-900">
                       Advance Amount
                     </div>
@@ -1145,14 +1439,14 @@ function BuyerPropertyDetailsView({
             {/* Inquiry Card (KEEP) */}
             <div
               ref={inquiryRef}
-              className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+              className="rounded-[28px] bg-white p-6 shadow-[0_20px_55px_-40px_rgba(15,23,42,0.35)] ring-1 ring-slate-200"
             >
               <h3 className="mb-4 text-lg font-extrabold text-slate-900">
                 Make an Inquiry
               </h3>
 
               {success && (
-                <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                <div className="mb-4 rounded-2xl border border-green-200 bg-green-50 p-4">
                   <p className="text-sm font-semibold text-green-800">
                     Your inquiry has been sent successfully! The seller will
                     contact you soon.
@@ -1161,7 +1455,7 @@ function BuyerPropertyDetailsView({
               )}
 
               {error && (
-                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4">
                   <p className="text-sm font-semibold text-red-800">{error}</p>
                 </div>
               )}
@@ -1182,7 +1476,7 @@ function BuyerPropertyDetailsView({
                           name: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="Your full name"
                     />
                   </div>
@@ -1201,7 +1495,7 @@ function BuyerPropertyDetailsView({
                           email: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="your.email@example.com"
                     />
                   </div>
@@ -1219,7 +1513,7 @@ function BuyerPropertyDetailsView({
                           phone: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="+977 98XXXXXXXX"
                     />
                   </div>
@@ -1239,7 +1533,7 @@ function BuyerPropertyDetailsView({
                           message: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="I'm interested in this property..."
                     />
                   </div>
@@ -1247,7 +1541,7 @@ function BuyerPropertyDetailsView({
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {submitting ? (
                       <>
@@ -1384,6 +1678,7 @@ function BuyerPropertyDetailsView({
           </div>
         </div>
       )}
+      </div>
     </main>
   );
 }
@@ -1442,8 +1737,8 @@ export default function PropertyDetailsPage() {
 
   if (loading) {
     return (
-      <div className="grid min-h-[calc(100vh-64px)] place-items-center">
-        <div className="text-center">
+      <div className="grid min-h-[calc(100vh-64px)] place-items-center bg-[linear-gradient(180deg,#f4fff9_0%,#eefbf5_100%)] px-4">
+        <div className="rounded-[28px] border border-emerald-100 bg-white px-10 py-12 text-center shadow-sm ring-1 ring-emerald-100">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-r-2 border-emerald-600" />
           <p className="mt-4 text-slate-600">Loading property...</p>
         </div>
@@ -1453,13 +1748,13 @@ export default function PropertyDetailsPage() {
 
   if (fatalError && !property) {
     return (
-      <div className="grid min-h-[calc(100vh-64px)] place-items-center">
-        <div className="text-center">
+      <div className="grid min-h-[calc(100vh-64px)] place-items-center bg-[linear-gradient(180deg,#f4fff9_0%,#eefbf5_100%)] px-4">
+        <div className="rounded-[28px] border border-rose-200 bg-white px-10 py-12 text-center shadow-sm ring-1 ring-rose-100">
           <p className="text-red-600">{fatalError}</p>
           <button
             type="button"
             onClick={() => router.back()}
-            className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700"
+            className="mt-4 rounded-2xl bg-emerald-600 px-4 py-2.5 text-white hover:bg-emerald-700"
           >
             Go Back
           </button>

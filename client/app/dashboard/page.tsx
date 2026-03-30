@@ -4,6 +4,8 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import OfferBadge from "@/components/offers/OfferBadge";
+import { apiFetch } from "@/app/lib/api";
 import {
   Home,
   Building2,
@@ -24,7 +26,8 @@ import {
 } from "lucide-react";
 
 type Property = {
-  id: string;
+  id?: string;
+  _id?: string;
   title: string;
   location: string;
   price: string;
@@ -32,6 +35,32 @@ type Property = {
   beds: number;
   baths: number;
   sqft: number;
+  offerCategory?: "none" | "dashain" | "latest" | "hot" | "limited_time";
+  offerBadge?: string;
+  offerTitle?: string;
+  offerActive?: boolean;
+  currency?: string;
+  address?: string;
+  images?: { url: string }[];
+};
+
+type PropertyListResponse = {
+  items: Array<{
+    _id: string;
+    title: string;
+    location: string;
+    address?: string;
+    price: number;
+    currency?: string;
+    beds?: number;
+    baths?: number;
+    sqft?: number;
+    images?: { url: string }[];
+    offerCategory?: "none" | "dashain" | "latest" | "hot" | "limited_time";
+    offerBadge?: string;
+    offerTitle?: string;
+    offerActive?: boolean;
+  }>;
 };
 
 const featured: Property[] = [
@@ -44,6 +73,9 @@ const featured: Property[] = [
     beds: 5,
     baths: 4,
     sqft: 4100,
+    offerCategory: "dashain",
+    offerBadge: "Dashain Offer",
+    offerActive: true,
   },
   {
     id: "p2",
@@ -54,6 +86,9 @@ const featured: Property[] = [
     beds: 2,
     baths: 2,
     sqft: 1200,
+    offerCategory: "latest",
+    offerBadge: "Latest Deal",
+    offerActive: true,
   },
   {
     id: "p3",
@@ -64,6 +99,9 @@ const featured: Property[] = [
     beds: 3,
     baths: 2,
     sqft: 1500,
+    offerCategory: "hot",
+    offerBadge: "Hot Deal",
+    offerActive: true,
   },
   {
     id: "p4",
@@ -74,6 +112,9 @@ const featured: Property[] = [
     beds: 3,
     baths: 2,
     sqft: 2000,
+    offerCategory: "limited_time",
+    offerBadge: "Limited Time",
+    offerActive: true,
   },
 ];
 
@@ -93,6 +134,61 @@ const fadeUp = {
 export default function DashboardLandingLike() {
   const [mode, setMode] = React.useState<"buy" | "rent" | "sell">("buy");
   const [activePage, setActivePage] = React.useState(1);
+  const [offerProperties, setOfferProperties] = React.useState<Property[]>([]);
+
+  React.useEffect(() => {
+    apiFetch<PropertyListResponse>("/properties?limit=48")
+      .then((res) => {
+        const mapped = (res.items || []).map((item) => ({
+          _id: item._id,
+          title: item.title,
+          location: item.address || item.location,
+          price: `${item.currency || "NPR"} ${Number(item.price || 0).toLocaleString()}`,
+          image: item.images?.[0]?.url || "/placeholder.jpg",
+          beds: Number(item.beds || 0),
+          baths: Number(item.baths || 0),
+          sqft: Number(item.sqft || 0),
+          offerCategory: item.offerCategory || "none",
+          offerBadge: item.offerBadge,
+          offerTitle: item.offerTitle,
+          offerActive: Boolean(item.offerActive),
+          currency: item.currency || "NPR",
+          address: item.address || "",
+          images: item.images || [],
+        }));
+        setOfferProperties(mapped);
+      })
+      .catch(() => setOfferProperties([]));
+  }, []);
+
+  const dashainOffers = React.useMemo(
+    () =>
+      offerProperties
+        .filter((item) => item.offerActive && item.offerCategory === "dashain")
+        .slice(0, 6),
+    [offerProperties]
+  );
+  const hotDeals = React.useMemo(
+    () =>
+      offerProperties
+        .filter((item) => item.offerActive && item.offerCategory === "hot")
+        .slice(0, 6),
+    [offerProperties]
+  );
+  const latestDeals = React.useMemo(
+    () =>
+      offerProperties
+        .filter((item) => item.offerActive && item.offerCategory === "latest")
+        .slice(0, 6),
+    [offerProperties]
+  );
+  const limitedTimeOffers = React.useMemo(
+    () =>
+      offerProperties
+        .filter((item) => item.offerActive && item.offerCategory === "limited_time")
+        .slice(0, 6),
+    [offerProperties]
+  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -456,6 +552,36 @@ export default function DashboardLandingLike() {
         </div>
       </section>
 
+      <OfferSection
+        title="Dashain Festival Offers"
+        description="Seasonal picks curated from active Dashain promotions."
+        href="/buyer/search-properties"
+        items={dashainOffers}
+      />
+
+      <OfferSection
+        title="Hot Deals"
+        description="Listings getting the strongest spotlight right now."
+        href="/buyer/search-properties"
+        items={hotDeals}
+        tinted
+      />
+
+      <OfferSection
+        title="Latest Deals"
+        description="Freshly promoted properties with active deal tags."
+        href="/buyer/search-properties"
+        items={latestDeals}
+      />
+
+      <OfferSection
+        title="Limited Time Offers"
+        description="Short-window promotions worth checking before they expire."
+        href="/buyer/search-properties"
+        items={limitedTimeOffers}
+        tinted
+      />
+
       {/* Partner section */}
       <section className="bg-emerald-50/40 py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -648,8 +774,10 @@ function MiniCard({ icon, title }: { icon: React.ReactNode; title: string }) {
 }
 
 function PropertyCard({ p }: { p: Property }) {
+  const href = p._id ? `/buyer/property/${p._id}` : `/properties/${p.id}`;
+
   return (
-    <Link href={`/properties/${p.id}`} className="group block">
+    <Link href={href} className="group block">
       <motion.div
         whileHover={{ y: -8 }}
         transition={{ type: "spring", stiffness: 240, damping: 18 }}
@@ -662,6 +790,13 @@ function PropertyCard({ p }: { p: Property }) {
             fill
             className="object-cover transition duration-500 group-hover:scale-[1.06]"
           />
+          <div className="absolute left-3 top-3 z-10">
+            <OfferBadge
+              category={p.offerCategory}
+              active={p.offerActive}
+              label={p.offerBadge || p.offerTitle}
+            />
+          </div>
           <button
             type="button"
             className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-slate-700 shadow-sm ring-1 ring-white/60 opacity-0 transition group-hover:opacity-100"
@@ -687,6 +822,59 @@ function PropertyCard({ p }: { p: Property }) {
         </div>
       </motion.div>
     </Link>
+  );
+}
+
+function OfferSection({
+  title,
+  description,
+  href,
+  items,
+  tinted = false,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  items: Property[];
+  tinted?: boolean;
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <section className={tinted ? "bg-emerald-50/35 py-20" : "bg-white py-20"}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h3 className="text-2xl font-extrabold tracking-tight text-slate-900">
+              {title}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">{description}</p>
+          </div>
+
+          <Link
+            href={href}
+            className="group inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+          >
+            View All
+            <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          {items.slice(0, 4).map((p, i) => (
+            <motion.div
+              key={p._id || p.id || `${title}-${i}`}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ duration: 0.45, delay: i * 0.05 }}
+            >
+              <PropertyCard p={p} />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

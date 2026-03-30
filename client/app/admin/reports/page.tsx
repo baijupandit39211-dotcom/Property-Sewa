@@ -95,11 +95,11 @@ function formatDate(value: string) {
 }
 
 function statusClasses(status: string) {
-  if (status === "pending") return "border-amber-200 bg-amber-50 text-amber-800";
+  if (status === "pending") return "border-emerald-200 bg-emerald-50 text-emerald-800";
   if (status === "reviewed") return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (status === "action_taken") return "border-sky-200 bg-sky-50 text-sky-800";
-  if (status === "rejected") return "border-rose-200 bg-rose-50 text-rose-700";
-  return "border-slate-200 bg-slate-100 text-slate-700";
+  if (status === "action_taken") return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  if (status === "rejected") return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  return "border-emerald-200 bg-emerald-50 text-emerald-800";
 }
 
 function pickProperty(report: ReportItem) {
@@ -150,7 +150,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function ActionBadge({ actionType }: { actionType: string }) {
   return (
-    <span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+    <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
       {formatActionLabel(actionType)}
     </span>
   );
@@ -170,11 +170,11 @@ function StatCard({
   icon: ReactNode;
 }) {
   const tones = {
-    slate: "border-slate-200 bg-white",
-    amber: "border-amber-100 bg-amber-50/80",
+    slate: "border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)]",
+    amber: "border-emerald-100 bg-emerald-50/80",
     emerald: "border-emerald-100 bg-emerald-50/80",
-    sky: "border-sky-100 bg-sky-50/80",
-    rose: "border-rose-100 bg-rose-50/80",
+    sky: "border-emerald-100 bg-emerald-50/80",
+    rose: "border-emerald-100 bg-emerald-50/80",
   }[tone];
 
   return (
@@ -185,7 +185,7 @@ function StatCard({
           <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
           <p className="mt-2 text-sm text-slate-500">{detail}</p>
         </div>
-        <div className="rounded-2xl bg-slate-900 p-3 text-white shadow-sm">{icon}</div>
+        <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white shadow-sm">{icon}</div>
       </div>
     </div>
   );
@@ -299,9 +299,10 @@ export default function AdminReportsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_28%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4 sm:p-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="relative overflow-hidden rounded-[32px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a_0%,#134e4a_42%,#ecfdf5_100%)] px-6 py-7 text-white shadow-[0_30px_80px_-40px_rgba(15,23,42,0.8)] sm:px-8 sm:py-9">
+        <section className="relative overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-7 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-9">
+          <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
@@ -310,7 +311,7 @@ export default function AdminReportsPage() {
               <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                 Reports moderation
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
                 Review reported listings, reject invalid complaints, hide
                 listings from the public site, and restore them if a moderation
                 action was a mistake.
@@ -337,7 +338,7 @@ export default function AdminReportsPage() {
           <StatCard title="Rejected" value={String(stats.rejected)} detail="Dismissed moderation reports." tone="rose" icon={<XCircle className="h-5 w-5" />} />
         </section>
 
-        <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-4 shadow-sm shadow-slate-200/70 backdrop-blur sm:p-5">
+        <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-4 shadow-sm shadow-emerald-100/70 backdrop-blur sm:p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-900">Filter moderation queue</p>
@@ -352,8 +353,8 @@ export default function AdminReportsPage() {
                   className={[
                     "rounded-2xl px-4 py-2.5 text-sm font-semibold transition ring-1",
                     status === option
-                      ? "bg-slate-900 text-white ring-slate-900 shadow-sm"
-                      : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50",
+                      ? "bg-emerald-700 text-white ring-emerald-700 shadow-sm"
+                      : "bg-white text-slate-700 ring-emerald-100 hover:bg-emerald-50",
                   ].join(" ")}
                 >
                   {STATUS_COPY[option].label}
@@ -375,22 +376,22 @@ export default function AdminReportsPage() {
           </section>
         ) : null}
 
-        <section className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/95 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.28)]">
-          <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-4 sm:px-6">
+        <section className="overflow-hidden rounded-[30px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-[0_24px_60px_-36px_rgba(22,101,52,0.24)]">
+          <div className="flex items-center justify-between border-b border-emerald-100 px-4 py-4 sm:px-6">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Report queue</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {loading ? "Refreshing report data." : `${reports.length} entries in this view.`}
               </p>
             </div>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
               {STATUS_COPY[status].label}
             </span>
           </div>
 
           {reports.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-              <div className="rounded-full bg-slate-100 p-4 text-slate-500">
+              <div className="rounded-full bg-emerald-50 p-4 text-emerald-600">
                 <ShieldAlert className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-semibold text-slate-900">No reports found</h3>
@@ -401,7 +402,7 @@ export default function AdminReportsPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-slate-50/90 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <thead className="bg-emerald-50/80 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                   <tr>
                     <th className="px-6 py-4">Listing</th>
                     <th className="px-6 py-4">Reason</th>
@@ -422,7 +423,7 @@ export default function AdminReportsPage() {
                       property?.status === "rejected" || actionType === "property_removed";
 
                     return (
-                      <tr key={report._id} className="align-top transition hover:bg-slate-50/80">
+                      <tr key={report._id} className="align-top transition hover:bg-emerald-50/50">
                         <td className="px-6 py-5">
                           <div className="max-w-xs">
                             <div className="text-sm font-semibold text-slate-900">
@@ -446,7 +447,7 @@ export default function AdminReportsPage() {
                               {message || "No extra details"}
                             </div>
                             {report.adminNote ? (
-                              <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500 ring-1 ring-slate-200">
+                              <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-emerald-100">
                                 Admin note: {report.adminNote}
                               </div>
                             ) : null}
@@ -508,7 +509,7 @@ export default function AdminReportsPage() {
                                 report.status === "rejected" ||
                                 report.status === "action_taken"
                               }
-                              className="inline-flex items-center gap-2 rounded-2xl bg-white px-3.5 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-200 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="inline-flex items-center gap-2 rounded-2xl bg-white px-3.5 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               <XCircle className="h-4 w-4" />
                               Reject report
@@ -517,7 +518,7 @@ export default function AdminReportsPage() {
                               type="button"
                               onClick={() => void removeListing(report._id)}
                               disabled={processingKey === `${report._id}:remove` || propertyHidden}
-                              className="inline-flex items-center gap-2 rounded-2xl bg-rose-50 px-3.5 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-200 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               <Ban className="h-4 w-4" />
                               Hide listing
@@ -528,7 +529,7 @@ export default function AdminReportsPage() {
                               disabled={
                                 processingKey === `${report._id}:restore` || !propertyHidden
                               }
-                              className="inline-flex items-center gap-2 rounded-2xl bg-white px-3.5 py-2 text-xs font-semibold text-sky-700 ring-1 ring-sky-200 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="inline-flex items-center gap-2 rounded-2xl bg-white px-3.5 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               <RefreshCw className="h-4 w-4" />
                               Restore listing

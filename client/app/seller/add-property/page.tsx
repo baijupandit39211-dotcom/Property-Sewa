@@ -14,6 +14,18 @@ import {
 } from "lucide-react";
 
 const MAX_IMAGES = 6;
+const OFFER_CATEGORIES = [
+  { value: "none", label: "No Offer" },
+  { value: "dashain", label: "Dashain Festival Offers" },
+  { value: "latest", label: "Latest Deals" },
+  { value: "hot", label: "Hot Deals" },
+  { value: "limited_time", label: "Limited Time Offers" },
+] as const;
+const OFFER_DISCOUNT_TYPES = [
+  { value: "none", label: "No Discount" },
+  { value: "percentage", label: "Percentage" },
+  { value: "fixed", label: "Fixed Amount" },
+] as const;
 
 const AMENITIES = [
   "Parking",
@@ -86,6 +98,14 @@ export default function SellerAddPropertyPage() {
 
     // ✅ store google location as: "lat,lng" OR a link
     landmark: "",
+    offerCategory: "none",
+    offerTitle: "",
+    offerDescription: "",
+    offerBadge: "",
+    offerDiscountType: "none",
+    offerDiscountValue: "",
+    offerValidUntil: "",
+    offerActive: false,
   });
 
   const [amenities, setAmenities] = useState<Amenity[]>([]);
@@ -108,7 +128,12 @@ export default function SellerAddPropertyPage() {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const target = e.target;
+    const nextValue =
+      target instanceof HTMLInputElement && target.type === "checkbox"
+        ? target.checked
+        : target.value;
+    setFormData((prev) => ({ ...prev, [target.name]: nextValue }));
   };
 
   const toggleAmenity = (a: Amenity) => {
@@ -214,6 +239,14 @@ export default function SellerAddPropertyPage() {
       roadAccessFt: "",
 
       landmark: "",
+      offerCategory: "none",
+      offerTitle: "",
+      offerDescription: "",
+      offerBadge: "",
+      offerDiscountType: "none",
+      offerDiscountValue: "",
+      offerValidUntil: "",
+      offerActive: false,
     });
     setAmenities([]);
     setImages([]);
@@ -238,7 +271,7 @@ export default function SellerAddPropertyPage() {
       // add text fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value === "" || value === null || value === undefined) return;
-        formDataToSend.append(key, value);
+        formDataToSend.append(key, String(value));
       });
 
       // force numbers
@@ -261,6 +294,29 @@ export default function SellerAddPropertyPage() {
         formDataToSend.delete("monthlyRent");
         formDataToSend.delete("deposit");
         formDataToSend.delete("availabilityDate");
+      }
+
+      if (formData.offerCategory === "none") {
+        formDataToSend.set("offerCategory", "none");
+        formDataToSend.set("offerTitle", "");
+        formDataToSend.set("offerDescription", "");
+        formDataToSend.set("offerBadge", "");
+        formDataToSend.set("offerDiscountType", "none");
+        formDataToSend.set("offerDiscountValue", "0");
+        formDataToSend.delete("offerValidUntil");
+        formDataToSend.set("offerActive", "false");
+      } else {
+        formDataToSend.set(
+          "offerDiscountValue",
+          String(Number(formData.offerDiscountValue || 0))
+        );
+        if (formData.offerDiscountType === "none") {
+          formDataToSend.set("offerDiscountValue", "0");
+        }
+        if (!formData.offerValidUntil) {
+          formDataToSend.delete("offerValidUntil");
+        }
+        formDataToSend.set("offerActive", String(Boolean(formData.offerActive)));
       }
 
       // amenities
@@ -314,6 +370,11 @@ export default function SellerAddPropertyPage() {
   const landmarkValue = String(formData.landmark || "").trim();
   const landmarkIsLink = landmarkValue.startsWith("http");
   const landmarkIsCoord = isLatLng(landmarkValue);
+  const hasOffer = formData.offerCategory !== "none";
+  const hasDiscount =
+    hasOffer &&
+    (formData.offerDiscountType === "percentage" ||
+      formData.offerDiscountType === "fixed");
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-50 px-4 py-8 sm:px-6">
@@ -839,6 +900,147 @@ export default function SellerAddPropertyPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+            <div className="mb-3 text-sm font-semibold text-emerald-900">
+              Property Offer
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-semibold text-slate-800">
+                  Offer Category
+                </label>
+                <select
+                  name="offerCategory"
+                  value={formData.offerCategory}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                >
+                  {OFFER_CATEGORIES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 mt-7 md:mt-0">
+                <input
+                  type="checkbox"
+                  name="offerActive"
+                  checked={Boolean(formData.offerActive)}
+                  onChange={handleChange}
+                  disabled={loading || !hasOffer}
+                  className="h-4 w-4 accent-emerald-600"
+                />
+                <span className="text-sm font-semibold text-slate-800">
+                  Activate this offer
+                </span>
+              </label>
+            </div>
+
+            {hasOffer && (
+              <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">
+                    Offer Title
+                  </label>
+                  <input
+                    type="text"
+                    name="offerTitle"
+                    value={formData.offerTitle}
+                    onChange={handleChange}
+                    disabled={loading}
+                    placeholder="e.g., Dashain Special Discount"
+                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">
+                    Offer Badge
+                  </label>
+                  <input
+                    type="text"
+                    name="offerBadge"
+                    value={formData.offerBadge}
+                    onChange={handleChange}
+                    disabled={loading}
+                    placeholder="e.g., Save 15%"
+                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-800">
+                    Offer Description
+                  </label>
+                  <textarea
+                    name="offerDescription"
+                    value={formData.offerDescription}
+                    onChange={handleChange}
+                    rows={3}
+                    disabled={loading}
+                    placeholder="Short offer details for cards and property detail page."
+                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">
+                    Discount Type
+                  </label>
+                  <select
+                    name="offerDiscountType"
+                    value={formData.offerDiscountType}
+                    onChange={handleChange}
+                    disabled={loading}
+                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  >
+                    {OFFER_DISCOUNT_TYPES.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">
+                    Discount Value
+                  </label>
+                  <input
+                    type="number"
+                    name="offerDiscountValue"
+                    value={formData.offerDiscountValue}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.01"
+                    disabled={loading || !hasDiscount}
+                    placeholder={
+                      formData.offerDiscountType === "percentage" ? "e.g., 10" : "e.g., 5000"
+                    }
+                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800">
+                    Valid Until
+                  </label>
+                  <input
+                    type="date"
+                    name="offerValidUntil"
+                    value={formData.offerValidUntil}
+                    onChange={handleChange}
+                    disabled={loading}
+                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Amenities */}

@@ -171,8 +171,8 @@ function Shell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
+    <section className="rounded-[30px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-emerald-100 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-slate-900">{title}</h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">{description}</p>
@@ -205,7 +205,7 @@ function Stat({
           <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
           <p className="mt-2 text-sm text-slate-500">{detail}</p>
         </div>
-        <div className="rounded-2xl bg-slate-900 p-3 text-white">{icon}</div>
+        <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white">{icon}</div>
       </div>
     </div>
   );
@@ -231,7 +231,7 @@ function Field({
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+        className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
       />
     </label>
   );
@@ -257,7 +257,7 @@ function Area({
         rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+        className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
       />
     </label>
   );
@@ -275,7 +275,7 @@ function Toggle({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+    <div className="flex items-start justify-between gap-4 rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
       <div>
         <p className="text-sm font-semibold text-slate-900">{title}</p>
         <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
@@ -287,7 +287,7 @@ function Toggle({
         onClick={() => onChange(!checked)}
         className={cn(
           "relative mt-1 inline-flex h-8 w-14 shrink-0 rounded-full transition",
-          checked ? "bg-emerald-600" : "bg-slate-300"
+          checked ? "bg-emerald-600" : "bg-emerald-200"
         )}
       >
         <span
@@ -549,7 +549,7 @@ export default function AdminSettingsWorkspace() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4 sm:p-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
       <AdminToast
         show={!!notice}
         message={notice?.message || ""}
@@ -557,50 +557,34 @@ export default function AdminSettingsWorkspace() {
       />
 
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a_0%,#134e4a_46%,#ecfdf5_100%)] px-6 py-7 text-white shadow-[0_30px_80px_-40px_rgba(15,23,42,0.85)] sm:px-8 sm:py-9">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-end">
+        <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
                 Admin control center
               </span>
               <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Settings</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
                 Manage your admin profile, platform defaults, moderation rules,
                 alerts, and password flow from one production-ready workspace.
               </p>
               {operations.maintenanceMode ? (
-                <div className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-100">
+                <div className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-emerald-50">
                   <TriangleAlert className="h-4 w-4" />
                   Maintenance mode is enabled for the shared platform settings.
                 </div>
               ) : null}
             </div>
-
-            <div className="rounded-[28px] border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100/80">
-                Workspace owner
-              </p>
-              <p className="mt-4 text-2xl font-bold text-white">{profile.name || "Admin"}</p>
-              <p className="mt-1 text-sm text-slate-200">{profile.email || "No email set"}</p>
-              <div className="mt-4 space-y-3 text-sm text-slate-100">
-                <div className="rounded-2xl border border-white/10 bg-slate-950/20 px-4 py-3">
-                  Role: {label(profile.role)}
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-950/20 px-4 py-3">
-                  Last sync: {fmtDate(updatedAt)}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => void loadSettings(true)}
-                disabled={refreshing}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/15 disabled:opacity-60"
-              >
-                <RefreshCcw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-                {refreshing ? "Refreshing..." : "Refresh settings"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => void loadSettings(true)}
+              disabled={refreshing}
+              className="inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/15 disabled:opacity-60"
+            >
+              <RefreshCcw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
           </div>
         </section>
 
@@ -616,14 +600,14 @@ export default function AdminSettingsWorkspace() {
             title="Report SLA"
             value={`${operations.reportReviewSlaHours}h`}
             detail="Moderation target configured for reports."
-            tone="border-sky-100 bg-sky-50/80"
+            tone="border-emerald-100 bg-emerald-50/80"
             icon={<Clock3 className="h-5 w-5" />}
           />
           <Stat
             title="Notifications on"
             value={`${enabledAlerts(notifications)}/5`}
             detail={`Daily digest set for ${String(notifications.digestHour).padStart(2, "0")}:00`}
-            tone="border-amber-100 bg-amber-50/80"
+            tone="border-emerald-100 bg-emerald-50/80"
             icon={<BellRing className="h-5 w-5" />}
           />
           <Stat
@@ -634,7 +618,7 @@ export default function AdminSettingsWorkspace() {
                 ? "New listings require review."
                 : "New listings can publish directly."
             }
-            tone="border-slate-200 bg-white"
+            tone="border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)]"
             icon={<Globe2 className="h-5 w-5" />}
           />
         </section>
@@ -643,7 +627,7 @@ export default function AdminSettingsWorkspace() {
           title="Admin profile"
           description="Saving this section updates the signed-in admin account details without changing auth or role logic."
           action={
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
               Account owner
             </span>
           }
@@ -688,15 +672,15 @@ export default function AdminSettingsWorkspace() {
               />
             </div>
 
-            <div className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-700">
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                <span className="rounded-full border border-emerald-200 bg-white px-3 py-1">
                   Role: {label(profile.role)}
                 </span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                <span className="rounded-full border border-emerald-200 bg-white px-3 py-1">
                   Provider: {label(profile.provider)}
                 </span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                <span className="rounded-full border border-emerald-200 bg-white px-3 py-1">
                   Created: {fmtDate(profile.createdAt)}
                 </span>
               </div>
@@ -787,9 +771,9 @@ export default function AdminSettingsWorkspace() {
               />
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-4">
+            <div className="rounded-[28px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-white p-3 text-emerald-700 shadow-sm ring-1 ring-slate-200">
+                <div className="rounded-2xl bg-white p-3 text-emerald-700 shadow-sm ring-1 ring-emerald-100">
                   <Settings2 className="h-5 w-5" />
                 </div>
                 <div>
@@ -871,7 +855,7 @@ export default function AdminSettingsWorkspace() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-slate-500">
                 Last shared settings sync:{" "}
                 <span className="font-semibold text-slate-700">{fmtDate(updatedAt)}</span>
@@ -896,7 +880,7 @@ export default function AdminSettingsWorkspace() {
             title="Notification preferences"
             description="Choose which operational alerts and summaries stay active for the admin workspace."
             action={
-              <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                 Alerts
               </span>
             }
@@ -960,7 +944,7 @@ export default function AdminSettingsWorkspace() {
                 />
               </div>
               <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_180px]">
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 text-sm text-slate-600">
                   Use 24-hour format. The backend stores the digest hour between 0 and 23.
                 </div>
                 <Field
@@ -975,7 +959,7 @@ export default function AdminSettingsWorkspace() {
                   }
                 />
               </div>
-              <div className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-500">
                   Enabled alert rules:{" "}
                   <span className="font-semibold text-slate-700">
@@ -1008,7 +992,7 @@ export default function AdminSettingsWorkspace() {
               }
             >
               <form className="space-y-5" onSubmit={savePassword}>
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 text-sm text-slate-600">
                   Provider:{" "}
                   <span className="font-semibold text-slate-700">{label(profile.provider)}</span>.
                   Google-authenticated accounts cannot change passwords from this form.
@@ -1052,7 +1036,7 @@ export default function AdminSettingsWorkspace() {
               description="Quick readout of the saved platform identity and current live rules."
             >
               <div className="space-y-4 text-sm text-slate-600">
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
                   <div className="flex items-center gap-3">
                     <Building2 className="h-5 w-5 text-slate-700" />
                     <div>
@@ -1061,7 +1045,7 @@ export default function AdminSettingsWorkspace() {
                     </div>
                   </div>
                 </div>
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
                   <div className="flex items-center gap-3">
                     <ShieldCheck className="h-5 w-5 text-emerald-700" />
                     <p>
@@ -1074,7 +1058,7 @@ export default function AdminSettingsWorkspace() {
                     </p>
                   </div>
                 </div>
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
                   <div className="flex items-center gap-3">
                     <LockKeyhole className="h-5 w-5 text-slate-700" />
                     <p>

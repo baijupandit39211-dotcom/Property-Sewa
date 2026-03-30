@@ -17,6 +17,7 @@ import adminSettingsRoutes from "../modules/admin-settings/routes/adminSettings.
 import userRoutes from "../modules/users/routes/user.routes";
 import reportRoutes, { adminRouter as adminReportRoutes } from "../modules/reports/report.routes";
 import notificationRoutes from "../modules/notifications/routes/notification.routes";
+import wishlistRoutes from "../modules/wishlist/routes/wishlist.routes";
 
 const router = Router();
 
@@ -57,5 +58,6 @@ router.use("/api/reports", reportRoutes); // alias for frontend /api prefix
 router.use("/api/admin/reports", adminReportRoutes); // admin reports
 router.use("/admin/reports", adminReportRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/wishlist", wishlistRoutes);
 
 export default router;

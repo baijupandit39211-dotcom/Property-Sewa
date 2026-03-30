@@ -47,9 +47,13 @@ export default function AdminHeader() {
 
   return (
     <header className="sticky top-0 z-50 bg-[#2f5d46] shadow">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6">
+      <div className="flex h-16 items-center justify-between px-6 text-white shadow-md">
         <Link href="/admin/overview" className="flex items-center gap-3">
-          <div className="h-7 w-7 rounded-full bg-emerald-400" />
+          <div className="relative h-7 w-7 shrink-0 rounded-xl bg-white/10">
+            <span className="absolute left-[8px] top-[7px] h-1.5 w-3.5 rounded-full bg-[#32f29a]" />
+            <span className="absolute left-[8px] top-[12px] h-1.5 w-3.5 rounded-full bg-[#6df9ba]" />
+            <span className="absolute left-[8px] top-[17px] h-1.5 w-3.5 rounded-full bg-[#32f29a]" />
+          </div>
           <span className="text-lg font-extrabold tracking-wide text-white">
             PROPERTY SEWA
           </span>

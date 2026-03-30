@@ -18,6 +18,7 @@ import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
 import AdActionsMenu from "@/app/property/[id]/_components/AdActionsMenu";
 import ReportAdModal from "@/app/property/[id]/_components/ReportAdModal";
+import OfferBadge from "@/components/offers/OfferBadge";
 
 type ListResponse = {
   success: boolean;
@@ -31,7 +32,6 @@ type ListResponse = {
 const BRAND = "#316249";
 
 // ✅ keys (KEEP)
-const WISHLIST_KEY = "property-sewa:wishlist:v1";
 const COMPARE_KEY = "property-sewa:compare:v1";
 const MAX_COMPARE = 2;
 
@@ -99,8 +99,19 @@ export default function BuyerDashboardPage() {
   );
 
   useEffect(() => {
-    setWishlistIds(readIds(WISHLIST_KEY));
     setCompareIds(readIds(COMPARE_KEY));
+
+    apiFetch<{ items: Array<{ propertyId?: string | { _id?: string } }> }>("/wishlist")
+      .then((res) => {
+        const ids = (res.items || [])
+          .map((item) =>
+            typeof item.propertyId === "string" ? item.propertyId : item.propertyId?._id
+          )
+          .filter((id): id is string => Boolean(id));
+
+        setWishlistIds(ids);
+      })
+      .catch(() => setWishlistIds([]));
 
     apiFetch<ListResponse>("/properties?limit=12")
       .then((res) => setProperties(res.items))
@@ -133,17 +144,30 @@ export default function BuyerDashboardPage() {
   }
 
   // ✅ KEEP YOUR FUNCTIONS (same behavior) + restored toast/pop
-  function toggleWishlist(id: string) {
+  async function toggleWishlist(id: string) {
     const has = wishlistSet.has(id);
-    const next = has
-      ? wishlistIds.filter((x) => x !== id)
-      : [id, ...wishlistIds];
 
-    setWishlistIds(next);
-    writeIds(WISHLIST_KEY, next);
+    try {
+      if (has) {
+        await apiFetch(`/wishlist/${id}`, { method: "DELETE" });
+        const next = wishlistIds.filter((x) => x !== id);
+        setWishlistIds(next);
+        showToast("Removed from wishlist");
+        return;
+      }
 
-    showToast(has ? "Removed from wishlist" : "Saved to wishlist");
-    if (!has) pop(id, setWishPopIds);
+      await apiFetch("/wishlist", {
+        method: "POST",
+        body: JSON.stringify({ propertyId: id }),
+      });
+
+      const next = [id, ...wishlistIds];
+      setWishlistIds(next);
+      showToast("Saved to wishlist");
+      pop(id, setWishPopIds);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   function toggleCompare(id: string) {
@@ -528,6 +552,13 @@ function PropertyCard({
             alt={p.title}
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
           />
+          <div className="absolute bottom-3 left-3 z-10">
+            <OfferBadge
+              category={p.offerCategory}
+              active={p.offerActive}
+              label={p.offerBadge || p.offerTitle}
+            />
+          </div>
         </div>
 
         <div className={["space-y-1", big ? "px-5 py-5" : "px-4 py-4"].join(" ")}>

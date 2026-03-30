@@ -1,1015 +1,486 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import Link from "next/link";
+import {
+  useDeferredValue,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  BellRing,
+  Building2,
+  ChevronRight,
+  Clock3,
+  LoaderCircle,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  RefreshCw,
+  Search,
+  Send,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
-import { MessageCircle, Send, User, Calendar, Building2, Clock } from "lucide-react";
-
-// Add CSS animations
-const styles = `
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .animate-fade-in {
-    animation: fade-in 0.3s ease-out;
-  }
-  
-  .animate-slide-up {
-    animation: slide-up 0.3s ease-out;
-  }
-`;
-
-// Inject styles into head
-if (typeof window !== 'undefined') {
-  const styleSheet = document.createElement('style');
-  styleSheet.textContent = styles;
-  document.head.appendChild(styleSheet);
-}
 
 type Lead = {
   _id: string;
-  propertyId: {
-    _id: string;
-    title: string;
-    location: string;
-  };
-  buyerId: string;
+  buyerId?: string | null;
+  propertyId: { _id: string; title: string; location: string };
   name: string;
   email: string;
   phone: string;
   message: string;
-  status: string;
+  status: "new" | "contacted" | "closed";
   createdAt: string;
-  latestVisitStatus?: "requested" | "confirmed" | "rejected" | "rescheduled" | "completed";
-  latestVisitDate?: string;
 };
 
 type Message = {
   _id: string;
   leadId: string;
-  senderId: {
-    _id: string;
-    name: string;
-    email: string;
-  } | null;
+  senderId: { _id: string; name: string; email: string } | null;
   senderRole: "seller" | "buyer";
   text: string;
   createdAt: string;
-  status?: "sending" | "failed" | "delivered";
-  clientId?: string; // WhatsApp-style client ID for matching
-  tempId?: string;
 };
 
-type Conversation = Lead & {
-  lastMessage?: Message;
-  unreadCount?: number;
-  groupKey?: string; // buyerId + propertyId for grouping
-  isLatestInGroup?: boolean; // Whether this is the latest conversation in its group
-  groupCount?: number; // Number of conversations in this group
+type ConversationSummary = Lead & { lastMessage: Message | null; unreadCount: number };
+
+const cn = (...v: Array<string | false | null | undefined>) => v.filter(Boolean).join(" ");
+const initials = (name: string) =>
+  name.split(" ").filter(Boolean).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+const formatDateTime = (value: string) =>
+  new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const formatShortTime = (value: string) => {
+  const date = new Date(value);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  if (diff < 1000 * 60 * 60) return "Just now";
+  if (diff < 1000 * 60 * 60 * 24) return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (diff < 1000 * 60 * 60 * 24 * 7) return date.toLocaleDateString([], { weekday: "short" });
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
 };
+const getStatusTone = (status: Lead["status"]) =>
+  status === "new"
+    ? "bg-sky-50 text-sky-700 ring-sky-200"
+    : status === "contacted"
+      ? "bg-amber-50 text-amber-700 ring-amber-200"
+      : "bg-emerald-50 text-emerald-700 ring-emerald-200";
+
+async function fetchConversationMessages(leadId: string) {
+  const response = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${leadId}`);
+  return response.items || [];
+}
 
 export default function SellerMessagesPage() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [selectedId, setSelectedId] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
-  const [messagesLoading, setMessagesLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [newMessage, setNewMessage] = useState("");
+  const [threadLoading, setThreadLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const [composer, setComposer] = useState("");
+  const [search, setSearch] = useState("");
+  const [readMarkers, setReadMarkers] = useState<Record<string, string>>({});
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const deferredSearch = useDeferredValue(search);
 
-  // Count total conversations (including duplicates) for display
-  const [totalConversations, setTotalConversations] = useState(0);
-  
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
-  
-  // Unread tracking state
-  const [readConversations, setReadConversations] = useState<Set<string>>(new Set());
-  const [lastSeenMessageIds, setLastSeenMessageIds] = useState<Map<string, string>>(new Map());
-  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
-  
-  // Optimistic messaging state
-  const [failedMessages, setFailedMessages] = useState<Map<string, { text: string; timestamp: number }>>(new Map());
-  
-  // Polling state
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
-  
-  // Refs for auto-scrolling
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const selectedConversation = useMemo(
+    () => conversations.find((item) => item._id === selectedId) || null,
+    [conversations, selectedId]
+  );
+  const filteredConversations = useMemo(() => {
+    const query = deferredSearch.trim().toLowerCase();
+    if (!query) return conversations;
+    return conversations.filter((item) =>
+      item.name.toLowerCase().includes(query) ||
+      item.email.toLowerCase().includes(query) ||
+      item.propertyId.title.toLowerCase().includes(query) ||
+      item.propertyId.location.toLowerCase().includes(query)
+    );
+  }, [conversations, deferredSearch]);
+  const totalUnread = useMemo(
+    () => conversations.reduce((sum, item) => sum + item.unreadCount, 0),
+    [conversations]
+  );
 
-  // Load read state from localStorage
-  useEffect(() => {
-    const savedReadState = localStorage.getItem('sellerReadConversations');
-    if (savedReadState) {
-      setReadConversations(new Set(JSON.parse(savedReadState)));
-    }
-    
-    const savedLastSeen = localStorage.getItem('sellerLastSeenMessageIds');
-    if (savedLastSeen) {
-      setLastSeenMessageIds(new Map(JSON.parse(savedLastSeen)));
-    }
-  }, []);
-
-  // Save read state to localStorage
-  const saveReadState = (readSet: Set<string>) => {
-    localStorage.setItem('sellerReadConversations', JSON.stringify(Array.from(readSet)));
-  };
-
-  // Save last seen message IDs
-  const saveLastSeenState = (lastSeenMap: Map<string, string>) => {
-    localStorage.setItem('sellerLastSeenMessageIds', JSON.stringify(Array.from(lastSeenMap.entries())));
-  };
-
-  // Auto-scroll to bottom when messages change
-  const scrollToBottom = () => {
+  const scrollToBottom = useEffectEvent(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  });
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const markConversationRead = useEffectEvent((leadId: string, thread: Message[]) => {
+    const lastMessage = thread[thread.length - 1];
+    if (!lastMessage) return;
+    setReadMarkers((prev) => ({ ...prev, [leadId]: lastMessage._id }));
+    setConversations((prev) => prev.map((item) => (item._id === leadId ? { ...item, unreadCount: 0 } : item)));
+  });
 
-  // Polling for new messages
-  const startPolling = useCallback(() => {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-    }
-    
-    const interval = setInterval(async () => {
-      if (selectedConversation && !sending) {
-        await fetchMessages(selectedConversation._id, false); // Silent fetch without loading state
-      }
-      
-      // Poll all conversations for unread counts
-      try {
-        const response = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/mine");
-        if (response.success && response.items) {
-          // For each conversation, fetch messages to calculate unread counts
-          const conversationsWithUnread = await Promise.all(
-            response.items.map(async (lead) => {
-              try {
-                const messageResponse = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${lead._id}`);
-                if (messageResponse.success) {
-                  const messages = messageResponse.items || [];
-                  const unreadCount = getUnreadCount(lead as Conversation, messages);
-                  return { ...lead, unreadCount, messages };
-                }
-                return { ...lead, unreadCount: 0, messages: [] };
-              } catch {
-                return { ...lead, unreadCount: 0, messages: [] };
-              }
-            })
-          );
-          
-          // Group conversations and update state
-          const groupedConversations = groupConversations(conversationsWithUnread);
-          groupedConversations.sort((a, b) => {
-            const aTime = a.lastMessage?.createdAt || a.createdAt;
-            const bTime = b.lastMessage?.createdAt || b.createdAt;
-            return new Date(bTime).getTime() - new Date(aTime).getTime();
-          });
-          
-          setConversations(groupedConversations);
-          setFilteredConversations(groupedConversations);
-          
-          // Calculate total unread count
-          const totalUnread = groupedConversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
-          setTotalUnreadCount(totalUnread);
-          updateDocumentTitle(totalUnread);
-          
-          // Show notifications for new messages in non-active conversations
-          groupedConversations.forEach(conv => {
-            if (conv.unreadCount && conv.unreadCount > 0) {
-              // Show toast for new messages in non-active conversation
-              if (selectedConversation?._id !== conv._id) {
-                showNewMessageToast(conv, conv.unreadCount);
-              }
-            }
-          });
+  const loadInbox = useEffectEvent(async (keepSelection = true) => {
+    const leadsRes = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/mine");
+    const leads = leadsRes.items || [];
+    const summaries = await Promise.all(
+      leads.map(async (lead) => {
+        const thread = await fetchConversationMessages(lead._id);
+        const lastMessage = thread[thread.length - 1] || null;
+        const marker = readMarkers[lead._id];
+        let unreadCount = 0;
+        if (!marker) unreadCount = thread.filter((item) => item.senderRole === "buyer").length;
+        else {
+          const markerIndex = thread.findIndex((item) => item._id === marker);
+          const unseen = markerIndex === -1 ? thread : thread.slice(markerIndex + 1);
+          unreadCount = unseen.filter((item) => item.senderRole === "buyer").length;
         }
-      } catch (err) {
-        console.error('Polling error:', err);
-      }
-    }, 8000); // Poll every 8 seconds
-    
-    setPollingInterval(interval);
-  }, [selectedConversation, sending]);
-
-  // Stop polling when component unmounts or conversation changes
-  useEffect(() => {
-    startPolling();
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        setPollingInterval(null);
-      }
-    };
-  }, [selectedConversation, sending]);
-
-  // Calculate unread count for a conversation
-  const getUnreadCount = (conversation: Conversation, conversationMessages: Message[] = []) => {
-    const lastSeenId = lastSeenMessageIds.get(conversation._id);
-    if (!lastSeenId) {
-      // If we haven't seen any messages, count all buyer messages
-      return conversationMessages.filter(msg => msg.senderRole === "buyer").length;
-    }
-    
-    // Count buyer messages after the last seen message
-    const lastSeenIndex = conversationMessages.findIndex(msg => msg._id === lastSeenId);
-    if (lastSeenIndex === -1) {
-      return conversationMessages.filter(msg => msg.senderRole === "buyer").length;
-    }
-    
-    return conversationMessages
-      .slice(lastSeenIndex + 1)
-      .filter(msg => msg.senderRole === "buyer").length;
-  };
-
-  // Update document title with unread count
-  const updateDocumentTitle = (unreadCount: number) => {
-    const baseTitle = "Property Sewa - Seller Dashboard";
-    if (unreadCount > 0) {
-      document.title = `(${unreadCount}) ${baseTitle}`;
-    } else {
-      document.title = baseTitle;
-    }
-  };
-
-  // Show toast notification for new message
-  const showNewMessageToast = (conversation: Conversation, newMessageCount: number) => {
-    if (selectedConversation?._id !== conversation._id && newMessageCount > 0) {
-      // Create toast notification
-      const toast = document.createElement('div');
-      toast.className = 'fixed top-4 right-4 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-slide-down max-w-sm';
-      toast.innerHTML = `
-        <div class="flex items-center gap-3">
-          <div class="flex-shrink-0">
-            <div class="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-              ${conversation.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-            </div>
-          </div>
-          <div class="flex-1">
-            <p class="font-medium text-sm">New message from ${conversation.name}</p>
-            <p class="text-xs opacity-90">${conversation.propertyId?.title}</p>
-          </div>
-        </div>
-      `;
-      
-      document.body.appendChild(toast);
-      
-      // Auto-remove after 5 seconds
-      setTimeout(() => {
-        if (toast.parentNode) {
-          toast.parentNode.removeChild(toast);
-        }
-      }, 5000);
-    }
-  };
-
-  // Mark conversation as read
-  const markAsRead = (conversationId: string, messages: Message[] = []) => {
-    if (messages.length > 0) {
-      const lastMessageId = messages[messages.length - 1]._id;
-      setLastSeenMessageIds(prev => {
-        const newMap = new Map(prev);
-        newMap.set(conversationId, lastMessageId);
-        saveLastSeenState(newMap);
-        return newMap;
-      });
-    }
-    
-    if (!readConversations.has(conversationId)) {
-      const newReadSet = new Set(readConversations).add(conversationId);
-      setReadConversations(newReadSet);
-      saveReadState(newReadSet);
-    }
-  };
-
-  // Generate temporary ID for optimistic messages
-  const generateTempId = () => `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-  // Optimistic message sending
-  const sendOptimisticMessage = (text: string) => {
-    const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const optimisticMessage: Message = {
-      _id: clientId,
-      leadId: selectedConversation!._id,
-      senderId: { _id: "current", name: "You", email: "" },
-      senderRole: "seller" as const,
-      text,
-      createdAt: new Date().toISOString(),
-      status: "sending",
-      clientId,
-      tempId: clientId
-    };
-    
-    setMessages(prev => [...prev, optimisticMessage]);
-    setConversations(prev => 
-      prev.map(conv => 
-        conv._id === selectedConversation!._id 
-          ? { ...conv, lastMessage: optimisticMessage }
-          : conv
-      )
+        return { ...lead, lastMessage, unreadCount };
+      })
     );
-    setFilteredConversations(prev => 
-      prev.map(conv => 
-        conv._id === selectedConversation!._id 
-          ? { ...conv, lastMessage: optimisticMessage }
-          : conv
-      )
-    );
-    
-    return clientId;
-  };
-
-  // Retry failed message
-  const retryMessage = async (clientId: string) => {
-    const failedMessage = failedMessages.get(clientId);
-    if (!failedMessage) return;
-    
-    // Remove from failed messages
-    setFailedMessages(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(clientId);
-      return newMap;
+    summaries.sort((a, b) => {
+      const aTime = a.lastMessage?.createdAt || a.createdAt;
+      const bTime = b.lastMessage?.createdAt || b.createdAt;
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
-    
-    // Update message status to sending
-    setMessages(prev => 
-      prev.map(msg => 
-        msg.clientId === clientId 
-          ? { ...msg, status: "sending" }
-          : msg
-      )
-    );
-    
-    // Attempt to send again
-    await attemptSendMessage(failedMessage.text, clientId);
-  };
+    setConversations(summaries);
+    if (!keepSelection || !selectedId) setSelectedId(summaries[0]?._id || "");
+    else if (!summaries.some((item) => item._id === selectedId)) setSelectedId(summaries[0]?._id || "");
+  });
 
-  // Actual message sending attempt
-  const attemptSendMessage = async (text: string, clientId?: string) => {
+  const loadThread = useEffectEvent(async (leadId: string, silent = false) => {
+    if (!silent) setThreadLoading(true);
     try {
-      const response = await apiFetch<{ success: boolean; message: Message }>(`/messages/${selectedConversation!._id}`, {
-        method: "POST",
-        body: JSON.stringify({ text }),
-      });
-
-      if (response.success) {
-        // Replace optimistic message with server message and set status to delivered
-        setMessages(prev => {
-          const updated = prev.map(msg => 
-            msg.clientId === clientId 
-              ? { ...response.message, status: "delivered" as const }
-              : msg
-          );
-          // Remove optimistic message if it exists
-          return updated.filter(msg => msg.status !== "sending");
-        });
-        
-        // Update conversation lists
-        const realMessage = response.message;
-        setConversations(prev => 
-          prev.map(conv => 
-            conv._id === selectedConversation!._id 
-              ? { ...conv, lastMessage: realMessage }
-              : conv
-          )
-        );
-        setFilteredConversations(prev => 
-          prev.map(conv => 
-            conv._id === selectedConversation!._id 
-              ? { ...conv, lastMessage: realMessage }
-              : conv
-          )
-        );
-        
-        // Clear failed message if it exists
-        if (clientId) {
-          setFailedMessages(prev => {
-            const newMap = new Map(prev);
-            newMap.delete(clientId);
-            return newMap;
-          });
-        }
-        
-        return true;
-      }
-    } catch (err) {
-      // Mark as failed
-      if (clientId) {
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.clientId === clientId 
-              ? { ...msg, status: "failed" as const }
-              : msg
-          )
-        );
-        
-        // Store failed message for retry
-        setFailedMessages(prev => {
-          const newMap = new Map(prev);
-          newMap.set(clientId, { text, timestamp: Date.now() });
-          return newMap;
-        });
-      }
-      return false;
+      const thread = await fetchConversationMessages(leadId);
+      setMessages(thread);
+      markConversationRead(leadId, thread);
+      requestAnimationFrame(() => scrollToBottom());
+    } finally {
+      if (!silent) setThreadLoading(false);
     }
-  };
+  });
 
-  // Search functionality
   useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredConversations(conversations);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = conversations.filter(conv => 
-        conv.name.toLowerCase().includes(query) ||
-        conv.email.toLowerCase().includes(query) ||
-        conv.propertyId.title.toLowerCase().includes(query) ||
-        conv.propertyId.location.toLowerCase().includes(query)
-      );
-      setFilteredConversations(filtered);
-    }
-  }, [searchQuery, conversations]);
-
-  // Debounced search
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      // Search is handled in the useEffect above
-    }, 200);
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
-  // Fetch conversations (seller leads)
-  useEffect(() => {
-    const fetchConversations = async () => {
+    async function bootstrap() {
+      setLoading(true);
+      setError("");
       try {
-        // First check if seller is authenticated (same as leads page)
-        const authCheck = await apiFetch<{ success: boolean; user: any }>("/auth/me");
-        if (!authCheck.success) {
-          setError("Please log in to view messages");
-          return;
-        }
-        
-        // Then fetch leads using same endpoint as leads page
-        const response = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/mine");
-        
-        if (response.success && response.items) {
-          // Store total count before grouping
-          setTotalConversations(response.items.length);
-          
-          // For each lead, try to fetch the last message
-          const conversationsWithMessages = await Promise.all(
-            response.items.map(async (lead) => {
-              try {
-                const messageResponse = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${lead._id}`);
-                if (messageResponse.success && messageResponse.items && messageResponse.items.length > 0) {
-                  const lastMessage = messageResponse.items[messageResponse.items.length - 1];
-                  return { ...lead, lastMessage };
-                }
-                return lead;
-              } catch (err) {
-                // If message fetch fails, return lead without last message
-                return lead;
-              }
-            })
-          );
-
-          // Group conversations by buyerId + propertyId
-          const groupedConversations = groupConversations(conversationsWithMessages);
-          
-          // Sort by latest activity (last message or lead creation)
-          groupedConversations.sort((a, b) => {
-            const aTime = a.lastMessage?.createdAt || a.createdAt;
-            const bTime = b.lastMessage?.createdAt || b.createdAt;
-            return new Date(bTime).getTime() - new Date(aTime).getTime();
-          });
-
-          setConversations(groupedConversations);
-          setFilteredConversations(groupedConversations);
-          
-          // Auto-select first conversation if available
-          if (groupedConversations.length > 0) {
-            setSelectedConversation(groupedConversations[0]);
-            markAsRead(groupedConversations[0]._id);
-          }
-        } else {
-          setError("Failed to fetch conversations - no data returned");
-        }
+        await loadInbox(false);
       } catch (err: any) {
-        setError(err.message || "Failed to fetch conversations");
+        setError(err?.message || "Failed to load seller inbox");
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchConversations();
+    }
+    bootstrap();
   }, []);
 
-  // Group conversations by buyerId + propertyId, keeping only the latest
-  const groupConversations = (conversations: (Lead & { lastMessage?: Message })[]): Conversation[] => {
-    const groups = new Map<string, (Lead & { lastMessage?: Message })[]>();
-    
-    // Group by buyerId + propertyId
-    conversations.forEach(conv => {
-      const groupKey = `${conv.buyerId}-${conv.propertyId._id}`;
-      if (!groups.has(groupKey)) {
-        groups.set(groupKey, []);
-      }
-      groups.get(groupKey)!.push(conv);
-    });
-
-    // For each group, find the latest conversation
-    const latestConversations: Conversation[] = [];
-    groups.forEach((groupConvs, groupKey) => {
-      // Sort by creation date to find the latest
-      groupConvs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      
-      // Take the latest one
-      const latest = groupConvs[0];
-      latestConversations.push({
-        ...latest,
-        groupKey,
-        isLatestInGroup: true,
-        groupCount: groupConvs.length // Store count for display
-      });
-    });
-
-    return latestConversations;
-  };
-
-  // Fetch messages for selected conversation
   useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation._id);
-      markAsRead(selectedConversation._id, messages);
+    if (!selectedId) {
+      setMessages([]);
+      return;
     }
-  }, [selectedConversation]);
+    loadThread(selectedId);
+  }, [selectedId]);
 
-  const fetchMessages = async (leadId: string, showLoading = true) => {
-    if (showLoading) {
-      setMessagesLoading(true);
-    }
+  useEffect(() => {
+    const interval = window.setInterval(async () => {
+      try {
+        await loadInbox(true);
+        if (selectedId) await loadThread(selectedId, true);
+      } catch {}
+    }, 12000);
+    return () => window.clearInterval(interval);
+  }, [selectedId]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setError("");
     try {
-      const response = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${leadId}`);
-      if (response.success) {
-        const serverMessages = response.items || [];
-        
-        // Merge strategy: preserve optimistic messages that aren't matched by server messages
-        setMessages(prev => {
-          const optimisticMessages = prev.filter(msg => msg.clientId && msg.status !== "delivered");
-          const mergedMessages = [...serverMessages];
-          
-          // Add optimistic messages that don't have a match in server messages
-          optimisticMessages.forEach(optimisticMsg => {
-            const hasMatch = serverMessages.some(serverMsg => 
-              serverMsg.text === optimisticMsg.text && 
-              serverMsg.senderRole === optimisticMsg.senderRole &&
-              Math.abs(new Date(serverMsg.createdAt).getTime() - new Date(optimisticMsg.createdAt).getTime()) < 5000 // 5 second window
-            );
-            
-            if (!hasMatch) {
-              mergedMessages.push(optimisticMsg);
-            }
-          });
-          
-          // Sort by creation time
-          mergedMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-          
-          return mergedMessages;
-        });
-        
-        // Auto-scroll after messages load
-        setTimeout(() => scrollToBottom(), 100);
-      }
+      await loadInbox(true);
+      if (selectedId) await loadThread(selectedId, true);
     } catch (err: any) {
-      setError(err.message || "Failed to fetch messages");
+      setError(err?.message || "Failed to refresh inbox");
     } finally {
-      if (showLoading) {
-        setMessagesLoading(false);
-      }
+      setRefreshing(false);
     }
-  };
+  }
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
+  async function handleSendMessage(event: React.FormEvent) {
+    event.preventDefault();
+    if (!selectedConversation || !composer.trim() || sending) return;
 
-    // Prevent duplicate sends
-    if (sending) return;
-    
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage: Message = {
+      _id: tempId,
+      leadId: selectedConversation._id,
+      senderId: null,
+      senderRole: "seller",
+      text: composer.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
     setSending(true);
     setError("");
-    
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setComposer("");
+    requestAnimationFrame(() => scrollToBottom());
+
     try {
-      // Send optimistically first
-      const clientId = sendOptimisticMessage(newMessage);
-      const success = await attemptSendMessage(newMessage, clientId);
-      
-      if (success) {
-        // Clear input
-        setNewMessage("");
-        // Auto-scroll to bottom after new message
-        setTimeout(() => scrollToBottom(), 100);
-      } else {
-        setError("Failed to send message. Please try again.");
-      }
+      const response = await apiFetch<{ success: boolean; message: Message }>(
+        `/messages/${selectedConversation._id}`,
+        { method: "POST", body: JSON.stringify({ text: optimisticMessage.text }) }
+      );
+
+      setMessages((prev) => prev.map((item) => (item._id === tempId ? response.message : item)));
+      setConversations((prev) =>
+        prev
+          .map((item) =>
+            item._id === selectedConversation._id
+              ? { ...item, lastMessage: response.message }
+              : item
+          )
+          .sort((a, b) => {
+            const aTime = a.lastMessage?.createdAt || a.createdAt;
+            const bTime = b.lastMessage?.createdAt || b.createdAt;
+            return new Date(bTime).getTime() - new Date(aTime).getTime();
+          })
+      );
+      await loadThread(selectedConversation._id, true);
     } catch (err: any) {
-      setError(err.message || "Failed to send message");
+      setMessages((prev) => prev.filter((item) => item._id !== tempId));
+      setComposer(optimisticMessage.text);
+      setError(err?.message || "Failed to send message");
     } finally {
       setSending(false);
     }
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
-    if (diffInHours < 1) {
-      return "Just now";
-    } else if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    } else if (diffInHours < 24 * 7) {
-      return date.toLocaleDateString([], { weekday: "short" });
-    } else {
-      return date.toLocaleDateString([], { month: "short", day: "numeric" });
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "new":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "contacted":
-        return "bg-amber-100 text-amber-800 border-amber-200";
-      case "closed":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  }
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-r-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading conversations...</p>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-r-2 border-emerald-600" />
+          <p className="mt-4 text-sm text-slate-600">Loading seller inbox...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex bg-gray-50">
-      {/* Conversations List */}
-      <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
-        {/* Conversations Header */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Messages</h2>
-            {totalUnreadCount > 0 && (
-              <span className="inline-flex px-2 py-1 text-xs font-medium bg-red-500 text-white rounded-full animate-pulse">
-                {totalUnreadCount}
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-gray-600">
-            {filteredConversations.length} conversations
-            {totalConversations !== filteredConversations.length && (
-              <span className="text-gray-500"> ({totalConversations} total)</span>
-            )}
-          </p>
-        </div>
-
-        {/* Search Input */}
-        <div className="p-3 border-b border-gray-200">
-          <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search conversations..."
-              className="w-full px-3 py-2 pl-9 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-gray-50"
-            />
-            <User className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-          </div>
-        </div>
-        
-        {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            // Skeleton loading state
-            <div className="p-4 space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-start gap-3 p-3">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-                  </div>
-                </div>
-              ))}
+    <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
+      <section className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-8">
+        <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
+        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
+              <Sparkles className="h-3.5 w-3.5" />
+              Seller Messaging Workspace
             </div>
-          ) : filteredConversations.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              {searchQuery ? (
-                <>
-                  <User className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>No conversations found</p>
-                  <p className="text-sm mt-2">Try adjusting your search terms</p>
-                </>
-              ) : (
-                <>
-                  <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>No conversations yet</p>
-                  <p className="text-sm mt-2">When buyers contact you, they'll appear here</p>
-                </>
-              )}
+            <div>
+              <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Messages / Chat</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#edf6f0]/90 sm:text-base">
+                Manage buyer conversations, reply from a clean thread view, and keep property-specific
+                communication in one seller inbox.
+              </p>
             </div>
-          ) : (
-            filteredConversations.map((conversation) => {
-              const unreadCount = conversation.unreadCount || 0;
-              return (
-                <div
-                  key={conversation._id}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-all duration-300 ease-in-out transform hover:scale-[1.02] ${
-                    selectedConversation?._id === conversation._id 
-                      ? "bg-emerald-50 border-l-4 border-l-emerald-500" 
-                      : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedConversation(conversation);
-                    markAsRead(conversation._id, messages);
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Avatar with initials */}
-                    <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
-                      {conversation.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-gray-900 truncate">{conversation.name}</p>
-                        <div className="flex items-center gap-2">
-                          {conversation.groupCount && conversation.groupCount > 1 && (
-                            <span className="inline-flex px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
-                              {conversation.groupCount}
-                            </span>
-                          )}
-                          {unreadCount > 0 && (
-                            <span className="inline-flex px-1.5 py-0.5 text-xs font-medium bg-red-500 text-white rounded-full animate-pulse">
-                              {unreadCount}
-                            </span>
-                          )}
-                          <span className="text-xs text-gray-500">
-                            {formatTime(conversation.lastMessage?.createdAt || conversation.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-xs text-gray-600 mb-1">
-                        <Building2 className="h-3 w-3" />
-                        <p className="truncate">{conversation.propertyId?.title}</p>
-                      </div>
-                      
-                      <div className="text-sm text-gray-600 truncate">
-                        {conversation.lastMessage ? (
-                          <span>
-                            {conversation.lastMessage.senderRole === "seller" ? "You: " : `${conversation.name}: `}
-                            {conversation.lastMessage.text}
-                          </span>
-                        ) : (
-                          <span>{conversation.message}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Chat Panel */}
-      <div className="flex-1 flex flex-col bg-white">
-        {selectedConversation ? (
-          <>
-            {/* Chat Header - Sticky */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {/* Avatar */}
-                  <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-semibold">
-                    {selectedConversation.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{selectedConversation.name}</h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Building2 className="h-4 w-4" />
-                      <span>{selectedConversation.propertyId?.title}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-500">
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(selectedConversation.status)}`}>
-                    {selectedConversation.status.charAt(0).toUpperCase() + selectedConversation.status.slice(1)}
-                  </span>
-                </div>
+            <div className="flex flex-wrap gap-3 text-sm">
+              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Conversations</div>
+                <div className="mt-1 text-2xl font-black">{conversations.length}</div>
+              </div>
+              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Unread</div>
+                <div className="mt-1 text-2xl font-black">{totalUnread}</div>
+              </div>
+              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Active thread</div>
+                <div className="mt-1 text-sm font-semibold">{selectedConversation?.propertyId.title || "Select a conversation"}</div>
               </div>
             </div>
+          </div>
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 bg-gray-50">
-              {messagesLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-r-2 border-emerald-600"></div>
+          <div className="relative z-10 grid gap-3 self-start rounded-[28px] bg-[rgba(218,232,223,0.12)] p-4 backdrop-blur-md ring-1 ring-[rgba(255,255,255,0.14)]">
+            <button type="button" onClick={handleRefresh} disabled={refreshing} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#11392f] transition hover:bg-[#f5faf7] disabled:opacity-60">
+              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+              {refreshing ? "Refreshing..." : "Refresh inbox"}
+            </button>
+            <Link href="/seller/leads" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#edf6f0] px-4 py-3 text-sm font-semibold text-[#17614b] transition hover:bg-white">
+              Open leads
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <div className="rounded-2xl bg-[rgba(9,36,27,0.12)] px-4 py-3 text-sm text-white/90">
+              Threads are loaded from seller leads and live message history. Notifications continue to route buyers here.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {error && <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800">{error}</div>}
+      <section className="grid min-h-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <aside className="flex h-[720px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_20px_70px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_24px_80px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
+          <div className="border-b border-slate-100 px-5 py-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-black tracking-tight text-slate-950">Conversation inbox</h2>
+                <p className="mt-1 text-sm text-slate-600">{filteredConversations.length} visible of {conversations.length}</p>
+              </div>
+              {totalUnread > 0 && <span className="inline-flex rounded-full bg-rose-500 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white">{totalUnread} unread</span>}
+            </div>
+            <div className="relative mt-4">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search buyer, property, or location" className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:bg-white" />
+            </div>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth">
+            {filteredConversations.length === 0 ? (
+              <div className="px-6 py-16 text-center">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-emerald-50 text-emerald-700"><MessageCircle className="h-6 w-6" /></div>
+                <h3 className="mt-4 text-lg font-black tracking-tight text-slate-950">{search ? "No matching conversations" : "No conversations yet"}</h3>
+                <p className="mt-2 text-sm text-slate-500">{search ? "Try a different search term." : "When buyers send inquiries, their threads will appear here."}</p>
+              </div>
+            ) : (
+              filteredConversations.map((conversation) => {
+                const active = selectedId === conversation._id;
+                const preview = conversation.lastMessage?.text || conversation.message || "No message content";
+                return (
+                  <button key={conversation._id} type="button" onClick={() => setSelectedId(conversation._id)} className={cn("group relative w-full border-b border-slate-100 px-5 py-4 text-left transition-all duration-200 ease-out hover:bg-[#f7fbf8] hover:pl-6", active && "bg-emerald-50/80 shadow-[inset_3px_0_0_0_#059669]")}>
+                    <div className="flex items-start gap-3">
+                      <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-emerald-600 text-sm font-black text-white shadow-[0_14px_28px_rgba(5,150,105,0.22)] transition-transform duration-200 ease-out group-hover:scale-[1.03]">{initials(conversation.name)}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-bold text-slate-950 transition-colors duration-200 group-hover:text-emerald-800">{conversation.name}</div>
+                            <div className="mt-1 truncate text-xs text-slate-500">{conversation.propertyId.title}</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="text-xs font-medium text-slate-500">{formatShortTime(conversation.lastMessage?.createdAt || conversation.createdAt)}</span>
+                            {conversation.unreadCount > 0 && <span className="inline-flex min-w-6 justify-center rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-bold text-white">{conversation.unreadCount}</span>}
+                          </div>
+                        </div>
+                        <div className="mt-2 truncate text-sm text-slate-600 transition-colors duration-200 group-hover:text-slate-700">{conversation.lastMessage?.senderRole === "seller" ? "You: " : ""}{preview}</div>
+                        <div className="mt-3 flex items-center gap-2">
+                          <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1", getStatusTone(conversation.status))}>{conversation.status}</span>
+                          <span className="truncate text-xs text-slate-500">{conversation.propertyId.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </aside>
+
+        <section className="grid min-h-0 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex h-[720px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_24px_80px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
+            {!selectedConversation ? (
+              <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
+                <div>
+                  <div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-emerald-50 text-emerald-700"><MessageCircle className="h-6 w-6" /></div>
+                  <h3 className="mt-4 text-xl font-black tracking-tight text-slate-950">Select a conversation</h3>
+                  <p className="mt-2 text-sm text-slate-500">Choose a buyer thread from the inbox to view and reply.</p>
                 </div>
-              ) : messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <MessageCircle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <p className="text-xl font-medium text-gray-600">No messages yet</p>
-                    <p className="text-sm text-gray-500 mt-2">Start the conversation with a greeting</p>
+              </div>
+            ) : (
+              <>
+                <div className="border-b border-slate-100 px-6 py-5">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-emerald-600 text-base font-black text-white">{initials(selectedConversation.name)}</div>
+                      <div>
+                        <h2 className="text-xl font-black tracking-tight text-slate-950">{selectedConversation.name}</h2>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
+                          <span className="inline-flex items-center gap-1.5"><Building2 className="h-4 w-4 text-slate-400" />{selectedConversation.propertyId.title}</span>
+                          <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" />{selectedConversation.propertyId.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={cn("inline-flex rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] ring-1", getStatusTone(selectedConversation.status))}>{selectedConversation.status}</span>
+                      <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600"><Clock3 className="h-3.5 w-3.5" />Started {formatDateTime(selectedConversation.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-[linear-gradient(180deg,#f4f8f5_0%,#ffffff_26%)] px-6 py-6">
+                  {threadLoading ? (
+                    <div className="flex h-full items-center justify-center"><LoaderCircle className="h-6 w-6 animate-spin text-emerald-600" /></div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex justify-start">
+                        <div className="max-w-[80%] rounded-[22px] rounded-tl-md bg-slate-100 px-4 py-3 text-slate-800 shadow-sm transition-transform duration-200 ease-out hover:-translate-y-0.5">
+                          <div className="text-sm leading-6">{selectedConversation.message}</div>
+                          <div className="mt-2 text-xs text-slate-500">Original inquiry | {formatDateTime(selectedConversation.createdAt)}</div>
+                        </div>
+                      </div>
+                      {messages.map((message) => {
+                        const mine = message.senderRole === "seller";
+                        return (
+                          <div key={message._id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                            <div className={cn("max-w-[80%] rounded-[22px] px-4 py-3 shadow-sm transition-transform duration-200 ease-out hover:-translate-y-0.5", mine ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_16px_30px_rgba(5,150,105,0.18)]" : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200")}>
+                              <div className="text-sm leading-6">{message.text}</div>
+                              <div className={cn("mt-2 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
+                                {mine ? `You | ${formatDateTime(message.createdAt)}` : `${message.senderId?.name || selectedConversation.name} | ${formatDateTime(message.createdAt)}`}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
+                </div>
+                <div className="border-t border-slate-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(249,252,250,0.98)_100%)] px-6 py-5 backdrop-blur-sm">
+                  <form onSubmit={handleSendMessage} className="space-y-3">
+                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3 transition-all duration-200 ease-out focus-within:-translate-y-0.5 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_16px_34px_rgba(15,23,42,0.08)]">
+                      <textarea value={composer} onChange={(event) => setComposer(event.target.value)} rows={2} placeholder="Type your reply to the buyer..." className="w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400" disabled={sending} />
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="max-w-[440px] text-xs leading-5 text-slate-500">Replies are sent into the buyer conversation and trigger message notifications.</p>
+                      <button type="submit" disabled={sending || !composer.trim()} className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(5,150,105,0.20)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_38px_rgba(5,150,105,0.26)] disabled:cursor-not-allowed disabled:opacity-60">
+                        {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        Send message
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </>
+            )}
+          </div>
+
+          <aside className="flex min-h-0 flex-col gap-6">
+            <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600"><UserRound className="h-3.5 w-3.5" />Buyer Snapshot</div>
+              {selectedConversation ? (
+                <div className="mt-5 space-y-4">
+                  <div className="rounded-[24px] bg-[linear-gradient(135deg,#f8fafc_0%,#effdf5_100%)] p-4 ring-1 ring-slate-200 transition-transform duration-200 ease-out hover:-translate-y-0.5">
+                    <div className="text-lg font-black tracking-tight text-slate-950">{selectedConversation.name}</div>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-slate-600"><Mail className="h-4 w-4 text-slate-400" />{selectedConversation.email}</div>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-slate-600"><Phone className="h-4 w-4 text-slate-400" />{selectedConversation.phone || "No phone shared"}</div>
+                  </div>
+                  <div className="space-y-3 text-sm text-slate-600">
+                    <div><div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Listing</div><div className="mt-1 font-semibold text-slate-900">{selectedConversation.propertyId.title}</div></div>
+                    <div><div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Location</div><div className="mt-1">{selectedConversation.propertyId.location}</div></div>
+                    <div><div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Inquiry status</div><div className="mt-1"><span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] ring-1", getStatusTone(selectedConversation.status))}>{selectedConversation.status}</span></div></div>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {/* Initial inquiry message */}
-                  <div className="flex justify-start animate-fade-in">
-                    <div className="max-w-[70%]">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                          {selectedConversation.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                        </div>
-                        <span className="text-xs text-gray-500 font-medium">{selectedConversation.name}</span>
-                      </div>
-                      <div className="bg-gray-100 text-gray-900 rounded-2xl rounded-tl-none px-4 py-2">
-                        <p className="text-sm">{selectedConversation.message}</p>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1 ml-1">
-                        {new Date(selectedConversation.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Chat messages */}
-                  {messages.map((message, index) => {
-                    const isFailed = message.status === "failed";
-                    const isSending = message.status === "sending";
-                    const isDelivered = message.status === "delivered";
-                    
-                    return (
-                      <div
-                        key={message._id}
-                        className={`flex ${message.senderRole === "seller" ? "justify-end" : "justify-start"} animate-slide-up`}
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <div className="max-w-[70%]">
-                          {message.senderRole === "buyer" && (
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                                {selectedConversation.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                              </div>
-                              <span className="text-xs text-gray-500 font-medium">
-                                {message.senderId?.name || selectedConversation.name}
-                              </span>
-                            </div>
-                          )}
-                          <div
-                            className={`rounded-2xl px-4 py-2 relative ${
-                              message.senderRole === "seller"
-                                ? "bg-emerald-100 text-emerald-900 rounded-tr-none"
-                                : "bg-gray-100 text-gray-900 rounded-tl-none"
-                            }`}
-                          >
-                            <p className="text-sm">{message.text}</p>
-                            
-                            {/* Failed message retry button */}
-                            {isFailed && (
-                              <button
-                                onClick={() => retryMessage(message.clientId!)}
-                                className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                                title="Retry sending"
-                              >
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 2a1 1 0 011-1 1v1a1 1 0 011-1 1H3a1 1 0 011-1-1V3a1 1 0 011-1-1H4zm2 0a1 1 0 011-1 1v1a1 1 0 011-1 1H3a1 1 0 011-1-1V3a1 1 0 011-1-1H4z"/>
-                                </svg>
-                              </button>
-                            )}
-                            
-                            {/* Sending indicator */}
-                            {isSending && (
-                              <div className="absolute -top-1 -right-1 p-1">
-                                <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                              </div>
-                            )}
-                          </div>
-                          <p className={`text-xs mt-1 ${
-                            message.senderRole === "seller" ? "text-right mr-1" : "ml-1"
-                          }`}>
-                            {message.senderRole === "seller" ? (
-                              <>
-                                {isSending && "⏳ Sending..."}
-                                {isDelivered && "✓ Delivered"}
-                                {isFailed && "Failed · Retry"}
-                              </>
-                            ) : (
-                              new Date(message.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit"
-                              })
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {/* Scroll-to-bottom ref */}
-                  <div ref={messagesEndRef} />
-                </div>
+                <p className="mt-5 text-sm text-slate-500">Select a conversation to view buyer and listing details.</p>
               )}
             </div>
 
-            {/* Message Input - Fixed at bottom */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-white">
-              <form onSubmit={handleSendMessage} className="flex gap-3">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-gray-50"
-                  disabled={sending}
-                />
-                <button
-                  type="submit"
-                  disabled={sending || !newMessage.trim()}
-                  className="px-4 py-3 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
-                >
-                  {sending ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-r-2 border-white"></div>
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </button>
-              </form>
-              
-              {/* Error display */}
-              {error && (
-                <div className="mt-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-800">{error}</p>
-                  <button
-                    onClick={() => setError("")}
-                    className="text-xs text-red-600 underline hover:no-underline"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              )}
+            <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600"><BellRing className="h-3.5 w-3.5" />Seller Flow</div>
+              <div className="mt-5 grid gap-3">
+                <Link href="/seller/leads" className="group flex items-center justify-between rounded-[20px] border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-[#f7fbf8] hover:text-slate-900">Open leads workspace<ChevronRight className="h-4 w-4 text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5" /></Link>
+                <Link href="/seller/visit-scheduling" className="group flex items-center justify-between rounded-[20px] border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-[#f7fbf8] hover:text-slate-900">Manage visit requests<ChevronRight className="h-4 w-4 text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5" /></Link>
+                <Link href="/seller/notifications" className="group flex items-center justify-between rounded-[20px] border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-[#f7fbf8] hover:text-slate-900">Open notifications<ChevronRight className="h-4 w-4 text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5" /></Link>
+              </div>
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <MessageCircle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <p className="text-xl font-medium text-gray-600">Select a conversation</p>
-              <p className="text-sm text-gray-500 mt-2">Choose a conversation from the list to start messaging</p>
-            </div>
-          </div>
-        )}
-      </div>
+          </aside>
+        </section>
+      </section>
     </div>
   );
 }

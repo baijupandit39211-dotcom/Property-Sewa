@@ -74,6 +74,23 @@ const PropertySchema = new Schema(
       },
     ],
 
+    offerCategory: {
+      type: String,
+      enum: ["none", "dashain", "latest", "hot", "limited_time"],
+      default: "none",
+    },
+    offerTitle: { type: String, default: "", trim: true },
+    offerDescription: { type: String, default: "", trim: true },
+    offerBadge: { type: String, default: "", trim: true },
+    offerDiscountType: {
+      type: String,
+      enum: ["none", "percentage", "fixed"],
+      default: "none",
+    },
+    offerDiscountValue: { type: Number, default: 0 },
+    offerValidUntil: { type: Date, default: null },
+    offerActive: { type: Boolean, default: false },
+
     status: {
       type: String,
       enum: ["pending", "active", "rejected", "draft"],

@@ -9,4 +9,12 @@ export type Property = {
   baths: number;
   sqft: number;
   images: { url: string }[];
+  offerCategory?: "none" | "dashain" | "latest" | "hot" | "limited_time";
+  offerTitle?: string;
+  offerDescription?: string;
+  offerBadge?: string;
+  offerDiscountType?: "none" | "percentage" | "fixed";
+  offerDiscountValue?: number;
+  offerValidUntil?: string | null;
+  offerActive?: boolean;
 };

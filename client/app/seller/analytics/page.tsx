@@ -777,17 +777,18 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.24),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.18),_transparent_30%),linear-gradient(135deg,#0f3b2d_0%,#123f37_48%,#0f172a_120%)] px-6 py-6 text-white shadow-[0_28px_90px_rgba(15,23,42,0.18)] md:px-8 md:py-8">
-        <div className="absolute -right-10 top-10 h-40 w-40 rounded-full border border-white/10" />
-        <div className="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/5 blur-2xl" />
+      <section className="relative overflow-hidden rounded-[34px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_28px_90px_rgba(19,74,54,0.18)] md:px-8 md:py-8">
+        <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
+        <div className="absolute -right-10 top-10 h-40 w-40 rounded-full border border-white/12" />
+        <div className="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
 
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/80">
               <Sparkles className="h-4 w-4" />
               Seller intelligence workspace
               {isRefreshing && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] tracking-[0.16em] text-white/80">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] tracking-[0.16em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
                   <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                   Refreshing
                 </span>
@@ -798,7 +799,7 @@ export default function AnalyticsPage() {
               <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
                 Seller analytics built around actual listing flow.
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#edf6f0]/90 sm:text-base">
                 Track how listing traffic turns into leads and visit requests, spot weak inventory,
                 and export a report for the exact window you care about.
               </p>
@@ -818,7 +819,7 @@ export default function AnalyticsPage() {
                     "rounded-full border px-4 py-2 text-sm font-semibold transition",
                     range === option.value
                       ? "border-white bg-white text-slate-950"
-                      : "border-white/15 bg-white/8 text-white hover:border-white/25 hover:bg-white/12"
+                      : "border-white/15 bg-white/10 text-white hover:border-white/25 hover:bg-white/15"
                   )}
                 >
                   {option.label}
@@ -828,35 +829,35 @@ export default function AnalyticsPage() {
               <button
                 type="button"
                 onClick={() => setRefreshToken((value) => value + 1)}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/12"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/15"
               >
                 <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
                 Refresh
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 text-sm text-white/75">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-white/85">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10 backdrop-blur-sm">
                 <Clock3 className="h-4 w-4" />
                 {formatDate(analytics.filters.startDate)} to {formatDate(analytics.filters.endDate)}
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10 backdrop-blur-sm">
                 <BarChart3 className="h-4 w-4" />
                 {summary.engagedListings} engaged listing{summary.engagedListings === 1 ? "" : "s"}
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10 backdrop-blur-sm">
                 <Users className="h-4 w-4" />
                 {summary.leads} lead{summary.leads === 1 ? "" : "s"} in range
               </div>
             </div>
           </div>
 
-          <div className="grid gap-3 self-start">
+          <div className="relative z-10 grid gap-3 self-start rounded-[28px] bg-[rgba(218,232,223,0.12)] p-4 backdrop-blur-md ring-1 ring-[rgba(255,255,255,0.14)]">
             <button
               type="button"
               onClick={exportPdf}
               disabled={exporting !== null}
-              className="inline-flex items-center justify-center gap-2 rounded-[22px] bg-white px-5 py-4 text-sm font-semibold text-slate-950 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-[22px] bg-white px-5 py-4 text-sm font-semibold text-[#11392f] transition hover:scale-[1.01] hover:bg-[#f5faf7] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {exporting === "pdf" ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -870,7 +871,7 @@ export default function AnalyticsPage() {
               type="button"
               onClick={exportCsv}
               disabled={exporting !== null || !analytics.propertyPerformance.length}
-              className="inline-flex items-center justify-center gap-2 rounded-[22px] border border-white/15 bg-white/8 px-5 py-4 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-[22px] border border-white/15 bg-white/10 px-5 py-4 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {exporting === "csv" ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -880,13 +881,13 @@ export default function AnalyticsPage() {
               Export CSV listing data
             </button>
 
-            <div className="rounded-[22px] border border-white/12 bg-white/8 p-4 text-white/78">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
+            <div className="rounded-[22px] border border-white/12 bg-[rgba(9,36,27,0.12)] p-4 text-white/90">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
                 Recommended action
               </div>
               <p className="mt-2 text-sm leading-6">{nextAction}</p>
               {lastUpdatedAt && (
-                <p className="mt-3 text-xs text-white/55">Updated {formatDateTime(lastUpdatedAt)}</p>
+                <p className="mt-3 text-xs text-white/70">Updated {formatDateTime(lastUpdatedAt)}</p>
               )}
             </div>
           </div>

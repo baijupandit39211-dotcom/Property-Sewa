@@ -5,6 +5,7 @@ import * as adminOverviewController from "../controllers/adminOverview.controlle
 
 const router = Router();
 
+router.get("/activity", requireAdminAuth, requireAdminRole, adminOverviewController.getActivity);
 router.get("/", requireAdminAuth, requireAdminRole, adminOverviewController.getOverview);
 
 export default router;

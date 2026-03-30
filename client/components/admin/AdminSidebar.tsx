@@ -48,16 +48,6 @@ function isActivePath(pathname: string, href: string) {
   );
 }
 
-function BrandMark() {
-  return (
-    <div className="relative h-12 w-12 shrink-0 rounded-2xl bg-white/10">
-      <span className="absolute left-[15px] top-[12px] h-1.5 w-5 rounded-full bg-emerald-300" />
-      <span className="absolute left-[15px] top-[20px] h-1.5 w-5 rounded-full bg-emerald-200" />
-      <span className="absolute left-[15px] top-[28px] h-1.5 w-5 rounded-full bg-emerald-300" />
-    </div>
-  );
-}
-
 function SidebarLink({
   href,
   label,
@@ -104,20 +94,6 @@ export default function AdminSidebar() {
 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-slate-200 bg-white shadow-sm ring-1 ring-slate-200">
-      <div className="border-b border-emerald-900/10 bg-[#316249] px-4 py-4">
-        <div className="flex items-center gap-3">
-          <BrandMark />
-          <div className="min-w-0">
-            <div className="truncate text-base font-extrabold tracking-[0.12em] text-white">
-              PROPERTY SEWA
-            </div>
-            <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-100/85">
-              Super Admin
-            </div>
-          </div>
-        </div>
-      </div>
-
       <nav className="flex flex-1 flex-col px-2 py-4">
         <div className="space-y-1">
           {navigationItems.map((item) => (

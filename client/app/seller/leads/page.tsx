@@ -1,166 +1,998 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  useDeferredValue,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  BellRing,
+  Building2,
+  CalendarClock,
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  LoaderCircle,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  RefreshCw,
+  Search,
+  Send,
+  Sparkles,
+  UserRound,
+  XCircle,
+} from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
-import { Mail, Phone, Calendar, MessageSquare } from "lucide-react";
+import { subscribeToNotificationSocket } from "@/app/lib/notificationsSocket";
+
+type LeadStatus = "new" | "contacted" | "closed";
+type FilterStatus = "all" | LeadStatus;
+
+type Buyer = {
+  _id?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+};
+
+type Property = {
+  _id: string;
+  title: string;
+  location: string;
+  images?: Array<{ url: string }>;
+  price?: number;
+  currency?: string;
+  listingType?: string;
+  status?: string;
+};
+
+type Visit = {
+  _id: string;
+  requestedDate: string;
+  preferredTime: string;
+  status: "requested" | "confirmed" | "rejected" | "rescheduled" | "completed";
+  sellerResponse?: string;
+  actualDate?: string;
+  actualTime?: string;
+  message?: string;
+  createdAt: string;
+};
+
+type Message = {
+  _id: string;
+  leadId: string;
+  senderId: { _id: string; name: string; email: string } | null;
+  senderRole: "seller" | "buyer";
+  text: string;
+  createdAt: string;
+};
 
 type Lead = {
   _id: string;
-  propertyId: {
-    _id: string;
-    title: string;
-    location: string;
-  };
+  buyerId?: Buyer | string | null;
+  propertyId: Property;
   name: string;
   email: string;
   phone: string;
   message: string;
-  status: string;
+  status: LeadStatus;
   createdAt: string;
+  updatedAt?: string;
+  lastMessage?: Message | null;
+  latestActivityAt?: string;
+  messageCount?: number;
+  latestVisit?: Visit | null;
 };
+
+const cn = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(" ");
+
+const STATUS_OPTIONS: Array<{ value: FilterStatus; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "closed", label: "Closed" },
+];
+
+const LEAD_STATUS_ACTIONS: Array<{
+  value: LeadStatus;
+  label: string;
+  icon: typeof MessageCircle;
+  tone: string;
+}> = [
+  {
+    value: "new",
+    label: "Reopen",
+    icon: BellRing,
+    tone: "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100",
+  },
+  {
+    value: "contacted",
+    label: "Mark contacted",
+    icon: CheckCircle2,
+    tone: "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100",
+  },
+  {
+    value: "closed",
+    label: "Close lead",
+    icon: XCircle,
+    tone: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+  },
+];
+
+const getStatusTone = (status: LeadStatus) =>
+  status === "new"
+    ? "bg-sky-50 text-sky-700 ring-sky-200"
+    : status === "contacted"
+      ? "bg-amber-50 text-amber-700 ring-amber-200"
+      : "bg-emerald-50 text-emerald-700 ring-emerald-200";
+
+const getVisitTone = (status: Visit["status"]) =>
+  status === "requested"
+    ? "bg-sky-50 text-sky-700 ring-sky-200"
+    : status === "confirmed" || status === "rescheduled"
+      ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+      : status === "completed"
+        ? "bg-slate-100 text-slate-700 ring-slate-200"
+        : "bg-rose-50 text-rose-700 ring-rose-200";
+
+const formatDateTime = (value: string) =>
+  new Date(value).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+const formatDate = (value?: string) =>
+  value
+    ? new Date(value).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
+
+const formatRelative = (value?: string) => {
+  if (!value) return "No activity";
+  const date = new Date(value);
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 1000 * 60) return "Just now";
+  if (diffMs < 1000 * 60 * 60) return `${Math.max(1, Math.floor(diffMs / (1000 * 60)))}m ago`;
+  if (diffMs < 1000 * 60 * 60 * 24) return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (diffMs < 1000 * 60 * 60 * 24 * 7) return date.toLocaleDateString([], { weekday: "short" });
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+};
+
+const formatCurrency = (amount?: number, currency?: string) => {
+  if (!amount) return "Price on request";
+  return `${currency || "Rs"} ${Number(amount).toLocaleString()}`;
+};
+
+const initials = (name: string) =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+async function fetchConversationMessages(leadId: string) {
+  const response = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${leadId}`);
+  return response.items || [];
+}
+
+function getBuyerSnapshot(lead: Lead | null) {
+  if (!lead) return null;
+  const buyer = typeof lead.buyerId === "object" && lead.buyerId ? lead.buyerId : null;
+  return {
+    name: buyer?.name || lead.name || "Buyer",
+    email: buyer?.email || lead.email || "No email shared",
+    phone: buyer?.phone || lead.phone || "",
+  };
+}
 
 export default function SellerLeadsPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [threadLoading, setThreadLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [statusSaving, setStatusSaving] = useState<LeadStatus | null>(null);
   const [error, setError] = useState("");
+  const [composer, setComposer] = useState("");
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<FilterStatus>("all");
+  const deferredSearch = useDeferredValue(search);
+
+  const selectedLead = useMemo(
+    () => leads.find((lead) => lead._id === selectedId) || null,
+    [leads, selectedId]
+  );
+
+  const stats = useMemo(() => {
+    const total = leads.length;
+    const fresh = leads.filter((lead) => lead.status === "new").length;
+    const contacted = leads.filter((lead) => lead.status === "contacted").length;
+    const closed = leads.filter((lead) => lead.status === "closed").length;
+    const withVisit = leads.filter((lead) => lead.latestVisit).length;
+    return { total, fresh, contacted, closed, withVisit };
+  }, [leads]);
+
+  const filteredLeads = useMemo(() => {
+    const query = deferredSearch.trim().toLowerCase();
+    return leads.filter((lead) => {
+      if (filter !== "all" && lead.status !== filter) return false;
+      if (!query) return true;
+      const haystack = [
+        lead.name,
+        lead.email,
+        lead.phone,
+        lead.propertyId?.title,
+        lead.propertyId?.location,
+        lead.lastMessage?.text,
+        lead.message,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [deferredSearch, filter, leads]);
+
+  const scrollToBottom = useEffectEvent(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  });
+
+  const syncSelectedLeadToUrl = useEffectEvent((leadId: string) => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    if (leadId) params.set("lead", leadId);
+    else params.delete("lead");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  });
+
+  const loadInbox = useEffectEvent(async () => {
+    const response = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/mine");
+    const items = (response.items || []).sort(
+      (left, right) =>
+        new Date(right.latestActivityAt || right.createdAt).getTime() -
+        new Date(left.latestActivityAt || left.createdAt).getTime()
+    );
+    setLeads(items);
+
+    const requestedLeadId = searchParams?.get("lead") || "";
+    const nextSelectedId =
+      (requestedLeadId && items.some((lead) => lead._id === requestedLeadId) && requestedLeadId) ||
+      (selectedId && items.some((lead) => lead._id === selectedId) && selectedId) ||
+      items[0]?._id ||
+      "";
+
+    setSelectedId(nextSelectedId);
+  });
+
+  const loadThread = useEffectEvent(async (leadId: string, silent = false) => {
+    if (!silent) setThreadLoading(true);
+    try {
+      const thread = await fetchConversationMessages(leadId);
+      setMessages(thread);
+      requestAnimationFrame(() => scrollToBottom());
+    } finally {
+      if (!silent) setThreadLoading(false);
+    }
+  });
 
   useEffect(() => {
-    const fetchLeads = async () => {
+    async function bootstrap() {
+      setLoading(true);
+      setError("");
       try {
-        // First check if seller is authenticated
-        const authCheck = await apiFetch<{ success: boolean; user: any }>("/auth/me");
-        if (!authCheck.success) {
-          setError("Please log in to view leads");
-          return;
-        }
-
-        // Then fetch leads
-        const response = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/mine");
-        if (response.success) {
-          setLeads(response.items || []);
-        }
+        await loadInbox();
       } catch (err: any) {
-        setError(err.message || "Failed to fetch leads");
+        setError(err?.message || "Failed to load seller leads");
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    fetchLeads();
+    bootstrap();
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "new":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "contacted":
-        return "bg-amber-100 text-amber-800 border-amber-200";
-      case "closed":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+  useEffect(() => {
+    const requestedLeadId = searchParams?.get("lead") || "";
+    if (requestedLeadId && requestedLeadId !== selectedId && leads.some((lead) => lead._id === requestedLeadId)) {
+      setSelectedId(requestedLeadId);
     }
-  };
+  }, [leads, searchParams, selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setMessages([]);
+      return;
+    }
+    syncSelectedLeadToUrl(selectedId);
+    loadThread(selectedId);
+  }, [selectedId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(async () => {
+      try {
+        await loadInbox();
+        if (selectedId) await loadThread(selectedId, true);
+      } catch {}
+    }, 15000);
+    return () => window.clearInterval(interval);
+  }, [selectedId]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToNotificationSocket({
+      onNew: async (payload) => {
+        const leadId = String((payload.notification as any)?.data?.leadId || "");
+        if (!leadId) return;
+        try {
+          await loadInbox();
+          if (selectedId === leadId || !selectedId) {
+            setSelectedId((current) => current || leadId);
+            await loadThread(leadId, true);
+          }
+        } catch {}
+      },
+    });
+
+    return unsubscribe;
+  }, [selectedId]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setError("");
+    try {
+      await loadInbox();
+      if (selectedId) await loadThread(selectedId, true);
+    } catch (err: any) {
+      setError(err?.message || "Failed to refresh leads");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  async function handleSendMessage(event: React.FormEvent) {
+    event.preventDefault();
+    if (!selectedLead || !composer.trim() || sending) return;
+
+    const optimisticText = composer.trim();
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage: Message = {
+      _id: tempId,
+      leadId: selectedLead._id,
+      senderId: null,
+      senderRole: "seller",
+      text: optimisticText,
+      createdAt: new Date().toISOString(),
+    };
+
+    setSending(true);
+    setError("");
+    setComposer("");
+    setMessages((prev) => [...prev, optimisticMessage]);
+    requestAnimationFrame(() => scrollToBottom());
+
+    try {
+      const response = await apiFetch<{ success: boolean; message: Message }>(
+        `/messages/${selectedLead._id}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ text: optimisticText }),
+        }
+      );
+
+      setMessages((prev) => prev.map((item) => (item._id === tempId ? response.message : item)));
+      setLeads((prev) =>
+        prev
+          .map((lead) =>
+            lead._id === selectedLead._id
+              ? {
+                  ...lead,
+                  status: lead.status === "new" ? "contacted" : lead.status,
+                  lastMessage: response.message,
+                  messageCount: (lead.messageCount || 0) + 1,
+                  latestActivityAt: response.message.createdAt,
+                }
+              : lead
+          )
+          .sort(
+            (left, right) =>
+              new Date(right.latestActivityAt || right.createdAt).getTime() -
+              new Date(left.latestActivityAt || left.createdAt).getTime()
+          )
+      );
+      await loadThread(selectedLead._id, true);
+    } catch (err: any) {
+      setMessages((prev) => prev.filter((item) => item._id !== tempId));
+      setComposer(optimisticText);
+      setError(err?.message || "Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleStatusChange(nextStatus: LeadStatus) {
+    if (!selectedLead || selectedLead.status === nextStatus || statusSaving) return;
+
+    setStatusSaving(nextStatus);
+    setError("");
+    try {
+      const response = await apiFetch<{ success: boolean; lead: Lead }>(
+        `/leads/${selectedLead._id}/status`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ status: nextStatus }),
+        }
+      );
+
+      setLeads((prev) =>
+        prev.map((lead) => (lead._id === selectedLead._id ? { ...lead, ...response.lead } : lead))
+      );
+    } catch (err: any) {
+      setError(err?.message || "Failed to update lead status");
+    } finally {
+      setStatusSaving(null);
+    }
+  }
+
+  const buyer = getBuyerSnapshot(selectedLead);
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-emerald-50 px-6 py-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-r-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading leads...</p>
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-r-2 border-emerald-600" />
+          <p className="mt-4 text-sm text-slate-600">Loading seller leads...</p>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-emerald-50 px-6 py-8">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-slate-900">Leads & Inquiries</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Track and respond to buyer inquiries for your properties.
-          </p>
-        </div>
-
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
-            <p className="text-red-800">{error}</p>
+    <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
+      <section className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(120deg,#0c2d26_0%,#15533b_40%,#7bb495_76%,#d6e5dc_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-8">
+        <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.24)_0%,rgba(236,246,240,0.06)_58%,transparent_100%)]" />
+        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
+              <Sparkles className="h-3.5 w-3.5" />
+              Seller Leads Workspace
+            </div>
+            <div>
+              <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Leads / Inquiries</h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[#edf6f0]/90 sm:text-base">
+                Manage every buyer inquiry from one place: qualify the lead, reply in thread, track visit intent,
+                and keep the pipeline moving without jumping across pages.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Total leads</div>
+                <div className="mt-1 text-2xl font-black">{stats.total}</div>
+              </div>
+              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Fresh</div>
+                <div className="mt-1 text-2xl font-black">{stats.fresh}</div>
+              </div>
+              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Contacted</div>
+                <div className="mt-1 text-2xl font-black">{stats.contacted}</div>
+              </div>
+              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">With visits</div>
+                <div className="mt-1 text-2xl font-black">{stats.withVisit}</div>
+              </div>
+            </div>
           </div>
-        )}
 
-        <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Property</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Contact</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Message</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {leads.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                      No leads received yet. When buyers inquire about your properties, they'll appear here.
-                    </td>
-                  </tr>
-                ) : (
-                  leads.map((lead) => (
-                    <tr 
-                      key={lead._id} 
-                      className="hover:bg-slate-50 cursor-pointer"
-                      onClick={() => router.push(`/seller/leads/${lead._id}`)}
-                    >
-                      <td className="px-4 py-4">
-                        <div>
-                          <p className="font-medium text-slate-900">{lead.propertyId?.title || "Unknown Property"}</p>
-                          <p className="text-sm text-slate-600">{lead.propertyId?.location || "Unknown Location"}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <Mail className="h-3 w-3" />
-                            <span>{lead.email}</span>
+          <div className="relative z-10 grid gap-3 self-start rounded-[28px] bg-[rgba(218,232,223,0.12)] p-4 backdrop-blur-md ring-1 ring-[rgba(255,255,255,0.14)]">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#11392f] transition hover:bg-[#f5faf7] disabled:opacity-60"
+            >
+              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+              {refreshing ? "Refreshing..." : "Refresh workspace"}
+            </button>
+            <Link
+              href="/seller/messages"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#edf6f0] px-4 py-3 text-sm font-semibold text-[#17614b] transition hover:bg-white"
+            >
+              Open messages hub
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <div className="rounded-2xl bg-[rgba(9,36,27,0.12)] px-4 py-3 text-sm text-white/90">
+              New inquiries and buyer replies now land here, and seller replies automatically move fresh leads into
+              contacted status.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {error && (
+        <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800">
+          {error}
+        </div>
+      )}
+
+      <section className="grid min-h-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <aside className="flex h-[760px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_20px_70px_rgba(15,23,42,0.06)] xl:h-[calc(100vh-260px)] xl:min-h-[640px]">
+          <div className="border-b border-slate-100 px-5 py-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-black tracking-tight text-slate-950">Lead queue</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  {filteredLeads.length} visible of {leads.length}
+                </p>
+              </div>
+              {stats.fresh > 0 && (
+                <span className="inline-flex rounded-full bg-sky-500 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white">
+                  {stats.fresh} new
+                </span>
+              )}
+            </div>
+            <div className="relative mt-4">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search buyer, property, email, phone"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:bg-white"
+              />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {STATUS_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFilter(option.value)}
+                  className={cn(
+                    "rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition",
+                    filter === option.value
+                      ? "bg-slate-950 text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {filteredLeads.length === 0 ? (
+              <div className="px-6 py-16 text-center">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-emerald-50 text-emerald-700">
+                  <MessageCircle className="h-6 w-6" />
+                </div>
+                <h3 className="mt-4 text-lg font-black tracking-tight text-slate-950">
+                  {search || filter !== "all" ? "No matching leads" : "No leads yet"}
+                </h3>
+                <p className="mt-2 text-sm text-slate-500">
+                  {search || filter !== "all"
+                    ? "Adjust your search or status filter."
+                    : "Buyer inquiries will appear here once your listings start receiving interest."}
+                </p>
+              </div>
+            ) : (
+              filteredLeads.map((lead) => {
+                const active = selectedId === lead._id;
+                const preview = lead.lastMessage?.text || lead.message || "No message content";
+                return (
+                  <button
+                    key={lead._id}
+                    type="button"
+                    onClick={() => setSelectedId(lead._id)}
+                    className={cn(
+                      "group relative w-full border-b border-slate-100 px-5 py-4 text-left transition-all duration-200 ease-out hover:bg-[#f7fbf8] hover:pl-6",
+                      active && "bg-emerald-50/80 shadow-[inset_3px_0_0_0_#059669]"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-emerald-600 text-sm font-black text-white shadow-[0_14px_28px_rgba(5,150,105,0.22)]">
+                        {initials(lead.name || "Buyer")}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-bold text-slate-950">{lead.name}</div>
+                            <div className="mt-1 truncate text-xs text-slate-500">{lead.propertyId?.title}</div>
                           </div>
-                          {lead.phone && (
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                              <Phone className="h-3 w-3" />
-                              <span>{lead.phone}</span>
-                            </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="text-xs font-medium text-slate-500">
+                              {formatRelative(lead.latestActivityAt || lead.createdAt)}
+                            </span>
+                            {(lead.messageCount || 0) > 0 && (
+                              <span className="inline-flex min-w-6 justify-center rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-bold text-white">
+                                {lead.messageCount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-2 truncate text-sm text-slate-600">
+                          {lead.lastMessage?.senderRole === "seller" ? "You: " : ""}
+                          {preview}
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1",
+                              getStatusTone(lead.status)
+                            )}
+                          >
+                            {lead.status}
+                          </span>
+                          {lead.latestVisit && (
+                            <span
+                              className={cn(
+                                "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1",
+                                getVisitTone(lead.latestVisit.status)
+                              )}
+                            >
+                              visit {lead.latestVisit.status}
+                            </span>
                           )}
+                          <span className="truncate text-xs text-slate-500">{lead.propertyId?.location}</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="max-w-xs">
-                          <p className="text-sm text-slate-600 line-clamp-3">{lead.message}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(lead.status)}`}>
-                          {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-slate-600">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-3 w-3" />
-                          <span>{new Date(lead.createdAt).toLocaleDateString()}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
-        </div>
-      </div>
-    </main>
+        </aside>
+
+        <section className="grid min-h-0 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex h-[760px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)] xl:h-[calc(100vh-260px)] xl:min-h-[640px]">
+            {!selectedLead ? (
+              <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
+                <div>
+                  <div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-emerald-50 text-emerald-700">
+                    <MessageCircle className="h-6 w-6" />
+                  </div>
+                  <h3 className="mt-4 text-xl font-black tracking-tight text-slate-950">Select a lead</h3>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Choose an inquiry from the queue to review buyer context and reply.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="border-b border-slate-100 px-6 py-5">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-emerald-600 text-base font-black text-white">
+                        {initials(selectedLead.name || "Buyer")}
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black tracking-tight text-slate-950">{selectedLead.name}</h2>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Building2 className="h-4 w-4 text-slate-400" />
+                            {selectedLead.propertyId.title}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <MapPin className="h-4 w-4 text-slate-400" />
+                            {selectedLead.propertyId.location}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] ring-1",
+                          getStatusTone(selectedLead.status)
+                        )}
+                      >
+                        {selectedLead.status}
+                      </span>
+                      <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                        <Clock3 className="h-3.5 w-3.5" />
+                        Opened {formatDateTime(selectedLead.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {LEAD_STATUS_ACTIONS.map((action) => {
+                      const Icon = action.icon;
+                      const active = selectedLead.status === action.value;
+                      return (
+                        <button
+                          key={action.value}
+                          type="button"
+                          disabled={!!statusSaving}
+                          onClick={() => handleStatusChange(action.value)}
+                          className={cn(
+                            "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
+                            active ? "border-slate-950 bg-slate-950 text-white" : action.tone
+                          )}
+                        >
+                          {statusSaving === action.value ? (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Icon className="h-4 w-4" />
+                          )}
+                          {action.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f4f8f5_0%,#ffffff_26%)] px-6 py-6">
+                  {threadLoading ? (
+                    <div className="flex h-full items-center justify-center">
+                      <LoaderCircle className="h-6 w-6 animate-spin text-emerald-600" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+                            Original inquiry
+                          </span>
+                          <span className="text-xs text-slate-500">{formatDateTime(selectedLead.createdAt)}</span>
+                        </div>
+                        <p className="mt-3 text-sm leading-7 text-slate-700">{selectedLead.message}</p>
+                      </div>
+
+                      {messages.length === 0 ? (
+                        <div className="rounded-[24px] border border-dashed border-slate-300 bg-white px-5 py-8 text-center text-sm text-slate-500">
+                          No follow-up messages yet. Reply below to start the conversation.
+                        </div>
+                      ) : (
+                        messages.map((message) => {
+                          const mine = message.senderRole === "seller";
+                          return (
+                            <div key={message._id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                              <div
+                                className={cn(
+                                  "max-w-[80%] rounded-[22px] px-4 py-3 shadow-sm",
+                                  mine
+                                    ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_16px_30px_rgba(5,150,105,0.18)]"
+                                    : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200"
+                                )}
+                              >
+                                <div className="text-sm leading-6">{message.text}</div>
+                                <div className={cn("mt-2 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
+                                  {mine
+                                    ? `You | ${formatDateTime(message.createdAt)}`
+                                    : `${message.senderId?.name || selectedLead.name} | ${formatDateTime(message.createdAt)}`}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(249,252,250,0.98)_100%)] px-6 py-5">
+                  <form onSubmit={handleSendMessage} className="space-y-3">
+                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3 transition focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_16px_34px_rgba(15,23,42,0.08)]">
+                      <textarea
+                        value={composer}
+                        onChange={(event) => setComposer(event.target.value)}
+                        rows={3}
+                        placeholder="Reply to the buyer, confirm next steps, or qualify the lead..."
+                        className="w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400"
+                        disabled={sending}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="max-w-[480px] text-xs leading-5 text-slate-500">
+                        Replies stay attached to this inquiry thread and trigger buyer notifications automatically.
+                      </p>
+                      <button
+                        type="submit"
+                        disabled={sending || !composer.trim()}
+                        className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(5,150,105,0.20)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_38px_rgba(5,150,105,0.26)] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        Send reply
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </>
+            )}
+          </div>
+          <aside className="flex min-h-0 flex-col gap-6">
+            <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                <UserRound className="h-3.5 w-3.5" />
+                Buyer Snapshot
+              </div>
+              {selectedLead && buyer ? (
+                <div className="mt-5 space-y-4">
+                  <div className="rounded-[24px] bg-[linear-gradient(135deg,#f8fafc_0%,#effdf5_100%)] p-4 ring-1 ring-slate-200">
+                    <div className="text-lg font-black tracking-tight text-slate-950">{buyer.name}</div>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+                      <Mail className="h-4 w-4 text-slate-400" />
+                      {buyer.email && buyer.email !== "No email shared" ? (
+                        <a href={`mailto:${buyer.email}`} className="truncate hover:text-emerald-700">
+                          {buyer.email}
+                        </a>
+                      ) : (
+                        <span>No email shared</span>
+                      )}
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+                      <Phone className="h-4 w-4 text-slate-400" />
+                      {buyer.phone ? (
+                        <a href={`tel:${buyer.phone}`} className="hover:text-emerald-700">
+                          {buyer.phone}
+                        </a>
+                      ) : (
+                        <span>No phone shared</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-3 text-sm text-slate-600">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Lead stage</div>
+                      <div className="mt-1">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] ring-1",
+                            getStatusTone(selectedLead.status)
+                          )}
+                        >
+                          {selectedLead.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Last activity</div>
+                      <div className="mt-1">{formatDateTime(selectedLead.latestActivityAt || selectedLead.createdAt)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Thread size</div>
+                      <div className="mt-1">{selectedLead.messageCount || 0} follow-up messages</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-5 text-sm text-slate-500">Select a lead to view buyer details.</p>
+              )}
+            </div>
+
+            <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                <Building2 className="h-3.5 w-3.5" />
+                Property Context
+              </div>
+              {selectedLead ? (
+                <div className="mt-5 space-y-4">
+                  <div className="overflow-hidden rounded-[24px] ring-1 ring-slate-200">
+                    <div className="h-40 bg-slate-100">
+                      {selectedLead.propertyId.images?.[0]?.url ? (
+                        <img
+                          src={selectedLead.propertyId.images[0].url}
+                          alt={selectedLead.propertyId.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-full place-items-center text-slate-400">
+                          <Building2 className="h-8 w-8" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2 bg-white p-4">
+                      <div className="text-lg font-black tracking-tight text-slate-950">
+                        {selectedLead.propertyId.title}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <MapPin className="h-4 w-4 text-slate-400" />
+                        {selectedLead.propertyId.location}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <span className="font-semibold text-slate-900">
+                          {formatCurrency(selectedLead.propertyId.price, selectedLead.propertyId.currency)}
+                        </span>
+                        {selectedLead.propertyId.listingType && (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+                            {selectedLead.propertyId.listingType}
+                          </span>
+                        )}
+                        {selectedLead.propertyId.status && (
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                            {selectedLead.propertyId.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/seller/property/${selectedLead.propertyId._id}`}
+                    className="group flex items-center justify-between rounded-[20px] border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-[#f7fbf8] hover:text-slate-900"
+                  >
+                    Open property details
+                    <ChevronRight className="h-4 w-4 text-slate-400 transition group-hover:translate-x-0.5" />
+                  </Link>
+                </div>
+              ) : (
+                <p className="mt-5 text-sm text-slate-500">Property details will appear here when you select a lead.</p>
+              )}
+            </div>
+
+            <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                <CalendarClock className="h-3.5 w-3.5" />
+                Visit Intent
+              </div>
+              {selectedLead?.latestVisit ? (
+                <div className="mt-5 space-y-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] ring-1",
+                        getVisitTone(selectedLead.latestVisit.status)
+                      )}
+                    >
+                      {selectedLead.latestVisit.status}
+                    </span>
+                    <span className="text-sm text-slate-500">
+                      Requested {formatDateTime(selectedLead.latestVisit.createdAt)}
+                    </span>
+                  </div>
+                  <div className="rounded-[24px] bg-slate-50 p-4 ring-1 ring-slate-200">
+                    <div className="text-sm font-semibold text-slate-900">
+                      {selectedLead.latestVisit.actualDate
+                        ? `Scheduled for ${formatDate(selectedLead.latestVisit.actualDate)}`
+                        : `Requested for ${formatDate(selectedLead.latestVisit.requestedDate)}`}
+                      {(selectedLead.latestVisit.actualTime || selectedLead.latestVisit.preferredTime) &&
+                        ` at ${selectedLead.latestVisit.actualTime || selectedLead.latestVisit.preferredTime}`}
+                    </div>
+                    {selectedLead.latestVisit.message && (
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{selectedLead.latestVisit.message}</p>
+                    )}
+                    {selectedLead.latestVisit.sellerResponse && (
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        Seller note: {selectedLead.latestVisit.sellerResponse}
+                      </p>
+                    )}
+                  </div>
+                  <Link
+                    href="/seller/visit-scheduling"
+                    className="group flex items-center justify-between rounded-[20px] border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-[#f7fbf8] hover:text-slate-900"
+                  >
+                    Open visit scheduling
+                    <ChevronRight className="h-4 w-4 text-slate-400 transition group-hover:translate-x-0.5" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-5 rounded-[24px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                  No visit request linked to this lead yet.
+                </div>
+              )}
+            </div>
+          </aside>
+        </section>
+      </section>
+    </div>
   );
 }

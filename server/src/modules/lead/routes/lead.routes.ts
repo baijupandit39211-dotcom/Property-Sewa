@@ -13,4 +13,10 @@ router.get("/mine", requireUserAuth, leadController.getMyLeads);
 // GET /leads/my-inquiries (buyer-only)
 router.get("/my-inquiries", requireUserAuth, leadController.getMyInquiries);
 
+// GET /leads/:leadId
+router.get("/:leadId", requireUserAuth, leadController.getLeadById);
+
+// PATCH /leads/:leadId/status
+router.patch("/:leadId/status", requireUserAuth, leadController.updateLeadStatus);
+
 export default router;

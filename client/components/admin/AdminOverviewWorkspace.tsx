@@ -183,12 +183,12 @@ function CardShell({
 }) {
   const ring =
     tone === "emerald"
-      ? "border-emerald-100 shadow-emerald-100/60"
+      ? "border-emerald-100 shadow-emerald-100/60 bg-[linear-gradient(180deg,#ffffff_0%,#f4fff8_100%)]"
       : tone === "sky"
-      ? "border-sky-100 shadow-sky-100/60"
-      : "border-slate-200 shadow-slate-100";
+      ? "border-emerald-100 shadow-emerald-100/60 bg-[linear-gradient(180deg,#ffffff_0%,#f0fff7_100%)]"
+      : "border-emerald-100 shadow-emerald-100/50 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)]";
 
-  return <section className={cn("rounded-[28px] border bg-white shadow-sm", ring)}>{children}</section>;
+  return <section className={cn("rounded-[28px] border shadow-sm", ring)}>{children}</section>;
 }
 
 function StatCard({
@@ -212,7 +212,7 @@ function StatCard({
           <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
           <p className="mt-2 text-sm text-slate-500">{detail}</p>
         </div>
-        <div className="rounded-2xl bg-slate-900 p-3 text-white">{icon}</div>
+        <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#6fd3a6_100%)] p-3 text-white shadow-sm">{icon}</div>
       </div>
     </div>
   );
@@ -312,7 +312,7 @@ export default function AdminOverviewWorkspace() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4 sm:p-6">
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
         <div className="mx-auto max-w-7xl space-y-6">
           <div className="h-56 rounded-[32px] bg-slate-200/80" />
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -341,7 +341,7 @@ export default function AdminOverviewWorkspace() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4 sm:p-6">
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
         <div className="mx-auto max-w-3xl rounded-[32px] border border-rose-200 bg-white p-8 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="rounded-2xl bg-rose-100 p-3 text-rose-600">
@@ -371,7 +371,7 @@ export default function AdminOverviewWorkspace() {
   const userRoleMax = Math.max(1, ...overview.charts.userRoles.map((row) => row.value || 0));
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4 sm:p-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
       <AdminToast
         show={!!notice}
         message={notice?.message || ""}
@@ -379,8 +379,8 @@ export default function AdminOverviewWorkspace() {
       />
 
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a_0%,#134e4a_46%,#ecfdf5_100%)] px-6 py-7 text-white shadow-[0_30px_80px_-40px_rgba(15,23,42,0.85)] sm:px-8 sm:py-9">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-end">
+        <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
@@ -389,44 +389,20 @@ export default function AdminOverviewWorkspace() {
               <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                 Admin dashboard
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
                 Review platform health, moderate pending listings, track revenue, and watch
                 user and report activity from one real-time control surface.
               </p>
             </div>
-
-            <div className="rounded-[28px] border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100/80">
-                Live snapshot
-              </p>
-              <div className="mt-4 space-y-3">
-                <div className="rounded-2xl border border-white/10 bg-slate-950/20 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
-                    Pending approvals
-                  </p>
-                  <p className="mt-2 text-2xl font-bold text-white">
-                    {fmtNumber(overview.stats.properties.pending)}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-950/20 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
-                    Pending reports
-                  </p>
-                  <p className="mt-2 text-2xl font-bold text-white">
-                    {fmtNumber(overview.stats.reports.pending)}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => void loadOverview(true)}
-                disabled={refreshing}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/15 disabled:opacity-60"
-              >
-                <RefreshCcw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-                {refreshing ? "Refreshing..." : "Refresh dashboard"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => void loadOverview(true)}
+              disabled={refreshing}
+              className="inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/15 disabled:opacity-60"
+            >
+              <RefreshCcw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
           </div>
         </section>
 
@@ -442,28 +418,28 @@ export default function AdminOverviewWorkspace() {
             title="Total reports"
             value={fmtNumber(overview.stats.reports.total)}
             detail={`${fmtNumber(overview.stats.reports.pending)} still pending`}
-            tone="border-amber-100 bg-amber-50/80"
+            tone="border-emerald-100 bg-emerald-50/80"
             icon={<ShieldAlert className="h-5 w-5" />}
           />
           <StatCard
             title="Paid revenue"
             value={`NPR ${fmtMoney(overview.stats.commerce.paidRevenue)}`}
             detail={`${fmtNumber(overview.stats.commerce.paidPayments)} paid transactions`}
-            tone="border-sky-100 bg-sky-50/80"
+            tone="border-emerald-100 bg-emerald-50/80"
             icon={<CreditCard className="h-5 w-5" />}
           />
           <StatCard
             title="Reservations"
             value={fmtNumber(overview.stats.commerce.totalReservations)}
             detail={`${fmtNumber(overview.stats.commerce.confirmedReservations)} confirmed`}
-            tone="border-violet-100 bg-violet-50/80"
+            tone="border-emerald-100 bg-emerald-50/80"
             icon={<Clock3 className="h-5 w-5" />}
           />
           <StatCard
             title="Users"
             value={fmtNumber(overview.stats.users.total)}
             detail={`${fmtNumber(overview.stats.users.active)} active accounts`}
-            tone="border-slate-200 bg-white"
+            tone="border-emerald-100 bg-white"
             icon={<Users className="h-5 w-5" />}
           />
         </section>
@@ -511,7 +487,7 @@ export default function AdminOverviewWorkspace() {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="#0f766e" radius={[10, 10, 4, 4]} />
+                  <Bar dataKey="value" fill="#1f9d74" radius={[10, 10, 4, 4]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -533,7 +509,7 @@ export default function AdminOverviewWorkspace() {
 
               {!overview.lists.pendingListings.length ? (
                 <div className="px-5 pb-6">
-                  <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                  <div className="rounded-[24px] border border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-10 text-center text-sm text-slate-500">
                     No pending listings right now.
                   </div>
                 </div>
@@ -543,7 +519,7 @@ export default function AdminOverviewWorkspace() {
                     {overview.lists.pendingListings.map((listing) => (
                       <div
                         key={listing.id}
-                        className="rounded-[24px] border border-slate-200 bg-slate-50 p-4"
+                        className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 p-4"
                       >
                         <div className="flex items-start gap-3">
                           <div className="h-16 w-20 overflow-hidden rounded-2xl bg-slate-200">
@@ -595,7 +571,7 @@ export default function AdminOverviewWorkspace() {
 
                   <div className="hidden overflow-x-auto md:block">
                     <table className="min-w-[920px] w-full text-sm">
-                      <thead className="bg-slate-50 text-slate-600">
+                      <thead className="bg-emerald-50/70 text-slate-600">
                         <tr>
                           <th className="px-5 py-4 text-left font-semibold">Property</th>
                           <th className="px-5 py-4 text-left font-semibold">Seller</th>
@@ -609,7 +585,7 @@ export default function AdminOverviewWorkspace() {
                         {overview.lists.pendingListings.map((listing) => (
                           <tr
                             key={listing.id}
-                            className="border-t border-slate-200 transition hover:bg-slate-50/70"
+                            className="border-t border-emerald-100 transition hover:bg-emerald-50/45"
                           >
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3">
@@ -687,7 +663,7 @@ export default function AdminOverviewWorkspace() {
                 {overview.lists.recentReports.map((report) => (
                   <div
                     key={report.id}
-                    className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4"
+                    className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -706,7 +682,7 @@ export default function AdminOverviewWorkspace() {
                   </div>
                 ))}
                 {!overview.lists.recentReports.length ? (
-                  <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+                  <div className="rounded-[24px] border border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-8 text-sm text-slate-500">
                     No reports submitted yet.
                   </div>
                 ) : null}
@@ -731,7 +707,7 @@ export default function AdminOverviewWorkspace() {
                 {overview.lists.recentPayments.map((payment) => (
                   <div
                     key={payment.id}
-                    className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4"
+                    className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -750,7 +726,7 @@ export default function AdminOverviewWorkspace() {
                   </div>
                 ))}
                 {!overview.lists.recentPayments.length ? (
-                  <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+                  <div className="rounded-[24px] border border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-8 text-sm text-slate-500">
                     No payment activity yet.
                   </div>
                 ) : null}
@@ -775,7 +751,7 @@ export default function AdminOverviewWorkspace() {
                         <span className="font-semibold text-slate-700">{row.name}</span>
                         <span className="text-slate-500">{fmtNumber(row.value)}</span>
                       </div>
-                      <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-2 rounded-full bg-emerald-100">
                         <div
                           className="h-2 rounded-full bg-emerald-600"
                           style={{ width: `${(row.value / userRoleMax) * 100}%` }}
@@ -788,7 +764,7 @@ export default function AdminOverviewWorkspace() {
                   {overview.lists.recentUsers.map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3"
+                      className="flex items-center justify-between rounded-[20px] border border-emerald-100 bg-emerald-50/45 px-4 py-3"
                     >
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-slate-900">{user.name}</p>
@@ -821,9 +797,9 @@ export default function AdminOverviewWorkspace() {
                         <span className="font-semibold text-slate-700">{row.name}</span>
                         <span className="text-slate-500">{fmtNumber(row.value)}</span>
                       </div>
-                      <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-2 rounded-full bg-emerald-100">
                         <div
-                          className="h-2 rounded-full bg-sky-600"
+                          className="h-2 rounded-full bg-emerald-500"
                           style={{ width: `${(row.value / propertyStatusMax) * 100}%` }}
                         />
                       </div>
@@ -834,7 +810,7 @@ export default function AdminOverviewWorkspace() {
                   {overview.lists.topReportReasons.map((reason) => (
                     <div
                       key={reason.reason}
-                      className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3"
+                      className="flex items-center justify-between rounded-[20px] border border-emerald-100 bg-emerald-50/45 px-4 py-3"
                     >
                       <span className="text-sm font-semibold text-slate-700">
                         {reason.reason}

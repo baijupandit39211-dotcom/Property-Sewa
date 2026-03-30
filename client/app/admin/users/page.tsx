@@ -95,13 +95,13 @@ function initials(name: string) {
 function RolePill({ role }: { role: RoleApi }) {
   const tone =
     role === "buyer"
-      ? "border-sky-200 bg-sky-50 text-sky-700"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
       : role === "seller"
-      ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
       : role === "agent"
-      ? "border-amber-200 bg-amber-50 text-amber-800"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
       : role === "admin"
-      ? "border-violet-200 bg-violet-50 text-violet-700"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
       : "border-emerald-200 bg-emerald-50 text-emerald-800";
 
   return (
@@ -141,14 +141,14 @@ function StatusBadge({ status }: { status: StatusApi }) {
 function UserAvatar({ name, role }: { name: string; role: RoleApi }) {
   const accent =
     role === "superadmin"
-      ? "from-emerald-600 to-teal-500"
+      ? "from-emerald-700 to-teal-500"
       : role === "admin"
-      ? "from-violet-600 to-fuchsia-500"
+      ? "from-emerald-600 to-teal-500"
       : role === "agent"
-      ? "from-amber-500 to-orange-500"
+      ? "from-emerald-500 to-lime-500"
       : role === "seller"
-      ? "from-indigo-500 to-blue-500"
-      : "from-sky-500 to-cyan-500";
+      ? "from-emerald-500 to-teal-500"
+      : "from-teal-500 to-emerald-400";
 
   return (
     <div
@@ -183,7 +183,7 @@ function StatCard({
           <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
           <p className="mt-2 text-sm text-slate-500">{detail}</p>
         </div>
-        <div className="rounded-2xl bg-slate-900 p-3 text-white">{icon}</div>
+        <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white shadow-sm">{icon}</div>
       </div>
     </div>
   );
@@ -576,10 +576,10 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4 sm:p-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a_0%,#134e4a_45%,#ecfdf5_100%)] px-6 py-7 text-white shadow-[0_30px_80px_-40px_rgba(15,23,42,0.85)] sm:px-8 sm:py-9">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px] xl:items-end">
+        <section className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
@@ -588,39 +588,20 @@ export default function AdminUsersPage() {
               <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                 Users management
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
                 Review account health, manage roles, and control user access from one
                 production-ready directory without changing the existing behavior.
               </p>
             </div>
-
-            <div className="rounded-[28px] border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100/80">
-                Live snapshot
-              </p>
-              <div className="mt-4 grid gap-3">
-                <div>
-                  <p className="text-3xl font-bold text-white">{stats.total || total}</p>
-                  <p className="text-sm text-slate-200">Total accounts in the admin directory</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-slate-950/20 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-                      In view
-                    </p>
-                    <p className="mt-2 text-xl font-bold text-white">{users.length}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-slate-950/20 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-                      Page
-                    </p>
-                    <p className="mt-2 text-xl font-bold text-white">
-                      {page}/{totalPages}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => void fetchUsers()}
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/15 disabled:opacity-60"
+            >
+              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
           </div>
         </section>
 
@@ -629,7 +610,7 @@ export default function AdminUsersPage() {
             title="Total users"
             value={stats.total || total}
             detail="Total accounts matching the current search scope."
-            tone="border-slate-200 bg-white"
+            tone="border-emerald-100 bg-white"
             icon={<Users className="h-5 w-5" />}
           />
           <StatCard
@@ -643,14 +624,14 @@ export default function AdminUsersPage() {
             title="Archived"
             value={archivedCount}
             detail="Accounts removed from the active working set."
-            tone="border-amber-100 bg-amber-50/80"
+            tone="border-emerald-100 bg-emerald-50/80"
             icon={<Archive className="h-5 w-5" />}
           />
           <StatCard
             title="Suspended in view"
             value={suspendedCount}
             detail="Accounts restricted for policy or abuse reasons."
-            tone="border-rose-100 bg-rose-50/80"
+            tone="border-emerald-100 bg-emerald-50/80"
             icon={<ShieldOff className="h-5 w-5" />}
           />
         </section>
@@ -663,8 +644,8 @@ export default function AdminUsersPage() {
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6">
-            <section className="rounded-[28px] border border-slate-200/80 bg-white/90 p-5 shadow-lg shadow-slate-200/40 backdrop-blur">
-              <div className="flex flex-col gap-4 border-b border-slate-200 pb-5">
+            <section className="rounded-[28px] border border-emerald-100/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-lg shadow-emerald-100/40 backdrop-blur">
+              <div className="flex flex-col gap-4 border-b border-emerald-100 pb-5">
                 <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Directory filters</p>
@@ -728,7 +709,7 @@ export default function AdminUsersPage() {
                     </button>
                   ) : null}
                   {!query.trim() && roleFilter === "all" && statusFilter === "all" ? (
-                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/60 px-3 py-1 text-xs font-semibold text-emerald-700">
                       <Filter className="h-3.5 w-3.5" />
                       No filters applied
                     </span>
@@ -812,26 +793,26 @@ export default function AdminUsersPage() {
               </section>
             ) : null}
 
-            <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-lg shadow-slate-200/40">
-              <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <section className="overflow-hidden rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-lg shadow-emerald-100/40">
+              <div className="flex flex-col gap-3 border-b border-emerald-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-base font-semibold text-slate-900">User directory</h2>
                   <p className="mt-1 text-sm text-slate-500">
                     Showing {users.length} users on this page out of {total} total records.
                   </p>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/60 px-3 py-1 text-xs font-semibold text-emerald-700">
                   <Users className="h-3.5 w-3.5" />
                   {limit} per page
                 </div>
               </div>
 
               {loading && !users.length ? (
-                <div className="space-y-4 bg-slate-50/70 p-5">
+                <div className="space-y-4 bg-emerald-50/40 p-5">
                   {Array.from({ length: 4 }).map((_, index) => (
                     <div
                       key={index}
-                      className="animate-pulse rounded-[24px] border border-slate-200 bg-white p-5"
+                        className="animate-pulse rounded-[24px] border border-emerald-100 bg-white p-5"
                     >
                       <div className="flex items-center gap-3">
                         <div className="h-11 w-11 rounded-2xl bg-slate-200" />
@@ -845,7 +826,7 @@ export default function AdminUsersPage() {
                 </div>
               ) : !users.length ? (
                 <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                     <Users className="h-8 w-8" />
                   </div>
                   <h3 className="mt-5 text-lg font-semibold text-slate-900">No users found</h3>
@@ -856,7 +837,7 @@ export default function AdminUsersPage() {
                 </div>
               ) : (
                 <>
-                  <div className="space-y-4 bg-slate-50/70 p-4 md:hidden">
+                  <div className="space-y-4 bg-emerald-50/40 p-4 md:hidden">
                     {users.map((user) => {
                       const disabled = disableActions(user);
                       const canRestore = user.status !== "active";
@@ -866,7 +847,7 @@ export default function AdminUsersPage() {
                       return (
                         <div
                           key={user.id}
-                          className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"
+                          className="rounded-[24px] border border-emerald-100 bg-white p-5 shadow-sm"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex min-w-0 items-center gap-3">
@@ -939,7 +920,7 @@ export default function AdminUsersPage() {
                           </div>
 
                           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
                               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                                 Created
                               </p>
@@ -947,7 +928,7 @@ export default function AdminUsersPage() {
                                 {formatDate(user.createdAt)}
                               </p>
                             </div>
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
                               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                                 Updated
                               </p>
@@ -963,7 +944,7 @@ export default function AdminUsersPage() {
 
                   <div className="hidden overflow-x-auto md:block">
                     <table className="min-w-[980px] w-full text-sm">
-                      <thead className="bg-slate-50 text-slate-600">
+                      <thead className="bg-emerald-50/70 text-slate-600">
                         <tr>
                           <th className="px-5 py-4 text-left font-semibold">User</th>
                           <th className="px-5 py-4 text-left font-semibold">Role</th>
@@ -983,7 +964,7 @@ export default function AdminUsersPage() {
                           return (
                             <tr
                               key={user.id}
-                              className="border-t border-slate-200 transition hover:bg-slate-50/70"
+                              className="border-t border-emerald-100 transition hover:bg-emerald-50/40"
                             >
                               <td className="px-5 py-4">
                                 <div className="flex items-center gap-3">
@@ -1074,7 +1055,7 @@ export default function AdminUsersPage() {
               )}
             </section>
 
-            <section className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <section className="flex flex-col gap-4 rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-900">
                   Page {page} of {totalPages}
@@ -1120,14 +1101,14 @@ export default function AdminUsersPage() {
             </section>
           </div>
           <aside className="space-y-6">
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Role distribution</h2>
               <p className="mt-1 text-sm text-slate-500">Counts within the current result set.</p>
               <div className="mt-5 space-y-3">
                 {ROLE_OPTIONS.map((role) => (
                   <div
                     key={role}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                    className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3"
                   >
                     <RolePill role={role} />
                     <span className="text-sm font-bold text-slate-900">
@@ -1138,25 +1119,25 @@ export default function AdminUsersPage() {
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Admin guardrails</h2>
               <p className="mt-1 text-sm text-slate-500">
                 The existing backend permission checks are unchanged.
               </p>
               <div className="mt-5 space-y-3 text-sm text-slate-600">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
                   You cannot change your own account from this page.
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
                   Admin users cannot modify SuperAdmin accounts.
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
                   Role changes remain limited to SuperAdmin users.
                 </div>
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Status health</h2>
               <p className="mt-1 text-sm text-slate-500">
                 Live counts across the current search and role scope.
@@ -1166,13 +1147,13 @@ export default function AdminUsersPage() {
                   <span className="text-sm font-semibold text-emerald-900">Active</span>
                   <span className="text-base font-bold text-emerald-900">{activeCount}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
-                  <span className="text-sm font-semibold text-amber-900">Archived</span>
-                  <span className="text-base font-bold text-amber-900">{archivedCount}</span>
+                <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                  <span className="text-sm font-semibold text-emerald-900">Archived</span>
+                  <span className="text-base font-bold text-emerald-900">{archivedCount}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3">
-                  <span className="text-sm font-semibold text-rose-900">Suspended</span>
-                  <span className="text-base font-bold text-rose-900">{suspendedCount}</span>
+                <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                  <span className="text-sm font-semibold text-emerald-900">Suspended</span>
+                  <span className="text-base font-bold text-emerald-900">{suspendedCount}</span>
                 </div>
               </div>
             </section>
