@@ -1,3 +1,5 @@
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { ApiError } from "../../../utils/apiError";
 import User from "../../../models/User.model";
 import AuditLog from "../../../models/AuditLog.model";
@@ -130,9 +132,91 @@ export async function listUsers(params: {
   };
 }
 
+export async function getUserStats() {
+  const [total, active, archived, suspended, owners, verified] = await Promise.all([
+    User.countDocuments({}),
+    User.countDocuments({ status: "active" }),
+    User.countDocuments({ status: { $in: ["archived", "inactive"] } }),
+    User.countDocuments({ status: "suspended" }),
+    User.countDocuments({ role: { $in: ["seller", "agent"] } }),
+    User.countDocuments({ status: "active" }),
+  ]);
+
+  return {
+    total,
+    active,
+    archived,
+    suspended,
+    owners,
+    verified,
+  };
+}
+
 export async function getUserById(id: string) {
   const user = await User.findById(id).select(SAFE_USER_FIELDS).lean();
   if (!user) throw new ApiError(404, "User not found");
+  return toSafeUser(user);
+}
+
+export async function createUser(params: {
+  actor: Actor;
+  body: {
+    name?: string;
+    email?: string;
+    role?: string;
+    status?: string;
+  };
+  ip?: string;
+  userAgent?: string;
+}) {
+  const { actor, body } = params;
+  assertActor(actor);
+
+  const actorRole = normalizeRole(actor.role);
+  const role = normalizeRole(body.role);
+  const status = normalizeStatus(body.status);
+  const name = sanitizeString(body.name, 120);
+  const email = normalizeEmail(body.email);
+
+  if (!name) throw new ApiError(400, "Name is required");
+  if (!email) throw new ApiError(400, "Email is required");
+  if (!ALLOWED_ROLES.includes(role as any)) throw new ApiError(400, "Invalid role");
+  if (!ALLOWED_STATUSES.includes(status as any)) throw new ApiError(400, "Invalid status");
+
+  if (actorRole !== "superadmin" && (role === "admin" || role === "superadmin")) {
+    throw new ApiError(403, "Only superadmin can create admin accounts");
+  }
+
+  const existing = await User.findOne({ email });
+  if (existing) throw new ApiError(400, "Email already exists");
+
+  const passwordHash = await bcrypt.hash(crypto.randomBytes(24).toString("hex"), 10);
+
+  const user = await User.create({
+    name,
+    email,
+    role,
+    status,
+    provider: "local",
+    passwordHash,
+    archivedAt: status === "archived" ? new Date() : null,
+  });
+
+  await AuditLog.create({
+    action: "user.created",
+    actorId: actor.userId,
+    targetUserId: user._id,
+    reason: "",
+    metadata: {
+      role,
+      status,
+      email,
+      name,
+    },
+    ip: params.ip || "",
+    userAgent: params.userAgent || "",
+  });
+
   return toSafeUser(user);
 }
 

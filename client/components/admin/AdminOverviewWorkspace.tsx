@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { apiFetchAdmin } from "@/app/lib/api";
 import AdminToast from "@/components/admin/AdminToast";
 import {
@@ -9,20 +10,22 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  BarChart,
-  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Line,
+  Area,
+  ComposedChart,
 } from "recharts";
 import {
   ArrowRight,
   CheckCircle2,
-  Clock3,
   CreditCard,
   RefreshCcw,
   ShieldAlert,
   Sparkles,
   TriangleAlert,
   Users,
-  XCircle,
 } from "lucide-react";
 
 type OverviewResponse = {
@@ -158,37 +161,33 @@ function fmtMoney(value: number) {
   }).format(value || 0);
 }
 
-function fmtDate(value?: string) {
-  if (!value) return "Unknown";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  });
-}
-
 function formatLabel(value: string) {
   if (!value) return "Unknown";
   return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function toSafeNumber(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function CardShell({
   children,
-  tone = "slate",
+  className,
 }: {
   children: React.ReactNode;
-  tone?: "slate" | "emerald" | "sky";
+  className?: string;
 }) {
-  const ring =
-    tone === "emerald"
-      ? "border-emerald-100 shadow-emerald-100/60 bg-[linear-gradient(180deg,#ffffff_0%,#f4fff8_100%)]"
-      : tone === "sky"
-      ? "border-emerald-100 shadow-emerald-100/60 bg-[linear-gradient(180deg,#ffffff_0%,#f0fff7_100%)]"
-      : "border-emerald-100 shadow-emerald-100/50 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)]";
-
-  return <section className={cn("rounded-[28px] border shadow-sm", ring)}>{children}</section>;
+  return (
+    <section
+      className={cn(
+        "rounded-[14px] border border-[#dfe8e2] bg-white shadow-[0_6px_24px_rgba(16,24,40,0.05)]",
+        className
+      )}
+    >
+      {children}
+    </section>
+  );
 }
 
 function StatCard({
@@ -196,23 +195,23 @@ function StatCard({
   value,
   detail,
   icon,
-  tone,
 }: {
   title: string;
   value: string;
   detail: string;
   icon: React.ReactNode;
-  tone: string;
 }) {
   return (
-    <div className={cn("rounded-[28px] border p-5 shadow-sm", tone)}>
+    <div className="rounded-[14px] border border-[#dfe8e2] bg-white px-5 py-5 shadow-[0_6px_24px_rgba(16,24,40,0.04)]">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-slate-600">{title}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
-          <p className="mt-2 text-sm text-slate-500">{detail}</p>
+          <p className="text-[15px] font-semibold text-[#3b4a54]">{title}</p>
+          <p className="mt-2 text-[24px] font-bold tracking-tight text-[#24323d]">{value}</p>
+          <p className="mt-2 text-[14px] text-[#6e7f8d]">{detail}</p>
         </div>
-        <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#6fd3a6_100%)] p-3 text-white shadow-sm">{icon}</div>
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#61b24a] text-white shadow-sm">
+          {icon}
+        </div>
       </div>
     </div>
   );
@@ -220,31 +219,109 @@ function StatCard({
 
 function LinkLike({ href, label }: { href: string; label: string }) {
   return (
-    <a
+    <Link
       href={href}
-      className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:underline"
+      className="inline-flex items-center gap-1.5 rounded-md border border-[#dbe5de] bg-[#f3f8f4] px-3 py-2 text-sm font-semibold text-[#56725f] transition hover:bg-[#ebf3ed]"
     >
       {label}
       <ArrowRight className="h-4 w-4" />
-    </a>
+    </Link>
   );
 }
 
 function StatusPill({ value }: { value: string }) {
   const lower = value.toLowerCase();
+
   const tone =
-    lower === "paid" || lower === "active" || lower === "reviewed"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : lower === "pending"
-      ? "border-amber-200 bg-amber-50 text-amber-800"
-      : lower === "rejected" || lower === "suspended" || lower === "failed"
-      ? "border-rose-200 bg-rose-50 text-rose-700"
-      : "border-slate-200 bg-slate-100 text-slate-700";
+    lower === "active" ||
+    lower === "paid" ||
+    lower === "reviewed" ||
+    lower === "for sale" ||
+    lower === "approved"
+      ? "bg-[#e8f6ec] text-[#2f8f4e]"
+      : lower === "pending" || lower === "for rent"
+      ? "bg-[#fff3d8] text-[#b88710]"
+      : lower === "sold" || lower === "rejected" || lower === "failed" || lower === "inactive"
+      ? "bg-[#ffeae2] text-[#d9822b]"
+      : "bg-[#eef2f4] text-[#62707c]";
 
   return (
-    <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-semibold", tone)}>
+    <span className={cn("inline-flex rounded-md px-2.5 py-1 text-xs font-semibold", tone)}>
       {formatLabel(value)}
     </span>
+  );
+}
+
+function MiniAvatar({ name }: { name: string }) {
+  const initial = (name || "U").trim().charAt(0).toUpperCase();
+
+  return (
+    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,#dcefe2_0%,#84c39c_100%)] text-sm font-bold text-[#23563a] ring-2 ring-white">
+      {initial}
+    </div>
+  );
+}
+
+function EmptyChartState({ message }: { message: string }) {
+  return (
+    <div className="flex h-full items-center justify-center rounded-[10px] border border-dashed border-[#dfe8e2] bg-[#f8fbf9] text-sm text-[#6e7f8d]">
+      {message}
+    </div>
+  );
+}
+
+const PAGE_BG =
+  "min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.18),transparent_26%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.10),transparent_22%),linear-gradient(180deg,#f6fffa_0%,#edf8f1_100%)] p-4 sm:p-6";
+
+const PIE_COLORS = ["#2f8f4e", "#62b33d", "#f2b233", "#74719a", "#cfd8d3"];
+
+function renderPieLabel(props: any) {
+  const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
+  if (!percent || percent < 0.07) return null;
+
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.62;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#ffffff"
+      textAnchor="middle"
+      dominantBaseline="central"
+      style={{ fontSize: 16, fontWeight: 700 }}
+    >
+      {`${Math.round(percent * 100)}%`}
+    </text>
+  );
+}
+
+function CustomRevenueTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ dataKey?: string; value?: number }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  const payments = payload.find((item) => item.dataKey === "payments")?.value ?? 0;
+  const revenue = payload.find((item) => item.dataKey === "revenue")?.value ?? 0;
+
+  return (
+    <div className="rounded-md border border-[#d9e3dc] bg-white px-4 py-3 shadow-md">
+      <p className="mb-2 text-[15px] font-medium text-[#243b53]">{label}</p>
+      <p className="text-[14px] font-medium text-[#62b33d]">
+        payments : {fmtNumber(Number(payments))}
+      </p>
+      <p className="mt-2 text-[14px] font-medium text-[#2d6a4f]">
+        revenue : {fmtNumber(Number(revenue))}
+      </p>
+    </div>
   );
 }
 
@@ -253,7 +330,6 @@ export default function AdminOverviewWorkspace() {
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [actingId, setActingId] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<{
     tone: "success" | "error";
     message: string;
@@ -291,49 +367,62 @@ export default function AdminOverviewWorkspace() {
     };
   }, [notice]);
 
-  async function moderateListing(id: string, action: "approve" | "reject") {
-    setActingId(id);
-    try {
-      await apiFetchAdmin(`/properties/admin/${id}/${action}`, { method: "PATCH" });
-      await loadOverview(true);
-      setNotice({
-        tone: "success",
-        message: action === "approve" ? "Listing approved successfully." : "Listing rejected successfully.",
-      });
-    } catch (err: any) {
-      setNotice({
-        tone: "error",
-        message: err?.message || `Failed to ${action} listing`,
-      });
-    } finally {
-      setActingId(null);
-    }
-  }
+  const revenueChartData = React.useMemo(() => {
+    return (overview.charts.revenue || []).map((item, index) => ({
+      label: item?.label || `M${index + 1}`,
+      revenue: toSafeNumber(item?.revenue),
+      payments: toSafeNumber(item?.payments),
+    }));
+  }, [overview.charts.revenue]);
+
+  const hasRevenueData = revenueChartData.some(
+    (item) => item.revenue > 0 || item.payments > 0
+  );
+
+  const propertyStatusData = React.useMemo(() => {
+    const raw =
+      overview.charts.propertyStatus?.length > 0
+        ? overview.charts.propertyStatus
+        : [
+            { name: "For Sale", value: overview.stats.properties.active || 0 },
+            { name: "Pending", value: overview.stats.properties.pending || 0 },
+            { name: "Rejected", value: overview.stats.properties.rejected || 0 },
+          ];
+
+    return raw
+      .map((item) => ({
+        name: item.name,
+        value: toSafeNumber(item.value),
+      }))
+      .filter((item) => item.value > 0);
+  }, [overview.charts.propertyStatus, overview.stats.properties.active, overview.stats.properties.pending, overview.stats.properties.rejected]);
+
+  const propertyStatusTotal = propertyStatusData.reduce((sum, item) => sum + item.value, 0);
+  const hasPropertyStatusData = propertyStatusData.length > 0 && propertyStatusTotal > 0;
+
+  const recentProperties = overview.lists.pendingListings.slice(0, 4);
+  const topAgents = overview.lists.recentUsers.slice(0, 4);
+  const latestLeads = overview.lists.recentReports.slice(0, 5);
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
+      <main className={PAGE_BG}>
         <div className="mx-auto max-w-7xl space-y-6">
-          <div className="h-56 rounded-[32px] bg-slate-200/80" />
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="h-32 rounded-[28px] bg-white shadow-sm" />
+          <div className="h-56 rounded-[34px] bg-slate-200/70" />
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-32 rounded-[14px] bg-white shadow-sm" />
             ))}
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="h-80 rounded-[28px] bg-white shadow-sm" />
-            <div className="h-80 rounded-[28px] bg-white shadow-sm" />
+            <div className="h-[340px] rounded-[14px] bg-white shadow-sm" />
+            <div className="h-[340px] rounded-[14px] bg-white shadow-sm" />
           </div>
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_380px]">
-            <div className="space-y-6">
-              <div className="h-96 rounded-[28px] bg-white shadow-sm" />
-              <div className="h-80 rounded-[28px] bg-white shadow-sm" />
-            </div>
-            <div className="space-y-6">
-              <div className="h-72 rounded-[28px] bg-white shadow-sm" />
-              <div className="h-80 rounded-[28px] bg-white shadow-sm" />
-            </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="h-[280px] rounded-[14px] bg-white shadow-sm" />
+            <div className="h-[280px] rounded-[14px] bg-white shadow-sm" />
           </div>
+          <div className="h-[260px] rounded-[14px] bg-white shadow-sm" />
         </div>
       </main>
     );
@@ -341,7 +430,7 @@ export default function AdminOverviewWorkspace() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
+      <main className={PAGE_BG}>
         <div className="mx-auto max-w-3xl rounded-[32px] border border-rose-200 bg-white p-8 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="rounded-2xl bg-rose-100 p-3 text-rose-600">
@@ -364,14 +453,8 @@ export default function AdminOverviewWorkspace() {
     );
   }
 
-  const propertyStatusMax = Math.max(
-    1,
-    ...overview.charts.propertyStatus.map((row) => row.value || 0)
-  );
-  const userRoleMax = Math.max(1, ...overview.charts.userRoles.map((row) => row.value || 0));
-
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
+    <main className={PAGE_BG}>
       <AdminToast
         show={!!notice}
         message={notice?.message || ""}
@@ -394,6 +477,7 @@ export default function AdminOverviewWorkspace() {
                 user and report activity from one real-time control surface.
               </p>
             </div>
+
             <button
               type="button"
               onClick={() => void loadOverview(true)}
@@ -406,424 +490,330 @@ export default function AdminOverviewWorkspace() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            title="Active listings"
-            value={fmtNumber(overview.stats.properties.active)}
-            detail={`${fmtNumber(overview.stats.properties.pending)} waiting for approval`}
-            tone="border-emerald-100 bg-emerald-50/80"
+            title="Total Properties"
+            value={fmtNumber(overview.stats.properties.total)}
+            detail={`${fmtNumber(overview.stats.properties.active)} active`}
             icon={<CheckCircle2 className="h-5 w-5" />}
           />
           <StatCard
-            title="Total reports"
-            value={fmtNumber(overview.stats.reports.total)}
-            detail={`${fmtNumber(overview.stats.reports.pending)} still pending`}
-            tone="border-emerald-100 bg-emerald-50/80"
+            title="Total Owners"
+            value={fmtNumber(overview.stats.users.sellers + overview.stats.users.agents)}
+            detail={`${fmtNumber(overview.stats.users.agents)} agents`}
             icon={<ShieldAlert className="h-5 w-5" />}
           />
           <StatCard
-            title="Paid revenue"
-            value={`NPR ${fmtMoney(overview.stats.commerce.paidRevenue)}`}
-            detail={`${fmtNumber(overview.stats.commerce.paidPayments)} paid transactions`}
-            tone="border-emerald-100 bg-emerald-50/80"
-            icon={<CreditCard className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Reservations"
-            value={fmtNumber(overview.stats.commerce.totalReservations)}
-            detail={`${fmtNumber(overview.stats.commerce.confirmedReservations)} confirmed`}
-            tone="border-emerald-100 bg-emerald-50/80"
-            icon={<Clock3 className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Users"
+            title="Total Users"
             value={fmtNumber(overview.stats.users.total)}
             detail={`${fmtNumber(overview.stats.users.active)} active accounts`}
-            tone="border-emerald-100 bg-white"
             icon={<Users className="h-5 w-5" />}
+          />
+          <StatCard
+            title="Total Earnings"
+            value={`₹${fmtMoney(overview.stats.commerce.paidRevenue)}`}
+            detail={`${fmtNumber(overview.stats.commerce.paidPayments)} paid payments`}
+            icon={<CreditCard className="h-5 w-5" />}
           />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <CardShell tone="emerald">
-            <div className="flex items-center justify-between px-5 py-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Revenue trend</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Real paid revenue from successful platform payments.
-                </p>
-              </div>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
-                Last 6 months
-              </span>
+          <CardShell>
+            <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
+              <h2 className="text-[16px] font-bold text-[#243b53]">Revenue Stats</h2>
             </div>
-            <div className="h-72 px-2 pb-5 sm:px-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={overview.charts.revenue}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="revenue" fill="#10b981" radius={[10, 10, 4, 4]} />
-                </BarChart>
-              </ResponsiveContainer>
+
+            <div className="p-4">
+              <div className="mb-4 flex flex-wrap items-center gap-6 text-sm">
+                <div className="flex items-center gap-2 text-[#4f5d75]">
+                  <span className="inline-block h-[5px] w-7 rounded-full bg-[#2d6a4f]" />
+                  Monthly Earnings
+                </div>
+                <div className="flex items-center gap-2 text-[#4f5d75]">
+                  <span className="inline-block h-[5px] w-7 rounded-full bg-[#62b33d]" />
+                  Commission
+                </div>
+              </div>
+
+              <div className="h-[250px]">
+                {hasRevenueData ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={revenueChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="earningsFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#2d6a4f" stopOpacity={0.18} />
+                          <stop offset="100%" stopColor="#2d6a4f" stopOpacity={0.03} />
+                        </linearGradient>
+                        <linearGradient id="commissionFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#62b33d" stopOpacity={0.14} />
+                          <stop offset="100%" stopColor="#62b33d" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+
+                      <CartesianGrid stroke="#e7ecef" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 12, fill: "#6b7c93" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 12, fill: "#6b7c93" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={44}
+                      />
+                      <Tooltip content={<CustomRevenueTooltip />} />
+
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        fill="url(#earningsFill)"
+                        stroke="none"
+                        isAnimationActive={false}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="payments"
+                        fill="url(#commissionFill)"
+                        stroke="none"
+                        isAnimationActive={false}
+                      />
+
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#2d6a4f"
+                        strokeWidth={3}
+                        dot={{ r: 3, fill: "#ffffff", stroke: "#2d6a4f", strokeWidth: 2 }}
+                        activeDot={{ r: 5, fill: "#ffffff", stroke: "#2d6a4f", strokeWidth: 2 }}
+                        isAnimationActive={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="payments"
+                        stroke="#62b33d"
+                        strokeWidth={3}
+                        dot={{ r: 3, fill: "#ffffff", stroke: "#62b33d", strokeWidth: 2 }}
+                        activeDot={{ r: 5, fill: "#ffffff", stroke: "#62b33d", strokeWidth: 2 }}
+                        isAnimationActive={false}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChartState message="No revenue data available yet." />
+                )}
+              </div>
             </div>
           </CardShell>
 
-          <CardShell tone="sky">
-            <div className="flex items-center justify-between px-5 py-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Moderation status</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Current distribution of listing reports by workflow state.
-                </p>
-              </div>
-              <LinkLike href="/admin/reports" label="Open reports" />
+          <CardShell>
+            <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
+              <h2 className="text-[16px] font-bold text-[#243b53]">Property Listings</h2>
+              <LinkLike href="/admin/listings-approval" label="View All" />
             </div>
-            <div className="h-72 px-2 pb-5 sm:px-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={overview.charts.moderation}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#1f9d74" radius={[10, 10, 4, 4]} />
-                </BarChart>
-              </ResponsiveContainer>
+
+            <div className="grid gap-2 p-4 md:grid-cols-[1fr_180px] md:items-center">
+              <div className="h-[250px]">
+                {hasPropertyStatusData ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={propertyStatusData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={48}
+                        outerRadius={110}
+                        paddingAngle={1.5}
+                        labelLine={false}
+                        label={renderPieLabel}
+                        isAnimationActive={false}
+                      >
+                        {propertyStatusData.map((entry, index) => (
+                          <Cell
+                            key={`${entry.name}-${index}`}
+                            fill={PIE_COLORS[index % PIE_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChartState message="No property status data available yet." />
+                )}
+              </div>
+
+              <div className="space-y-5">
+                {hasPropertyStatusData ? (
+                  propertyStatusData.map((item, index) => {
+                    const percentage = propertyStatusTotal
+                      ? Math.round((item.value / propertyStatusTotal) * 100)
+                      : 0;
+
+                    return (
+                      <div
+                        key={item.name}
+                        className="flex items-center justify-between gap-3 border-b border-[#edf2ef] pb-3 last:border-b-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="inline-block h-4 w-4 rounded-[4px]"
+                            style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                          />
+                          <span className="text-sm font-medium text-[#334e68]">
+                            {formatLabel(item.name)}
+                          </span>
+                        </div>
+                        <span className="text-[15px] font-bold text-[#243b53]">{percentage}%</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-sm text-[#6e7f8d]">No breakdown available.</div>
+                )}
+              </div>
             </div>
           </CardShell>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_380px]">
-          <div className="space-y-6">
-            <CardShell>
-              <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Listings pending approval</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Approve or reject new listings directly from the overview queue.
-                  </p>
-                </div>
-                <LinkLike href="/admin/listings-approval" label="Open queue" />
-              </div>
+        <section className="grid gap-6 lg:grid-cols-2">
+          <CardShell>
+            <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
+              <h2 className="text-[16px] font-bold text-[#243b53]">Recent Properties</h2>
+              <LinkLike href="/admin/listings-approval" label="View All" />
+            </div>
 
-              {!overview.lists.pendingListings.length ? (
-                <div className="px-5 pb-6">
-                  <div className="rounded-[24px] border border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-10 text-center text-sm text-slate-500">
-                    No pending listings right now.
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-4 px-4 pb-4 md:hidden">
-                    {overview.lists.pendingListings.map((listing) => (
-                      <div
-                        key={listing.id}
-                        className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 p-4"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="h-16 w-20 overflow-hidden rounded-2xl bg-slate-200">
-                            {listing.image ? (
-                              <img
-                                src={listing.image}
-                                alt={listing.title}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : null}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold text-slate-900">
-                              {listing.title}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-500">{listing.location}</p>
-                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              {listing.propertyType} / {listing.listingType}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-                          <span>{listing.sellerName}</span>
-                          <span>
-                            {listing.currency} {fmtMoney(listing.price)}
-                          </span>
-                        </div>
-                        <div className="mt-4 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => void moderateListing(listing.id, "approve")}
-                            disabled={actingId === listing.id}
-                            className="flex-1 rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void moderateListing(listing.id, "reject")}
-                            disabled={actingId === listing.id}
-                            className="flex-1 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-[#f8fbf9] text-left text-[#52606d]">
+                    <th className="px-5 py-3 font-semibold">Property</th>
+                    <th className="px-5 py-3 font-semibold">Location</th>
+                    <th className="px-5 py-3 font-semibold">Status</th>
+                    <th className="px-5 py-3 font-semibold">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentProperties.length ? (
+                    recentProperties.map((listing) => (
+                      <tr key={listing.id} className="border-t border-[#edf2ef]">
+                        <td className="px-5 py-3 font-semibold text-[#243b53]">{listing.title}</td>
+                        <td className="px-5 py-3 text-[#52606d]">{listing.location}</td>
+                        <td className="px-5 py-3">
+                          <StatusPill value={listing.listingType || "pending"} />
+                        </td>
+                        <td className="px-5 py-3 font-semibold text-[#243b53]">
+                          {listing.currency} {fmtMoney(listing.price)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-slate-500">
+                        No recent properties found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardShell>
 
-                  <div className="hidden overflow-x-auto md:block">
-                    <table className="min-w-[920px] w-full text-sm">
-                      <thead className="bg-emerald-50/70 text-slate-600">
-                        <tr>
-                          <th className="px-5 py-4 text-left font-semibold">Property</th>
-                          <th className="px-5 py-4 text-left font-semibold">Seller</th>
-                          <th className="px-5 py-4 text-left font-semibold">Type</th>
-                          <th className="px-5 py-4 text-left font-semibold">Price</th>
-                          <th className="px-5 py-4 text-left font-semibold">Created</th>
-                          <th className="px-5 py-4 text-right font-semibold">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {overview.lists.pendingListings.map((listing) => (
-                          <tr
-                            key={listing.id}
-                            className="border-t border-emerald-100 transition hover:bg-emerald-50/45"
-                          >
-                            <td className="px-5 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="h-12 w-16 overflow-hidden rounded-xl bg-slate-200">
-                                  {listing.image ? (
-                                    <img
-                                      src={listing.image}
-                                      alt={listing.title}
-                                      className="h-full w-full object-cover"
-                                    />
-                                  ) : null}
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="truncate font-semibold text-slate-900">
-                                    {listing.title}
-                                  </p>
-                                  <p className="truncate text-sm text-slate-500">
-                                    {listing.location}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-5 py-4 text-slate-700">{listing.sellerName}</td>
-                            <td className="px-5 py-4 text-slate-600">
-                              {formatLabel(listing.propertyType)} / {formatLabel(listing.listingType)}
-                            </td>
-                            <td className="px-5 py-4 text-slate-700">
-                              {listing.currency} {fmtMoney(listing.price)}
-                            </td>
-                            <td className="px-5 py-4 text-slate-600">
-                              {fmtDate(listing.createdAt)}
-                            </td>
-                            <td className="px-5 py-4">
-                              <div className="flex justify-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => void moderateListing(listing.id, "approve")}
-                                  disabled={actingId === listing.id}
-                                  className="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-                                >
-                                  <CheckCircle2 className="h-4 w-4" />
-                                  Approve
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => void moderateListing(listing.id, "reject")}
-                                  disabled={actingId === listing.id}
-                                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                  Reject
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </CardShell>
+          <CardShell>
+            <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
+              <h2 className="text-[16px] font-bold text-[#243b53]">Top Owners</h2>
+              <LinkLike href="/admin/users" label="View All" />
+            </div>
 
-            <CardShell tone="sky">
-              <div className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Recent reports</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Latest moderation items from the reports queue.
-                  </p>
-                </div>
-                <LinkLike href="/admin/reports" label="Open reports" />
-              </div>
-              <div className="space-y-3 px-5 pb-5">
-                {overview.lists.recentReports.map((report) => (
-                  <div
-                    key={report.id}
-                    className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-900">{report.propertyTitle}</p>
-                        <p className="mt-1 text-sm text-slate-500">{report.reason}</p>
-                        <p className="mt-2 text-xs text-slate-400">
-                          Reporter: {report.reporterName} • {fmtDate(report.createdAt)}
+            <div className="divide-y divide-[#edf2ef]">
+              {topAgents.length ? (
+                topAgents.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between gap-4 px-5 py-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <MiniAvatar name={user.name} />
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-[#243b53]">{user.name}</p>
+                        <p className="text-sm text-[#7b8794]">
+                          {fmtNumber(
+                            user.role.toLowerCase() === "agent"
+                              ? overview.stats.users.agents
+                              : overview.stats.users.sellers
+                          )}{" "}
+                          Properties
                         </p>
                       </div>
-                      <StatusPill value={report.status} />
                     </div>
-                    <p className="mt-3 text-sm text-slate-500">{report.propertyLocation}</p>
-                    {report.message ? (
-                      <p className="mt-3 text-sm leading-6 text-slate-600">{report.message}</p>
-                    ) : null}
-                  </div>
-                ))}
-                {!overview.lists.recentReports.length ? (
-                  <div className="rounded-[24px] border border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-8 text-sm text-slate-500">
-                    No reports submitted yet.
-                  </div>
-                ) : null}
-              </div>
-            </CardShell>
-          </div>
 
-          <div className="space-y-6">
-            <CardShell tone="emerald">
-              <div className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Recent payments</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Latest payment attempts across the platform.
-                  </p>
-                </div>
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
-                  Views 30d: {fmtNumber(overview.stats.commerce.propertyViews30d)}
-                </span>
-              </div>
-              <div className="space-y-3 px-5 pb-5">
-                {overview.lists.recentPayments.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-900">{payment.propertyTitle}</p>
-                        <p className="mt-1 text-sm text-slate-500">{payment.buyerName}</p>
-                      </div>
-                      <StatusPill value={payment.status} />
+                    <div className="text-right">
+                      <p className="text-[18px] font-bold text-[#243b53]">
+                        {fmtNumber(
+                          user.role.toLowerCase() === "agent"
+                            ? overview.stats.users.agents
+                            : overview.stats.users.sellers
+                        )}
+                      </p>
+                      <p className="text-sm text-[#7b8794]">Properties</p>
                     </div>
-                    <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
-                      <span>{formatLabel(payment.gateway)}</span>
-                      <span className="font-semibold text-slate-900">
-                        NPR {fmtMoney(payment.amount)}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-400">{fmtDate(payment.createdAt)}</p>
                   </div>
-                ))}
-                {!overview.lists.recentPayments.length ? (
-                  <div className="rounded-[24px] border border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-8 text-sm text-slate-500">
-                    No payment activity yet.
-                  </div>
-                ) : null}
-              </div>
-            </CardShell>
+                ))
+              ) : (
+                <div className="px-5 py-10 text-center text-sm text-slate-500">
+                  No owner data available.
+                </div>
+              )}
+            </div>
+          </CardShell>
+        </section>
 
-            <CardShell>
-              <div className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">User activity</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Recent accounts and role distribution.
-                  </p>
-                </div>
-                <LinkLike href="/admin/users" label="Open users" />
-              </div>
-              <div className="space-y-5 px-5 pb-5">
-                <div className="space-y-3">
-                  {overview.charts.userRoles.map((row) => (
-                    <div key={row.name}>
-                      <div className="mb-1 flex items-center justify-between text-sm">
-                        <span className="font-semibold text-slate-700">{row.name}</span>
-                        <span className="text-slate-500">{fmtNumber(row.value)}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-emerald-100">
-                        <div
-                          className="h-2 rounded-full bg-emerald-600"
-                          style={{ width: `${(row.value / userRoleMax) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-3">
-                  {overview.lists.recentUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between rounded-[20px] border border-emerald-100 bg-emerald-50/45 px-4 py-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-900">{user.name}</p>
-                        <p className="truncate text-sm text-slate-500">{user.email}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <StatusPill value={user.status} />
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                          {formatLabel(user.role)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardShell>
+        <section>
+          <CardShell>
+            <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
+              <h2 className="text-[16px] font-bold text-[#243b53]">Latest Leads</h2>
+              <LinkLike href="/admin/reports" label="View All" />
+            </div>
 
-            <CardShell tone="sky">
-              <div className="px-5 py-4">
-                <h2 className="text-lg font-bold text-slate-900">Platform mix</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Property pipeline and top moderation reasons.
-                </p>
-              </div>
-              <div className="space-y-5 px-5 pb-5">
-                <div className="space-y-3">
-                  {overview.charts.propertyStatus.map((row) => (
-                    <div key={row.name}>
-                      <div className="mb-1 flex items-center justify-between text-sm">
-                        <span className="font-semibold text-slate-700">{row.name}</span>
-                        <span className="text-slate-500">{fmtNumber(row.value)}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-emerald-100">
-                        <div
-                          className="h-2 rounded-full bg-emerald-500"
-                          style={{ width: `${(row.value / propertyStatusMax) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-3">
-                  {overview.lists.topReportReasons.map((reason) => (
-                    <div
-                      key={reason.reason}
-                      className="flex items-center justify-between rounded-[20px] border border-emerald-100 bg-emerald-50/45 px-4 py-3"
-                    >
-                      <span className="text-sm font-semibold text-slate-700">
-                        {reason.reason}
-                      </span>
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                        {fmtNumber(reason.count)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardShell>
-          </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-[#f8fbf9] text-left text-[#52606d]">
+                    <th className="px-5 py-3 font-semibold">Name</th>
+                    <th className="px-5 py-3 font-semibold">Email</th>
+                    <th className="px-5 py-3 font-semibold">Interested In</th>
+                    <th className="px-5 py-3 font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {latestLeads.length ? (
+                    latestLeads.map((report) => (
+                      <tr key={report.id} className="border-t border-[#edf2ef]">
+                        <td className="px-5 py-3 font-semibold text-[#2f5aa8]">
+                          {report.reporterName || "Unknown"}
+                        </td>
+                        <td className="px-5 py-3 text-[#2f5aa8]">
+                          {report.reporterName || "Unknown"}
+                        </td>
+                        <td className="px-5 py-3 text-[#52606d]">
+                          {report.propertyTitle || report.reason}
+                        </td>
+                        <td className="px-5 py-3">
+                          <StatusPill value={report.status || "pending"} />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-slate-500">
+                        No latest leads available.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardShell>
         </section>
       </div>
     </main>

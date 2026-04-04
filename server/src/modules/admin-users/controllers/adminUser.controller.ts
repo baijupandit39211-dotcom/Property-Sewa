@@ -20,6 +20,41 @@ export async function listUsers(req: Request, res: Response, next: NextFunction)
   }
 }
 
+export async function getStats(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const stats = await adminUserService.getUserStats();
+    return res.status(200).json({ success: true, stats });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function createUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const actor = {
+      userId: String(req.user?.userId || ""),
+      role: String(req.user?.role || ""),
+    };
+    if (!actor.userId) throw new ApiError(401, "Authentication required");
+
+    const user = await adminUserService.createUser({
+      actor,
+      body: {
+        name: req.body?.name,
+        email: req.body?.email,
+        role: req.body?.role,
+        status: req.body?.status,
+      },
+      ip: req.ip,
+      userAgent: String(req.headers["user-agent"] || ""),
+    });
+
+    return res.status(201).json({ success: true, user });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await adminUserService.getUserById(req.params.id);

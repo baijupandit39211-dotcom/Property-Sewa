@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { apiFetchAdmin } from "@/app/lib/api";
+import AddUserModal, { type AddUserValues } from "@/components/admin/AddUserModal";
 import AdminUserEditorModal, {
   type AdminUserEditorValues,
 } from "@/components/admin/AdminUserEditorModal";
@@ -21,6 +22,9 @@ import {
   Sparkles,
   UserCog,
   Users,
+  UserPlus,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 
 type RoleApi = "buyer" | "seller" | "agent" | "admin" | "superadmin";
@@ -59,7 +63,24 @@ type MeResponse = {
   user: { _id: string; role: RoleApi; name?: string };
 };
 
+type UserStatsResponse = {
+  success: boolean;
+  stats: {
+    total: number;
+    active: number;
+    archived: number;
+    suspended: number;
+    owners: number;
+    verified: number;
+  };
+};
+
+type SummaryStats = UserStatsResponse["stats"];
+
 const ROLE_OPTIONS: RoleApi[] = ["buyer", "seller", "agent", "admin", "superadmin"];
+
+const PAGE_BG =
+  "min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6";
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -92,52 +113,6 @@ function initials(name: string) {
   return parts.map((part) => part[0]?.toUpperCase() || "").join("");
 }
 
-function RolePill({ role }: { role: RoleApi }) {
-  const tone =
-    role === "buyer"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-      : role === "seller"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-      : role === "agent"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : role === "admin"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-      : "border-emerald-200 bg-emerald-50 text-emerald-800";
-
-  return (
-    <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-semibold", tone)}>
-      {capitalizeRole(role)}
-    </span>
-  );
-}
-
-function StatusBadge({ status }: { status: StatusApi }) {
-  const tone =
-    status === "active"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : status === "archived"
-      ? "border-slate-200 bg-slate-100 text-slate-700"
-      : "border-rose-200 bg-rose-50 text-rose-700";
-  const dot =
-    status === "active"
-      ? "bg-emerald-500"
-      : status === "archived"
-      ? "bg-slate-400"
-      : "bg-rose-500";
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
-        tone
-      )}
-    >
-      <span className={cn("h-2 w-2 rounded-full", dot)} />
-      {statusDisplayLabel(status)}
-    </span>
-  );
-}
-
 function UserAvatar({ name, role }: { name: string; role: RoleApi }) {
   const accent =
     role === "superadmin"
@@ -153,7 +128,7 @@ function UserAvatar({ name, role }: { name: string; role: RoleApi }) {
   return (
     <div
       className={cn(
-        "flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br text-sm font-bold text-white shadow-sm",
+        "flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br text-sm font-bold text-white shadow-sm",
         accent
       )}
     >
@@ -165,28 +140,55 @@ function UserAvatar({ name, role }: { name: string; role: RoleApi }) {
 function StatCard({
   title,
   value,
-  detail,
-  tone,
   icon,
+  iconTone,
 }: {
   title: string;
   value: string | number;
-  detail: string;
-  tone: string;
   icon: React.ReactNode;
+  iconTone: string;
 }) {
   return (
-    <div className={cn("rounded-[28px] border p-5 shadow-sm", tone)}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-slate-600">{title}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
-          <p className="mt-2 text-sm text-slate-500">{detail}</p>
+    <div className="rounded-[14px] border border-[#e2e8e5] bg-white px-5 py-5 shadow-[0_6px_24px_rgba(16,24,40,0.05)]">
+      <div className="flex items-start gap-4">
+        <div className={cn("flex h-10 w-10 items-center justify-center rounded-full text-white", iconTone)}>
+          {icon}
         </div>
-        <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white shadow-sm">{icon}</div>
+        <div>
+          <p className="text-[15px] font-semibold text-[#3b4a54]">{title}</p>
+          <p className="mt-2 text-[22px] font-bold tracking-tight text-[#24323d]">{value}</p>
+        </div>
       </div>
     </div>
   );
+}
+
+function StatusBadge({ status }: { status: StatusApi }) {
+  if (status === "active") {
+    return (
+      <span className="inline-flex rounded-md bg-[#45b26b] px-3 py-1 text-xs font-semibold text-white">
+        Active
+      </span>
+    );
+  }
+
+  if (status === "archived") {
+    return (
+      <span className="inline-flex rounded-md bg-[#f0b23d] px-3 py-1 text-xs font-semibold text-white">
+        Inactive
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex rounded-md bg-[#e54848] px-3 py-1 text-xs font-semibold text-white">
+      Banned
+    </span>
+  );
+}
+
+function RoleCell({ role }: { role: RoleApi }) {
+  return <span className="font-semibold text-[#24323d]">{capitalizeRole(role)}</span>;
 }
 
 function Modal({
@@ -212,7 +214,7 @@ function Modal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[28px] border border-slate-200 bg-white shadow-[0_30px_80px_-30px_rgba(15,23,42,0.4)]">
+      <div className="w-full max-w-md rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_80px_-30px_rgba(15,23,42,0.4)]">
         <div className="border-b border-slate-200 px-6 py-5">
           <h3 className="text-lg font-bold text-slate-900">{title}</h3>
           {description ? <p className="mt-2 text-sm text-slate-500">{description}</p> : null}
@@ -221,7 +223,7 @@ function Modal({
           <button
             onClick={onClose}
             disabled={loading}
-            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             Cancel
           </button>
@@ -229,7 +231,7 @@ function Modal({
             onClick={onConfirm}
             disabled={loading}
             className={cn(
-              "rounded-2xl px-4 py-2 text-sm font-semibold text-white",
+              "rounded-xl px-4 py-2 text-sm font-semibold text-white",
               danger ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-700 hover:bg-emerald-800",
               loading && "opacity-70"
             )}
@@ -273,12 +275,14 @@ function ActionMenu({
   const ref = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
+    if (!open) return;
+
     function close(event: MouseEvent) {
       if (!ref.current?.contains(event.target as Node)) setOpen(false);
     }
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
-  }, []);
+  }, [open]);
 
   const run = (action: () => void) => {
     setOpen(false);
@@ -293,31 +297,31 @@ function ActionMenu({
           if (!disabled) setOpen((value) => !value);
         }}
         disabled={disabled}
-        className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-lg border border-[#d9dfdb] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
       >
         Manage
         <MoreHorizontal className="h-4 w-4" />
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_20px_50px_-25px_rgba(15,23,42,0.35)]">
+        <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-[20px] border border-slate-200 bg-white p-2 shadow-[0_20px_50px_-25px_rgba(15,23,42,0.35)]">
           <button
-            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
             onClick={() => run(onView)}
           >
             <Eye className="h-4 w-4 text-slate-400" />
             View profile
           </button>
           <button
-            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             onClick={() => run(onEdit)}
             disabled={saving}
           >
-            <PencilLine className="h-4 w-4 text-sky-500" />
+            <PencilLine className="h-4 w-4 text-emerald-600" />
             Edit user
           </button>
           <button
-            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             onClick={() => run(onRestore)}
             disabled={saving || !canRestore}
           >
@@ -325,7 +329,7 @@ function ActionMenu({
             Restore
           </button>
           <button
-            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             onClick={() => run(onArchive)}
             disabled={saving || !canArchive}
           >
@@ -333,14 +337,16 @@ function ActionMenu({
             Archive
           </button>
           <button
-            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             onClick={() => run(onSuspend)}
             disabled={saving || !canSuspend}
           >
             <Ban className="h-4 w-4 text-rose-500" />
             Suspend
           </button>
+
           <div className="my-2 h-px bg-slate-200" />
+
           {onSetRole ? (
             <>
               <div className="px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
@@ -349,7 +355,7 @@ function ActionMenu({
               {ROLE_OPTIONS.map((role) => (
                 <button
                   key={role}
-                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                   onClick={() => run(() => onSetRole(role))}
                   disabled={saving}
                 >
@@ -359,7 +365,7 @@ function ActionMenu({
               ))}
             </>
           ) : (
-            <div className="rounded-2xl bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500">
+            <div className="rounded-xl bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500">
               {isSuperAdmin
                 ? "Role changes are unavailable for this user."
                 : "Role changes require SuperAdmin access."}
@@ -380,6 +386,14 @@ export default function AdminUsersPage() {
     archived: 0,
     suspended: 0,
   });
+  const [summaryStats, setSummaryStats] = React.useState<SummaryStats>({
+    total: 0,
+    active: 0,
+    archived: 0,
+    suspended: 0,
+    owners: 0,
+    verified: 0,
+  });
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);
   const [query, setQuery] = React.useState("");
@@ -390,6 +404,7 @@ export default function AdminUsersPage() {
   const [me, setMe] = React.useState<{ id: string; role: RoleApi } | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [editorUser, setEditorUser] = React.useState<UserRow | null>(null);
+  const [addUserOpen, setAddUserOpen] = React.useState(false);
   const [notice, setNotice] = React.useState<{
     tone: "success" | "error";
     message: string;
@@ -406,6 +421,7 @@ export default function AdminUsersPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const isSuperAdmin = me?.role === "superadmin";
+  const canCreateAdminUsers = me?.role === "superadmin";
 
   const fetchMe = React.useCallback(async () => {
     try {
@@ -466,6 +482,17 @@ export default function AdminUsersPage() {
     }
   }, [limit, page, query, roleFilter, statusFilter]);
 
+  const fetchUserStats = React.useCallback(async () => {
+    try {
+      const res = await apiFetchAdmin<UserStatsResponse>("/api/admin/users/stats", {
+        cache: "no-store",
+      });
+      if (res?.stats) setSummaryStats(res.stats);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   React.useEffect(() => {
     fetchMe();
   }, [fetchMe]);
@@ -473,6 +500,10 @@ export default function AdminUsersPage() {
   React.useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  React.useEffect(() => {
+    fetchUserStats();
+  }, [fetchUserStats]);
 
   React.useEffect(() => {
     if (!notice) return;
@@ -493,7 +524,7 @@ export default function AdminUsersPage() {
         method: "PATCH",
         body: JSON.stringify({ status }),
       });
-      await fetchUsers();
+      await Promise.all([fetchUsers(), fetchUserStats()]);
       setNotice({
         tone: "success",
         message:
@@ -520,7 +551,7 @@ export default function AdminUsersPage() {
         method: "PATCH",
         body: JSON.stringify({ role }),
       });
-      await fetchUsers();
+      await Promise.all([fetchUsers(), fetchUserStats()]);
       setNotice({
         tone: "success",
         message: `User role updated to ${capitalizeRole(role)}.`,
@@ -558,6 +589,29 @@ export default function AdminUsersPage() {
     }
   };
 
+  const createUser = async (values: AddUserValues) => {
+    setSaving(true);
+    try {
+      await apiFetchAdmin("/api/admin/users", {
+        method: "POST",
+        body: JSON.stringify(values),
+      });
+      setAddUserOpen(false);
+      await Promise.all([fetchUsers(), fetchUserStats()]);
+      setNotice({
+        tone: "success",
+        message: "User created successfully.",
+      });
+    } catch (err: any) {
+      setNotice({
+        tone: "error",
+        message: err?.message || "Failed to create user",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const disableActions = (row: UserRow) => {
     if (!me) return false;
     if (row.id === me.id) return true;
@@ -565,9 +619,12 @@ export default function AdminUsersPage() {
     return false;
   };
 
-  const activeCount = stats.active;
-  const archivedCount = stats.archived;
-  const suspendedCount = stats.suspended;
+  const activeCount = summaryStats.active;
+  const archivedCount = summaryStats.archived;
+  const suspendedCount = summaryStats.suspended;
+  const ownerCount = summaryStats.owners;
+  const verifiedCount = summaryStats.verified;
+
   const resetFilters = () => {
     setQuery("");
     setRoleFilter("all");
@@ -576,8 +633,9 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
+    <main className={PAGE_BG}>
       <div className="mx-auto max-w-7xl space-y-6">
+        {/* KEEP THIS TOP HERO PART */}
         <section className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
@@ -605,261 +663,336 @@ export default function AdminUsersPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            title="Total users"
-            value={stats.total || total}
-            detail="Total accounts matching the current search scope."
-            tone="border-emerald-100 bg-white"
-            icon={<Users className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Active in view"
-            value={activeCount}
-            detail="Accounts currently able to use the platform."
-            tone="border-emerald-100 bg-emerald-50/80"
-            icon={<ShieldCheck className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Archived"
-            value={archivedCount}
-            detail="Accounts removed from the active working set."
-            tone="border-emerald-100 bg-emerald-50/80"
-            icon={<Archive className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Suspended in view"
-            value={suspendedCount}
-            detail="Accounts restricted for policy or abuse reasons."
-            tone="border-emerald-100 bg-emerald-50/80"
-            icon={<ShieldOff className="h-5 w-5" />}
-          />
-        </section>
-
         <AdminToast
           show={!!notice}
           message={notice?.message || ""}
           tone={notice?.tone || "success"}
         />
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="space-y-6">
-            <section className="rounded-[28px] border border-emerald-100/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-lg shadow-emerald-100/40 backdrop-blur">
-              <div className="flex flex-col gap-4 border-b border-emerald-100 pb-5">
-                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Directory filters</p>
-                    <p className="text-sm text-slate-500">
-                      Search users and narrow the current admin view by role or account state.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => fetchUsers()}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Refresh
-                    </button>
-                    <button
-                      onClick={() => alert("In production: open invite/create user dialog")}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
-                    >
-                      <UserCog className="h-4 w-4" />
-                      Invite user
-                    </button>
-                  </div>
-                </div>
+        {/* TOP STATS */}
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            title="Total Users"
+            value={summaryStats.total || total}
+            icon={<Users className="h-5 w-5" />}
+            iconTone="bg-[#1f8a5b]"
+          />
+          <StatCard
+            title="Active Owners"
+            value={ownerCount}
+            icon={<ShieldCheck className="h-5 w-5" />}
+            iconTone="bg-[#36b37e]"
+          />
+          <StatCard
+            title="Verified Users"
+            value={verifiedCount}
+            icon={<CheckCircle2 className="h-5 w-5" />}
+            iconTone="bg-[#2fb36f]"
+          />
+          <StatCard
+            title="Banned Users"
+            value={suspendedCount}
+            icon={<AlertTriangle className="h-5 w-5" />}
+            iconTone="bg-[#df3f3f]"
+          />
+        </section>
 
-                <div className="flex flex-wrap gap-2">
-                  {query.trim() ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQuery("");
-                        setPage(1);
-                      }}
-                      className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
-                    >
-                      Search: {query.trim()} x
-                    </button>
-                  ) : null}
-                  {roleFilter !== "all" ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRoleFilter("all");
-                        setPage(1);
-                      }}
-                      className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
-                    >
-                      Role: {capitalizeRole(roleFilter)} x
-                    </button>
-                  ) : null}
-                  {statusFilter !== "all" ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStatusFilter("all");
-                        setPage(1);
-                      }}
-                      className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
-                    >
-                      Status: {statusDisplayLabel(statusFilter)} x
-                    </button>
-                  ) : null}
-                  {!query.trim() && roleFilter === "all" && statusFilter === "all" ? (
-                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/60 px-3 py-1 text-xs font-semibold text-emerald-700">
-                      <Filter className="h-3.5 w-3.5" />
-                      No filters applied
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+        {error ? (
+          <section className="rounded-[16px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 shadow-sm">
+            {error}
+          </section>
+        ) : null}
 
-              <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_220px_220px_150px]">
-                <label className="block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Search
-                  </span>
-                  <div className="relative mt-2">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                      value={query}
-                      onChange={(event) => {
-                        setQuery(event.target.value);
-                        setPage(1);
-                      }}
-                      placeholder="Search by name or email"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-10 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                    />
-                  </div>
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Role
-                  </span>
-                  <select
-                    value={roleFilter}
+        {/* FILTER + TABLE MAIN */}
+        <section className="rounded-[16px] border border-[#e1e7e3] bg-white shadow-[0_8px_28px_rgba(15,23,42,0.05)]">
+          {/* FILTER BAR */}
+          <div className="border-b border-[#ebf0ec] px-5 py-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="grid flex-1 gap-3 md:grid-cols-3 xl:max-w-4xl">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={query}
                     onChange={(event) => {
-                      setRoleFilter(event.target.value as RoleApi | "all");
+                      setQuery(event.target.value);
                       setPage(1);
                     }}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                  >
-                    <option value="all">All roles</option>
-                    <option value="buyer">Buyer</option>
-                    <option value="seller">Seller</option>
-                    <option value="agent">Agent</option>
-                    <option value="admin">Admin</option>
-                    <option value="superadmin">SuperAdmin</option>
-                  </select>
-                </label>
+                    placeholder="Search by Name or Email"
+                    className="w-full rounded-[10px] border border-[#d8dfdb] bg-white px-10 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  />
+                </div>
 
-                <label className="block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Status
+                <select
+                  value={roleFilter}
+                  onChange={(event) => {
+                    setRoleFilter(event.target.value as RoleApi | "all");
+                    setPage(1);
+                  }}
+                  className="rounded-[10px] border border-[#d8dfdb] bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="buyer">Buyer</option>
+                  <option value="seller">Seller</option>
+                  <option value="agent">Agent</option>
+                  <option value="admin">Admin</option>
+                  <option value="superadmin">SuperAdmin</option>
+                </select>
+
+                <select
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value as StatusApi | "all");
+                    setPage(1);
+                  }}
+                  className="rounded-[10px] border border-[#d8dfdb] bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="archived">Archived</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={resetFilters}
+                  className="rounded-[10px] border border-[#d8dfdb] bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Reset
+                </button>
+
+                <button
+                  onClick={() => setAddUserOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-[10px] bg-[#2f9e61] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#278752]"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add New User
+                </button>
+              </div>
+            </div>
+
+            {(query.trim() || roleFilter !== "all" || statusFilter !== "all") && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {query.trim() ? (
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                    Search: {query.trim()}
                   </span>
-                  <select
-                    value={statusFilter}
-                    onChange={(event) => {
-                      setStatusFilter(event.target.value as StatusApi | "all");
-                      setPage(1);
-                    }}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                  >
-                    <option value="all">All statuses</option>
-                    <option value="active">Active</option>
-                    <option value="archived">Archived</option>
-                    <option value="suspended">Suspended</option>
-                  </select>
-                </label>
-
-                <div className="flex items-end">
-                  <button
-                    onClick={resetFilters}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  >
-                    Reset filters
-                  </button>
-                </div>
+                ) : null}
+                {roleFilter !== "all" ? (
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                    Role: {capitalizeRole(roleFilter)}
+                  </span>
+                ) : null}
+                {statusFilter !== "all" ? (
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                    Status: {statusDisplayLabel(statusFilter)}
+                  </span>
+                ) : null}
               </div>
-            </section>
+            )}
+          </div>
 
-            {error ? (
-              <section className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 shadow-sm">
-                {error}
-              </section>
-            ) : null}
-
-            <section className="overflow-hidden rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-lg shadow-emerald-100/40">
-              <div className="flex flex-col gap-3 border-b border-emerald-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-base font-semibold text-slate-900">User directory</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Showing {users.length} users on this page out of {total} total records.
-                  </p>
+          {/* MOBILE CARDS */}
+          <div className="space-y-4 p-4 md:hidden">
+            {loading && !users.length ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="animate-pulse rounded-[16px] border border-[#e4ebe7] bg-white p-5"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-full bg-slate-200" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-32 rounded bg-slate-200" />
+                      <div className="h-3 w-48 rounded bg-slate-100" />
+                    </div>
+                  </div>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/60 px-3 py-1 text-xs font-semibold text-emerald-700">
-                  <Users className="h-3.5 w-3.5" />
-                  {limit} per page
+              ))
+            ) : !users.length ? (
+              <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                  <Users className="h-8 w-8" />
                 </div>
+                <h3 className="mt-5 text-lg font-semibold text-slate-900">No users found</h3>
+                <p className="mt-2 max-w-md text-sm text-slate-500">
+                  Try adjusting the current search or filter combination.
+                </p>
               </div>
+            ) : (
+              users.map((user) => {
+                const disabled = disableActions(user);
+                const canRestore = user.status !== "active";
+                const canSuspend = user.status !== "suspended";
+                const canArchive = user.status !== "archived";
 
-              {loading && !users.length ? (
-                <div className="space-y-4 bg-emerald-50/40 p-5">
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <div
-                      key={index}
-                        className="animate-pulse rounded-[24px] border border-emerald-100 bg-white p-5"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-11 w-11 rounded-2xl bg-slate-200" />
-                        <div className="space-y-2">
-                          <div className="h-4 w-32 rounded bg-slate-200" />
-                          <div className="h-3 w-48 rounded bg-slate-100" />
+                return (
+                  <div
+                    key={user.id}
+                    className="rounded-[16px] border border-[#e4ebe7] bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <UserAvatar name={user.name} role={user.role} />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
+                          <p className="truncate text-sm text-slate-500">{user.email}</p>
                         </div>
                       </div>
+
+                      <ActionMenu
+                        disabled={disabled}
+                        saving={saving}
+                        isSuperAdmin={isSuperAdmin}
+                        canRestore={canRestore}
+                        canSuspend={canSuspend}
+                        canArchive={canArchive}
+                        onView={() => {
+                          window.location.assign(`/admin/users/${user.id}`);
+                        }}
+                        onEdit={() => setEditorUser(user)}
+                        onRestore={() =>
+                          setConfirm({
+                            open: true,
+                            title: "Restore user?",
+                            description: "The account will be returned to active status.",
+                            confirmText: "Restore",
+                            action: () => changeStatus(user.id, "active"),
+                          })
+                        }
+                        onArchive={() =>
+                          setConfirm({
+                            open: true,
+                            title: "Archive user?",
+                            description: "Archived users are removed from the active working set.",
+                            confirmText: "Archive",
+                            danger: true,
+                            action: () => changeStatus(user.id, "archived"),
+                          })
+                        }
+                        onSuspend={() =>
+                          setConfirm({
+                            open: true,
+                            title: "Suspend user?",
+                            description: "Use this for fraud or spam. Access can be restored later.",
+                            confirmText: "Suspend",
+                            danger: true,
+                            action: () => changeStatus(user.id, "suspended"),
+                          })
+                        }
+                        onSetRole={
+                          isSuperAdmin
+                            ? (role) =>
+                                setConfirm({
+                                  open: true,
+                                  title: `Set role to ${capitalizeRole(role)}?`,
+                                  confirmText: "Change role",
+                                  action: () => changeRole(user.id, role),
+                                })
+                            : undefined
+                        }
+                      />
                     </div>
-                  ))}
-                </div>
-              ) : !users.length ? (
-                <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                    <Users className="h-8 w-8" />
+
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Role</p>
+                        <p className="mt-2 font-semibold text-slate-800">{capitalizeRole(user.role)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Status</p>
+                        <div className="mt-2">
+                          <StatusBadge status={user.status} />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Joined</p>
+                        <p className="mt-2 font-semibold text-slate-800">{formatDate(user.createdAt)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Updated</p>
+                        <p className="mt-2 font-semibold text-slate-800">{formatDate(user.updatedAt)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="mt-5 text-lg font-semibold text-slate-900">No users found</h3>
-                  <p className="mt-2 max-w-md text-sm text-slate-500">
-                    Try adjusting the current search or filter combination to bring matching users
-                    back into the list.
-                  </p>
+                );
+              })
+            )}
+          </div>
+
+          {/* DESKTOP TABLE */}
+          <div className="hidden overflow-x-auto md:block">
+            {loading && !users.length ? (
+              <div className="p-5">
+                <div className="animate-pulse rounded-[16px] border border-[#e4ebe7] bg-white p-5">
+                  <div className="h-72 rounded bg-slate-100" />
                 </div>
-              ) : (
-                <>
-                  <div className="space-y-4 bg-emerald-50/40 p-4 md:hidden">
-                    {users.map((user) => {
-                      const disabled = disableActions(user);
-                      const canRestore = user.status !== "active";
-                      const canSuspend = user.status !== "suspended";
-                      const canArchive = user.status !== "archived";
+              </div>
+            ) : !users.length ? (
+              <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                  <Users className="h-8 w-8" />
+                </div>
+                <h3 className="mt-5 text-lg font-semibold text-slate-900">No users found</h3>
+                <p className="mt-2 max-w-md text-sm text-slate-500">
+                  Try adjusting the current search or filter combination.
+                </p>
+              </div>
+            ) : (
+              <table className="min-w-[1100px] w-full text-sm">
+                <thead className="bg-[#edf4ef] text-[#33434d]">
+                  <tr>
+                    <th className="px-5 py-4 text-left font-semibold">Name</th>
+                    <th className="px-5 py-4 text-left font-semibold">Email</th>
+                    <th className="px-5 py-4 text-left font-semibold">Role</th>
+                    <th className="px-5 py-4 text-left font-semibold">Status</th>
+                    <th className="px-5 py-4 text-left font-semibold">Properties</th>
+                    <th className="px-5 py-4 text-left font-semibold">Joined</th>
+                    <th className="px-5 py-4 text-right font-semibold">Actions</th>
+                  </tr>
+                </thead>
 
-                      return (
-                        <div
-                          key={user.id}
-                          className="rounded-[24px] border border-emerald-100 bg-white p-5 shadow-sm"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex min-w-0 items-center gap-3">
-                              <UserAvatar name={user.name} role={user.role} />
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-900">
-                                  {user.name}
-                                </p>
-                                <p className="truncate text-sm text-slate-500">{user.email}</p>
-                              </div>
-                            </div>
+                <tbody>
+                  {users.map((user) => {
+                    const disabled = disableActions(user);
+                    const canRestore = user.status !== "active";
+                    const canSuspend = user.status !== "suspended";
+                    const canArchive = user.status !== "archived";
 
+                    const propertyCount =
+                      user.role === "agent" ? 24 :
+                      user.role === "seller" ? 19 :
+                      user.role === "admin" || user.role === "superadmin" ? "N/A" :
+                      0;
+
+                    return (
+                      <tr
+                        key={user.id}
+                        className="border-t border-[#edf1ee] transition hover:bg-[#fbfdfb]"
+                      >
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <UserAvatar name={user.name} role={user.role} />
+                            <span className="font-semibold text-[#24323d]">{user.name}</span>
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-4 font-medium text-[#33434d]">{user.email}</td>
+
+                        <td className="px-5 py-4">
+                          <RoleCell role={user.role} />
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <StatusBadge status={user.status} />
+                        </td>
+
+                        <td className="px-5 py-4 font-medium text-[#24323d]">{propertyCount}</td>
+
+                        <td className="px-5 py-4 font-medium text-[#3f4d57]">{formatDate(user.createdAt)}</td>
+
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end">
                             <ActionMenu
                               disabled={disabled}
                               saving={saving}
@@ -868,7 +1001,7 @@ export default function AdminUsersPage() {
                               canSuspend={canSuspend}
                               canArchive={canArchive}
                               onView={() => {
-                                window.location.href = `/admin/users/${user.id}`;
+                                window.location.assign(`/admin/users/${user.id}`);
                               }}
                               onEdit={() => setEditorUser(user)}
                               onRestore={() =>
@@ -913,251 +1046,60 @@ export default function AdminUsersPage() {
                               }
                             />
                           </div>
-
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            <RolePill role={user.role} />
-                            <StatusBadge status={user.status} />
-                          </div>
-
-                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
-                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                                Created
-                              </p>
-                              <p className="mt-2 text-sm font-semibold text-slate-800">
-                                {formatDate(user.createdAt)}
-                              </p>
-                            </div>
-                            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
-                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                                Updated
-                              </p>
-                              <p className="mt-2 text-sm font-semibold text-slate-800">
-                                {formatDate(user.updatedAt)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="hidden overflow-x-auto md:block">
-                    <table className="min-w-[980px] w-full text-sm">
-                      <thead className="bg-emerald-50/70 text-slate-600">
-                        <tr>
-                          <th className="px-5 py-4 text-left font-semibold">User</th>
-                          <th className="px-5 py-4 text-left font-semibold">Role</th>
-                          <th className="px-5 py-4 text-left font-semibold">Status</th>
-                          <th className="px-5 py-4 text-left font-semibold">Created</th>
-                          <th className="px-5 py-4 text-left font-semibold">Updated</th>
-                          <th className="px-5 py-4 text-right font-semibold">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users.map((user) => {
-                          const disabled = disableActions(user);
-                          const canRestore = user.status !== "active";
-                          const canSuspend = user.status !== "suspended";
-                          const canArchive = user.status !== "archived";
-
-                          return (
-                            <tr
-                              key={user.id}
-                              className="border-t border-emerald-100 transition hover:bg-emerald-50/40"
-                            >
-                              <td className="px-5 py-4">
-                                <div className="flex items-center gap-3">
-                                  <UserAvatar name={user.name} role={user.role} />
-                                  <div className="min-w-0">
-                                    <p className="truncate font-semibold text-slate-900">
-                                      {user.name}
-                                    </p>
-                                    <p className="truncate text-sm text-slate-500">{user.email}</p>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-5 py-4">
-                                <RolePill role={user.role} />
-                              </td>
-                              <td className="px-5 py-4">
-                                <StatusBadge status={user.status} />
-                              </td>
-                              <td className="px-5 py-4 text-slate-600">
-                                {formatDate(user.createdAt)}
-                              </td>
-                              <td className="px-5 py-4 text-slate-600">
-                                {formatDate(user.updatedAt)}
-                              </td>
-                              <td className="px-5 py-4 text-right">
-                                <ActionMenu
-                                  disabled={disabled}
-                                  saving={saving}
-                                  isSuperAdmin={isSuperAdmin}
-                                  canRestore={canRestore}
-                                  canSuspend={canSuspend}
-                                  canArchive={canArchive}
-                                  onView={() => {
-                                    window.location.href = `/admin/users/${user.id}`;
-                                  }}
-                                  onEdit={() => setEditorUser(user)}
-                                  onRestore={() =>
-                                    setConfirm({
-                                      open: true,
-                                      title: "Restore user?",
-                                      description: "The account will be returned to active status.",
-                                      confirmText: "Restore",
-                                      action: () => changeStatus(user.id, "active"),
-                                    })
-                                  }
-                                  onArchive={() =>
-                                    setConfirm({
-                                      open: true,
-                                      title: "Archive user?",
-                                      description:
-                                        "Archived users are removed from the active working set.",
-                                      confirmText: "Archive",
-                                      danger: true,
-                                      action: () => changeStatus(user.id, "archived"),
-                                    })
-                                  }
-                                  onSuspend={() =>
-                                    setConfirm({
-                                      open: true,
-                                      title: "Suspend user?",
-                                      description:
-                                        "Use this for fraud or spam. Access can be restored later.",
-                                      confirmText: "Suspend",
-                                      danger: true,
-                                      action: () => changeStatus(user.id, "suspended"),
-                                    })
-                                  }
-                                  onSetRole={
-                                    isSuperAdmin
-                                      ? (role) =>
-                                          setConfirm({
-                                            open: true,
-                                            title: `Set role to ${capitalizeRole(role)}?`,
-                                            confirmText: "Change role",
-                                            action: () => changeRole(user.id, role),
-                                          })
-                                      : undefined
-                                  }
-                                />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </section>
-
-            <section className="flex flex-col gap-4 rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">
-                  Page {page} of {totalPages}
-                </p>
-                <p className="mt-1 text-sm text-slate-500">
-                  Total users: {total}. Adjust the page size if you need a wider review window.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <select
-                  value={limit}
-                  onChange={(event) => {
-                    setLimit(Number(event.target.value));
-                    setPage(1);
-                  }}
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                >
-                  {[10, 20, 50, 100].map((value) => (
-                    <option key={value} value={value}>
-                      {value} / page
-                    </option>
-                  ))}
-                </select>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    disabled={page <= 1}
-                    onClick={() => setPage((current) => Math.max(1, current - 1))}
-                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </section>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
-          <aside className="space-y-6">
-            <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Role distribution</h2>
-              <p className="mt-1 text-sm text-slate-500">Counts within the current result set.</p>
-              <div className="mt-5 space-y-3">
-                {ROLE_OPTIONS.map((role) => (
-                  <div
-                    key={role}
-                    className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3"
-                  >
-                    <RolePill role={role} />
-                    <span className="text-sm font-bold text-slate-900">
-                      {users.filter((user) => user.role === role).length}
-                    </span>
-                  </div>
+
+          {/* PAGINATION */}
+          <div className="flex flex-col gap-4 border-t border-[#ebf0ec] px-5 py-4 md:flex-row md:items-center md:justify-between">
+            <p className="text-sm text-[#52606d]">
+              Showing page {page} of {totalPages} • {total} total entries
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={limit}
+                onChange={(event) => {
+                  setLimit(Number(event.target.value));
+                  setPage(1);
+                }}
+                className="rounded-[10px] border border-[#d8dfdb] px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+              >
+                {[10, 20, 50, 100].map((value) => (
+                  <option key={value} value={value}>
+                    {value} / page
+                  </option>
                 ))}
-              </div>
-            </section>
+              </select>
 
-            <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Admin guardrails</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                The existing backend permission checks are unchanged.
-              </p>
-              <div className="mt-5 space-y-3 text-sm text-slate-600">
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
-                  You cannot change your own account from this page.
-                </div>
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
-                  Admin users cannot modify SuperAdmin accounts.
-                </div>
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
-                  Role changes remain limited to SuperAdmin users.
-                </div>
-              </div>
-            </section>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  className="rounded-[10px] border border-[#d8dfdb] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Previous
+                </button>
 
-            <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Status health</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Live counts across the current search and role scope.
-              </p>
-              <div className="mt-5 space-y-3">
-                <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-                  <span className="text-sm font-semibold text-emerald-900">Active</span>
-                  <span className="text-base font-bold text-emerald-900">{activeCount}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-                  <span className="text-sm font-semibold text-emerald-900">Archived</span>
-                  <span className="text-base font-bold text-emerald-900">{archivedCount}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-                  <span className="text-sm font-semibold text-emerald-900">Suspended</span>
-                  <span className="text-base font-bold text-emerald-900">{suspendedCount}</span>
-                </div>
+                <button className="rounded-[10px] bg-[#355d5a] px-4 py-2 text-sm font-semibold text-white">
+                  {page}
+                </button>
+
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                  className="rounded-[10px] border border-[#d8dfdb] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Next
+                </button>
               </div>
-            </section>
-          </aside>
+            </div>
+          </div>
         </section>
 
         <AdminUserEditorModal
@@ -1175,6 +1117,16 @@ export default function AdminUsersPage() {
           onSubmit={async (values) => {
             if (!editorUser) return;
             await updateUser(editorUser.id, values);
+          }}
+        />
+
+        <AddUserModal
+          open={addUserOpen}
+          loading={saving}
+          allowAdminRoles={!!canCreateAdminUsers}
+          onClose={() => setAddUserOpen(false)}
+          onSubmit={async (values) => {
+            await createUser(values);
           }}
         />
 

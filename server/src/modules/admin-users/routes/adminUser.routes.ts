@@ -5,8 +5,22 @@ import * as adminUserController from "../controllers/adminUser.controller";
 
 const router = Router();
 
+router.get(
+  "/stats",
+  requireAdminAuth,
+  requireRoles(["admin", "superadmin"]),
+  adminUserController.getStats
+);
+
 // GET /admin/users?search&role&status&page&limit
 router.get("/", requireAdminAuth, requireRoles(["admin", "superadmin"]), adminUserController.listUsers);
+
+router.post(
+  "/",
+  requireAdminAuth,
+  requireRoles(["admin", "superadmin"]),
+  adminUserController.createUser
+);
 
 // GET /admin/users/:id
 router.get("/:id", requireAdminAuth, requireRoles(["admin", "superadmin"]), adminUserController.getUser);
