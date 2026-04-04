@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Heart, Scale } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
@@ -125,6 +126,7 @@ function EmptyState() {
 }
 
 export default function SearchPropertiesPage() {
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<Property[]>([]);
   const [showOnlyOffers, setShowOnlyOffers] = useState(false);
   const [search, setSearch] = useState("");
@@ -149,6 +151,18 @@ export default function SearchPropertiesPage() {
 
   const [poppingIds, setPoppingIds] = useState<Record<string, boolean>>({});
   const [comparePopIds, setComparePopIds] = useState<Record<string, boolean>>({});
+  const offersOnlyFromQuery = searchParams.get("offersOnly");
+  const offersOnlyEnabled =
+    offersOnlyFromQuery === "true" || offersOnlyFromQuery === "1" || offersOnlyFromQuery === "yes";
+
+  useEffect(() => {
+    document.title = "Properties";
+  }, []);
+
+  useEffect(() => {
+    setShowOnlyOffers(offersOnlyEnabled);
+    setPage(1);
+  }, [offersOnlyEnabled]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -199,6 +213,7 @@ export default function SearchPropertiesPage() {
     if (page) params.set("page", String(page));
     if (limit) params.set("limit", String(limit));
     if (sort) params.set("sort", sort);
+    if (showOnlyOffers) params.set("offersOnly", "true");
 
     setLoading(true);
     setError("");
@@ -214,7 +229,7 @@ export default function SearchPropertiesPage() {
       .finally(() => {
         setLoading(false);
       });
-  }, [debouncedSearch, debouncedLocation, listingType, minPrice, maxPrice, page, limit, sort]);
+  }, [debouncedSearch, debouncedLocation, listingType, minPrice, maxPrice, page, limit, sort, showOnlyOffers]);
 
   const wishlistSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const compareSet = useMemo(() => new Set(compareIds), [compareIds]);
@@ -319,10 +334,10 @@ export default function SearchPropertiesPage() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
-                Search workspace
+                Properties
               </span>
               <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-                Discover homes worth shortlisting
+                Properties
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
                 Search active listings, narrow by price and location, compare top options, and save promising properties to revisit later.

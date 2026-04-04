@@ -219,6 +219,15 @@ export async function listPending(req: Request, res: Response, next: NextFunctio
   }
 }
 
+export async function listAllForAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await propertyService.listAllForAdmin(req.query);
+    return res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 export async function approve(req: Request, res: Response, next: NextFunction) {
   try {
     const adminUserId = req.user?.userId as string;
@@ -233,6 +242,29 @@ export async function reject(req: Request, res: Response, next: NextFunction) {
   try {
     const adminUserId = req.user?.userId as string;
     const updated = await propertyService.rejectProperty(req.params.id, adminUserId);
+    return res.status(200).json({ success: true, property: updated });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function adminDelete(req: Request, res: Response, next: NextFunction) {
+  try {
+    const deleted = await propertyService.adminDeleteProperty(req.params.id);
+    return res.status(200).json({ success: true, property: deleted });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function adminUpdateStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const adminUserId = req.user?.userId as string;
+    const updated = await propertyService.adminUpdateStatus(
+      req.params.id,
+      req.body?.status,
+      adminUserId
+    );
     return res.status(200).json({ success: true, property: updated });
   } catch (err) {
     return next(err);

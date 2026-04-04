@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, type Variants } from "framer-motion";
+import Link from "next/link";
 import {
   BookmarkCheck,
   ChevronLeft,
@@ -81,6 +82,7 @@ function Toast({ show, text }: { show: boolean; text: string }) {
 
 export default function BuyerDashboardPage() {
   const [properties, setProperties] = useState<Property[]>([]);
+  const [offerProperties, setOfferProperties] = useState<Property[]>([]);
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [reportModal, setReportModal] = useState<{ open: boolean; adId: string | null }>({
@@ -113,8 +115,12 @@ export default function BuyerDashboardPage() {
       })
       .catch(() => setWishlistIds([]));
 
-    apiFetch<ListResponse>("/properties?limit=12")
+    apiFetch<ListResponse>("/properties?limit=12&sort=latest")
       .then((res) => setProperties(res.items))
+      .catch(console.error);
+
+    apiFetch<ListResponse>("/properties?limit=6&sort=latest&offersOnly=true")
+      .then((res) => setOfferProperties(res.items))
       .catch(console.error);
   }, []);
 
@@ -193,8 +199,8 @@ export default function BuyerDashboardPage() {
     pop(id, setComparePopIds);
   }
 
-  const featured = useMemo(() => properties.slice(0, 4), [properties]);
-  const recommended = useMemo(() => properties.slice(4, 7), [properties]);
+  const recentListings = useMemo(() => properties.slice(0, 4), [properties]);
+  const offerListings = useMemo(() => offerProperties.slice(0, 3), [offerProperties]);
   const recent = useMemo(() => properties.slice(0, 2), [properties]);
 
   const handleOpenReport = (input: { adId?: string | null }) => {
@@ -274,14 +280,22 @@ export default function BuyerDashboardPage() {
         </div>
       </div>
 
-      {/* Featured */}
+      {/* Recent listings */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-extrabold text-slate-900">
-          Featured Properties
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-2xl font-extrabold text-slate-900">
+            Recent Listings
+          </h2>
+          <Link
+            href="/buyer/search-properties"
+            className="inline-flex items-center rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-100 transition hover:bg-emerald-50"
+          >
+            View All
+          </Link>
+        </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {featured.map((p) => (
+          {recentListings.map((p) => (
             <PropertyCard
               key={p._id}
               p={p}
@@ -301,31 +315,53 @@ export default function BuyerDashboardPage() {
         <Pagination />
       </section>
 
-      {/* Recommended */}
+      {/* Offer properties */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-extrabold text-slate-900">
-          Recommended for You
-        </h2>
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {recommended.map((p) => (
-            <PropertyCard
-              key={p._id}
-              p={p}
-              big
-              showMeta={false}
-              wishSaved={wishlistSet.has(p._id)}
-              wishPop={!!wishPopIds[p._id]}
-              onToggleWish={() => toggleWishlist(p._id)}
-              compareOn={compareSet.has(p._id)}
-              comparePop={!!comparePopIds[p._id]}
-              onToggleCompare={() => toggleCompare(p._id)}
-              onReport={handleOpenReport}
-            />
-          ))}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-2xl font-extrabold text-slate-900">
+            Offer Properties
+          </h2>
+          <Link
+            href="/buyer/search-properties?offersOnly=true"
+            className="inline-flex items-center rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-100 transition hover:bg-emerald-50"
+          >
+            View All
+          </Link>
         </div>
 
-        <Pagination />
+        {offerListings.length ? (
+          <>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {offerListings.map((p) => (
+                <PropertyCard
+                  key={p._id}
+                  p={p}
+                  big
+                  showMeta={false}
+                  wishSaved={wishlistSet.has(p._id)}
+                  wishPop={!!wishPopIds[p._id]}
+                  onToggleWish={() => toggleWishlist(p._id)}
+                  compareOn={compareSet.has(p._id)}
+                  comparePop={!!comparePopIds[p._id]}
+                  onToggleCompare={() => toggleCompare(p._id)}
+                  onReport={handleOpenReport}
+                />
+              ))}
+            </div>
+
+            <Pagination />
+          </>
+        ) : (
+          <div className="rounded-2xl bg-white px-6 py-10 text-center shadow-sm ring-1 ring-slate-200/70">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+              <Search className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 text-lg font-bold text-slate-900">No offer properties available</h3>
+            <p className="mt-2 text-sm text-slate-500">
+              Active discounts and promotional listings will appear here as soon as they are published.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Recently Viewed / Alerts */}

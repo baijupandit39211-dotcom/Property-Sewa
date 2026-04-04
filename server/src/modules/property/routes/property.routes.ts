@@ -19,9 +19,12 @@ router.get("/mine/:id", requireUserAuth, propertyController.getMyPropertyById);
 router.get("/preview/:id", requireUserAuth, propertyController.previewById);
 
 // ✅ admin routes MUST be before "/:id"
+router.get("/admin/all", requireAdminAuth, requireAdminRole, propertyController.listAllForAdmin);
 router.get("/admin/pending", requireAdminAuth, requireAdminRole, propertyController.listPending);
 router.patch("/admin/:id/approve", requireAdminAuth, requireAdminRole, propertyController.approve);
 router.patch("/admin/:id/reject", requireAdminAuth, requireAdminRole, propertyController.reject);
+router.patch("/admin/:id/status", requireAdminAuth, requireAdminRole, propertyController.adminUpdateStatus);
+router.delete("/admin/:id", requireAdminAuth, requireAdminRole, propertyController.adminDelete);
 
 // seller/agent: create with images
 router.post("/", requireUserAuth, upload.array("images", 6), propertyController.createProperty);

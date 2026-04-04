@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  Building2,
   ClipboardCheck,
   Flag,
   HelpCircle,
@@ -29,6 +30,7 @@ type ActionItem = {
 const navigationItems: LinkItem[] = [
   { label: "Dashboard", href: "/admin/overview", icon: LayoutDashboard },
   { label: "Add Property", href: "/admin/add-property", icon: SquarePlus },
+  { label: "View All Properties", href: "/admin/view-all-properties", icon: Building2 },
   { label: "Users Management", href: "/admin/users", icon: Users },
   { label: "Listings Approval", href: "/admin/listings-approval", icon: ClipboardCheck },
   { label: "Recent Activity", href: "/admin/recent-activity", icon: Activity },

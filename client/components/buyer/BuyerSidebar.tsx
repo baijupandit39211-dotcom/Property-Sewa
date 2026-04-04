@@ -15,7 +15,7 @@ import {
 
 const links = [
   { label: "Dashboard", href: "/buyer/buyer-dashboard", icon: LayoutDashboard },
-  { label: "Search Properties", href: "/buyer/search-properties", icon: Search },
+  { label: "Properties", href: "/buyer/search-properties", icon: Search },
   { label: "Wishlist / Saved Properties", href: "/buyer/wishlist", icon: Bookmark },
   { label: "Compare Properties", href: "/buyer/compare", icon: Scale },
   { label: "Alerts / Notifications", href: "/buyer/notifications", icon: Bell },
