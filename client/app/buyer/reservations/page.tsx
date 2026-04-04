@@ -170,12 +170,12 @@ export default function BuyerReservationsPage() {
                         >
                           View Property
                         </button>
-                        {r.paymentMethod === "ONLINE" && (
+                        {(r.paymentMethod === "ONLINE" || r.paymentMethod === "COD") && (
                           <button
                             onClick={() => router.push(`/buyer/property/${property?._id || property?.id || property}/payment`)}
                             className="rounded-xl bg-emerald-600 px-3 py-2 font-semibold text-white hover:bg-emerald-700"
                           >
-                            Complete Payment
+                            Complete Advance Payment
                           </button>
                         )}
                       </div>

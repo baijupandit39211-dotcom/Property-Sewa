@@ -41,12 +41,20 @@ const PropertySchema = new Schema(
     advanceAmount: { type: Number, default: 0 },
 
     // reservation state
+    reservationType: {
+      type: String,
+      enum: ["COD", "ADVANCE"],
+      default: null,
+    },
     reservationStatus: {
       type: String,
-      enum: ["none", "reserved", "paid", "cancelled", "expired"],
-      default: "none",
+      enum: ["active", "paid", "expired", "none", "reserved", "cancelled"],
+      default: null,
     },
     reservedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    reservedAt: { type: Date, default: null },
+    reservationExpiresAt: { type: Date, default: null },
+    // Legacy field kept temporarily so existing reservations can be cleaned up safely.
     reservedUntil: { type: Date, default: null },
 
     yearBuilt: { type: Number, default: 0 },

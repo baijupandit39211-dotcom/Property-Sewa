@@ -1,10 +1,19 @@
 import Wishlist from "../../../models/Wishlist.model";
 import Property from "../../../models/Property.model";
 import { ApiError } from "../../../utils/apiError";
+import { isPropertyVisibleToViewer } from "../../property/services/property.services";
+import { expireStalePropertyReservations } from "../../property/utils/reservation.utils";
+
+const PROPERTY_SELECT =
+  "title description price currency location address beds baths sqft propertyType listingType images status offerCategory offerTitle offerBadge offerActive offerValidUntil createdBy createdAt approvedBy reservationType reservationStatus reservedBy reservedAt reservationExpiresAt reservedUntil";
 
 async function addToWishlist(buyerId: string, propertyId: string) {
-  const property = await Property.findOne({ _id: propertyId, status: "active" });
-  if (!property) throw new ApiError(404, "Property not found");
+  await expireStalePropertyReservations();
+
+  const property = await Property.findById(propertyId);
+  if (!property || !isPropertyVisibleToViewer(property, { userId: buyerId, role: "buyer" })) {
+    throw new ApiError(404, "Property not found");
+  }
 
   await Wishlist.findOneAndUpdate(
     { buyerId, propertyId },
@@ -14,11 +23,13 @@ async function addToWishlist(buyerId: string, propertyId: string) {
 
   const item = await Wishlist.findOne({ buyerId, propertyId }).populate({
     path: "propertyId",
-    select:
-      "title description price currency location address beds baths sqft propertyType listingType images status offerCategory offerTitle offerBadge offerActive offerValidUntil createdBy createdAt",
+    select: PROPERTY_SELECT,
   });
 
   if (!item) throw new ApiError(500, "Failed to save wishlist item");
+  if (!isPropertyVisibleToViewer((item as any).propertyId, { userId: buyerId, role: "buyer" })) {
+    throw new ApiError(404, "Property not found");
+  }
   return item;
 }
 
@@ -28,29 +39,41 @@ async function removeFromWishlist(buyerId: string, propertyId: string) {
 }
 
 async function getWishlist(buyerId: string, query: any = {}) {
+  await expireStalePropertyReservations();
+
   const page = Math.max(1, Number(query?.page || 1));
   const limit = Math.min(24, Math.max(1, Number(query?.limit || 12)));
   const skip = (page - 1) * limit;
 
   const filter = { buyerId };
 
-  const [items, total] = await Promise.all([
-    Wishlist.find(filter)
-      .populate({
-        path: "propertyId",
-        select:
-          "title description price currency location address beds baths sqft propertyType listingType images status offerCategory offerTitle offerBadge offerActive offerValidUntil createdBy createdAt",
-      })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit),
-    Wishlist.countDocuments(filter),
-  ]);
+  const items = await Wishlist.find(filter)
+    .populate({
+      path: "propertyId",
+      select: PROPERTY_SELECT,
+    })
+    .sort({ createdAt: -1 });
 
-  return { items, total, page, limit };
+  const visibleItems = items.filter((item: any) =>
+    isPropertyVisibleToViewer(item?.propertyId, { userId: buyerId, role: "buyer" })
+  );
+
+  return {
+    items: visibleItems.slice(skip, skip + limit),
+    total: visibleItems.length,
+    page,
+    limit,
+  };
 }
 
 async function isInWishlist(buyerId: string, propertyId: string) {
+  await expireStalePropertyReservations();
+
+  const property = await Property.findById(propertyId);
+  if (!property || !isPropertyVisibleToViewer(property, { userId: buyerId, role: "buyer" })) {
+    return false;
+  }
+
   const exists = await Wishlist.exists({ buyerId, propertyId });
   return !!exists;
 }

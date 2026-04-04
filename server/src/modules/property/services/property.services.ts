@@ -1,6 +1,19 @@
 import { ApiError } from "../../../utils/apiError";
 import Property from "../../../models/Property.model";
 import { Types, type SortOrder } from "mongoose";
+import {
+  expireStalePropertyReservations,
+  getReservationBuyerId,
+  getReservationExpiresAt,
+  getReservationStatus,
+} from "../utils/reservation.utils";
+
+type ViewerContext =
+  | {
+      userId?: string;
+      role?: string;
+    }
+  | undefined;
 
 type CreatePropertyInput = {
   title: string;
@@ -70,6 +83,62 @@ function buildApprovedVisibilityQuery() {
     status: "active",
     approvedBy: { $ne: null },
   } as const;
+}
+
+function isAdminViewer(viewer?: ViewerContext) {
+  const role = String(viewer?.role || "").trim().toLowerCase();
+  return role === "admin" || role === "superadmin";
+}
+
+export function isPropertyVisibleToViewer(property: any, viewer?: ViewerContext, now = new Date()) {
+  if (!property) return false;
+  if (isAdminViewer(viewer)) return true;
+
+  if (String(property.status || "").toLowerCase() !== "active") return false;
+  if (!property.approvedBy) return false;
+
+  const reservationStatus = getReservationStatus(property);
+  const reservedBy = getReservationBuyerId(property);
+  const reservationExpiresAt = getReservationExpiresAt(property);
+  const expiresAtTime = reservationExpiresAt?.getTime() || 0;
+  const nowTime = now.getTime();
+
+  if (reservationStatus === "active" && expiresAtTime > nowTime) {
+    return viewer?.userId ? reservedBy === String(viewer.userId) : false;
+  }
+
+  if (reservationStatus === "paid") {
+    return viewer?.userId ? reservedBy === String(viewer.userId) : false;
+  }
+
+  return true;
+}
+
+function buildReservationVisibilityQuery(viewer?: ViewerContext, now = new Date()) {
+  if (isAdminViewer(viewer)) return {};
+
+  const sharedVisibility = [
+    { reservationStatus: { $exists: false } },
+    { reservationStatus: null },
+    { reservationStatus: "none" },
+    { reservationStatus: "cancelled" },
+    { reservationStatus: "expired" },
+    { reservationStatus: "active", reservationExpiresAt: { $lte: now } },
+    { reservationStatus: "reserved", reservedUntil: { $lte: now } },
+  ];
+
+  if (!viewer?.userId) {
+    return { $or: sharedVisibility };
+  }
+
+  return {
+    $or: [
+      ...sharedVisibility,
+      { reservationStatus: "active", reservedBy: new Types.ObjectId(viewer.userId) },
+      { reservationStatus: "reserved", reservedBy: new Types.ObjectId(viewer.userId) },
+      { reservationStatus: "paid", reservedBy: new Types.ObjectId(viewer.userId) },
+    ],
+  };
 }
 
 function buildActiveOfferQuery(now = new Date()) {
@@ -176,10 +245,13 @@ async function deleteProperty(propertyId: string, userId: string) {
   return property;
 }
 
-async function listApproved(query: any) {
+async function listApproved(query: any, viewer?: ViewerContext) {
+  await expireStalePropertyReservations();
+
   const q: any = { ...buildApprovedVisibilityQuery() };
   const offersOnly = String(query?.offersOnly || "").trim().toLowerCase();
   const search = String(query?.search || "").trim();
+  const andFilters: any[] = [];
   const ids = String(query?.ids || "")
     .split(",")
     .map((id) => id.trim())
@@ -191,7 +263,8 @@ async function listApproved(query: any) {
 
   if (search) {
     const safeSearch = escapeRegex(search);
-    q.$or = [
+    andFilters.push({
+      $or: [
       { title: { $regex: safeSearch, $options: "i" } },
       { description: { $regex: safeSearch, $options: "i" } },
       { location: { $regex: safeSearch, $options: "i" } },
@@ -199,13 +272,22 @@ async function listApproved(query: any) {
       { propertyType: { $regex: safeSearch, $options: "i" } },
       { landmark: { $regex: safeSearch, $options: "i" } },
       { amenities: { $regex: safeSearch, $options: "i" } },
-    ];
+      ],
+    });
   }
 
   if (query?.location) q.location = { $regex: String(query.location), $options: "i" };
   if (query?.listingType) q.listingType = query.listingType;
   if (offersOnly === "true" || offersOnly === "1" || offersOnly === "yes") {
-    Object.assign(q, buildActiveOfferQuery());
+    andFilters.push(buildActiveOfferQuery());
+  }
+  andFilters.push(buildReservationVisibilityQuery(viewer));
+
+  const effectiveAndFilters = andFilters.filter(
+    (value) => value && Object.keys(value).length > 0
+  );
+  if (effectiveAndFilters.length > 0) {
+    q.$and = effectiveAndFilters;
   }
 
   const minPrice = query?.minPrice ? Number(query.minPrice) : null;
@@ -232,8 +314,14 @@ async function listApproved(query: any) {
   return { items, total, page, limit };
 }
 
-async function getApprovedById(id: string) {
-  const p = await Property.findOne({ _id: id, ...buildApprovedVisibilityQuery() }).populate(
+async function getApprovedById(id: string, viewer?: ViewerContext) {
+  await expireStalePropertyReservations();
+
+  const p = await Property.findOne({
+    _id: id,
+    ...buildApprovedVisibilityQuery(),
+    ...buildReservationVisibilityQuery(viewer),
+  }).populate(
     "createdBy",
     "name phone email role"
   );

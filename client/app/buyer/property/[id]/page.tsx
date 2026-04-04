@@ -4,6 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import {
+  getReservationExpiresAt,
+  getReservationOwnerId,
+  getReservationStatus,
+  getReservationType,
+} from "@/app/lib/propertyReservation";
 import AdActionsMenu from "@/app/property/[id]/_components/AdActionsMenu";
 import OfferBadge from "@/components/offers/OfferBadge";
 import {
@@ -108,26 +114,17 @@ function extractLatLngFromGoogleUrl(url: string) {
 
 type Availability = "available" | "reserved" | "booked";
 
-function toTime(v: any) {
-  const t = new Date(v).getTime();
-  return Number.isFinite(t) ? t : 0;
-}
-
 function getAvailability(p: any): Availability {
-  const rs = String(p?.reservationStatus || "none").toLowerCase();
-  const until = p?.reservedUntil ? toTime(p.reservedUntil) : 0;
-  const now = Date.now();
-  const hasValidUntil = until > 0;
-
-  if (rs === "paid") return "booked";
-  if (rs === "reserved" && hasValidUntil && until > now) return "reserved";
+  const status = getReservationStatus(p);
+  if (status === "paid") return "booked";
+  if (status === "active") return "reserved";
   return "available";
 }
 
 function formatReservedUntil(p: any) {
-  const t = p?.reservedUntil ? new Date(p.reservedUntil).getTime() : 0;
-  if (!Number.isFinite(t) || t <= Date.now()) return "";
-  return new Date(t).toLocaleString();
+  const date = getReservationExpiresAt(p);
+  if (!date || date.getTime() <= Date.now()) return "";
+  return date.toLocaleString();
 }
 
 function formatOfferDiscount(p: any) {
@@ -201,6 +198,7 @@ function BuyerPropertyDetailsView({
     phone: "",
     message: "",
   });
+  const [meId, setMeId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -257,6 +255,8 @@ function BuyerPropertyDetailsView({
     .join("") || "AG";
 
   const availability = useMemo(() => getAvailability(property), [property]);
+  const reservationType = useMemo(() => getReservationType(property), [property]);
+  const reservationOwnerId = useMemo(() => getReservationOwnerId(property), [property]);
   const reservedUntilText = useMemo(
     () => formatReservedUntil(property),
     [property]
@@ -264,6 +264,8 @@ function BuyerPropertyDetailsView({
   const isAvailable = availability === "available";
   const isReserved = availability === "reserved";
   const isBooked = availability === "booked";
+  const isReservedByMe = !!meId && reservationOwnerId === meId;
+  const showCompleteAdvancePayment = isReserved && isReservedByMe && reservationType === "COD";
 
   useEffect(() => {
     const firstImg =
@@ -279,6 +281,7 @@ function BuyerPropertyDetailsView({
           "/auth/me"
         );
         if (userResponse?.success) {
+          setMeId(String(userResponse?.user?._id || userResponse?.user?.id || ""));
           setFormData((prev) => ({
             ...prev,
             name: userResponse?.user?.name || "",
@@ -1210,13 +1213,13 @@ function BuyerPropertyDetailsView({
                   <button
                     type="button"
                     onClick={() => {
-                      if (!isAvailable) return;
+                      if (!isAvailable && !showCompleteAdvancePayment) return;
                       goToPayment();
                     }}
-                    disabled={!isAvailable}
+                    disabled={!isAvailable && !showCompleteAdvancePayment}
                     className={[
                       "inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-extrabold text-white transition",
-                      isAvailable
+                      isAvailable || showCompleteAdvancePayment
                         ? "bg-slate-900 hover:bg-black"
                         : isReserved
                         ? "cursor-not-allowed bg-amber-500/80"
@@ -1224,7 +1227,9 @@ function BuyerPropertyDetailsView({
                     ].join(" ")}
                   >
                     <CreditCard className="h-4 w-4" />
-                    {isAvailable
+                    {showCompleteAdvancePayment
+                      ? "Complete Advance Payment"
+                      : isAvailable
                       ? "Pay Advance (Online)"
                       : isReserved
                       ? "Reserved (Payment Locked)"
@@ -1281,7 +1286,9 @@ function BuyerPropertyDetailsView({
                             <div className="mt-1">
                               This property is reserved
                               {reservedUntilText ? ` until ${reservedUntilText}` : ""}.
-                              Payment and COD actions remain locked until the hold ends.
+                              {showCompleteAdvancePayment
+                                ? " You can still complete the advance payment during this 1-hour hold."
+                                : " Payment and COD actions remain locked until the hold ends."}
                             </div>
                           </div>
                         </div>
@@ -1302,8 +1309,9 @@ function BuyerPropertyDetailsView({
                 )}
 
                 <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-                  Online payment reservation expires if payment is not completed within
-                  24 hours. COD reservation requires in-person confirmation and may expire sooner.
+                  COD and advance reservations stay active for 1 hour. If payment is not completed
+                  in time, the reservation expires automatically and the property becomes available
+                  again.
                 </div>
               </div>
             </div>

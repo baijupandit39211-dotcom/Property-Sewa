@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import {
+  getReservationExpiresAt,
+  getReservationStatus,
+} from "@/app/lib/propertyReservation";
 import { reserveCod } from "@/app/lib/reservations";
 import {
   AlertTriangle,
@@ -17,7 +21,7 @@ import {
 
 type PropertyType = any;
 
-const HOLD_HOURS = Number(process.env.NEXT_PUBLIC_COD_HOLD_HOURS || 12) || 12;
+const HOLD_HOURS = 1;
 
 function formatMoney(currency: string | undefined, value: any) {
   const c = currency || "Rs";
@@ -40,11 +44,6 @@ function calcAdvanceAmountClient(property: any) {
 
   const price = Number(property?.price || 0);
   return price > 0 ? Math.round(price * 0.02) : 0;
-}
-
-function toTime(v: any) {
-  const t = new Date(v).getTime();
-  return Number.isFinite(t) ? t : 0;
 }
 
 export default function ReserveCodPage() {
@@ -140,9 +139,9 @@ export default function ReserveCodPage() {
     return formatMoney(property?.currency, base);
   }, [property]);
 
-  const reservationStatus = String(property?.reservationStatus || "none").toLowerCase();
-  const reservedUntil = toTime(property?.reservedUntil);
-  const isReservedActive = reservationStatus === "reserved" && reservedUntil > Date.now();
+  const reservationStatus = getReservationStatus(property);
+  const reservedUntil = getReservationExpiresAt(property)?.getTime() || 0;
+  const isReservedActive = reservationStatus === "active";
   const isPaid = reservationStatus === "paid";
   const blocked = isReservedActive || isPaid;
 
@@ -264,7 +263,7 @@ export default function ReserveCodPage() {
                   Reserve with Cash on Delivery
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Cash on Delivery - Pay booking advance when agent confirms.
+                  Reserve now and hold the property for 1 hour without immediate payment.
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
@@ -289,7 +288,8 @@ export default function ReserveCodPage() {
                 <div>
                   <div className="font-semibold">Reservation requested</div>
                   <div className="text-xs text-emerald-800/90">
-                    We've held the property and will contact you to confirm your visit.
+                    We&apos;ve held the property for 1 hour. You can also complete the advance
+                    payment during this hold.
                   </div>
                 </div>
               </div>
@@ -432,9 +432,8 @@ export default function ReserveCodPage() {
               <div className="mt-4 rounded-xl bg-emerald-50 p-3 ring-1 ring-emerald-100">
                 <div className="text-xs font-extrabold text-emerald-900">Hold time</div>
                 <p className="mt-1 text-xs text-emerald-800">
-                  We hold the property for up to {HOLD_HOURS} hours after you submit this COD
-                  request. Please confirm with the agent during the visit to keep the reservation
-                  active.
+                  We hold the property for {HOLD_HOURS} hour after you submit this COD request.
+                  Complete advance payment within that time if you want to lock it in immediately.
                 </p>
               </div>
 

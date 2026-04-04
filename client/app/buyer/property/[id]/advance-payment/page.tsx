@@ -1,8 +1,14 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import {
+  getReservationExpiresAt,
+  getReservationOwnerId,
+  getReservationStatus,
+} from "@/app/lib/propertyReservation";
 import { reserveCod } from "@/app/lib/reservations";
 import {
   AlertTriangle,
@@ -19,7 +25,8 @@ import {
 
 type PaymentMethod = "esewa" | "khalti" | "cod";
 
-const COD_HOLD_HOURS = Number(process.env.NEXT_PUBLIC_COD_HOLD_HOURS || 12) || 12;
+const RESERVATION_WINDOW_HOURS = 1;
+const COD_HOLD_HOURS = RESERVATION_WINDOW_HOURS;
 const PLACEHOLDER_IMAGE = "https://via.placeholder.com/1200x700?text=No+Image";
 
 function calcAdvanceAmount(property: any) {
@@ -37,11 +44,6 @@ function calcAdvanceAmount(property: any) {
 
   const price = Number(property?.price || 0);
   return price > 0 ? Math.round(price * 0.02) : 0;
-}
-
-function toTime(v: any) {
-  const t = new Date(v).getTime();
-  return Number.isFinite(t) ? t : 0;
 }
 
 function primaryImage(property: any) {
@@ -135,12 +137,12 @@ export default function AdvancePaymentPage() {
   );
   const currency = property?.currency || "Rs";
 
-  const reservationStatus = String(property?.reservationStatus || "none").toLowerCase();
-  const reservedUntil = toTime(property?.reservedUntil);
-  const reservedBy = property?.reservedBy ? String(property.reservedBy) : "";
+  const reservationStatus = getReservationStatus(property);
+  const reservedUntil = getReservationExpiresAt(property)?.getTime() || 0;
+  const reservedBy = getReservationOwnerId(property);
 
   const isPaid = reservationStatus === "paid";
-  const isReservedActive = reservationStatus === "reserved" && reservedUntil > Date.now();
+  const isReservedActive = reservationStatus === "active";
   const isMine = !!meId && !!reservedBy && meId === reservedBy;
   const reservedByOther = isReservedActive && !isMine;
 
@@ -151,7 +153,7 @@ export default function AdvancePaymentPage() {
     key: PaymentMethod;
     label: string;
     description: string;
-    icon: JSX.Element;
+    icon: ReactNode;
   }[] = [
     {
       key: "esewa",
@@ -372,7 +374,7 @@ export default function AdvancePaymentPage() {
                     {currency} {Number(advanceAmount || 0).toLocaleString()}
                   </div>
                   <div className="mt-1 text-xs text-slate-500">
-                    Online payment expires in 24 hours after initiation.
+                    Reservation is held for 1 hour from the time you start it.
                   </div>
                 </div>
               </div>
@@ -384,8 +386,8 @@ export default function AdvancePaymentPage() {
               <div>
                 <h2 className="text-lg font-extrabold text-slate-900">Choose Payment Method</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Online payment: reservation expires if payment is not completed within 24 hours.
-                  COD: reservation must be confirmed in person (shorter expiry).
+                  Both reservation methods hold the property for 1 hour. Complete advance payment
+                  within that window or the property becomes available again.
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
@@ -530,8 +532,8 @@ export default function AdvancePaymentPage() {
                 </div>
 
                 <div className="text-xs text-emerald-800">
-                  We hold the property for up to {COD_HOLD_HOURS} hours after you submit COD. Please
-                  confirm with the agent in person to keep the reservation active.
+                  We hold the property for {RESERVATION_WINDOW_HOURS} hour after you submit COD.
+                  You can still return and complete the advance payment during that window.
                 </div>
               </div>
             )}
@@ -540,8 +542,8 @@ export default function AdvancePaymentPage() {
               <div className="mt-5 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                 <div className="text-sm font-extrabold text-slate-900">Online payment</div>
                 <div className="mt-1 text-xs text-slate-600">
-                  We reserve the property for you for 24 hours while you complete the payment. If
-                  the payment is not finished in time, the reservation will expire automatically.
+                  We reserve the property for 1 hour while you complete the payment. If the
+                  payment is not finished in time, the reservation will expire automatically.
                 </div>
               </div>
             )}
@@ -558,7 +560,8 @@ export default function AdvancePaymentPage() {
                 <div>
                   <div className="font-semibold">Reservation requested</div>
                   <div className="text-xs text-emerald-800/90">
-                    We&apos;ve held the property. An agent will confirm your COD visit.
+                    We&apos;ve held the property for 1 hour. You can return to complete the advance
+                    payment or coordinate the next step with the agent.
                   </div>
                 </div>
               </div>

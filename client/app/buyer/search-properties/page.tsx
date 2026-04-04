@@ -102,9 +102,10 @@ function EmptyState() {
         </svg>
       </div>
 
-      <h2 className="text-2xl font-bold text-slate-900">No properties found</h2>
+      <h2 className="text-2xl font-bold text-slate-900">No available properties found</h2>
       <p className="mx-auto mt-2 max-w-xl text-sm text-slate-500">
-        Try again later or explore other listings. You can save to wishlist or compare shortlisted properties.
+        There are no currently available active listings for these filters. Reserved or paid
+        properties are excluded automatically, so try adjusting your filters or check again later.
       </p>
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
@@ -521,7 +522,7 @@ export default function SearchPropertiesPage() {
           <div className="rounded-[32px] border border-emerald-100 bg-white p-8 shadow-sm">
             <div className="text-lg font-bold text-slate-900">Loading properties...</div>
             <p className="mt-2 text-sm text-slate-500">
-              Fetching the latest matching listings.
+              Fetching all currently available listings.
             </p>
           </div>
         ) : visibleItems.length === 0 ? (

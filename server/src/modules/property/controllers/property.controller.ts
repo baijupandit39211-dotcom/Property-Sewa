@@ -192,7 +192,7 @@ export async function deleteProperty(req: Request, res: Response, next: NextFunc
 // GET /properties (buyer list approved)
 export async function listApproved(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await propertyService.listApproved(req.query);
+    const result = await propertyService.listApproved(req.query, req.user);
     return res.status(200).json({ success: true, ...result });
   } catch (err) {
     return next(err);
@@ -202,7 +202,7 @@ export async function listApproved(req: Request, res: Response, next: NextFuncti
 // GET /properties/:id (buyer approved)
 export async function getApprovedById(req: Request, res: Response, next: NextFunction) {
   try {
-    const property = await propertyService.getApprovedById(req.params.id);
+    const property = await propertyService.getApprovedById(req.params.id, req.user);
     return res.status(200).json({ success: true, property });
   } catch (err) {
     return next(err);

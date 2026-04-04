@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import {
+  getReservationExpiresAt,
+  getReservationOwnerId,
+  getReservationStatus,
+} from "@/app/lib/propertyReservation";
 import { ArrowLeft, ShieldCheck, Lock, CheckCircle2 } from "lucide-react";
 
 type Gateway = "khalti" | "esewa";
@@ -81,11 +86,11 @@ export default function PaymentPage() {
   const finalAmount = amount > 0 ? amount : computedFallback;
 
   // ✅ reservation guards
-  const reservationStatus = String(property?.reservationStatus || "none").toLowerCase();
-  const reservedBy = property?.reservedBy ? String(property.reservedBy) : "";
-  const reservedUntil = property?.reservedUntil ? new Date(property.reservedUntil).getTime() : 0;
+  const reservationStatus = getReservationStatus(property);
+  const reservedBy = getReservationOwnerId(property);
+  const reservedUntil = getReservationExpiresAt(property)?.getTime() || 0;
 
-  const isReserved = reservationStatus === "reserved";
+  const isReserved = reservationStatus === "active";
   const isPaid = reservationStatus === "paid";
   const isMine = !!meId && !!reservedBy && meId === reservedBy;
 
@@ -257,7 +262,7 @@ export default function PaymentPage() {
             </div>
 
             <div className="mt-2 text-xs text-slate-500">
-              Reservation auto-expires if payment is not completed within 24 hours.
+              Reservation auto-expires if payment is not completed within 1 hour.
             </div>
           </div>
 

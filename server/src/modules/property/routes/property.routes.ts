@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireUserAuth, requireAdminAuth } from "../../auth/middleware/auth.middleware";
+import { requireUserAuth, requireAdminAuth, optionalAuth } from "../../auth/middleware/auth.middleware";
 import { requireAdminRole } from "../../../middleware/role.middleware";
 import { upload } from "../../../middleware/upload.middleware";
 import * as propertyController from "../controllers/property.controller";
@@ -7,7 +7,7 @@ import * as propertyController from "../controllers/property.controller";
 const router = Router();
 
 // buyer/public: approved listings
-router.get("/", propertyController.listApproved);
+router.get("/", optionalAuth, propertyController.listApproved);
 
 // seller: get my properties (MUST be before "/:id")
 router.get("/mine", requireUserAuth, propertyController.getMyProperties);
@@ -36,6 +36,6 @@ router.patch("/:id", requireUserAuth, upload.array("images", 6), propertyControl
 router.delete("/:id", requireUserAuth, propertyController.deleteProperty);
 
 // buyer/public: approved listing by id (KEEP LAST)
-router.get("/:id", propertyController.getApprovedById);
+router.get("/:id", optionalAuth, propertyController.getApprovedById);
 
 export default router;

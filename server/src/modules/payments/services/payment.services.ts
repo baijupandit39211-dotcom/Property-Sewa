@@ -2,6 +2,16 @@ import { ApiError } from "../../../utils/apiError";
 import Property from "../../../models/Property.model";
 import Payment from "../../../models/Payment.model";
 import Reservation from "../../../models/Reservation.model";
+import {
+  PROPERTY_RESERVATION_WINDOW_MS,
+  assignPropertyReservation,
+  clearPropertyReservation,
+  expirePropertyReservationIfNeeded,
+  expireStalePropertyReservations,
+  getReservationBuyerId,
+  isReservationActive,
+  isReservationPaid,
+} from "../../property/utils/reservation.utils";
 
 export function calcAdvanceAmount(property: any) {
   const explicit = Number(property.advanceAmount || 0);
@@ -26,20 +36,17 @@ export async function initiatePayment(params: {
   const property = await Property.findOne({ _id: params.propertyId, status: "active" });
   if (!property) throw new ApiError(404, "Property not found");
 
-  // Block if someone else reserved and not expired
-  if (
-    property.reservationStatus === "reserved" &&
-    property.reservedUntil &&
-    property.reservedUntil.getTime() > Date.now() &&
-    property.reservedBy &&
-    String(property.reservedBy) !== String(params.buyerId)
-  ) {
+  await expirePropertyReservationIfNeeded(property);
+
+  if (isReservationActive(property) && getReservationBuyerId(property) !== String(params.buyerId)) {
     throw new ApiError(409, "This property is already reserved by another user");
   }
 
-  // Block if already paid
-  if (property.reservationStatus === "paid") {
+  if (isReservationPaid(property) && getReservationBuyerId(property) !== String(params.buyerId)) {
     throw new ApiError(409, "This property is already paid/reserved");
+  }
+  if (isReservationPaid(property) && getReservationBuyerId(property) === String(params.buyerId)) {
+    throw new ApiError(409, "You have already completed payment for this property");
   }
 
   const amount = calcAdvanceAmount(property);
@@ -47,7 +54,8 @@ export async function initiatePayment(params: {
     throw new ApiError(400, "Advance amount is not set for this property");
   }
 
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const reservedAt = new Date();
+  const expiresAt = new Date(reservedAt.getTime() + PROPERTY_RESERVATION_WINDOW_MS);
 
   // Cancel old pending payments from same buyer/property (optional but good)
   await Payment.updateMany(
@@ -65,10 +73,13 @@ export async function initiatePayment(params: {
     expiresAt,
   });
 
-  // Reserve property for buyer
-  property.reservationStatus = "reserved";
-  property.reservedBy = params.buyerId as any;
-  property.reservedUntil = expiresAt;
+  assignPropertyReservation(property, {
+    buyerId: params.buyerId,
+    type: "ADVANCE",
+    reservedAt,
+    expiresAt,
+    status: "active",
+  });
   await property.save();
 
   return { payment, property, amount, expiresAt };
@@ -105,23 +116,13 @@ export async function markPaid(params: {
   const property = await Property.findById(payment.propertyId);
   if (!property) throw new ApiError(404, "Property not found");
 
-  // prevent race: if property reserved by someone else and not expired
-  if (
-    property.reservationStatus === "reserved" &&
-    property.reservedUntil &&
-    property.reservedUntil.getTime() > Date.now() &&
-    property.reservedBy &&
-    String(property.reservedBy) !== String(payment.buyerId)
-  ) {
+  await expirePropertyReservationIfNeeded(property);
+
+  if (isReservationActive(property) && getReservationBuyerId(property) !== String(payment.buyerId)) {
     throw new ApiError(409, "Property is reserved by another user");
   }
 
-  // if property already paid by someone else
-  if (
-    property.reservationStatus === "paid" &&
-    property.reservedBy &&
-    String(property.reservedBy) !== String(payment.buyerId)
-  ) {
+  if (isReservationPaid(property) && getReservationBuyerId(property) !== String(payment.buyerId)) {
     throw new ApiError(409, "Property already paid by another user");
   }
 
@@ -137,11 +138,28 @@ export async function markPaid(params: {
 
   await payment.save();
 
-  // mark property paid
-  property.reservationStatus = "paid";
-  property.reservedBy = payment.buyerId as any;
-  property.reservedUntil = null;
+  assignPropertyReservation(property, {
+    buyerId: String(payment.buyerId),
+    type: "ADVANCE",
+    reservedAt: property.reservedAt || new Date(),
+    status: "paid",
+  });
   await property.save();
+
+  await Reservation.updateMany(
+    {
+      propertyId: property._id,
+      userId: payment.buyerId,
+      paymentMethod: "COD",
+      reservationStatus: "REQUESTED",
+    },
+    {
+      $set: {
+        reservationStatus: "CONFIRMED",
+        paymentStatus: "PAID",
+      },
+    }
+  );
 
   return payment;
 }
@@ -155,9 +173,7 @@ export async function cancelReservation(params: { propertyId: string }) {
     { $set: { status: "cancelled" } }
   );
 
-  property.reservationStatus = "cancelled";
-  property.reservedBy = null as any;
-  property.reservedUntil = null;
+  clearPropertyReservation(property, "expired");
   await property.save();
 
   return property;
@@ -165,6 +181,8 @@ export async function cancelReservation(params: { propertyId: string }) {
 
 export async function autoExpireReservations() {
   const now = new Date();
+
+  const expiredProps = await expireStalePropertyReservations(now);
 
   await Payment.updateMany(
     { status: "pending", expiresAt: { $lt: now } },
@@ -175,18 +193,5 @@ export async function autoExpireReservations() {
     { reservationStatus: "REQUESTED", holdExpiresAt: { $lt: now } },
     { $set: { reservationStatus: "EXPIRED" } }
   );
-
-  const expiredProps = await Property.find({
-    reservationStatus: "reserved",
-    reservedUntil: { $lt: now },
-  });
-
-  for (const p of expiredProps) {
-    p.reservationStatus = "expired";
-    p.reservedBy = null as any;
-    p.reservedUntil = null;
-    await p.save();
-  }
-
-  return { expiredProps: expiredProps.length };
+  return { expiredProps };
 }

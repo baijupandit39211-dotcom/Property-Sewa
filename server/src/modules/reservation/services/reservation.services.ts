@@ -3,6 +3,14 @@ import Property from "../../../models/Property.model";
 import User from "../../../models/User.model";
 import Reservation from "../../../models/Reservation.model";
 import { calcAdvanceAmount } from "../../payments/services/payment.services";
+import {
+  PROPERTY_RESERVATION_WINDOW_MS,
+  assignPropertyReservation,
+  expirePropertyReservationIfNeeded,
+  getReservationBuyerId,
+  isReservationActive,
+  isReservationPaid,
+} from "../../property/utils/reservation.utils";
 
 type CreateCodReservationInput = {
   propertyId: string;
@@ -17,17 +25,14 @@ export async function listBuyerReservations(userId: string) {
   if (!userId) throw new ApiError(401, "Unauthorized");
 
   const reservations = await Reservation.find({ userId })
-    .populate("propertyId", "title location address price currency advanceAmount reservationStatus reservedUntil listingType monthlyRent deposit")
+    .populate(
+      "propertyId",
+      "title location address price currency advanceAmount reservationType reservationStatus reservedAt reservationExpiresAt reservedUntil listingType monthlyRent deposit"
+    )
     .sort({ createdAt: -1 });
 
   return reservations;
 }
-
-const DEFAULT_HOLD_HOURS = Number(process.env.COD_RESERVATION_HOURS || 12);
-const HOLD_MS =
-  Number.isFinite(DEFAULT_HOLD_HOURS) && DEFAULT_HOLD_HOURS > 0
-    ? DEFAULT_HOLD_HOURS * 60 * 60 * 1000
-    : 12 * 60 * 60 * 1000;
 
 function toDateOrNull(v: any) {
   if (!v) return null;
@@ -48,20 +53,19 @@ export async function createCodReservation(input: CreateCodReservationInput) {
   const property = await Property.findOne({ _id: propertyId, status: "active" });
   if (!property) throw new ApiError(404, "Property not found");
 
-  // if an old reservation expired, clear it before proceeding
-  if (
-    property.reservationStatus === "reserved" &&
-    property.reservedUntil &&
-    property.reservedUntil.getTime() <= Date.now()
-  ) {
-    property.reservationStatus = "expired";
-    property.reservedBy = null as any;
-    property.reservedUntil = null;
-    await property.save();
-  }
+  await expirePropertyReservationIfNeeded(property);
 
-  if (property.reservationStatus === "reserved" || property.reservationStatus === "paid") {
+  if (isReservationActive(property) && getReservationBuyerId(property) !== String(userId)) {
     throw new ApiError(409, "This property is already reserved/booked.");
+  }
+  if (isReservationActive(property) && getReservationBuyerId(property) === String(userId)) {
+    throw new ApiError(409, "You have already reserved this property for the current 1-hour window.");
+  }
+  if (isReservationPaid(property) && getReservationBuyerId(property) !== String(userId)) {
+    throw new ApiError(409, "This property is already reserved/booked.");
+  }
+  if (isReservationPaid(property) && getReservationBuyerId(property) === String(userId)) {
+    throw new ApiError(409, "You have already completed reservation for this property.");
   }
 
   const advanceAmount = calcAdvanceAmount(property);
@@ -70,7 +74,8 @@ export async function createCodReservation(input: CreateCodReservationInput) {
   }
 
   const bookingAdvancePaisa = Math.round(Number(advanceAmount) * 100);
-  const holdExpiresAt = new Date(Date.now() + HOLD_MS);
+  const reservedAt = new Date();
+  const holdExpiresAt = new Date(reservedAt.getTime() + PROPERTY_RESERVATION_WINDOW_MS);
 
   const reservation = await Reservation.create({
     propertyId,
@@ -88,9 +93,13 @@ export async function createCodReservation(input: CreateCodReservationInput) {
     },
   });
 
-  property.reservationStatus = "reserved";
-  property.reservedBy = userId as any;
-  property.reservedUntil = holdExpiresAt;
+  assignPropertyReservation(property, {
+    buyerId: userId,
+    type: "COD",
+    reservedAt,
+    expiresAt: holdExpiresAt,
+    status: "active",
+  });
   await property.save();
 
   return reservation;
