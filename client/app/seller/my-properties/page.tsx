@@ -9,7 +9,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { motion } from "framer-motion";
 import {
   AlertCircle,
   BarChart3,
@@ -131,6 +130,15 @@ const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
 ];
 
 const PAGE_SIZE = 8;
+const SECTION_RENDER_STYLE = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "900px",
+} as const;
+const LIST_CARD_RENDER_STYLE = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "260px",
+} as const;
+const BRAND = "#316249";
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -212,15 +220,15 @@ function activityTone(status: string) {
 function LoadingState() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
-      <div className="h-56 animate-pulse rounded-[32px] bg-slate-200" />
+      <div className="h-44 animate-pulse rounded-[32px] bg-[#edf3ef]" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-36 animate-pulse rounded-[28px] bg-slate-200" />
+          <div key={index} className="h-32 animate-pulse rounded-[28px] bg-[#eef2ef]" />
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_360px]">
-        <div className="h-[640px] animate-pulse rounded-[28px] bg-slate-200" />
-        <div className="h-[640px] animate-pulse rounded-[28px] bg-slate-200" />
+        <div className="h-[640px] animate-pulse rounded-[28px] bg-[#eef2ef]" />
+        <div className="h-[640px] animate-pulse rounded-[28px] bg-[#eef2ef]" />
       </div>
     </div>
   );
@@ -242,10 +250,10 @@ function DeleteModal({
   if (!open || !property) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-[30px] border border-slate-200 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.18)]">
-        <div className="border-b border-slate-200 px-6 py-5">
-          <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 backdrop-blur-md">
+      <div className="w-full max-w-lg rounded-[32px] border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.16)]">
+        <div className="border-b border-slate-100 px-6 py-6">
+          <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-700">
             <Trash2 className="h-3.5 w-3.5" />
             Delete listing
           </div>
@@ -259,22 +267,22 @@ function DeleteModal({
         </div>
 
         <div className="space-y-4 px-6 py-5">
-          <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 px-4 py-4 text-sm text-slate-600">
             Status:{" "}
             <span className="font-semibold text-slate-900">{titleCase(property.status)}</span>.
             If this listing is live, it will no longer appear on the marketplace.
           </div>
-          <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+          <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
             This action cannot be undone.
           </div>
         </div>
 
-        <div className="flex gap-3 border-t border-slate-200 px-6 py-4">
+        <div className="flex gap-3 border-t border-slate-100 px-6 py-4">
           <button
             type="button"
             onClick={onClose}
             disabled={deleting}
-            className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
           >
             Cancel
           </button>
@@ -282,7 +290,7 @@ function DeleteModal({
             type="button"
             onClick={onConfirm}
             disabled={deleting}
-            className="flex-1 rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
+            className="flex-1 rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-60"
           >
             {deleting ? (
               <span className="inline-flex items-center gap-2">
@@ -524,12 +532,7 @@ export default function SellerMyPropertiesPage() {
   }
 
   return (
-    <motion.main
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="mx-auto w-full max-w-7xl space-y-6"
-    >
+    <main className="mx-auto w-full max-w-7xl space-y-6">
       <div
         className={cn(
           "pointer-events-none fixed right-6 top-24 z-[70] transition-all duration-300",
@@ -546,7 +549,10 @@ export default function SellerMyPropertiesPage() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden rounded-[34px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_28px_90px_rgba(19,74,54,0.18)] md:px-8 md:py-7">
+      <section
+        style={SECTION_RENDER_STYLE}
+        className="relative overflow-hidden rounded-[34px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_20px_60px_rgba(19,74,54,0.16)] md:px-8 md:py-7"
+      >
         <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
         <div className="absolute -right-10 top-10 h-40 w-40 rounded-full border border-white/12" />
         <div className="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
@@ -605,11 +611,14 @@ export default function SellerMyPropertiesPage() {
         </div>
       )}
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <section
+        style={SECTION_RENDER_STYLE}
+        className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Link
             href="/seller/add-property"
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_70px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(15,23,42,0.09)]"
+            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)] transition-transform duration-150 ease-out motion-safe:hover:-translate-y-0.5"
           >
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
               <Plus className="h-5 w-5" />
@@ -622,7 +631,7 @@ export default function SellerMyPropertiesPage() {
 
           <Link
             href="/seller/analytics"
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_70px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(15,23,42,0.09)]"
+            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)] transition-transform duration-150 ease-out motion-safe:hover:-translate-y-0.5"
           >
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
               <BarChart3 className="h-5 w-5" />
@@ -635,7 +644,7 @@ export default function SellerMyPropertiesPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-[repeat(3,minmax(0,1fr))]">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Approval queue
             </div>
@@ -645,7 +654,7 @@ export default function SellerMyPropertiesPage() {
             <p className="mt-2 text-sm text-slate-600">Listings still waiting for moderation approval.</p>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Engaged listings
             </div>
@@ -655,7 +664,7 @@ export default function SellerMyPropertiesPage() {
             <p className="mt-2 text-sm text-slate-600">Listings with views, leads, or visits in the selected range.</p>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Last refresh
             </div>
@@ -665,7 +674,7 @@ export default function SellerMyPropertiesPage() {
             <p className="mt-2 text-sm text-slate-600">Latest successful inventory snapshot.</p>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] p-5 shadow-[0_18px_70px_rgba(15,23,42,0.07)] md:col-span-3">
+          <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)] md:col-span-3">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Workflow note
             </div>
@@ -677,14 +686,19 @@ export default function SellerMyPropertiesPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section
+        style={SECTION_RENDER_STYLE}
+        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+      >
         {cards.map((card) => {
           const Icon = card.icon;
           return (
-            <motion.article
+            <article
               key={card.title}
-              whileHover={{ y: -3 }}
-              className={cn("rounded-[28px] border p-5 shadow-[0_18px_70px_rgba(15,23,42,0.07)]", card.tone)}
+              className={cn(
+                "rounded-[28px] border p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)] transition-transform duration-150 ease-out motion-safe:hover:-translate-y-0.5",
+                card.tone
+              )}
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -700,13 +714,16 @@ export default function SellerMyPropertiesPage() {
                 </div>
               </div>
               <div className={cn("mt-4 text-sm", card.detailTone || "text-slate-600")}>{card.detail}</div>
-            </motion.article>
+            </article>
           );
         })}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px]">
-        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
+      <section
+        style={SECTION_RENDER_STYLE}
+        className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px]"
+      >
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
@@ -805,17 +822,22 @@ export default function SellerMyPropertiesPage() {
             )}
 
             {paginatedRows.map((property) => (
-              <motion.article
+              <article
                 key={property.id}
-                whileHover={{ y: -2 }}
-                transition={{ duration: 0.18 }}
-                className="rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm"
+                style={LIST_CARD_RENDER_STYLE}
+                className="rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm transition-transform duration-150 ease-out motion-safe:hover:-translate-y-0.5"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex gap-4">
                     <div className="h-24 w-28 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
                       {property.image ? (
-                        <img src={property.image} alt={property.title} className="h-full w-full object-cover" />
+                        <img
+                          src={property.image}
+                          alt={property.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <div className="grid h-full w-full place-items-center text-slate-400">
                           <Home className="h-6 w-6" />
@@ -916,7 +938,7 @@ export default function SellerMyPropertiesPage() {
                     </div>
                   </div>
                 </div>
-              </motion.article>
+              </article>
             ))}
           </div>
 
@@ -949,7 +971,7 @@ export default function SellerMyPropertiesPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
               <Sparkles className="h-3.5 w-3.5" />
               Inventory spotlight
@@ -989,7 +1011,7 @@ export default function SellerMyPropertiesPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
               <Clock3 className="h-3.5 w-3.5" />
               Status summary
@@ -1016,7 +1038,7 @@ export default function SellerMyPropertiesPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
             <div className="flex items-center justify-between">
               <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
                 <CalendarClock className="h-3.5 w-3.5" />
@@ -1083,6 +1105,6 @@ export default function SellerMyPropertiesPage() {
           void handleDelete();
         }}
       />
-    </motion.main>
+    </main>
   );
 }

@@ -27,7 +27,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
           if (role === "admin" || role === "superadmin") {
             router.replace("/admin/overview");
           } else if (role === "seller" || role === "agent") {
-            router.replace("/dashboard");
+            router.replace("/");
           } else {
             router.replace("/login");
           }

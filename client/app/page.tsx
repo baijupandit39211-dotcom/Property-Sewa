@@ -3,9 +3,11 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import OfferBadge from "@/components/offers/OfferBadge";
-import { apiFetch } from "@/app/lib/api";
+import { apiFetch, apiFetchSafe } from "@/app/lib/api";
+import { getDashboardPath, logoutByRole } from "@/app/lib/auth";
 import {
   Home,
   Building2,
@@ -21,8 +23,11 @@ import {
   Search,
   Heart,
   ChevronRight,
-  PhoneCall, // ✅ this is the icon you want
+  PhoneCall,
   Moon,
+  ChevronDown,
+  LayoutDashboard,
+  LogOut,
 } from "lucide-react";
 
 type Property = {
@@ -61,6 +66,13 @@ type PropertyListResponse = {
     offerTitle?: string;
     offerActive?: boolean;
   }>;
+};
+
+type SessionUser = {
+  name?: string;
+  email?: string;
+  role?: string;
+  avatar?: string;
 };
 
 const featured: Property[] = [
@@ -132,9 +144,14 @@ const fadeUp = {
 };
 
 export default function DashboardLandingLike() {
+  const router = useRouter();
   const [mode, setMode] = React.useState<"buy" | "rent" | "sell">("buy");
   const [activePage, setActivePage] = React.useState(1);
   const [offerProperties, setOfferProperties] = React.useState<Property[]>([]);
+  const [user, setUser] = React.useState<SessionUser | null>(null);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [loggingOut, setLoggingOut] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     apiFetch<PropertyListResponse>("/properties?limit=48")
@@ -160,6 +177,59 @@ export default function DashboardLandingLike() {
       })
       .catch(() => setOfferProperties([]));
   }, []);
+
+  React.useEffect(() => {
+    let active = true;
+
+    (async () => {
+      const meResponse = await apiFetchSafe<{ user?: SessionUser }>("/auth/me");
+      if (meResponse?.user) {
+        if (active) setUser(meResponse.user);
+        return;
+      }
+
+      const adminResponse = await apiFetchSafe<{ user?: SessionUser }>("/auth/admin/me");
+      if (active) setUser(adminResponse?.user || null);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!menuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [menuOpen]);
+
+  const handleDashboardClick = () => {
+    if (!user) return;
+    setMenuOpen(false);
+    router.push(getDashboardPath(user.role));
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await logoutByRole(user?.role);
+    } finally {
+      setMenuOpen(false);
+      setUser(null);
+      setLoggingOut(false);
+      router.replace("/");
+      router.refresh();
+    }
+  };
+
+  const avatarLabel = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
 
   const dashainOffers = React.useMemo(
     () =>
@@ -192,7 +262,6 @@ export default function DashboardLandingLike() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ✅ NAVBAR (Figma exact gradient + buttons + phone icon) */}
       <div className="sticky top-0 z-30">
         <div
           className="border-b border-white/10"
@@ -202,7 +271,6 @@ export default function DashboardLandingLike() {
           }}
         >
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-            {/* Left brand */}
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/15">
                 <Home className="h-5 w-5 text-white" />
@@ -212,47 +280,104 @@ export default function DashboardLandingLike() {
               </span>
             </div>
 
-            {/* Center links */}
             <div className="hidden items-center gap-10 text-sm md:flex">
               <Link
-                className="text-white hover:text-white transition"
+                className="text-white transition hover:text-white"
                 href="/properties?type=sale"
               >
                 For Sale
               </Link>
               <Link
-                className="text-white/80 hover:text-white transition"
+                className="text-white/80 transition hover:text-white"
                 href="/properties?type=rent"
               >
                 For Rent
               </Link>
               <Link
-                className="text-white/80 hover:text-white transition"
+                className="text-white/80 transition hover:text-white"
                 href="/agents"
               >
                 Agents
               </Link>
             </div>
 
-            {/* Right actions (exact like your crop) */}
             <div className="flex items-center gap-3">
-              {/* Log In: white pill, black text */}
-              <Link
-                href="/login"
-                className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black shadow-sm transition hover:scale-[1.02] active:scale-[0.99]"
-              >
-                Log In
-              </Link>
+              {user ? (
+                <div className="relative" ref={menuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setMenuOpen((open) => !open)}
+                    className="inline-flex items-center gap-2 rounded-full bg-white px-2 py-2 pr-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:scale-[1.02] active:scale-[0.99]"
+                  >
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name || "User avatar"}
+                        width={36}
+                        height={36}
+                        className="h-9 w-9 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="grid h-9 w-9 place-items-center rounded-full bg-emerald-100 text-sm font-extrabold text-emerald-900">
+                        {avatarLabel}
+                      </span>
+                    )}
+                    <span className="hidden max-w-[120px] truncate sm:block">
+                      {user.name || "Account"}
+                    </span>
+                    <ChevronDown className={cn("h-4 w-4 transition", menuOpen && "rotate-180")} />
+                  </button>
 
-              {/* Sign Up: neon mint */}
-              <Link
-                href="/register"
-                className="rounded-full bg-[#1DFF91] px-5 py-2 text-sm font-extrabold text-black shadow-sm transition hover:brightness-95 hover:scale-[1.02] active:scale-[0.99]"
-              >
-                Sign Up
-              </Link>
+                  {menuOpen ? (
+                    <div className="absolute right-0 top-full mt-3 w-56 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-[0_24px_80px_-24px_rgba(15,23,42,0.45)]">
+                      <div className="border-b border-slate-100 px-4 py-3">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {user.name || "Signed in"}
+                        </p>
+                        <p className="truncate text-xs text-slate-500">
+                          {user.role || user.email || "User"}
+                        </p>
+                      </div>
 
-              {/* Phone icon: white circle + dark green icon */}
+                      <button
+                        type="button"
+                        onClick={handleDashboardClick}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-emerald-50"
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-emerald-700" />
+                        Dashboard
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        disabled={loggingOut}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {loggingOut ? "Logging out..." : "Logout"}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black shadow-sm transition hover:scale-[1.02] active:scale-[0.99]"
+                  >
+                    Log In
+                  </Link>
+
+                  <Link
+                    href="/register"
+                    className="rounded-full bg-[#1DFF91] px-5 py-2 text-sm font-extrabold text-black shadow-sm transition hover:scale-[1.02] hover:brightness-95 active:scale-[0.99]"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
+
               <button
                 type="button"
                 aria-label="Call"
@@ -262,7 +387,6 @@ export default function DashboardLandingLike() {
                 <PhoneCall className="h-4 w-4 text-[#12392B]" />
               </button>
 
-              {/* optional theme icon (keep if you want) */}
               <button
                 onClick={() => {}}
                 className="ml-1 grid h-10 w-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/15 transition hover:bg-white/15"
@@ -277,9 +401,7 @@ export default function DashboardLandingLike() {
         </div>
       </div>
 
-      {/* HERO */}
       <section className="relative overflow-hidden">
-        {/* ✅ Figma-like hero background (your vertical gradient) */}
         <div
           className="absolute inset-0"
           style={{
@@ -288,7 +410,6 @@ export default function DashboardLandingLike() {
           }}
         />
 
-        {/* dotted grid */}
         <div
           className="absolute inset-0 opacity-[0.14]"
           style={{
@@ -298,11 +419,9 @@ export default function DashboardLandingLike() {
           }}
         />
 
-        {/* soft depth left */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/10 to-transparent" />
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-20">
-          {/* LEFT */}
           <div>
             <motion.h1
               variants={fadeUp}
@@ -329,7 +448,6 @@ export default function DashboardLandingLike() {
               exclusively yours.
             </motion.p>
 
-            {/* Search Card */}
             <motion.div
               variants={fadeUp}
               initial="hidden"
@@ -337,7 +455,6 @@ export default function DashboardLandingLike() {
               custom={2}
               className="mt-10 max-w-xl rounded-2xl bg-white/90 p-4 shadow-xl ring-1 ring-white/30 backdrop-blur"
             >
-              {/* Tabs */}
               <div className="flex gap-2">
                 <TabButton active={mode === "buy"} onClick={() => setMode("buy")}>
                   Buy
@@ -356,7 +473,6 @@ export default function DashboardLandingLike() {
                 </TabButton>
               </div>
 
-              {/* Search Row */}
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                 <div className="flex flex-1 items-center gap-2 rounded-xl bg-white px-4 py-3 ring-1 ring-emerald-100">
                   <Search className="h-4 w-4 text-emerald-600" />
@@ -379,30 +495,27 @@ export default function DashboardLandingLike() {
                 </button>
               </div>
 
-              {/* Filters */}
               <div className="mt-3 flex flex-wrap gap-2">
                 <Pill>Price Range</Pill>
                 <Pill>Beds &amp; Baths</Pill>
                 <Pill>Property Type</Pill>
               </div>
 
-              {/* Actions */}
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   href="/properties"
-                  className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-700 transition active:scale-[0.98]"
+                  className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-[0.98]"
                 >
                   Browse Properties
                 </Link>
                 <Link
                   href="/properties/new"
-                  className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 transition active:scale-[0.98]"
+                  className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-50 active:scale-[0.98]"
                 >
                   List Your Property
                 </Link>
               </div>
 
-              {/* Trust row */}
               <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500">
                 <span className="inline-flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -420,7 +533,6 @@ export default function DashboardLandingLike() {
             </motion.div>
           </div>
 
-          {/* RIGHT (3D House) */}
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -432,8 +544,11 @@ export default function DashboardLandingLike() {
               <div className="absolute -inset-6 rounded-[2.2rem] bg-emerald-200/20 blur-2xl" />
 
               <motion.div
-                whileHover={{ y: -6, rotate: -0.6 }}
-                transition={{ type: "spring", stiffness: 220, damping: 18 }}
+                whileHover={{ scale: [1, 1.05, 1], y: [0, -6, 0] }}
+                transition={{
+                  duration: 1.4,
+                  ease: "easeInOut",
+                }}
                 className="relative h-full w-full"
               >
                 <Image
@@ -449,7 +564,6 @@ export default function DashboardLandingLike() {
         </div>
       </section>
 
-      {/* Everything should be this easy */}
       <section className="bg-white py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <motion.h2
@@ -484,7 +598,6 @@ export default function DashboardLandingLike() {
         </div>
       </section>
 
-      {/* Featured Properties */}
       <section className="bg-white pb-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex items-end justify-between gap-4">
@@ -499,7 +612,7 @@ export default function DashboardLandingLike() {
 
             <Link
               href="/properties"
-              className="group inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition"
+              className="group inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
             >
               View All{" "}
               <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
@@ -520,7 +633,6 @@ export default function DashboardLandingLike() {
             ))}
           </div>
 
-          {/* Pagination */}
           <div className="mt-10 flex items-center justify-center gap-2 text-sm">
             <PageBtn
               label="‹"
@@ -541,7 +653,7 @@ export default function DashboardLandingLike() {
               </button>
             ))}
             <span className="px-2 text-slate-400">…</span>
-            <button className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+            <button className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200">
               10
             </button>
             <PageBtn
@@ -582,7 +694,6 @@ export default function DashboardLandingLike() {
         tinted
       />
 
-      {/* Partner section */}
       <section className="bg-emerald-50/40 py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <h3 className="text-center text-3xl font-extrabold tracking-tight text-slate-900">
@@ -629,7 +740,7 @@ export default function DashboardLandingLike() {
           <div className="mt-10 flex justify-center">
             <Link
               href="/how-it-works"
-              className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-700 transition active:scale-[0.98]"
+              className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-[0.98]"
             >
               How It Works
             </Link>
@@ -637,7 +748,6 @@ export default function DashboardLandingLike() {
         </div>
       </section>
 
-      {/* Get Alerts CTA + Footer */}
       <section className="relative overflow-hidden bg-gradient-to-r from-[#CFF9E8] via-[#8CF0C9] to-[#17D97B] py-16">
         <div
           className="absolute inset-0 opacity-[0.15]"
@@ -662,7 +772,7 @@ export default function DashboardLandingLike() {
                 className="h-12 flex-1 rounded-2xl bg-white/90 px-4 text-sm outline-none ring-1 ring-white/50 placeholder:text-slate-400"
                 placeholder="Enter your email address"
               />
-              <button className="h-12 rounded-2xl bg-emerald-950 px-5 text-sm font-semibold text-white hover:bg-emerald-900 transition active:scale-[0.98]">
+              <button className="h-12 rounded-2xl bg-emerald-950 px-5 text-sm font-semibold text-white transition hover:bg-emerald-900 active:scale-[0.98]">
                 Get Alerts
               </button>
             </div>
@@ -717,8 +827,6 @@ export default function DashboardLandingLike() {
   );
 }
 
-/* ------------------ Small UI pieces ------------------ */
-
 function TabButton({
   children,
   active,
@@ -748,7 +856,7 @@ function Pill({ children }: { children: React.ReactNode }) {
   return (
     <button
       type="button"
-      className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition"
+      className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
     >
       {children}
     </button>
@@ -906,7 +1014,7 @@ function PageBtn({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+      className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
       type="button"
     >
       {label}
@@ -921,7 +1029,7 @@ function FooterCol({ title, links }: { title: string; links: string[] }) {
       <ul className="mt-3 space-y-2 text-sm text-emerald-950/70">
         {links.map((l) => (
           <li key={l}>
-            <a className="hover:text-emerald-950 transition" href="#">
+            <a className="transition hover:text-emerald-950" href="#">
               {l}
             </a>
           </li>

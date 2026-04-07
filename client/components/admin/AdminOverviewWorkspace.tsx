@@ -488,6 +488,14 @@ export default function AdminOverviewWorkspace() {
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
+          <div className="mt-4">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15"
+            >
+              Back to Home
+            </Link>
+          </div>
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

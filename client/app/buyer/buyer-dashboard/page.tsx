@@ -235,6 +235,13 @@ export default function BuyerDashboardPage() {
 
           {/* ✅ Mortgage + Saved pill like your screenshot */}
           <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-slate-800 ring-1 ring-[#316249]/25 transition hover:bg-slate-50 active:scale-[0.98]"
+            >
+              Back to Home
+            </Link>
+
             <a
               href="/buyer/mortgage-calculator"
               className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-slate-800 ring-1 ring-[#316249]/25 transition hover:bg-slate-50 active:scale-[0.98]"

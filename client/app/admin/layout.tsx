@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           if (role === "buyer") {
             router.replace("/buyer/buyer-dashboard");
           } else if (role === "seller" || role === "agent") {
-            router.replace("/dashboard");
+            router.replace("/");
           } else {
             router.replace("/admin-login");
           }

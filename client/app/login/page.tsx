@@ -25,22 +25,6 @@ function loadGoogleScript(): Promise<void> {
   });
 }
 
-function routeByRole(role: string | undefined) {
-  const r = (role || "").toLowerCase();
-
-  // Admin goes to admin dashboard
-  if (r === "admin" || r === "superadmin") return "/admin/overview";
-
-  // Buyer goes to buyer dashboard
-  if (r === "buyer") return "/buyer/buyer-dashboard";
-
-  // Seller/Agent goes to seller dashboard
-  if (r === "seller" || r === "agent") return "/seller/seller-dashboard";
-
-  // If role is missing or invalid, redirect to login
-  return "/login";
-}
-
 export default function LoginPage() {
   const router = useRouter();
 
@@ -72,12 +56,12 @@ export default function LoginPage() {
         client_id: clientId,
         callback: async (resp: any) => {
           try {
-            const data = await apiFetch<{ user: any }>("/auth/google", {
+            await apiFetch<{ user: any }>("/auth/google", {
               method: "POST",
               body: JSON.stringify({ credential: resp.credential }),
             });
 
-            router.push(routeByRole(data?.user?.role));
+            router.push("/");
           } catch (e: any) {
             alert(e?.message || "Google login failed");
           }
@@ -104,12 +88,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const data = await apiFetch<{ user: any }>("/auth/login", {
+      await apiFetch<{ user: any }>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
-      router.push(routeByRole(data?.user?.role));
+      router.push("/");
     } catch (err: any) {
       alert(err?.message || "Login failed");
     } finally {

@@ -195,6 +195,7 @@ export default function SellerDashboardPage() {
               <button type="button" onClick={handleRefresh} disabled={refreshing} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#11392f] transition hover:bg-[#f5faf7] disabled:opacity-60"><RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />{refreshing ? "Refreshing..." : "Refresh data"}</button>
               <Link href="/seller/analytics" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#edf6f0] px-4 py-3 text-sm font-semibold text-[#17614b] transition hover:bg-white">Full analytics<ArrowRight className="h-4 w-4" /></Link>
             </div>
+            <Link href="/" className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15">Back to Home</Link>
             <div className="rounded-2xl bg-[rgba(9,36,27,0.12)] px-4 py-3 text-sm text-white/90">{summary?.totalListings ? `${fmtNum(summary.totalListings)} listings tracked from ${fmtDate(analytics?.filters.startDate)} to ${fmtDate(analytics?.filters.endDate)}.` : "Publish your first listing to activate the seller reporting flow."}</div>
           </div>
         </div>
