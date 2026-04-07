@@ -150,6 +150,13 @@ export default function LoginPage() {
           {/* Right */}
           <div className="flex items-center gap-3">
             <Link
+              href="/"
+              className="rounded-full bg-white/10 px-6 py-2 text-[14px] font-semibold text-white shadow-sm transition hover:bg-white/15"
+            >
+              Back to Home
+            </Link>
+
+            <Link
               href="/login"
               className="rounded-full bg-white px-6 py-2 text-[14px] font-semibold text-black shadow-sm"
             >

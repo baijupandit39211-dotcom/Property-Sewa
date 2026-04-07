@@ -11,9 +11,6 @@ import { getDashboardPath, logoutByRole } from "@/app/lib/auth";
 import {
   Home,
   Building2,
-  Tag,
-  BriefcaseBusiness,
-  Building,
   ShieldCheck,
   BadgeCheck,
   SlidersHorizontal,
@@ -75,61 +72,6 @@ type SessionUser = {
   avatar?: string;
 };
 
-const featured: Property[] = [
-  {
-    id: "p1",
-    title: "Luxury Lane Villa",
-    location: "Beverly Hills, CA",
-    price: "$2,800,000",
-    image: "/p1.jpg",
-    beds: 5,
-    baths: 4,
-    sqft: 4100,
-    offerCategory: "dashain",
-    offerBadge: "Dashain Offer",
-    offerActive: true,
-  },
-  {
-    id: "p2",
-    title: "Oak Street Apartment",
-    location: "Austin, TX",
-    price: "$850,000",
-    image: "/p2.jpg",
-    beds: 2,
-    baths: 2,
-    sqft: 1200,
-    offerCategory: "latest",
-    offerBadge: "Latest Deal",
-    offerActive: true,
-  },
-  {
-    id: "p3",
-    title: "Highrise View Condo",
-    location: "Miami, FL",
-    price: "$1,200,000",
-    image: "/p3.jpg",
-    beds: 3,
-    baths: 2,
-    sqft: 1500,
-    offerCategory: "hot",
-    offerBadge: "Hot Deal",
-    offerActive: true,
-  },
-  {
-    id: "p4",
-    title: "Forest Cabin Home",
-    location: "Aspen, CO",
-    price: "$650,000",
-    image: "/p4.jpg",
-    beds: 3,
-    baths: 2,
-    sqft: 2000,
-    offerCategory: "limited_time",
-    offerBadge: "Limited Time",
-    offerActive: true,
-  },
-];
-
 function cn(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
 }
@@ -146,8 +88,9 @@ const fadeUp = {
 export default function DashboardLandingLike() {
   const router = useRouter();
   const [mode, setMode] = React.useState<"buy" | "rent" | "sell">("buy");
+  const [searchQuery, setSearchQuery] = React.useState("");
   const [activePage, setActivePage] = React.useState(1);
-  const [offerProperties, setOfferProperties] = React.useState<Property[]>([]);
+  const [allProperties, setAllProperties] = React.useState<Property[]>([]);
   const [user, setUser] = React.useState<SessionUser | null>(null);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [loggingOut, setLoggingOut] = React.useState(false);
@@ -173,9 +116,9 @@ export default function DashboardLandingLike() {
           address: item.address || "",
           images: item.images || [],
         }));
-        setOfferProperties(mapped);
+        setAllProperties(mapped);
       })
-      .catch(() => setOfferProperties([]));
+      .catch(() => setAllProperties([]));
   }, []);
 
   React.useEffect(() => {
@@ -230,34 +173,64 @@ export default function DashboardLandingLike() {
   };
 
   const avatarLabel = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
+  const addPropertyHref =
+    user?.role === "seller" || user?.role === "agent"
+      ? "/seller/add-property"
+      : user?.role === "admin" || user?.role === "superadmin"
+      ? "/admin/add-property"
+      : "/register";
+
+  const browseHref =
+    mode === "rent"
+      ? "/properties?type=rent"
+      : mode === "buy"
+      ? "/properties?type=sale"
+      : "/properties";
+
+  const handleSearch = () => {
+    if (mode === "sell") {
+      router.push(addPropertyHref);
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.set("type", mode === "rent" ? "rent" : "sale");
+    if (searchQuery.trim()) params.set("search", searchQuery.trim());
+    router.push(`/properties?${params.toString()}`);
+  };
+
+  const featuredProperties = React.useMemo(
+    () => allProperties.slice(0, 4),
+    [allProperties]
+  );
 
   const dashainOffers = React.useMemo(
     () =>
-      offerProperties
+      allProperties
         .filter((item) => item.offerActive && item.offerCategory === "dashain")
         .slice(0, 6),
-    [offerProperties]
+    [allProperties]
   );
   const hotDeals = React.useMemo(
     () =>
-      offerProperties
+      allProperties
         .filter((item) => item.offerActive && item.offerCategory === "hot")
         .slice(0, 6),
-    [offerProperties]
+    [allProperties]
   );
   const latestDeals = React.useMemo(
     () =>
-      offerProperties
+      allProperties
         .filter((item) => item.offerActive && item.offerCategory === "latest")
         .slice(0, 6),
-    [offerProperties]
+    [allProperties]
   );
   const limitedTimeOffers = React.useMemo(
     () =>
-      offerProperties
+      allProperties
         .filter((item) => item.offerActive && item.offerCategory === "limited_time")
         .slice(0, 6),
-    [offerProperties]
+    [allProperties]
   );
 
   return (
@@ -295,9 +268,9 @@ export default function DashboardLandingLike() {
               </Link>
               <Link
                 className="text-white/80 transition hover:text-white"
-                href="/agents"
+                href="/properties"
               >
-                Agents
+                Browse All
               </Link>
             </div>
 
@@ -477,6 +450,8 @@ export default function DashboardLandingLike() {
                 <div className="flex flex-1 items-center gap-2 rounded-xl bg-white px-4 py-3 ring-1 ring-emerald-100">
                   <Search className="h-4 w-4 text-emerald-600" />
                   <input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
                     className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
                     placeholder="Enter an address, neighborhood, city, or ZIP code"
                   />
@@ -489,27 +464,28 @@ export default function DashboardLandingLike() {
                     "shadow-md shadow-emerald-500/25",
                     "transition active:scale-[0.98]"
                   )}
+                  onClick={handleSearch}
                   type="button"
                 >
-                  Search
+                  {mode === "sell" ? "Get Started" : "Search"}
                 </button>
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
-                <Pill>Price Range</Pill>
-                <Pill>Beds &amp; Baths</Pill>
-                <Pill>Property Type</Pill>
+                <Pill>Live Listings</Pill>
+                <Pill>Direct Detail Pages</Pill>
+                <Pill>Existing Buyer Flow</Pill>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
-                  href="/properties"
+                  href={browseHref}
                   className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-[0.98]"
                 >
-                  Browse Properties
+                  {mode === "rent" ? "Browse Rentals" : mode === "buy" ? "Browse Properties" : "Explore Listings"}
                 </Link>
                 <Link
-                  href="/properties/new"
+                  href={addPropertyHref}
                   className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-50 active:scale-[0.98]"
                 >
                   List Your Property
@@ -580,24 +556,36 @@ export default function DashboardLandingLike() {
           </p>
 
           <div className="mt-10 grid gap-4 md:grid-cols-5">
-            <MiniCard icon={<Home className="h-5 w-5" />} title="Buy a Home" />
+            <MiniCard
+              icon={<Home className="h-5 w-5" />}
+              title="Buy a Home"
+              href="/properties?type=sale"
+            />
             <MiniCard
               icon={<Building2 className="h-5 w-5" />}
               title="Rent a Home"
-            />
-            <MiniCard icon={<Tag className="h-5 w-5" />} title="Sell a Home" />
-            <MiniCard
-              icon={<BriefcaseBusiness className="h-5 w-5" />}
-              title="Commercial"
+              href="/properties?type=rent"
             />
             <MiniCard
-              icon={<Building className="h-5 w-5" />}
-              title="New Projects"
+              icon={<BarChart3 className="h-5 w-5" />}
+              title="Sell a Home"
+              href={addPropertyHref}
+            />
+            <MiniCard
+              icon={<Heart className="h-5 w-5" />}
+              title="Offers"
+              href="/properties?offersOnly=true"
+            />
+            <MiniCard
+              icon={<Search className="h-5 w-5" />}
+              title="All Listings"
+              href="/properties"
             />
           </div>
         </div>
       </section>
 
+      {featuredProperties.length > 0 ? (
       <section className="bg-white pb-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex items-end justify-between gap-4">
@@ -620,9 +608,9 @@ export default function DashboardLandingLike() {
           </div>
 
           <div className="mt-8 grid gap-5 md:grid-cols-4">
-            {featured.map((p, i) => (
+            {featuredProperties.map((p, i) => (
               <motion.div
-                key={p.id}
+                key={p._id || p.id}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.25 }}
@@ -663,18 +651,19 @@ export default function DashboardLandingLike() {
           </div>
         </div>
       </section>
+      ) : null}
 
       <OfferSection
         title="Dashain Festival Offers"
         description="Seasonal picks curated from active Dashain promotions."
-        href="/buyer/search-properties"
+        href="/properties?offersOnly=true"
         items={dashainOffers}
       />
 
       <OfferSection
         title="Hot Deals"
         description="Listings getting the strongest spotlight right now."
-        href="/buyer/search-properties"
+        href="/properties?offersOnly=true"
         items={hotDeals}
         tinted
       />
@@ -682,14 +671,14 @@ export default function DashboardLandingLike() {
       <OfferSection
         title="Latest Deals"
         description="Freshly promoted properties with active deal tags."
-        href="/buyer/search-properties"
+        href="/properties?offersOnly=true"
         items={latestDeals}
       />
 
       <OfferSection
         title="Limited Time Offers"
         description="Short-window promotions worth checking before they expire."
-        href="/buyer/search-properties"
+        href="/properties?offersOnly=true"
         items={limitedTimeOffers}
         tinted
       />
@@ -739,10 +728,10 @@ export default function DashboardLandingLike() {
 
           <div className="mt-10 flex justify-center">
             <Link
-              href="/how-it-works"
+              href="/properties"
               className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-[0.98]"
             >
-              How It Works
+              Browse Listings
             </Link>
           </div>
         </div>
@@ -817,9 +806,32 @@ export default function DashboardLandingLike() {
               </p>
             </div>
 
-            <FooterCol title="Company" links={["About Us", "Careers", "Press", "Blog"]} />
-            <FooterCol title="Explore" links={["Buy", "Rent", "Sell", "Agents"]} />
-            <FooterCol title="Support" links={["Help Center", "Contact Us", "FAQ"]} />
+            <FooterCol
+              title="Company"
+              links={[
+                { label: "Home", href: "/" },
+                { label: "Login", href: "/login" },
+                { label: "Register", href: "/register" },
+                { label: "Admin Login", href: "/admin-login" },
+              ]}
+            />
+            <FooterCol
+              title="Explore"
+              links={[
+                { label: "Buy", href: "/properties?type=sale" },
+                { label: "Rent", href: "/properties?type=rent" },
+                { label: "Sell", href: addPropertyHref },
+                { label: "Offers", href: "/properties?offersOnly=true" },
+              ]}
+            />
+            <FooterCol
+              title="Support"
+              links={[
+                { label: "Search Properties", href: "/properties" },
+                { label: "Forgot Password", href: "/forgot-password" },
+                { label: "Dashboard", href: user ? getDashboardPath(user.role) : "/login" },
+              ]}
+            />
           </div>
         </div>
       </section>
@@ -863,21 +875,31 @@ function Pill({ children }: { children: React.ReactNode }) {
   );
 }
 
-function MiniCard({ icon, title }: { icon: React.ReactNode; title: string }) {
+function MiniCard({
+  icon,
+  title,
+  href,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  href: string;
+}) {
   return (
-    <motion.div
-      whileHover={{ y: -6 }}
-      transition={{ type: "spring", stiffness: 240, damping: 16 }}
-      className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 hover:shadow-md"
-    >
-      <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
-        {icon}
-      </div>
-      <p className="mt-3 text-sm font-bold text-slate-900">{title}</p>
-      <p className="mt-1 text-xs text-slate-500">
-        Find your dream home from thousands of listings.
-      </p>
-    </motion.div>
+    <Link href={href}>
+      <motion.div
+        whileHover={{ y: -6 }}
+        transition={{ type: "spring", stiffness: 240, damping: 16 }}
+        className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 hover:shadow-md"
+      >
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+          {icon}
+        </div>
+        <p className="mt-3 text-sm font-bold text-slate-900">{title}</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Find your dream home from thousands of listings.
+        </p>
+      </motion.div>
+    </Link>
   );
 }
 
@@ -892,11 +914,10 @@ function PropertyCard({ p }: { p: Property }) {
         className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 hover:shadow-md"
       >
         <div className="relative aspect-[4/3] overflow-hidden">
-          <Image
+          <img
             src={p.image}
             alt={p.title}
-            fill
-            className="object-cover transition duration-500 group-hover:scale-[1.06]"
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.06]"
           />
           <div className="absolute left-3 top-3 z-10">
             <OfferBadge
@@ -1022,16 +1043,22 @@ function PageBtn({ label, onClick }: { label: string; onClick: () => void }) {
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: string[] }) {
+function FooterCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: Array<{ label: string; href: string }>;
+}) {
   return (
     <div>
       <p className="text-sm font-extrabold text-emerald-950">{title}</p>
       <ul className="mt-3 space-y-2 text-sm text-emerald-950/70">
         {links.map((l) => (
-          <li key={l}>
-            <a className="transition hover:text-emerald-950" href="#">
-              {l}
-            </a>
+          <li key={l.label}>
+            <Link className="transition hover:text-emerald-950" href={l.href}>
+              {l.label}
+            </Link>
           </li>
         ))}
       </ul>

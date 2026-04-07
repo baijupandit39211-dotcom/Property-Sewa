@@ -168,6 +168,13 @@ export default function RegisterPage() {
 
           <div className="flex items-center gap-3">
             <Link
+              href="/"
+              className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white hover:bg-white/15"
+            >
+              Back to Home
+            </Link>
+
+            <Link
               href="/login"
               className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white hover:bg-white/15"
             >
