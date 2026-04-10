@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import {
+  emitChatDelivered,
+  emitChatSeen,
   emitChatTypingStart,
   emitChatTypingStop,
   subscribeToChatSocket,
@@ -36,6 +38,8 @@ type Message = {
   senderRole: "seller" | "buyer";
   text: string;
   createdAt: string;
+  deliveredAt?: string | null;
+  seenAt?: string | null;
 };
 
 type Visit = {
@@ -50,6 +54,30 @@ type Visit = {
 type LeadWithVisit = Lead & {
   visit?: Visit;
 };
+
+function applyDeliveredStatus(messages: Message[], messageIds: string[], deliveredAt?: string) {
+  if (!messageIds.length || !deliveredAt) return messages;
+  const targets = new Set(messageIds);
+  return messages.map((message) =>
+    targets.has(message._id) ? { ...message, deliveredAt, seenAt: message.seenAt || null } : message
+  );
+}
+
+function applySeenStatus(messages: Message[], messageIds: string[], deliveredAt?: string, seenAt?: string) {
+  if (!messageIds.length || !seenAt) return messages;
+  const targets = new Set(messageIds);
+  return messages.map((message) =>
+    targets.has(message._id)
+      ? { ...message, deliveredAt: deliveredAt || message.deliveredAt || seenAt, seenAt }
+      : message
+  );
+}
+
+function getMessageStatus(message: Message) {
+  if (message.seenAt) return "Seen";
+  if (message.deliveredAt) return "Delivered";
+  return "Sent";
+}
 
 export default function BuyerMessageDetailPage() {
   const params = useParams();
@@ -66,6 +94,28 @@ export default function BuyerMessageDetailPage() {
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const activeLeadIdRef = useRef("");
+
+  const acknowledgeDelivered = (leadId: string, thread: Message[]) => {
+    if (!leadId || !thread.some((message) => message.senderRole === "seller" && !message.deliveredAt)) return;
+    emitChatDelivered(leadId);
+  };
+
+  const acknowledgeSeen = (leadId: string, thread: Message[]) => {
+    if (
+      !leadId ||
+      typeof document === "undefined" ||
+      document.visibilityState !== "visible" ||
+      !thread.some((message) => message.senderRole === "seller" && !message.seenAt)
+    ) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (document.visibilityState === "visible" && activeLeadIdRef.current === leadId) {
+        emitChatSeen(leadId);
+      }
+    }, 0);
+  };
 
   useEffect(() => {
     activeLeadIdRef.current = currentLeadId;
@@ -101,7 +151,10 @@ export default function BuyerMessageDetailPage() {
         // Fetch messages
         const messageResponse = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${params.leadId}`);
         if (messageResponse.success) {
-          setMessages(messageResponse.items || []);
+          const thread = messageResponse.items || [];
+          setMessages(thread);
+          acknowledgeDelivered(currentLeadId, thread);
+          acknowledgeSeen(currentLeadId, thread);
         }
       } catch (err: any) {
         setError(err.message || "Failed to load data");
@@ -120,9 +173,17 @@ export default function BuyerMessageDetailPage() {
       onNewMessage: ({ message }) => {
         if (String(message?.leadId || "") !== activeLeadIdRef.current) return;
 
-        setMessages((prev) =>
-          prev.some((item) => item._id === message._id) ? prev : [...prev, message]
-        );
+        setMessages((prev) => (prev.some((item) => item._id === message._id) ? prev : [...prev, message]));
+        acknowledgeDelivered(String(message.leadId || ""), [message]);
+        acknowledgeSeen(String(message.leadId || ""), [message]);
+      },
+      onMessageDelivered: ({ leadId, messageIds, deliveredAt }) => {
+        if (String(leadId) !== activeLeadIdRef.current) return;
+        setMessages((prev) => applyDeliveredStatus(prev, messageIds, deliveredAt));
+      },
+      onMessageSeen: ({ leadId, messageIds, deliveredAt, seenAt }) => {
+        if (String(leadId) !== activeLeadIdRef.current) return;
+        setMessages((prev) => applySeenStatus(prev, messageIds, deliveredAt, seenAt));
       },
       onTypingStart: ({ leadId, senderRole }) => {
         if (senderRole !== "seller" || String(leadId) !== activeLeadIdRef.current) return;
@@ -171,6 +232,11 @@ export default function BuyerMessageDetailPage() {
     setIsTyping(false);
     setTypingUserRole(null);
   }, [currentLeadId]);
+
+  useEffect(() => {
+    if (!currentLeadId || !messages.length) return;
+    acknowledgeSeen(currentLeadId, messages);
+  }, [currentLeadId, messages]);
 
   const getVisitStatusColor = (status: string) => {
     switch (status) {
@@ -244,7 +310,10 @@ export default function BuyerMessageDetailPage() {
         // Re-fetch messages to get updated list
         const messageResponse = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${params.leadId}`);
         if (messageResponse.success) {
-          setMessages(messageResponse.items || []);
+          const thread = messageResponse.items || [];
+          setMessages(thread);
+          acknowledgeDelivered(currentLeadId, thread);
+          acknowledgeSeen(currentLeadId, thread);
         }
       }
     } catch (err: any) {
@@ -400,6 +469,7 @@ export default function BuyerMessageDetailPage() {
                             hour: "2-digit",
                             minute: "2-digit"
                           })}
+                          {message.senderRole === "buyer" ? ` | ${getMessageStatus(message)}` : ""}
                         </p>
                       </div>
                     </div>

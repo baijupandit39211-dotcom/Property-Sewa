@@ -2,6 +2,7 @@ import type { Server as HttpServer } from "http";
 import jwt, { type JwtPayload, type Secret } from "jsonwebtoken";
 import { Server } from "socket.io";
 import Lead from "../models/Lead.model";
+import Message from "../models/Message.model";
 import User from "../models/User.model";
 
 type JwtPayloadShape = JwtPayload & {
@@ -30,6 +31,13 @@ type ChatNewMessagePayload = {
   message: Record<string, unknown>;
   senderId: string;
   receiverId: string;
+};
+
+type ChatStatusPayload = {
+  leadId: string;
+  messageIds: string[];
+  deliveredAt?: string;
+  seenAt?: string;
 };
 
 type ChatTypingPayload = {
@@ -107,6 +115,55 @@ async function resolveChatParticipants(leadId: string, userId: string) {
   }
 
   return null;
+}
+
+async function updateMessageReceiptStatus(
+  leadId: string,
+  userId: string,
+  status: "delivered" | "seen"
+) {
+  const lead = await Lead.findById(leadId).select("sellerId buyerId").lean();
+  if (!lead?.sellerId || !lead?.buyerId) {
+    throw new Error("Lead not found or incomplete");
+  }
+
+  const sellerId = String(lead.sellerId);
+  const buyerId = String(lead.buyerId);
+
+  let senderId = "";
+
+  if (sellerId === userId) {
+    senderId = buyerId;
+  } else if (buyerId === userId) {
+    senderId = sellerId;
+  } else {
+    throw new Error("User is not a participant in this lead");
+  }
+
+  const timestamp = new Date();
+  const updatedMessages = await Message.find(
+    status === "delivered"
+      ? { leadId, senderId, deliveredAt: null }
+      : { leadId, senderId, seenAt: null }
+  )
+    .select("_id")
+    .lean();
+
+  if (!updatedMessages.length) return null;
+
+  await Message.updateMany(
+    { _id: { $in: updatedMessages.map((message) => message._id) } },
+    status === "delivered"
+      ? { $set: { deliveredAt: timestamp } }
+      : { $set: { deliveredAt: timestamp, seenAt: timestamp } }
+  );
+
+  return {
+    senderId,
+    messageIds: updatedMessages.map((message) => String(message._id)),
+    deliveredAt: timestamp.toISOString(),
+    seenAt: status === "seen" ? timestamp.toISOString() : undefined,
+  };
 }
 
 export function initNotificationSocket(server: HttpServer) {
@@ -221,6 +278,53 @@ export function initNotificationSocket(server: HttpServer) {
           room,
         });
       } catch {}
+    });
+
+    socket.on("chat:deliver_messages", async (payload: { leadId?: string } = {}) => {
+      try {
+        const leadId = String(payload?.leadId || "").trim();
+        if (!leadId) return;
+
+        const result = await updateMessageReceiptStatus(leadId, userId, "delivered");
+        if (!result?.senderId || !result.messageIds.length || !result.deliveredAt) return;
+
+        io?.to(getSocketRoom(result.senderId)).emit("chat:message_delivered", {
+          leadId,
+          messageIds: result.messageIds,
+          deliveredAt: result.deliveredAt,
+        } satisfies ChatStatusPayload);
+      } catch (error) {
+        console.error("[socket][chat] deliver_messages_failed", {
+          socketId: socket.id,
+          userId,
+          payload,
+          error,
+        });
+      }
+    });
+
+    socket.on("chat:see_messages", async (payload: { leadId?: string } = {}) => {
+      try {
+        const leadId = String(payload?.leadId || "").trim();
+        if (!leadId) return;
+
+        const result = await updateMessageReceiptStatus(leadId, userId, "seen");
+        if (!result?.senderId || !result.messageIds.length || !result.deliveredAt || !result.seenAt) return;
+
+        io?.to(getSocketRoom(result.senderId)).emit("chat:message_seen", {
+          leadId,
+          messageIds: result.messageIds,
+          deliveredAt: result.deliveredAt,
+          seenAt: result.seenAt,
+        } satisfies ChatStatusPayload);
+      } catch (error) {
+        console.error("[socket][chat] see_messages_failed", {
+          socketId: socket.id,
+          userId,
+          payload,
+          error,
+        });
+      }
     });
   });
 

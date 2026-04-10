@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
 import {
+  emitChatDelivered,
+  emitChatSeen,
   emitChatTypingStart,
   emitChatTypingStop,
   subscribeToChatSocket,
@@ -77,6 +79,8 @@ type Message = {
   senderRole: "seller" | "buyer";
   text: string;
   createdAt: string;
+  deliveredAt?: string | null;
+  seenAt?: string | null;
 };
 
 type Lead = {
@@ -194,6 +198,30 @@ async function fetchConversationMessages(leadId: string) {
   return response.items || [];
 }
 
+function applyDeliveredStatus(messages: Message[], messageIds: string[], deliveredAt?: string) {
+  if (!messageIds.length || !deliveredAt) return messages;
+  const targets = new Set(messageIds);
+  return messages.map((message) =>
+    targets.has(message._id) ? { ...message, deliveredAt, seenAt: message.seenAt || null } : message
+  );
+}
+
+function applySeenStatus(messages: Message[], messageIds: string[], deliveredAt?: string, seenAt?: string) {
+  if (!messageIds.length || !seenAt) return messages;
+  const targets = new Set(messageIds);
+  return messages.map((message) =>
+    targets.has(message._id)
+      ? { ...message, deliveredAt: deliveredAt || message.deliveredAt || seenAt, seenAt }
+      : message
+  );
+}
+
+function getMessageStatus(message: Message) {
+  if (message.seenAt) return "Seen";
+  if (message.deliveredAt) return "Delivered";
+  return "Sent";
+}
+
 function getBuyerSnapshot(lead: Lead | null) {
   if (!lead) return null;
   const buyer = typeof lead.buyerId === "object" && lead.buyerId ? lead.buyerId : null;
@@ -268,6 +296,28 @@ export default function SellerLeadsPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   });
 
+  const acknowledgeDelivered = useEffectEvent((leadId: string, thread: Message[]) => {
+    if (!leadId || !thread.some((message) => message.senderRole === "buyer" && !message.deliveredAt)) return;
+    emitChatDelivered(leadId);
+  });
+
+  const acknowledgeSeen = useEffectEvent((leadId: string, thread: Message[]) => {
+    if (
+      !leadId ||
+      typeof document === "undefined" ||
+      document.visibilityState !== "visible" ||
+      !thread.some((message) => message.senderRole === "buyer" && !message.seenAt)
+    ) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (document.visibilityState === "visible" && selectedIdRef.current === leadId) {
+        emitChatSeen(leadId);
+      }
+    }, 0);
+  });
+
   const syncSelectedLeadToUrl = useEffectEvent((leadId: string) => {
     const params = new URLSearchParams(searchParams?.toString() || "");
     if (leadId) params.set("lead", leadId);
@@ -300,6 +350,8 @@ export default function SellerLeadsPage() {
     try {
       const thread = await fetchConversationMessages(leadId);
       setMessages(thread);
+      acknowledgeDelivered(leadId, thread);
+      acknowledgeSeen(leadId, thread);
       requestAnimationFrame(() => scrollToBottom());
     } finally {
       if (!silent) setThreadLoading(false);
@@ -340,6 +392,46 @@ export default function SellerLeadsPage() {
 
   useEffect(() => {
     return subscribeToChatSocket({
+      onNewMessage: ({ message }) => {
+        if (!message?.leadId) return;
+
+        setLeads((prev) =>
+          prev
+            .map((lead) =>
+              lead._id === message.leadId
+                ? {
+                    ...lead,
+                    lastMessage: message,
+                    latestActivityAt: message.createdAt,
+                    messageCount:
+                      message.senderRole === "buyer"
+                        ? (lead.messageCount || 0) + 1
+                        : Math.max(lead.messageCount || 0, 1),
+                  }
+                : lead
+            )
+            .sort(
+              (left, right) =>
+                new Date(right.latestActivityAt || right.createdAt).getTime() -
+                new Date(left.latestActivityAt || left.createdAt).getTime()
+            )
+        );
+
+        if (message.leadId !== selectedIdRef.current) return;
+
+        setMessages((prev) => (prev.some((item) => item._id === message._id) ? prev : [...prev, message]));
+        acknowledgeDelivered(message.leadId, [message]);
+        acknowledgeSeen(message.leadId, [message]);
+        requestAnimationFrame(() => scrollToBottom());
+      },
+      onMessageDelivered: ({ leadId, messageIds, deliveredAt }) => {
+        if (leadId !== selectedIdRef.current) return;
+        setMessages((prev) => applyDeliveredStatus(prev, messageIds, deliveredAt));
+      },
+      onMessageSeen: ({ leadId, messageIds, deliveredAt, seenAt }) => {
+        if (leadId !== selectedIdRef.current) return;
+        setMessages((prev) => applySeenStatus(prev, messageIds, deliveredAt, seenAt));
+      },
       onTypingStart: ({ leadId, senderRole }) => {
         if (senderRole !== "buyer" || leadId !== selectedIdRef.current) return;
         setIsTyping(true);
@@ -406,6 +498,11 @@ export default function SellerLeadsPage() {
     setTypingUserRole(null);
     selectedIdRef.current = selectedId;
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedId || !messages.length) return;
+    acknowledgeSeen(selectedId, messages);
+  }, [messages, selectedId]);
 
   useEffect(() => {
     return () => {
@@ -870,7 +967,7 @@ export default function SellerLeadsPage() {
                                 <div className="text-sm leading-6">{message.text}</div>
                                 <div className={cn("mt-2 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
                                   {mine
-                                    ? `You | ${formatDateTime(message.createdAt)}`
+                                    ? `You | ${formatDateTime(message.createdAt)} | ${getMessageStatus(message)}`
                                     : `${message.senderId?.name || selectedLead.name} | ${formatDateTime(message.createdAt)}`}
                                 </div>
                               </div>

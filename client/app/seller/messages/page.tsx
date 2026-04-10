@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
 import {
+  emitChatDelivered,
+  emitChatSeen,
   emitChatTypingStart,
   emitChatTypingStop,
   subscribeToChatSocket,
@@ -51,6 +53,8 @@ type Message = {
   senderRole: "seller" | "buyer";
   text: string;
   createdAt: string;
+  deliveredAt?: string | null;
+  seenAt?: string | null;
 };
 
 type ConversationSummary = Lead & { lastMessage: Message | null; unreadCount: number };
@@ -79,6 +83,30 @@ const getStatusTone = (status: Lead["status"]) =>
 async function fetchConversationMessages(leadId: string) {
   const response = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${leadId}`);
   return response.items || [];
+}
+
+function applyDeliveredStatus(messages: Message[], messageIds: string[], deliveredAt?: string) {
+  if (!messageIds.length || !deliveredAt) return messages;
+  const targets = new Set(messageIds);
+  return messages.map((message) =>
+    targets.has(message._id) ? { ...message, deliveredAt, seenAt: message.seenAt || null } : message
+  );
+}
+
+function applySeenStatus(messages: Message[], messageIds: string[], deliveredAt?: string, seenAt?: string) {
+  if (!messageIds.length || !seenAt) return messages;
+  const targets = new Set(messageIds);
+  return messages.map((message) =>
+    targets.has(message._id)
+      ? { ...message, deliveredAt: deliveredAt || message.deliveredAt || seenAt, seenAt }
+      : message
+  );
+}
+
+function getMessageStatus(message: Message) {
+  if (message.seenAt) return "Seen";
+  if (message.deliveredAt) return "Delivered";
+  return "Sent";
 }
 
 export default function SellerMessagesPage() {
@@ -124,6 +152,28 @@ export default function SellerMessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   });
 
+  const acknowledgeDelivered = useEffectEvent((leadId: string, thread: Message[]) => {
+    if (!leadId || !thread.some((message) => message.senderRole === "buyer" && !message.deliveredAt)) return;
+    emitChatDelivered(leadId);
+  });
+
+  const acknowledgeSeen = useEffectEvent((leadId: string, thread: Message[]) => {
+    if (
+      !leadId ||
+      typeof document === "undefined" ||
+      document.visibilityState !== "visible" ||
+      !thread.some((message) => message.senderRole === "buyer" && !message.seenAt)
+    ) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (document.visibilityState === "visible" && selectedIdRef.current === leadId) {
+        emitChatSeen(leadId);
+      }
+    }, 0);
+  });
+
   const markConversationRead = useEffectEvent((leadId: string, thread: Message[]) => {
     const lastMessage = thread[thread.length - 1];
     if (!lastMessage) return;
@@ -165,6 +215,8 @@ export default function SellerMessagesPage() {
       const thread = await fetchConversationMessages(leadId);
       setMessages(thread);
       markConversationRead(leadId, thread);
+      acknowledgeDelivered(leadId, thread);
+      acknowledgeSeen(leadId, thread);
       requestAnimationFrame(() => scrollToBottom());
     } finally {
       if (!silent) setThreadLoading(false);
@@ -234,8 +286,18 @@ export default function SellerMessagesPage() {
           setMessages((prev) =>
             prev.some((item) => item._id === message._id) ? prev : [...prev, message]
           );
+          acknowledgeDelivered(message.leadId, [message]);
+          acknowledgeSeen(message.leadId, [message]);
           requestAnimationFrame(() => scrollToBottom());
         }
+      },
+      onMessageDelivered: ({ leadId, messageIds, deliveredAt }) => {
+        if (leadId !== selectedIdRef.current) return;
+        setMessages((prev) => applyDeliveredStatus(prev, messageIds, deliveredAt));
+      },
+      onMessageSeen: ({ leadId, messageIds, deliveredAt, seenAt }) => {
+        if (leadId !== selectedIdRef.current) return;
+        setMessages((prev) => applySeenStatus(prev, messageIds, deliveredAt, seenAt));
       },
       onTypingStart: ({ leadId, senderRole }) => {
         if (senderRole !== "buyer" || leadId !== selectedIdRef.current) return;
@@ -289,6 +351,11 @@ export default function SellerMessagesPage() {
     setTypingUserRole(null);
     selectedIdRef.current = selectedId;
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedId || !messages.length) return;
+    acknowledgeSeen(selectedId, messages);
+  }, [messages, selectedId]);
 
   function handleComposerTyping(value: string) {
     setComposer(value);
@@ -543,7 +610,7 @@ export default function SellerMessagesPage() {
                             <div className={cn("max-w-[80%] rounded-[22px] px-4 py-3 shadow-sm transition-transform duration-200 ease-out hover:-translate-y-0.5", mine ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_16px_30px_rgba(5,150,105,0.18)]" : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200")}>
                               <div className="text-sm leading-6">{message.text}</div>
                               <div className={cn("mt-2 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
-                                {mine ? `You | ${formatDateTime(message.createdAt)}` : `${message.senderId?.name || selectedConversation.name} | ${formatDateTime(message.createdAt)}`}
+                                {mine ? `You | ${formatDateTime(message.createdAt)} | ${getMessageStatus(message)}` : `${message.senderId?.name || selectedConversation.name} | ${formatDateTime(message.createdAt)}`}
                               </div>
                             </div>
                           </div>

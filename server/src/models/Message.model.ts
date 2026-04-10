@@ -11,6 +11,8 @@ const MessageSchema = new Schema(
     },
     isAutoReply: { type: Boolean, default: false },
     text: { type: String, required: true, trim: true },
+    deliveredAt: { type: Date, default: null },
+    seenAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
