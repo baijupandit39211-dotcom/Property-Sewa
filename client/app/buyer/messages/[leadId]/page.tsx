@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
-import { ArrowLeft, Send, MessageCircle, User, Calendar } from "lucide-react";
+import {
+  emitChatTypingStart,
+  emitChatTypingStop,
+  subscribeToChatSocket,
+} from "@/app/lib/chatSocket";
+import { ArrowLeft, Send, MessageCircle, Calendar } from "lucide-react";
 
 type Lead = {
   _id: string;
@@ -49,12 +54,22 @@ type LeadWithVisit = Lead & {
 export default function BuyerMessageDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const currentLeadId = String(params.leadId || "");
   const [lead, setLead] = useState<LeadWithVisit | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
+  const receiverTypingTimeoutRef = useRef<number | null>(null);
+  const activeLeadIdRef = useRef("");
+
+  useEffect(() => {
+    activeLeadIdRef.current = currentLeadId;
+  }, [currentLeadId]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -95,10 +110,67 @@ export default function BuyerMessageDetailPage() {
       }
     };
 
-    if (params.leadId) {
+    if (currentLeadId) {
       fetchData();
     }
-  }, [params.leadId]);
+  }, [currentLeadId]);
+
+  useEffect(() => {
+    return subscribeToChatSocket({
+      onNewMessage: ({ message }) => {
+        if (String(message?.leadId || "") !== activeLeadIdRef.current) return;
+
+        setMessages((prev) =>
+          prev.some((item) => item._id === message._id) ? prev : [...prev, message]
+        );
+      },
+      onTypingStart: ({ leadId, senderRole }) => {
+        if (senderRole !== "seller" || String(leadId) !== activeLeadIdRef.current) return;
+        setIsTyping(true);
+        setTypingUserRole(senderRole);
+        if (receiverTypingTimeoutRef.current) {
+          window.clearTimeout(receiverTypingTimeoutRef.current);
+        }
+        receiverTypingTimeoutRef.current = window.setTimeout(() => {
+          setIsTyping(false);
+          setTypingUserRole(null);
+        }, 1800);
+      },
+      onTypingStop: ({ leadId, senderRole }) => {
+        if (senderRole !== "seller" || String(leadId) !== activeLeadIdRef.current) return;
+        if (receiverTypingTimeoutRef.current) {
+          window.clearTimeout(receiverTypingTimeoutRef.current);
+        }
+        setIsTyping(false);
+        setTypingUserRole(null);
+      },
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+      if (receiverTypingTimeoutRef.current) {
+        window.clearTimeout(receiverTypingTimeoutRef.current);
+      }
+      if (activeLeadIdRef.current) {
+        emitChatTypingStop(activeLeadIdRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    if (receiverTypingTimeoutRef.current) {
+      window.clearTimeout(receiverTypingTimeoutRef.current);
+    }
+    setIsTyping(false);
+    setTypingUserRole(null);
+  }, [currentLeadId]);
 
   const getVisitStatusColor = (status: string) => {
     switch (status) {
@@ -154,6 +226,11 @@ export default function BuyerMessageDetailPage() {
 
     setSending(true);
     try {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+      emitChatTypingStop(currentLeadId);
+
       // Send message
       const response = await apiFetch<{ success: boolean; message: Message }>(`/messages/${params.leadId}`, {
         method: "POST",
@@ -175,6 +252,29 @@ export default function BuyerMessageDetailPage() {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleMessageInput = (value: string) => {
+    setNewMessage(value);
+
+    const leadId = currentLeadId;
+    if (!leadId || sending) return;
+
+    if (!value.trim()) {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+      emitChatTypingStop(leadId);
+      return;
+    }
+
+    emitChatTypingStart(leadId);
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    typingTimeoutRef.current = window.setTimeout(() => {
+      emitChatTypingStop(leadId);
+    }, 1200);
   };
 
   if (loading) {
@@ -309,11 +409,18 @@ export default function BuyerMessageDetailPage() {
 
               {/* Message Input */}
               <div className="p-4 border-t border-slate-200">
+                {isTyping && typingUserRole === "seller" && (
+                  <div className="mb-2 flex items-center gap-1.5 text-slate-400">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:0ms]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
+                  </div>
+                )}
                 <form onSubmit={handleSendMessage} className="flex gap-2">
                   <input
                     type="text"
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => handleMessageInput(e.target.value)}
                     placeholder="Type your message..."
                     className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     disabled={sending}

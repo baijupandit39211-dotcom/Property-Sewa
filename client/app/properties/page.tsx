@@ -70,6 +70,7 @@ export default function PublicPropertiesPage() {
   const typeParam = searchParams.get("type");
   const searchParam = searchParams.get("search") || "";
   const offersOnlyParam = searchParams.get("offersOnly");
+  const categoryParam = String(searchParams.get("category") || "").toLowerCase();
   const initialListingType = React.useMemo(
     () => normalizeListingType(typeParam),
     [typeParam]
@@ -81,6 +82,7 @@ export default function PublicPropertiesPage() {
   const [search, setSearch] = React.useState(searchParam);
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [showOnlyOffers, setShowOnlyOffers] = React.useState(initialOffersOnly);
+  const [categoryFilter, setCategoryFilter] = React.useState(categoryParam);
   const [items, setItems] = React.useState<Property[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -97,6 +99,10 @@ export default function PublicPropertiesPage() {
   React.useEffect(() => {
     setShowOnlyOffers(initialOffersOnly);
   }, [initialOffersOnly]);
+
+  React.useEffect(() => {
+    setCategoryFilter(categoryParam);
+  }, [categoryParam]);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search), 350);
@@ -122,6 +128,13 @@ export default function PublicPropertiesPage() {
       })
       .finally(() => setLoading(false));
   }, [listingType, debouncedSearch, showOnlyOffers]);
+
+  const visibleItems = React.useMemo(() => {
+    if (!categoryFilter) return items;
+    return items.filter(
+      (item) => String(item.offerCategory || "").toLowerCase() === categoryFilter
+    );
+  }, [items, categoryFilter]);
 
   const copy = pageCopy(listingType);
 
@@ -208,6 +221,14 @@ export default function PublicPropertiesPage() {
               >
                 Offers Only
               </button>
+              {categoryFilter ? (
+                <Link
+                  href={showOnlyOffers ? "/properties?offersOnly=true" : "/properties"}
+                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Clear Category
+                </Link>
+              ) : null}
             </div>
 
             <div className="relative w-full max-w-md">
@@ -232,7 +253,7 @@ export default function PublicPropertiesPage() {
             <h2 className="text-lg font-bold text-slate-900">Loading listings...</h2>
             <p className="mt-2 text-sm text-slate-500">Fetching the latest properties.</p>
           </section>
-        ) : items.length === 0 ? (
+        ) : visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-emerald-100 bg-white p-10 text-center shadow-sm">
             <h2 className="text-2xl font-bold text-slate-900">No properties found</h2>
             <p className="mt-2 text-sm text-slate-500">
@@ -241,7 +262,7 @@ export default function PublicPropertiesPage() {
           </section>
         ) : (
           <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {items.map((property) => (
+            {visibleItems.map((property) => (
               <Link
                 key={property._id}
                 href={`/buyer/property/${property._id}`}

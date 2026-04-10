@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { apiFetch } from "../lib/api";
 import { Mail, Lock, Eye, EyeOff, Phone, Menu } from "lucide-react";
 
@@ -24,6 +25,15 @@ function loadGoogleScript(): Promise<void> {
     document.head.appendChild(s);
   });
 }
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  show: (delay = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, delay, ease: "easeOut" },
+  }),
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -102,7 +112,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F4F2]">
+    <div className="relative min-h-screen overflow-hidden bg-[#F0F4F2]">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute -left-20 top-28 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl"
+          animate={{ x: [0, 28, -12, 0], y: [0, 18, -10, 0], scale: [1, 1.08, 0.96, 1] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute right-0 top-16 h-80 w-80 rounded-full bg-[#9fd7bc]/35 blur-3xl"
+          animate={{ x: [0, -30, 10, 0], y: [0, 20, -16, 0], scale: [1, 0.94, 1.04, 1] }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
       {/* Header (smaller height, exact gradient vibe) */}
       <header
         className="sticky top-0 z-40 shadow-[0_10px_30px_rgba(0,0,0,0.12)]"
@@ -151,28 +174,28 @@ export default function LoginPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="rounded-full bg-white/10 px-6 py-2 text-[14px] font-semibold text-white shadow-sm transition hover:bg-white/15"
+              className="rounded-full bg-white/10 px-6 py-2 text-[14px] font-semibold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg"
             >
               Back to Home
             </Link>
 
             <Link
               href="/login"
-              className="rounded-full bg-white px-6 py-2 text-[14px] font-semibold text-black shadow-sm"
+              className="rounded-full bg-white px-6 py-2 text-[14px] font-semibold text-black shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg"
             >
               Log In
             </Link>
 
             <Link
               href="/register"
-              className="rounded-full bg-[#1DFF91] px-6 py-2 text-[14px] font-extrabold text-[#062016] shadow-sm"
+              className="rounded-full bg-[#1DFF91] px-6 py-2 text-[14px] font-extrabold text-[#062016] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_30px_rgba(29,255,145,0.28)]"
             >
               Sign Up
             </Link>
 
             <button
               type="button"
-              className="grid h-[42px] w-[42px] place-items-center rounded-full bg-white shadow-sm"
+              className="grid h-[42px] w-[42px] place-items-center rounded-full bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-lg"
               aria-label="Phone"
               title="Phone"
             >
@@ -183,7 +206,7 @@ export default function LoginPage() {
       </header>
 
       {/* Body (fit in one screen) */}
-      <main className="mx-auto max-w-7xl px-6">
+      <main className="relative z-10 mx-auto max-w-7xl px-6">
         <div
           className="
             grid items-center gap-10
@@ -196,18 +219,37 @@ export default function LoginPage() {
           }}
         >
           {/* Left form */}
-          <div className="w-full max-w-[740px]">
-            <h1 className="text-[54px] font-extrabold leading-[1.05] tracking-tight text-[#0D1F18]">
+          <motion.div
+            className="w-full max-w-[740px]"
+            initial="hidden"
+            animate="show"
+            variants={fadeUp}
+            custom={0}
+          >
+            <motion.h1
+              className="text-[54px] font-extrabold leading-[1.05] tracking-tight text-[#0D1F18]"
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
+              custom={0.05}
+            >
               Welcome Back!
-            </h1>
+            </motion.h1>
 
-            <form onSubmit={onSubmit} className="mt-8 space-y-5">
+            <motion.form
+              onSubmit={onSubmit}
+              className="mt-8 space-y-5"
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
+              custom={0.12}
+            >
               {/* Email */}
               <div>
                 <label className="text-[16px] font-semibold text-[#0D1F18]">
                   Email
                 </label>
-                <div className="mt-2 flex h-[58px] items-center gap-3 rounded-[12px] border border-[#CFE3DA] bg-[#F3FBF7] px-4 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+                <div className="mt-2 flex h-[58px] items-center gap-3 rounded-[12px] border border-[#CFE3DA] bg-[#F3FBF7] px-4 shadow-[0_10px_30px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(0,0,0,0.08)] focus-within:-translate-y-0.5 focus-within:border-[#7cc8a5] focus-within:shadow-[0_18px_40px_rgba(18,57,43,0.10)]">
                   <Mail className="h-5 w-5 text-[#0F5E49]" />
                   <input
                     value={email}
@@ -224,7 +266,7 @@ export default function LoginPage() {
                 <label className="text-[16px] font-semibold text-[#0D1F18]">
                   Password
                 </label>
-                <div className="mt-2 flex h-[58px] items-center gap-3 rounded-[12px] border border-[#CFE3DA] bg-[#F3FBF7] px-4 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+                <div className="mt-2 flex h-[58px] items-center gap-3 rounded-[12px] border border-[#CFE3DA] bg-[#F3FBF7] px-4 shadow-[0_10px_30px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(0,0,0,0.08)] focus-within:-translate-y-0.5 focus-within:border-[#7cc8a5] focus-within:shadow-[0_18px_40px_rgba(18,57,43,0.10)]">
                   <Lock className="h-5 w-5 text-[#0F5E49]" />
 
                   <input
@@ -238,7 +280,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
-                    className="grid h-9 w-9 place-items-center rounded-full hover:bg-black/5 transition"
+                    className="grid h-9 w-9 place-items-center rounded-full transition duration-300 hover:scale-105 hover:bg-black/5"
                     aria-label={showPw ? "Hide password" : "Show password"}
                     title={showPw ? "Hide password" : "Show password"}
                   >
@@ -270,7 +312,7 @@ export default function LoginPage() {
                   bg-[#1DFF91]
                   text-[18px] font-extrabold text-[#062016]
                   shadow-[0_18px_35px_rgba(0,0,0,0.10)]
-                  hover:brightness-95 transition
+                  transition duration-300 hover:-translate-y-0.5 hover:brightness-95 hover:shadow-[0_24px_40px_rgba(29,255,145,0.20)]
                   disabled:cursor-not-allowed disabled:opacity-70
                 "
               >
@@ -278,7 +320,7 @@ export default function LoginPage() {
               </button>
 
               {/* Google (keep the actual GSI widget) */}
-              <div className="rounded-[14px] bg-[#E9EFEA] p-4">
+              <div className="rounded-[14px] bg-[#E9EFEA] p-4 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(0,0,0,0.06)]">
                 <div ref={googleBtnRef} className="flex justify-center" />
               </div>
 
@@ -288,21 +330,30 @@ export default function LoginPage() {
                   Sign Up
                 </Link>
               </p>
-            </form>
-          </div>
+            </motion.form>
+          </motion.div>
 
           {/* Right image (smaller + centered like figma) */}
-          <div className="relative mx-auto hidden w-full md:block">
-            <div className="relative mx-auto aspect-[1.05/1] w-full max-w-[520px]">
+          <motion.div
+            className="relative mx-auto hidden w-full md:block"
+            initial={{ opacity: 0, x: 36 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.18 }}
+          >
+            <motion.div
+              className="relative mx-auto aspect-[1.05/1] w-full max-w-[520px]"
+              whileHover={{ y: -8, rotate: -1, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 180, damping: 16 }}
+            >
               <Image
                 src="/login-house.png"
                 alt="House"
                 fill
                 priority
-                className="object-contain drop-shadow-[0_26px_26px_rgba(0,0,0,0.14)]"
+                className="object-contain drop-shadow-[0_26px_26px_rgba(0,0,0,0.14)] transition duration-500"
               />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </main>
     </div>

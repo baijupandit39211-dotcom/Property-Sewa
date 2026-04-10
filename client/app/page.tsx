@@ -22,6 +22,7 @@ import {
   ChevronRight,
   PhoneCall,
   Moon,
+  Sun,
   ChevronDown,
   LayoutDashboard,
   LogOut,
@@ -89,11 +90,11 @@ export default function DashboardLandingLike() {
   const router = useRouter();
   const [mode, setMode] = React.useState<"buy" | "rent" | "sell">("buy");
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [activePage, setActivePage] = React.useState(1);
   const [allProperties, setAllProperties] = React.useState<Property[]>([]);
   const [user, setUser] = React.useState<SessionUser | null>(null);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [loggingOut, setLoggingOut] = React.useState(false);
+  const [theme, setTheme] = React.useState<"light" | "dark">("light");
   const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -153,6 +154,19 @@ export default function DashboardLandingLike() {
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [menuOpen]);
 
+  React.useEffect(() => {
+    const storedTheme =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("property-sewa:theme")
+        : null;
+
+    if (storedTheme === "dark" || storedTheme === "light") {
+      setTheme(storedTheme);
+      document.documentElement.dataset.theme = storedTheme;
+      document.documentElement.style.colorScheme = storedTheme;
+    }
+  }, []);
+
   const handleDashboardClick = () => {
     if (!user) return;
     setMenuOpen(false);
@@ -197,6 +211,23 @@ export default function DashboardLandingLike() {
     params.set("type", mode === "rent" ? "rent" : "sale");
     if (searchQuery.trim()) params.set("search", searchQuery.trim());
     router.push(`/properties?${params.toString()}`);
+  };
+
+  const handleAlertsClick = () => {
+    if (user?.role === "buyer") {
+      router.push("/buyer/alerts");
+      return;
+    }
+
+    router.push("/login");
+  };
+
+  const handleThemeToggle = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+    document.documentElement.style.colorScheme = nextTheme;
+    window.localStorage.setItem("property-sewa:theme", nextTheme);
   };
 
   const featuredProperties = React.useMemo(
@@ -351,23 +382,27 @@ export default function DashboardLandingLike() {
                 </>
               )}
 
-              <button
-                type="button"
-                aria-label="Call"
-                title="Call"
+              <Link
+                href="/contact"
+                aria-label="Contact support"
+                title="Contact support"
                 className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm transition hover:scale-[1.02] active:scale-[0.99]"
               >
                 <PhoneCall className="h-4 w-4 text-[#12392B]" />
-              </button>
+              </Link>
 
               <button
-                onClick={() => {}}
+                onClick={handleThemeToggle}
                 className="ml-1 grid h-10 w-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/15 transition hover:bg-white/15"
                 aria-label="Theme"
-                title="Theme"
+                title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
                 type="button"
               >
-                <Moon className="h-4 w-4 text-white/90" />
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4 text-white/90" />
+                ) : (
+                  <Moon className="h-4 w-4 text-white/90" />
+                )}
               </button>
             </div>
           </div>
@@ -621,34 +656,6 @@ export default function DashboardLandingLike() {
             ))}
           </div>
 
-          <div className="mt-10 flex items-center justify-center gap-2 text-sm">
-            <PageBtn
-              label="‹"
-              onClick={() => setActivePage((p) => Math.max(1, p - 1))}
-            />
-            {[1, 2, 3].map((n) => (
-              <button
-                key={n}
-                onClick={() => setActivePage(n)}
-                className={cn(
-                  "grid h-9 w-9 place-items-center rounded-full transition",
-                  n === activePage
-                    ? "bg-emerald-500 text-white shadow shadow-emerald-500/25"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                {n}
-              </button>
-            ))}
-            <span className="px-2 text-slate-400">…</span>
-            <button className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200">
-              10
-            </button>
-            <PageBtn
-              label="›"
-              onClick={() => setActivePage((p) => Math.min(10, p + 1))}
-            />
-          </div>
         </div>
       </section>
       ) : null}
@@ -656,14 +663,14 @@ export default function DashboardLandingLike() {
       <OfferSection
         title="Dashain Festival Offers"
         description="Seasonal picks curated from active Dashain promotions."
-        href="/properties?offersOnly=true"
+        href="/properties?offersOnly=true&category=dashain"
         items={dashainOffers}
       />
 
       <OfferSection
         title="Hot Deals"
         description="Listings getting the strongest spotlight right now."
-        href="/properties?offersOnly=true"
+        href="/properties?offersOnly=true&category=hot"
         items={hotDeals}
         tinted
       />
@@ -671,14 +678,14 @@ export default function DashboardLandingLike() {
       <OfferSection
         title="Latest Deals"
         description="Freshly promoted properties with active deal tags."
-        href="/properties?offersOnly=true"
+        href="/properties?offersOnly=true&category=latest"
         items={latestDeals}
       />
 
       <OfferSection
         title="Limited Time Offers"
         description="Short-window promotions worth checking before they expire."
-        href="/properties?offersOnly=true"
+        href="/properties?offersOnly=true&category=limited_time"
         items={limitedTimeOffers}
         tinted
       />
@@ -761,7 +768,11 @@ export default function DashboardLandingLike() {
                 className="h-12 flex-1 rounded-2xl bg-white/90 px-4 text-sm outline-none ring-1 ring-white/50 placeholder:text-slate-400"
                 placeholder="Enter your email address"
               />
-              <button className="h-12 rounded-2xl bg-emerald-950 px-5 text-sm font-semibold text-white transition hover:bg-emerald-900 active:scale-[0.98]">
+              <button
+                type="button"
+                onClick={handleAlertsClick}
+                className="h-12 rounded-2xl bg-emerald-950 px-5 text-sm font-semibold text-white transition hover:bg-emerald-900 active:scale-[0.98]"
+              >
                 Get Alerts
               </button>
             </div>
@@ -904,7 +915,7 @@ function MiniCard({
 }
 
 function PropertyCard({ p }: { p: Property }) {
-  const href = p._id ? `/buyer/property/${p._id}` : `/properties/${p.id}`;
+  const href = p._id ? `/buyer/property/${p._id}` : "/properties";
 
   return (
     <Link href={href} className="group block">
@@ -1028,18 +1039,6 @@ function FeatureItem({
       <p className="mt-3 text-sm font-extrabold text-slate-900">{title}</p>
       <p className="mt-1 text-sm text-slate-500">{desc}</p>
     </motion.div>
-  );
-}
-
-function PageBtn({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
-      type="button"
-    >
-      {label}
-    </button>
   );
 }
 

@@ -56,7 +56,15 @@ export default function AdminLoginPage() {
           <Link href="/" className="text-lg font-extrabold text-white">
             PROPERTY SEWA
           </Link>
-          <div className="text-sm font-semibold text-white/90">Admin Login</div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white hover:bg-white/15"
+            >
+              Back to Home
+            </Link>
+            <div className="text-sm font-semibold text-white/90">Admin Login</div>
+          </div>
         </div>
       </header>
 

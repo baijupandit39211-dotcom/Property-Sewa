@@ -30,6 +30,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
+import {
+  emitChatTypingStart,
+  emitChatTypingStop,
+  subscribeToChatSocket,
+} from "@/app/lib/chatSocket";
 import { subscribeToNotificationSocket } from "@/app/lib/notificationsSocket";
 
 type LeadStatus = "new" | "contacted" | "closed";
@@ -217,6 +222,11 @@ export default function SellerLeadsPage() {
   const [composer, setComposer] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("all");
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
+  const receiverTypingTimeoutRef = useRef<number | null>(null);
+  const selectedIdRef = useRef("");
   const deferredSearch = useDeferredValue(search);
 
   const selectedLead = useMemo(
@@ -329,6 +339,31 @@ export default function SellerLeadsPage() {
   }, [selectedId]);
 
   useEffect(() => {
+    return subscribeToChatSocket({
+      onTypingStart: ({ leadId, senderRole }) => {
+        if (senderRole !== "buyer" || leadId !== selectedIdRef.current) return;
+        setIsTyping(true);
+        setTypingUserRole(senderRole);
+        if (receiverTypingTimeoutRef.current) {
+          window.clearTimeout(receiverTypingTimeoutRef.current);
+        }
+        receiverTypingTimeoutRef.current = window.setTimeout(() => {
+          setIsTyping(false);
+          setTypingUserRole(null);
+        }, 1800);
+      },
+      onTypingStop: ({ leadId, senderRole }) => {
+        if (senderRole !== "buyer" || leadId !== selectedIdRef.current) return;
+        if (receiverTypingTimeoutRef.current) {
+          window.clearTimeout(receiverTypingTimeoutRef.current);
+        }
+        setIsTyping(false);
+        setTypingUserRole(null);
+      },
+    });
+  }, []);
+
+  useEffect(() => {
     const interval = window.setInterval(async () => {
       try {
         await loadInbox();
@@ -355,6 +390,58 @@ export default function SellerLeadsPage() {
 
     return unsubscribe;
   }, [selectedId]);
+
+  useEffect(() => {
+    const previousLeadId = selectedIdRef.current;
+    if (previousLeadId && previousLeadId !== selectedId) {
+      emitChatTypingStop(previousLeadId);
+    }
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    if (receiverTypingTimeoutRef.current) {
+      window.clearTimeout(receiverTypingTimeoutRef.current);
+    }
+    setIsTyping(false);
+    setTypingUserRole(null);
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+      if (receiverTypingTimeoutRef.current) {
+        window.clearTimeout(receiverTypingTimeoutRef.current);
+      }
+      if (selectedIdRef.current) {
+        emitChatTypingStop(selectedIdRef.current);
+      }
+    };
+  }, []);
+
+  function handleComposerTyping(value: string) {
+    setComposer(value);
+
+    if (!selectedId || sending) return;
+
+    if (!value.trim()) {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+      emitChatTypingStop(selectedId);
+      return;
+    }
+
+    emitChatTypingStart(selectedId);
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    typingTimeoutRef.current = window.setTimeout(() => {
+      emitChatTypingStop(selectedId);
+    }, 1200);
+  }
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -387,6 +474,12 @@ export default function SellerLeadsPage() {
     setSending(true);
     setError("");
     setComposer("");
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    emitChatTypingStop(selectedLead._id);
+    setIsTyping(false);
+    setTypingUserRole(null);
     setMessages((prev) => [...prev, optimisticMessage]);
     requestAnimationFrame(() => scrollToBottom());
 
@@ -467,10 +560,10 @@ export default function SellerLeadsPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
+    <div className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-col gap-6 pb-2">
       <section className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(120deg,#0c2d26_0%,#15533b_40%,#7bb495_76%,#d6e5dc_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-8">
         <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.24)_0%,rgba(236,246,240,0.06)_58%,transparent_100%)]" />
-        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="relative grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" />
@@ -534,8 +627,8 @@ export default function SellerLeadsPage() {
         </div>
       )}
 
-      <section className="grid min-h-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="flex h-[760px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_20px_70px_rgba(15,23,42,0.06)] xl:h-[calc(100vh-260px)] xl:min-h-[640px]">
+      <section className="grid min-h-0 min-w-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
+        <aside className="flex min-h-[640px] min-w-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
           <div className="border-b border-slate-100 px-5 py-5">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -662,8 +755,8 @@ export default function SellerLeadsPage() {
           </div>
         </aside>
 
-        <section className="grid min-h-0 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex h-[760px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)] xl:h-[calc(100vh-260px)] xl:min-h-[640px]">
+        <section className="grid min-h-0 min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+          <div className="flex min-h-[640px] min-w-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
             {!selectedLead ? (
               <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
                 <div>
@@ -795,7 +888,7 @@ export default function SellerLeadsPage() {
                     <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3 transition focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_16px_34px_rgba(15,23,42,0.08)]">
                       <textarea
                         value={composer}
-                        onChange={(event) => setComposer(event.target.value)}
+                        onChange={(event) => handleComposerTyping(event.target.value)}
                         rows={3}
                         placeholder="Reply to the buyer, confirm next steps, or qualify the lead..."
                         className="w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400"
@@ -803,9 +896,17 @@ export default function SellerLeadsPage() {
                       />
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <p className="max-w-[480px] text-xs leading-5 text-slate-500">
-                        Replies stay attached to this inquiry thread and trigger buyer notifications automatically.
-                      </p>
+                      <div className="max-w-[480px] text-xs leading-5 text-slate-500">
+                        {isTyping && typingUserRole === "buyer" ? (
+                          <div className="flex items-center gap-1.5 text-emerald-400">
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:0ms]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
+                          </div>
+                        ) : (
+                          "Replies stay attached to this inquiry thread and trigger buyer notifications automatically."
+                        )}
+                      </div>
                       <button
                         type="submit"
                         disabled={sending || !composer.trim()}
@@ -820,7 +921,7 @@ export default function SellerLeadsPage() {
               </>
             )}
           </div>
-          <aside className="flex min-h-0 flex-col gap-6">
+          <aside className="flex min-h-0 min-w-0 flex-col gap-6">
             <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
               <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
                 <UserRound className="h-3.5 w-3.5" />

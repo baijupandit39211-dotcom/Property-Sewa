@@ -9,6 +9,7 @@ const MessageSchema = new Schema(
       enum: ["seller", "buyer"], 
       required: true 
     },
+    isAutoReply: { type: Boolean, default: false },
     text: { type: String, required: true, trim: true },
   },
   { timestamps: true }

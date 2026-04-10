@@ -26,6 +26,11 @@ import {
   UserRound,
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
+import {
+  emitChatTypingStart,
+  emitChatTypingStop,
+  subscribeToChatSocket,
+} from "@/app/lib/chatSocket";
 
 type Lead = {
   _id: string;
@@ -88,7 +93,12 @@ export default function SellerMessagesPage() {
   const [composer, setComposer] = useState("");
   const [search, setSearch] = useState("");
   const [readMarkers, setReadMarkers] = useState<Record<string, string>>({});
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
+  const receiverTypingTimeoutRef = useRef<number | null>(null);
+  const selectedIdRef = useRef("");
   const deferredSearch = useDeferredValue(search);
 
   const selectedConversation = useMemo(
@@ -194,6 +204,114 @@ export default function SellerMessagesPage() {
     return () => window.clearInterval(interval);
   }, [selectedId]);
 
+  useEffect(() => {
+    return subscribeToChatSocket({
+      onNewMessage: ({ message }) => {
+        if (!message?.leadId) return;
+
+        setConversations((prev) => {
+          const exists = prev.some((item) => item._id === message.leadId);
+          if (!exists) return prev;
+
+          return prev
+            .map((item) =>
+              item._id === message.leadId
+                ? {
+                    ...item,
+                    lastMessage: message,
+                    unreadCount: selectedIdRef.current === message.leadId ? 0 : item.unreadCount + 1,
+                  }
+                : item
+            )
+            .sort((a, b) => {
+              const aTime = a.lastMessage?.createdAt || a.createdAt;
+              const bTime = b.lastMessage?.createdAt || b.createdAt;
+              return new Date(bTime).getTime() - new Date(aTime).getTime();
+            });
+        });
+
+        if (selectedIdRef.current === message.leadId) {
+          setMessages((prev) =>
+            prev.some((item) => item._id === message._id) ? prev : [...prev, message]
+          );
+          requestAnimationFrame(() => scrollToBottom());
+        }
+      },
+      onTypingStart: ({ leadId, senderRole }) => {
+        if (senderRole !== "buyer" || leadId !== selectedIdRef.current) return;
+        setIsTyping(true);
+        setTypingUserRole(senderRole);
+        if (receiverTypingTimeoutRef.current) {
+          window.clearTimeout(receiverTypingTimeoutRef.current);
+        }
+        receiverTypingTimeoutRef.current = window.setTimeout(() => {
+          setIsTyping(false);
+          setTypingUserRole(null);
+        }, 1800);
+      },
+      onTypingStop: ({ leadId, senderRole }) => {
+        if (senderRole !== "buyer" || leadId !== selectedIdRef.current) return;
+        if (receiverTypingTimeoutRef.current) {
+          window.clearTimeout(receiverTypingTimeoutRef.current);
+        }
+        setIsTyping(false);
+        setTypingUserRole(null);
+      },
+    });
+  }, [scrollToBottom]);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+      if (receiverTypingTimeoutRef.current) {
+        window.clearTimeout(receiverTypingTimeoutRef.current);
+      }
+      if (selectedIdRef.current) {
+        emitChatTypingStop(selectedIdRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const previousLeadId = selectedIdRef.current;
+    if (previousLeadId && previousLeadId !== selectedId) {
+      emitChatTypingStop(previousLeadId);
+    }
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    if (receiverTypingTimeoutRef.current) {
+      window.clearTimeout(receiverTypingTimeoutRef.current);
+    }
+    setIsTyping(false);
+    setTypingUserRole(null);
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
+  function handleComposerTyping(value: string) {
+    setComposer(value);
+
+    if (!selectedId || sending) return;
+
+    if (!value.trim()) {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+      emitChatTypingStop(selectedId);
+      return;
+    }
+
+    emitChatTypingStart(selectedId);
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    typingTimeoutRef.current = window.setTimeout(() => {
+      emitChatTypingStop(selectedId);
+    }, 1200);
+  }
+
   async function handleRefresh() {
     setRefreshing(true);
     setError("");
@@ -225,6 +343,10 @@ export default function SellerMessagesPage() {
     setError("");
     setMessages((prev) => [...prev, optimisticMessage]);
     setComposer("");
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    emitChatTypingStop(selectedConversation._id);
     requestAnimationFrame(() => scrollToBottom());
 
     try {
@@ -434,10 +556,20 @@ export default function SellerMessagesPage() {
                 <div className="border-t border-slate-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(249,252,250,0.98)_100%)] px-6 py-5 backdrop-blur-sm">
                   <form onSubmit={handleSendMessage} className="space-y-3">
                     <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3 transition-all duration-200 ease-out focus-within:-translate-y-0.5 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_16px_34px_rgba(15,23,42,0.08)]">
-                      <textarea value={composer} onChange={(event) => setComposer(event.target.value)} rows={2} placeholder="Type your reply to the buyer..." className="w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400" disabled={sending} />
+                      <textarea value={composer} onChange={(event) => handleComposerTyping(event.target.value)} rows={2} placeholder="Type your reply to the buyer..." className="w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400" disabled={sending} />
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <p className="max-w-[440px] text-xs leading-5 text-slate-500">Replies are sent into the buyer conversation and trigger message notifications.</p>
+                      <div className="max-w-[440px] text-xs leading-5 text-slate-500">
+                        {isTyping && typingUserRole === "buyer" ? (
+                          <div className="flex items-center gap-1.5 text-emerald-400">
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:0ms]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
+                          </div>
+                        ) : (
+                          "Replies are sent into the buyer conversation and trigger message notifications."
+                        )}
+                      </div>
                       <button type="submit" disabled={sending || !composer.trim()} className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(5,150,105,0.20)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_38px_rgba(5,150,105,0.26)] disabled:cursor-not-allowed disabled:opacity-60">
                         {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         Send message

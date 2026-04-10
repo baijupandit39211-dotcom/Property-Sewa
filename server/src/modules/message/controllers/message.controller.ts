@@ -57,6 +57,7 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
     const message = await messageService.createMessage({
       leadId: req.params.leadId,
       senderId: userId,
+      receiverId: receiverId || "",
       senderRole,
       text,
     });

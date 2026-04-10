@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { apiFetch } from "../lib/api";
 
 declare global {
@@ -38,6 +39,15 @@ function loadGoogleScript(): Promise<void> {
     document.head.appendChild(s);
   });
 }
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  show: (delay = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, delay, ease: "easeOut" },
+  }),
+};
 
 // ✅ remove "admin" from selectable register roles
 type Role = "buyer" | "seller" | "agent";
@@ -159,7 +169,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4fbf7]">
+    <div className="relative min-h-screen overflow-hidden bg-[#f4fbf7]">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute left-[-6rem] top-24 h-80 w-80 rounded-full bg-emerald-200/45 blur-3xl"
+          animate={{ x: [0, 26, -14, 0], y: [0, 24, -8, 0], scale: [1, 1.06, 0.96, 1] }}
+          transition={{ duration: 13, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-10 right-[-5rem] h-96 w-96 rounded-full bg-[#bde7d0]/35 blur-3xl"
+          animate={{ x: [0, -34, 12, 0], y: [0, -18, 16, 0], scale: [1, 0.94, 1.05, 1] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
       <header className="bg-[#2f5d46]">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="text-lg font-extrabold text-white">
@@ -169,14 +192,14 @@ export default function RegisterPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white hover:bg-white/15"
+              className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg"
             >
               Back to Home
             </Link>
 
             <Link
               href="/login"
-              className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white hover:bg-white/15"
+              className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg"
             >
               Log In
             </Link>
@@ -187,14 +210,32 @@ export default function RegisterPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-14">
+      <main className="relative z-10 mx-auto max-w-7xl px-6 py-14">
         <div className="grid items-center gap-12 md:grid-cols-2">
-          <div className="mx-auto w-full max-w-xl">
-            <h1 className="text-4xl font-extrabold text-slate-900">
+          <motion.div
+            className="mx-auto w-full max-w-xl"
+            initial="hidden"
+            animate="show"
+            variants={fadeUp}
+            custom={0}
+          >
+            <motion.h1
+              className="text-4xl font-extrabold text-slate-900"
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
+              custom={0.04}
+            >
               Create your account
-            </h1>
+            </motion.h1>
 
-            <div className="mt-8">
+            <motion.div
+              className="mt-8"
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
+              custom={0.1}
+            >
               <div className="text-sm font-semibold text-slate-700">
                 Account Type
               </div>
@@ -205,9 +246,9 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setRole("buyer")}
                   className={[
-                    "rounded-xl px-5 py-3 text-sm font-semibold transition",
+                    "rounded-xl px-5 py-3 text-sm font-semibold transition duration-300 hover:-translate-y-0.5",
                     role === "buyer"
-                      ? "bg-emerald-500 text-emerald-950"
+                      ? "bg-emerald-500 text-emerald-950 shadow-[0_16px_30px_rgba(16,185,129,0.18)]"
                       : "bg-white text-slate-700 ring-1 ring-emerald-200 hover:bg-emerald-50",
                   ].join(" ")}
                 >
@@ -219,9 +260,9 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setRole("seller")}
                   className={[
-                    "rounded-xl px-5 py-3 text-sm font-semibold transition",
+                    "rounded-xl px-5 py-3 text-sm font-semibold transition duration-300 hover:-translate-y-0.5",
                     role === "seller"
-                      ? "bg-emerald-500 text-emerald-950"
+                      ? "bg-emerald-500 text-emerald-950 shadow-[0_16px_30px_rgba(16,185,129,0.18)]"
                       : "bg-white text-slate-700 ring-1 ring-emerald-200 hover:bg-emerald-50",
                   ].join(" ")}
                 >
@@ -232,14 +273,21 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/admin-login")}
-                  className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-700 ring-1 ring-emerald-200 hover:bg-emerald-50"
+                  className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-700 ring-1 ring-emerald-200 transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-50"
                 >
                   Admin
                 </button>
               </div>
-            </div>
+            </motion.div>
 
-            <form onSubmit={onSubmit} className="mt-8 space-y-6">
+            <motion.form
+              onSubmit={onSubmit}
+              className="mt-8 space-y-6"
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
+              custom={0.16}
+            >
               <div>
                 <label className="text-sm font-semibold text-slate-700">
                   Name
@@ -248,7 +296,7 @@ export default function RegisterPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your name"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none placeholder:text-emerald-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
+                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
                 />
               </div>
 
@@ -261,7 +309,7 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   type="email"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none placeholder:text-emerald-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
+                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
                 />
               </div>
 
@@ -273,7 +321,7 @@ export default function RegisterPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Enter your phone number"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none placeholder:text-emerald-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
+                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
                 />
               </div>
 
@@ -285,7 +333,7 @@ export default function RegisterPage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Enter your address"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none placeholder:text-emerald-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
+                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
                 />
               </div>
 
@@ -298,7 +346,7 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   type="password"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none placeholder:text-emerald-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
+                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
                 />
               </div>
 
@@ -309,7 +357,7 @@ export default function RegisterPage() {
                 </div>
                 <div className="mt-2 h-2 w-full rounded-full bg-emerald-100">
                   <div
-                    className="h-2 rounded-full bg-emerald-500 transition-all"
+                    className="h-2 rounded-full bg-emerald-500 transition-all duration-500"
                     style={{ width: `${score}%` }}
                   />
                 </div>
@@ -328,12 +376,12 @@ export default function RegisterPage() {
               <button
                 disabled={loading}
                 type="submit"
-                className="h-14 w-full rounded-xl bg-emerald-500 text-sm font-extrabold text-emerald-950 hover:bg-emerald-400 disabled:opacity-60"
+                className="h-14 w-full rounded-xl bg-emerald-500 text-sm font-extrabold text-emerald-950 transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-[0_22px_38px_rgba(16,185,129,0.20)] disabled:opacity-60"
               >
                 {loading ? "Signing up..." : "Sign Up"}
               </button>
 
-              <div className="rounded-xl bg-slate-100 p-3">
+              <div className="rounded-xl bg-slate-100 p-3 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(15,23,42,0.06)]">
                 <div ref={googleBtnRef} className="flex justify-center" />
               </div>
 
@@ -343,20 +391,30 @@ export default function RegisterPage() {
                   Login
                 </Link>
               </p>
-            </form>
-          </div>
+            </motion.form>
+          </motion.div>
 
-          <div className="relative mx-auto hidden w-full max-w-xl md:block">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl">
+          <motion.div
+            className="relative mx-auto hidden w-full max-w-xl md:block"
+            initial={{ opacity: 0, x: 36 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.18 }}
+          >
+            <motion.div
+              className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl"
+              whileHover={{ y: -8, rotate: 1, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 180, damping: 16 }}
+            >
               <Image
                 src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80"
                 alt="House"
                 fill
-                className="object-cover"
+                className="object-cover transition duration-700"
                 priority
               />
-            </div>
-          </div>
+              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.08),transparent_40%,rgba(255,255,255,0.12))]" />
+            </motion.div>
+          </motion.div>
         </div>
       </main>
     </div>

@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "http";
 import jwt, { type JwtPayload, type Secret } from "jsonwebtoken";
 import { Server } from "socket.io";
+import Lead from "../models/Lead.model";
 import User from "../models/User.model";
 
 type JwtPayloadShape = JwtPayload & {
@@ -25,7 +26,20 @@ type NotificationReadAllPayload = {
   readAt: string;
 };
 
+type ChatNewMessagePayload = {
+  message: Record<string, unknown>;
+  senderId: string;
+  receiverId: string;
+};
+
+type ChatTypingPayload = {
+  leadId: string;
+  senderId: string;
+  senderRole: "buyer" | "seller";
+};
+
 let io: Server | null = null;
+const isTypingDebugEnabled = process.env.NODE_ENV !== "production";
 
 function getAllowedOrigins() {
   return [
@@ -38,6 +52,11 @@ function getAllowedOrigins() {
 
 function getSocketRoom(userId: string) {
   return `user:${userId}`;
+}
+
+function logTypingDebug(event: string, details: Record<string, unknown>) {
+  if (!isTypingDebugEnabled) return;
+  console.log(`[socket][typing] ${event}`, details);
 }
 
 function getCookieValue(rawCookie: string | undefined, name: string) {
@@ -64,6 +83,30 @@ function getSecret() {
 
 function verify(token: string) {
   return jwt.verify(token, getSecret()) as JwtPayloadShape;
+}
+
+async function resolveChatParticipants(leadId: string, userId: string) {
+  const lead = await Lead.findById(leadId).select("sellerId buyerId").lean();
+  if (!lead?.sellerId || !lead?.buyerId) return null;
+
+  const sellerId = String(lead.sellerId);
+  const buyerId = String(lead.buyerId);
+
+  if (sellerId === userId) {
+    return {
+      receiverId: buyerId,
+      senderRole: "seller" as const,
+    };
+  }
+
+  if (buyerId === userId) {
+    return {
+      receiverId: sellerId,
+      senderRole: "buyer" as const,
+    };
+  }
+
+  return null;
 }
 
 export function initNotificationSocket(server: HttpServer) {
@@ -116,6 +159,69 @@ export function initNotificationSocket(server: HttpServer) {
     }
 
     socket.join(getSocketRoom(userId));
+    logTypingDebug("socket_connected", {
+      socketId: socket.id,
+      userId,
+      room: getSocketRoom(userId),
+    });
+
+    socket.on("chat:typing_start", async (payload: { leadId?: string } = {}) => {
+      try {
+        const leadId = String(payload?.leadId || "").trim();
+        if (!leadId) return;
+        logTypingDebug("typing_start_received", {
+          socketId: socket.id,
+          userId,
+          leadId,
+        });
+
+        const participants = await resolveChatParticipants(leadId, userId);
+        if (!participants?.receiverId) return;
+
+        const room = getSocketRoom(participants.receiverId);
+        io?.to(room).emit("chat:typing_start", {
+          leadId,
+          senderId: userId,
+          senderRole: participants.senderRole,
+        } satisfies ChatTypingPayload);
+        logTypingDebug("typing_start_forwarded", {
+          leadId,
+          senderId: userId,
+          senderRole: participants.senderRole,
+          receiverId: participants.receiverId,
+          room,
+        });
+      } catch {}
+    });
+
+    socket.on("chat:typing_stop", async (payload: { leadId?: string } = {}) => {
+      try {
+        const leadId = String(payload?.leadId || "").trim();
+        if (!leadId) return;
+        logTypingDebug("typing_stop_received", {
+          socketId: socket.id,
+          userId,
+          leadId,
+        });
+
+        const participants = await resolveChatParticipants(leadId, userId);
+        if (!participants?.receiverId) return;
+
+        const room = getSocketRoom(participants.receiverId);
+        io?.to(room).emit("chat:typing_stop", {
+          leadId,
+          senderId: userId,
+          senderRole: participants.senderRole,
+        } satisfies ChatTypingPayload);
+        logTypingDebug("typing_stop_forwarded", {
+          leadId,
+          senderId: userId,
+          senderRole: participants.senderRole,
+          receiverId: participants.receiverId,
+          room,
+        });
+      } catch {}
+    });
   });
 
   return io;
@@ -134,4 +240,9 @@ export function emitNotificationRead(userId: string, payload: NotificationReadPa
 export function emitNotificationReadAll(userId: string, payload: NotificationReadAllPayload) {
   if (!io) return;
   io.to(getSocketRoom(userId)).emit("notification:read_all", payload);
+}
+
+export function emitChatNewMessage(userId: string, payload: ChatNewMessagePayload) {
+  if (!io) return;
+  io.to(getSocketRoom(userId)).emit("chat:new_message", payload);
 }
