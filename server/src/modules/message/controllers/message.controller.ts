@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import path from "path";
 import cloudinary from "../../../config/cloudinary";
 import { ApiError } from "../../../utils/apiError";
 import Lead from "../../../models/Lead.model";
@@ -6,16 +7,45 @@ import messageService from "../services/message.services";
 import emailService from "../services/email.services";
 import notificationService from "../../notifications/services/notification.services";
 
-async function uploadMessageFile(buffer: Buffer) {
-  return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
+async function uploadMessageFile(buffer: Buffer, mimetype: string, originalName: string) {
+  const isImage = mimetype.startsWith("image/");
+  const resourceType = isImage ? "image" : "raw";
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  if (!cloudName) {
+    throw new Error("Cloudinary cloud name is not configured");
+  }
+
+  return new Promise<{ url: string; downloadUrl: string; publicId: string }>((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: "property-sewa/chat",
-        resource_type: "auto",
+        resource_type: resourceType,
+        type: "upload",
+        access_mode: "public",
       },
       (err, result) => {
         if (err || !result) return reject(err || new Error("Upload failed"));
-        resolve({ url: result.secure_url, publicId: result.public_id });
+        const fileFormat = String(result.format || "").trim();
+        const extension =
+          fileFormat && !String(result.public_id).toLowerCase().endsWith(`.${fileFormat.toLowerCase()}`)
+            ? `.${fileFormat}`
+            : "";
+        const baseUrl = `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/v${result.version}/${result.public_id}${extension}`;
+        const safeOriginalName = path.basename(originalName || `attachment${extension}`);
+
+        resolve({
+          url: baseUrl,
+          downloadUrl: cloudinary.url(result.public_id, {
+            resource_type: resourceType,
+            type: "upload",
+            secure: true,
+            sign_url: false,
+            version: result.version,
+            format: fileFormat || undefined,
+            flags: `attachment:${safeOriginalName}`,
+          }),
+          publicId: result.public_id,
+        });
       }
     );
 
@@ -87,14 +117,20 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
     }
 
     let fileUrl: string | null = null;
+    let fileDownloadUrl: string | null = null;
     let fileType: "image" | "file" | null = null;
     let fileName: string | null = null;
 
     if (uploadFile) {
-      const uploaded = await uploadMessageFile(uploadFile.buffer);
+      const uploaded = await uploadMessageFile(
+        uploadFile.buffer,
+        uploadFile.mimetype,
+        uploadFile.originalname || "attachment"
+      );
       fileUrl = uploaded.url;
+      fileDownloadUrl = uploaded.downloadUrl;
       fileType = uploadFile.mimetype.startsWith("image/") ? "image" : "file";
-      fileName = uploadFile.originalname || "attachment";
+      fileName = path.basename(uploadFile.originalname || "attachment");
     }
 
     const message = await messageService.createMessage({
@@ -104,6 +140,7 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
       senderRole,
       text: rawText,
       fileUrl,
+      fileDownloadUrl,
       fileType,
       fileName,
     });
@@ -203,6 +240,19 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
     }
 
     return res.status(201).json({ success: true, message });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// DELETE /messages/:leadId/:messageId (requireUserAuth)
+export async function deleteMessage(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+
+    const message = await messageService.deleteMessage(req.params.leadId, req.params.messageId, userId);
+    return res.status(200).json({ success: true, message });
   } catch (err) {
     return next(err);
   }

@@ -11,7 +11,7 @@ import {
   subscribeToChatPresence,
   subscribeToChatSocket,
 } from "@/app/lib/chatSocket";
-import { ArrowLeft, Send, MessageCircle, Calendar, Building2, Check, CheckCheck, MapPin, Paperclip, FileText, Download } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, Calendar, Building2, Check, CheckCheck, MapPin, Paperclip, FileText, Download, Eye, Trash2 } from "lucide-react";
 
 type Lead = {
   _id: string;
@@ -43,9 +43,12 @@ type Message = {
   senderRole: "seller" | "buyer";
   text: string;
   fileUrl?: string | null;
+  fileDownloadUrl?: string | null;
   fileType?: "image" | "file" | null;
   fileName?: string | null;
   createdAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string | null;
   deliveredAt?: string | null;
   seenAt?: string | null;
 };
@@ -75,6 +78,8 @@ type VisitResponse = {
   sellerResponse?: string;
   createdAt: string;
 };
+const MAX_CHAT_IMAGE_SIZE = 10 * 1024 * 1024;
+const MAX_CHAT_DOCUMENT_SIZE = 20 * 1024 * 1024;
 
 function applyDeliveredStatus(messages: Message[], messageIds: string[], deliveredAt?: string) {
   if (!messageIds.length || !deliveredAt) return messages;
@@ -94,6 +99,24 @@ function applySeenStatus(messages: Message[], messageIds: string[], deliveredAt?
   );
 }
 
+function applyDeletedStatus(messages: Message[], messageId: string, deletedAt?: string) {
+  if (!messageId || !deletedAt) return messages;
+  return messages.map((message) =>
+    message._id === messageId
+      ? {
+          ...message,
+          text: "",
+          fileUrl: null,
+          fileDownloadUrl: null,
+          fileType: null,
+          fileName: null,
+          isDeleted: true,
+          deletedAt,
+        }
+      : message
+  );
+}
+
 function renderMessageStatus(message: Message) {
   if (message.seenAt) {
     return <CheckCheck className="h-3.5 w-3.5 text-sky-300" />;
@@ -104,7 +127,12 @@ function renderMessageStatus(message: Message) {
   return <Check className="h-3.5 w-3.5 text-white/70" />;
 }
 
-function renderAttachmentContent(message: Message) {
+function isPdfAttachment(message: Message) {
+  const target = `${message.fileName || ""} ${message.fileUrl || ""}`.toLowerCase();
+  return target.includes(".pdf");
+}
+
+function renderAttachmentContent(message: Message, onPreviewPdf: (url: string, name: string) => void) {
   if (!message.fileUrl || !message.fileType) return null;
 
   if (message.fileType === "image") {
@@ -115,17 +143,42 @@ function renderAttachmentContent(message: Message) {
     );
   }
 
+  const isPdf = isPdfAttachment(message);
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-black/5 px-3 py-3 ring-1 ring-inset ring-current/10">
       <FileText className="h-5 w-5 flex-none" />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold">{message.fileName || "Attachment"}</div>
       </div>
-      <a href={message.fileUrl} target="_blank" rel="noreferrer" download={message.fileName || undefined} className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/70 text-slate-700 transition hover:bg-white">
-        <Download className="h-4 w-4" />
-      </a>
+      <div className="flex items-center gap-2">
+        {isPdf && (
+          <button
+            type="button"
+            onClick={() => onPreviewPdf(message.fileUrl!, message.fileName || "PDF")}
+            className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            View
+          </button>
+        )}
+        <a href={message.fileDownloadUrl || message.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white">
+          <Download className="h-3.5 w-3.5" />
+          Download
+        </a>
+      </div>
     </div>
   );
+}
+
+function validateChatAttachment(file: File) {
+  const isImage = file.type.startsWith("image/");
+  const maxSize = isImage ? MAX_CHAT_IMAGE_SIZE : MAX_CHAT_DOCUMENT_SIZE;
+  if (file.size > maxSize) {
+    return isImage
+      ? "Image is too large. Maximum size is 10MB."
+      : "File is too large. Maximum size is 20MB.";
+  }
+  return "";
 }
 
 function formatCurrency(amount?: number, currency?: string) {
@@ -183,13 +236,16 @@ export default function BuyerMessageDetailPage() {
   const [lead, setLead] = useState<LeadWithVisit | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [sendError, setSendError] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
   const [isSellerOnline, setIsSellerOnline] = useState(false);
   const [isSocketDisconnected, setIsSocketDisconnected] = useState(false);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [pdfPreview, setPdfPreview] = useState<{ url: string; name: string } | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState("");
@@ -266,7 +322,7 @@ export default function BuyerMessageDetailPage() {
           acknowledgeSeen(currentLeadId, thread);
         }
       } catch (err: any) {
-        setError(err.message || "Failed to load data");
+        setLoadError(err.message || "Failed to load data");
       } finally {
         setLoading(false);
       }
@@ -302,6 +358,10 @@ export default function BuyerMessageDetailPage() {
       onMessageSeen: ({ leadId, messageIds, deliveredAt, seenAt }) => {
         if (String(leadId) !== activeLeadIdRef.current) return;
         setMessages((prev) => applySeenStatus(prev, messageIds, deliveredAt, seenAt));
+      },
+      onMessageDeleted: ({ leadId, messageId, deletedAt }) => {
+        if (String(leadId) !== activeLeadIdRef.current) return;
+        setMessages((prev) => applyDeletedStatus(prev, messageId, deletedAt));
       },
       onUserOnline: ({ leadId }) => {
         if (String(leadId) !== activeLeadIdRef.current) return;
@@ -431,13 +491,14 @@ export default function BuyerMessageDetailPage() {
       senderRole: "buyer",
       text: trimmedText,
       fileUrl: optimisticUrl,
+      fileDownloadUrl: optimisticUrl,
       fileType: file ? (file.type.startsWith("image/") ? "image" : "file") : null,
       fileName: file?.name || null,
       createdAt: new Date().toISOString(),
     };
 
     setSending(true);
-    setError("");
+    setSendError("");
     setMessages((prev) => [...prev, optimisticMessage]);
     if (!file) setNewMessage("");
     try {
@@ -468,7 +529,7 @@ export default function BuyerMessageDetailPage() {
     } catch (err: any) {
       setMessages((prev) => prev.filter((item) => item._id !== tempId));
       if (!file) setNewMessage(trimmedText);
-      setError(err.message || "Failed to send message");
+      setSendError(err.message || "Failed to send message");
     } finally {
       if (optimisticUrl) URL.revokeObjectURL(optimisticUrl);
       setSending(false);
@@ -484,7 +545,32 @@ export default function BuyerMessageDetailPage() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    await sendChatMessage("", file);
+    const validationError = validateChatAttachment(file);
+    if (validationError) {
+      setSendError(validationError);
+      return;
+    }
+    setIsUploadingAttachment(true);
+    try {
+      await sendChatMessage("", file);
+    } finally {
+      setIsUploadingAttachment(false);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!currentLeadId || sending) return;
+    try {
+      const response = await apiFetch<{ success: boolean; message: Message }>(
+        `/messages/${currentLeadId}/${messageId}`,
+        { method: "DELETE" }
+      );
+      setMessages((prev) =>
+        applyDeletedStatus(prev, messageId, response.message.deletedAt || new Date().toISOString())
+      );
+    } catch (err: any) {
+      setSendError(err.message || "Failed to delete message");
+    }
   };
 
   const handleMessageInput = (value: string) => {
@@ -570,11 +656,11 @@ export default function BuyerMessageDetailPage() {
     );
   }
 
-  if (error || !lead) {
+  if (loadError || !lead) {
     return (
       <main className="min-h-screen bg-emerald-50 px-6 py-8">
         <div className="mx-auto max-w-4xl text-center">
-          <p className="text-red-600">{error || "Inquiry not found"}</p>
+          <p className="text-red-600">{loadError || "Inquiry not found"}</p>
           <button 
             onClick={() => router.back()}
             className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
@@ -589,6 +675,28 @@ export default function BuyerMessageDetailPage() {
   return (
     <main className="min-h-screen bg-emerald-50 px-6 py-8">
       <div className="mx-auto max-w-4xl">
+        {pdfPreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
+            <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                <div className="min-w-0 truncate text-sm font-semibold text-slate-900">{pdfPreview.name}</div>
+                <button type="button" onClick={() => setPdfPreview(null)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200">
+                  Close
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 bg-slate-100">
+                <object data={pdfPreview.url} type="application/pdf" className="h-full w-full">
+                  <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-sm text-slate-600">
+                    <p>Preview is not available in this browser.</p>
+                    <a href={pdfPreview.url} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">
+                      Open PDF
+                    </a>
+                  </div>
+                </object>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="mb-6">
           <button 
@@ -810,8 +918,14 @@ export default function BuyerMessageDetailPage() {
                             : "bg-slate-100 text-slate-900"
                         }`}
                       >
-                          {renderAttachmentContent(message)}
-                          {message.text ? <p className={`text-sm ${message.fileUrl ? "mt-3" : ""}`}>{message.text}</p> : null}
+                          {message.isDeleted ? (
+                            <p className={`text-sm italic ${message.senderRole === "buyer" ? "text-white/80" : "text-slate-500"}`}>This message was deleted</p>
+                          ) : (
+                            <>
+                              {renderAttachmentContent(message, (url, name) => setPdfPreview({ url, name }))}
+                              {message.text ? <p className={`text-sm ${message.fileUrl ? "mt-3" : ""}`}>{message.text}</p> : null}
+                            </>
+                          )}
                           <div className={`mt-1 flex items-center gap-1.5 text-xs ${
                             message.senderRole === "buyer" ? "text-emerald-100" : "text-slate-500"
                           }`}>
@@ -821,6 +935,11 @@ export default function BuyerMessageDetailPage() {
                               minute: "2-digit"
                             })}
                           </span>
+                          {message.senderRole === "buyer" && !message.isDeleted ? (
+                            <button type="button" onClick={() => handleDeleteMessage(message._id)} className="inline-flex items-center text-current/80 transition hover:text-white">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
                           {message.senderRole === "buyer" ? renderMessageStatus(message) : null}
                         </div>
                       </div>
@@ -845,6 +964,7 @@ export default function BuyerMessageDetailPage() {
                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
                   </div>
                 )}
+                {isUploadingAttachment && <div className="mb-2 text-xs text-slate-500">Uploading attachment...</div>}
                 <form onSubmit={handleSendMessage} className="flex gap-2">
                   <button
                     type="button"
@@ -874,7 +994,7 @@ export default function BuyerMessageDetailPage() {
                     )}
                   </button>
                 </form>
-                {error && <div className="mt-3 text-sm text-rose-600">Failed to send message</div>}
+                {sendError && <div className="mt-3 text-sm text-rose-600">{sendError}</div>}
               </div>
             </div>
           </div>

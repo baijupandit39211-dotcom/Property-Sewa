@@ -40,6 +40,12 @@ type ChatStatusPayload = {
   seenAt?: string;
 };
 
+type ChatMessageDeletedPayload = {
+  leadId: string;
+  messageId: string;
+  deletedAt: string;
+};
+
 type ChatPresencePayload = {
   leadId: string;
   userId: string;
@@ -481,4 +487,9 @@ export function emitNotificationReadAll(userId: string, payload: NotificationRea
 export function emitChatNewMessage(userId: string, payload: ChatNewMessagePayload) {
   if (!io) return;
   io.to(getSocketRoom(userId)).emit("chat:new_message", payload);
+}
+
+export function emitChatMessageDeleted(userId: string, payload: ChatMessageDeletedPayload) {
+  if (!io) return;
+  io.to(getSocketRoom(userId)).emit("chat:message_deleted", payload);
 }

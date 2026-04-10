@@ -37,7 +37,7 @@ export const upload = multer({
 export const chatUpload = multer({
   storage,
   limits: {
-    fileSize: 8 * 1024 * 1024,
+    fileSize: 20 * 1024 * 1024,
     files: 1,
   },
   fileFilter: chatFileFilter,

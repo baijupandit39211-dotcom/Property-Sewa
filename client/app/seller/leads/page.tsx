@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Clock3,
   Download,
+  Eye,
   FileText,
   LoaderCircle,
   Mail,
@@ -29,6 +30,7 @@ import {
   Search,
   Send,
   Sparkles,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
@@ -82,9 +84,12 @@ type Message = {
   senderRole: "seller" | "buyer";
   text: string;
   fileUrl?: string | null;
+  fileDownloadUrl?: string | null;
   fileType?: "image" | "file" | null;
   fileName?: string | null;
   createdAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string | null;
   deliveredAt?: string | null;
   seenAt?: string | null;
 };
@@ -117,6 +122,8 @@ type VisitResponse = {
   actualTime?: string;
   createdAt: string;
 };
+const MAX_CHAT_IMAGE_SIZE = 10 * 1024 * 1024;
+const MAX_CHAT_DOCUMENT_SIZE = 20 * 1024 * 1024;
 
 const cn = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(" ");
 
@@ -276,6 +283,24 @@ function applySeenStatus(messages: Message[], messageIds: string[], deliveredAt?
   );
 }
 
+function applyDeletedStatus(messages: Message[], messageId: string, deletedAt?: string) {
+  if (!messageId || !deletedAt) return messages;
+  return messages.map((message) =>
+    message._id === messageId
+      ? {
+          ...message,
+          text: "",
+          fileUrl: null,
+          fileDownloadUrl: null,
+          fileType: null,
+          fileName: null,
+          isDeleted: true,
+          deletedAt,
+        }
+      : message
+  );
+}
+
 function renderMessageStatus(message: Message) {
   if (message.seenAt) {
     return <CheckCheck className="h-3.5 w-3.5 text-sky-300" />;
@@ -288,6 +313,7 @@ function renderMessageStatus(message: Message) {
 
 function getMessagePreview(message: Message | null | undefined, fallback: string) {
   if (!message) return fallback;
+  if (message.isDeleted) return "This message was deleted";
   if (message.text?.trim()) return message.text;
   if (message.fileType === "image") return "Photo";
   if (message.fileName) return message.fileName;
@@ -295,7 +321,12 @@ function getMessagePreview(message: Message | null | undefined, fallback: string
   return fallback;
 }
 
-function renderAttachmentContent(message: Message) {
+function isPdfAttachment(message: Message) {
+  const target = `${message.fileName || ""} ${message.fileUrl || ""}`.toLowerCase();
+  return target.includes(".pdf");
+}
+
+function renderAttachmentContent(message: Message, onPreviewPdf: (url: string, name: string) => void) {
   if (!message.fileUrl || !message.fileType) return null;
 
   if (message.fileType === "image") {
@@ -306,17 +337,42 @@ function renderAttachmentContent(message: Message) {
     );
   }
 
+  const isPdf = isPdfAttachment(message);
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-black/5 px-3 py-3 ring-1 ring-inset ring-current/10">
       <FileText className="h-5 w-5 flex-none" />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold">{message.fileName || "Attachment"}</div>
       </div>
-      <a href={message.fileUrl} target="_blank" rel="noreferrer" download={message.fileName || undefined} className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/70 text-slate-700 transition hover:bg-white">
-        <Download className="h-4 w-4" />
-      </a>
+      <div className="flex items-center gap-2">
+        {isPdf && (
+          <button
+            type="button"
+            onClick={() => onPreviewPdf(message.fileUrl!, message.fileName || "PDF")}
+            className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            View
+          </button>
+        )}
+        <a href={message.fileDownloadUrl || message.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white">
+          <Download className="h-3.5 w-3.5" />
+          Download
+        </a>
+      </div>
     </div>
   );
+}
+
+function validateChatAttachment(file: File) {
+  const isImage = file.type.startsWith("image/");
+  const maxSize = isImage ? MAX_CHAT_IMAGE_SIZE : MAX_CHAT_DOCUMENT_SIZE;
+  if (file.size > maxSize) {
+    return isImage
+      ? "Image is too large. Maximum size is 10MB."
+      : "File is too large. Maximum size is 20MB.";
+  }
+  return "";
 }
 
 function getBuyerSnapshot(lead: Lead | null) {
@@ -388,6 +444,8 @@ export default function SellerLeadsPage() {
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
   const [isBuyerOnline, setIsBuyerOnline] = useState(false);
   const [isSocketDisconnected, setIsSocketDisconnected] = useState(false);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [pdfPreview, setPdfPreview] = useState<{ url: string; name: string } | null>(null);
   const [aiSellerReplies, setAiSellerReplies] = useState<string[]>([]);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleLoading, setScheduleLoading] = useState(false);
@@ -596,6 +654,29 @@ export default function SellerLeadsPage() {
       onMessageSeen: ({ leadId, messageIds, deliveredAt, seenAt }) => {
         if (leadId !== selectedIdRef.current) return;
         setMessages((prev) => applySeenStatus(prev, messageIds, deliveredAt, seenAt));
+      },
+      onMessageDeleted: ({ leadId, messageId, deletedAt }) => {
+        if (leadId !== selectedIdRef.current) return;
+        setMessages((prev) => applyDeletedStatus(prev, messageId, deletedAt));
+        setLeads((prev) =>
+          prev.map((lead) =>
+            lead._id === leadId && lead.lastMessage?._id === messageId
+              ? {
+                  ...lead,
+                  lastMessage: {
+                    ...lead.lastMessage,
+                    text: "",
+                    fileUrl: null,
+                    fileDownloadUrl: null,
+                    fileType: null,
+                    fileName: null,
+                    isDeleted: true,
+                    deletedAt,
+                  } as Message,
+                }
+              : lead
+          )
+        );
       },
       onUserOnline: ({ leadId }) => {
         if (leadId !== selectedIdRef.current) return;
@@ -839,6 +920,7 @@ export default function SellerLeadsPage() {
       senderRole: "seller",
       text: optimisticText,
       fileUrl: optimisticUrl,
+      fileDownloadUrl: optimisticUrl,
       fileType: file ? (file.type.startsWith("image/") ? "image" : "file") : null,
       fileName: file?.name || null,
       createdAt: new Date().toISOString(),
@@ -919,7 +1001,39 @@ export default function SellerLeadsPage() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    await sendSellerMessage("", file);
+    const validationError = validateChatAttachment(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setIsUploadingAttachment(true);
+    try {
+      await sendSellerMessage("", file);
+    } finally {
+      setIsUploadingAttachment(false);
+    }
+  }
+
+  async function handleDeleteMessage(messageId: string) {
+    if (!selectedLead || sending) return;
+    try {
+      const response = await apiFetch<{ success: boolean; message: Message }>(
+        `/messages/${selectedLead._id}/${messageId}`,
+        { method: "DELETE" }
+      );
+      setMessages((prev) =>
+        applyDeletedStatus(prev, messageId, response.message.deletedAt || new Date().toISOString())
+      );
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead._id === selectedLead._id && lead.lastMessage?._id === messageId
+            ? { ...lead, lastMessage: { ...lead.lastMessage, ...response.message } as Message }
+            : lead
+        )
+      );
+    } catch (err: any) {
+      setError(err?.message || "Failed to delete message");
+    }
   }
 
   async function handleStatusChange(nextStatus: LeadStatus) {
@@ -1029,6 +1143,28 @@ export default function SellerLeadsPage() {
       {isSocketDisconnected && (
         <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
           Connection lost
+        </div>
+      )}
+      {pdfPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
+          <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div className="min-w-0 truncate text-sm font-semibold text-slate-900">{pdfPreview.name}</div>
+              <button type="button" onClick={() => setPdfPreview(null)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200">
+                Close
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 bg-slate-100">
+              <object data={pdfPreview.url} type="application/pdf" className="h-full w-full">
+                <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-sm text-slate-600">
+                  <p>Preview is not available in this browser.</p>
+                  <a href={pdfPreview.url} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">
+                    Open PDF
+                  </a>
+                </div>
+              </object>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1420,12 +1556,25 @@ export default function SellerLeadsPage() {
                                     : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200"
                                 )}
                               >
-                                  {renderAttachmentContent(message)}
-                                  {message.text ? <div className={cn("text-sm leading-6", message.fileUrl && "mt-3")}>{message.text}</div> : null}
+                                  {message.isDeleted ? (
+                                    <div className={cn("text-sm italic", mine ? "text-white/80" : "text-slate-500")}>
+                                      This message was deleted
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {renderAttachmentContent(message, (url, name) => setPdfPreview({ url, name }))}
+                                      {message.text ? <div className={cn("text-sm leading-6", message.fileUrl && "mt-3")}>{message.text}</div> : null}
+                                    </>
+                                  )}
                                 <div className={cn("mt-2 flex items-center gap-1.5 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
                                   {mine ? (
                                     <>
                                       <span>{`You | ${formatDateTime(message.createdAt)}`}</span>
+                                      {!message.isDeleted && (
+                                        <button type="button" onClick={() => handleDeleteMessage(message._id)} className="inline-flex items-center text-current/80 transition hover:text-white">
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      )}
                                       {renderMessageStatus(message)}
                                     </>
                                   ) : (
@@ -1482,6 +1631,8 @@ export default function SellerLeadsPage() {
                             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
                             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
                           </div>
+                        ) : isUploadingAttachment ? (
+                          "Uploading attachment..."
                         ) : error ? (
                           "Failed to send message"
                         ) : isSocketDisconnected ? (

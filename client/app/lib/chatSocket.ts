@@ -13,7 +13,13 @@ type ChatMessage = {
   } | null;
   senderRole: "seller" | "buyer";
   text: string;
+  fileUrl?: string | null;
+  fileDownloadUrl?: string | null;
+  fileType?: "image" | "file" | null;
+  fileName?: string | null;
   createdAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string | null;
   deliveredAt?: string | null;
   seenAt?: string | null;
 };
@@ -37,6 +43,12 @@ type ChatStatusPayload = {
   seenAt?: string;
 };
 
+type ChatMessageDeletedPayload = {
+  leadId: string;
+  messageId: string;
+  deletedAt: string;
+};
+
 type ChatPresencePayload = {
   leadId: string;
   userId: string;
@@ -49,6 +61,7 @@ type ChatSocketHandlers = {
   onNewMessage?: (payload: ChatNewMessagePayload) => void;
   onMessageDelivered?: (payload: ChatStatusPayload) => void;
   onMessageSeen?: (payload: ChatStatusPayload) => void;
+  onMessageDeleted?: (payload: ChatMessageDeletedPayload) => void;
   onUserOnline?: (payload: ChatPresencePayload) => void;
   onUserOffline?: (payload: ChatPresencePayload) => void;
   onTypingStart?: (payload: ChatTypingPayload) => void;
@@ -104,6 +117,8 @@ export function subscribeToChatSocket(handlers: ChatSocketHandlers) {
     handlers.onMessageDelivered?.(payload);
   const handleMessageSeen = (payload: ChatStatusPayload) =>
     handlers.onMessageSeen?.(payload);
+  const handleMessageDeleted = (payload: ChatMessageDeletedPayload) =>
+    handlers.onMessageDeleted?.(payload);
   const handleUserOnline = (payload: ChatPresencePayload) =>
     handlers.onUserOnline?.(payload);
   const handleUserOffline = (payload: ChatPresencePayload) =>
@@ -122,6 +137,7 @@ export function subscribeToChatSocket(handlers: ChatSocketHandlers) {
   activeSocket.on("chat:new_message", handleNewMessage);
   activeSocket.on("chat:message_delivered", handleMessageDelivered);
   activeSocket.on("chat:message_seen", handleMessageSeen);
+  activeSocket.on("chat:message_deleted", handleMessageDeleted);
   activeSocket.on("chat:user_online", handleUserOnline);
   activeSocket.on("chat:user_offline", handleUserOffline);
   activeSocket.on("chat:typing_start", handleTypingStart);
@@ -133,6 +149,7 @@ export function subscribeToChatSocket(handlers: ChatSocketHandlers) {
     activeSocket.off("chat:new_message", handleNewMessage);
     activeSocket.off("chat:message_delivered", handleMessageDelivered);
     activeSocket.off("chat:message_seen", handleMessageSeen);
+    activeSocket.off("chat:message_deleted", handleMessageDeleted);
     activeSocket.off("chat:user_online", handleUserOnline);
     activeSocket.off("chat:user_offline", handleUserOffline);
     activeSocket.off("chat:typing_start", handleTypingStart);

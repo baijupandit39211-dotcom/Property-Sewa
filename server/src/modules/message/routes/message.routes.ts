@@ -11,5 +11,6 @@ router.get("/:leadId", requireUserAuth, messageController.getMessagesByLead);
 
 // POST /messages/:leadId (requireUserAuth)
 router.post("/:leadId", requireUserAuth, chatUpload.single("file"), messageController.createMessage);
+router.delete("/:leadId/:messageId", requireUserAuth, messageController.deleteMessage);
 
 export default router;

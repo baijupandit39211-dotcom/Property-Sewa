@@ -1,6 +1,6 @@
 import Lead from "../../../models/Lead.model";
 import Message from "../../../models/Message.model";
-import { emitChatNewMessage } from "../../../realtime/notification.socket";
+import { emitChatMessageDeleted, emitChatNewMessage } from "../../../realtime/notification.socket";
 import { ApiError } from "../../../utils/apiError";
 
 const AUTO_REPLY_TEXT =
@@ -13,6 +13,7 @@ export interface CreateMessageInput {
   senderRole: "seller" | "buyer";
   text: string;
   fileUrl?: string | null;
+  fileDownloadUrl?: string | null;
   fileType?: "image" | "file" | null;
   fileName?: string | null;
 }
@@ -139,6 +140,7 @@ async function createMessage(input: CreateMessageInput) {
     isAutoReply: false,
     text: input.text,
     fileUrl: input.fileUrl || null,
+    fileDownloadUrl: input.fileDownloadUrl || null,
     fileType: input.fileType || null,
     fileName: input.fileName || null,
   });
@@ -196,8 +198,49 @@ async function createMessage(input: CreateMessageInput) {
   return message;
 }
 
+async function deleteMessage(leadId: string, messageId: string, userId: string) {
+  const lead = await Lead.findById(leadId).select("sellerId buyerId").lean();
+  if (!lead) throw new ApiError(404, "Lead not found");
+
+  const sellerId = String(lead.sellerId || "");
+  const buyerId = String(lead.buyerId || "");
+  if (sellerId !== userId && buyerId !== userId) {
+    throw new ApiError(403, "You can only manage messages for your own leads");
+  }
+
+  const message = await Message.findOne({ _id: messageId, leadId });
+  if (!message) throw new ApiError(404, "Message not found");
+  if (message.senderId?.toString() !== userId) {
+    throw new ApiError(403, "You can only delete your own messages");
+  }
+  if (message.isDeleted) {
+    return message;
+  }
+
+  message.isDeleted = true;
+  message.deletedAt = new Date();
+  message.text = "";
+  message.fileUrl = null;
+  message.fileDownloadUrl = null;
+  message.fileType = null;
+  message.fileName = null;
+  await message.save();
+
+  const receiverId = sellerId === userId ? buyerId : sellerId;
+  if (receiverId) {
+    emitChatMessageDeleted(receiverId, {
+      leadId,
+      messageId: String(message._id),
+      deletedAt: message.deletedAt.toISOString(),
+    });
+  }
+
+  return message;
+}
+
 export default {
   getMessagesByLead,
   createMessage,
+  deleteMessage,
   getSellerReplySuggestions,
 };
