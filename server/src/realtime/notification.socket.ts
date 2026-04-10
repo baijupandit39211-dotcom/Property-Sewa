@@ -40,6 +40,12 @@ type ChatStatusPayload = {
   seenAt?: string;
 };
 
+type ChatPresencePayload = {
+  leadId: string;
+  userId: string;
+  isOnline: boolean;
+};
+
 type ChatTypingPayload = {
   leadId: string;
   senderId: string;
@@ -48,6 +54,7 @@ type ChatTypingPayload = {
 
 let io: Server | null = null;
 const isTypingDebugEnabled = process.env.NODE_ENV !== "production";
+const connectedSocketsByUser = new Map<string, Set<string>>();
 
 function getAllowedOrigins() {
   return [
@@ -65,6 +72,11 @@ function getSocketRoom(userId: string) {
 function logTypingDebug(event: string, details: Record<string, unknown>) {
   if (!isTypingDebugEnabled) return;
   console.log(`[socket][typing] ${event}`, details);
+}
+
+function logPresenceDebug(event: string, details: Record<string, unknown>) {
+  if (!isTypingDebugEnabled) return;
+  console.log(`[socket][presence] ${event}`, details);
 }
 
 function getCookieValue(rawCookie: string | undefined, name: string) {
@@ -115,6 +127,79 @@ async function resolveChatParticipants(leadId: string, userId: string) {
   }
 
   return null;
+}
+
+async function emitPresenceForUser(userId: string, isOnline: boolean) {
+  if (!io) return;
+
+  const leads = await Lead.find({
+    buyerId: { $ne: null },
+    $or: [{ sellerId: userId }, { buyerId: userId }],
+  })
+    .select("_id sellerId buyerId")
+    .lean();
+
+  for (const lead of leads) {
+    if (!lead?.sellerId || !lead?.buyerId) continue;
+
+    const sellerId = String(lead.sellerId);
+    const buyerId = String(lead.buyerId);
+    const receiverId = sellerId === userId ? buyerId : buyerId === userId ? sellerId : "";
+
+    if (!receiverId) continue;
+
+    const payload = {
+      leadId: String(lead._id),
+      userId,
+      isOnline,
+    } satisfies ChatPresencePayload;
+
+    io.to(getSocketRoom(receiverId)).emit(isOnline ? "chat:user_online" : "chat:user_offline", payload);
+    logPresenceDebug(isOnline ? "presence_emitted_online" : "presence_emitted_offline", {
+      leadId: String(lead._id),
+      userId,
+      receiverId,
+    });
+  }
+}
+
+function markUserSocketConnected(userId: string, socketId: string) {
+  const existing = connectedSocketsByUser.get(userId) || new Set<string>();
+  const wasOffline = existing.size === 0;
+  existing.add(socketId);
+  connectedSocketsByUser.set(userId, existing);
+  logPresenceDebug("socket_connected", {
+    userId,
+    socketId,
+    socketCount: existing.size,
+  });
+  return wasOffline;
+}
+
+function markUserSocketDisconnected(userId: string, socketId: string) {
+  const existing = connectedSocketsByUser.get(userId);
+  if (!existing) return true;
+
+  existing.delete(socketId);
+  const isOffline = existing.size === 0;
+
+  if (isOffline) {
+    connectedSocketsByUser.delete(userId);
+  } else {
+    connectedSocketsByUser.set(userId, existing);
+  }
+
+  logPresenceDebug("socket_disconnected", {
+    userId,
+    socketId,
+    socketCount: existing.size,
+  });
+
+  return isOffline;
+}
+
+function isUserOnline(userId: string) {
+  return (connectedSocketsByUser.get(userId)?.size || 0) > 0;
 }
 
 async function updateMessageReceiptStatus(
@@ -216,10 +301,50 @@ export function initNotificationSocket(server: HttpServer) {
     }
 
     socket.join(getSocketRoom(userId));
+    const becameOnline = markUserSocketConnected(userId, socket.id);
     logTypingDebug("socket_connected", {
       socketId: socket.id,
       userId,
       room: getSocketRoom(userId),
+    });
+
+    if (becameOnline) {
+      void emitPresenceForUser(userId, true);
+    }
+
+    socket.on("chat:presence_subscribe", async (payload: { leadId?: string } = {}) => {
+      try {
+        const leadId = String(payload?.leadId || "").trim();
+        if (!leadId) return;
+
+        const participants = await resolveChatParticipants(leadId, userId);
+        if (!participants?.receiverId) return;
+
+        const presencePayload = {
+          leadId,
+          userId: participants.receiverId,
+          isOnline: isUserOnline(participants.receiverId),
+        } satisfies ChatPresencePayload;
+
+        socket.emit(
+          presencePayload.isOnline ? "chat:user_online" : "chat:user_offline",
+          presencePayload
+        );
+        logPresenceDebug("presence_subscribed", {
+          socketId: socket.id,
+          userId,
+          leadId,
+          otherUserId: participants.receiverId,
+          isOnline: presencePayload.isOnline,
+        });
+      } catch (error) {
+        console.error("[socket][chat] presence_subscribe_failed", {
+          socketId: socket.id,
+          userId,
+          payload,
+          error,
+        });
+      }
     });
 
     socket.on("chat:typing_start", async (payload: { leadId?: string } = {}) => {
@@ -324,6 +449,13 @@ export function initNotificationSocket(server: HttpServer) {
           payload,
           error,
         });
+      }
+    });
+
+    socket.on("disconnect", () => {
+      const becameOffline = markUserSocketDisconnected(userId, socket.id);
+      if (becameOffline) {
+        void emitPresenceForUser(userId, false);
       }
     });
   });

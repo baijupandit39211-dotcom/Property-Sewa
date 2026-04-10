@@ -8,9 +8,10 @@ import {
   emitChatSeen,
   emitChatTypingStart,
   emitChatTypingStop,
+  subscribeToChatPresence,
   subscribeToChatSocket,
 } from "@/app/lib/chatSocket";
-import { ArrowLeft, Send, MessageCircle, Calendar } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, Calendar, Building2, MapPin } from "lucide-react";
 
 type Lead = {
   _id: string;
@@ -18,6 +19,10 @@ type Lead = {
     _id: string;
     title: string;
     location: string;
+    images?: Array<{ url: string }>;
+    price?: number;
+    currency?: string;
+    status?: string;
   };
   name: string;
   email: string;
@@ -79,6 +84,11 @@ function getMessageStatus(message: Message) {
   return "Sent";
 }
 
+function formatCurrency(amount?: number, currency?: string) {
+  if (!amount) return "Price on request";
+  return `${currency || "Rs"} ${Number(amount).toLocaleString()}`;
+}
+
 export default function BuyerMessageDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -91,6 +101,7 @@ export default function BuyerMessageDetailPage() {
   const [sending, setSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
+  const [isSellerOnline, setIsSellerOnline] = useState(false);
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const activeLeadIdRef = useRef("");
@@ -170,6 +181,11 @@ export default function BuyerMessageDetailPage() {
 
   useEffect(() => {
     return subscribeToChatSocket({
+      onConnect: () => {
+        if (activeLeadIdRef.current) {
+          subscribeToChatPresence(activeLeadIdRef.current);
+        }
+      },
       onNewMessage: ({ message }) => {
         if (String(message?.leadId || "") !== activeLeadIdRef.current) return;
 
@@ -184,6 +200,14 @@ export default function BuyerMessageDetailPage() {
       onMessageSeen: ({ leadId, messageIds, deliveredAt, seenAt }) => {
         if (String(leadId) !== activeLeadIdRef.current) return;
         setMessages((prev) => applySeenStatus(prev, messageIds, deliveredAt, seenAt));
+      },
+      onUserOnline: ({ leadId }) => {
+        if (String(leadId) !== activeLeadIdRef.current) return;
+        setIsSellerOnline(true);
+      },
+      onUserOffline: ({ leadId }) => {
+        if (String(leadId) !== activeLeadIdRef.current) return;
+        setIsSellerOnline(false);
       },
       onTypingStart: ({ leadId, senderRole }) => {
         if (senderRole !== "seller" || String(leadId) !== activeLeadIdRef.current) return;
@@ -231,12 +255,18 @@ export default function BuyerMessageDetailPage() {
     }
     setIsTyping(false);
     setTypingUserRole(null);
+    setIsSellerOnline(false);
   }, [currentLeadId]);
 
   useEffect(() => {
     if (!currentLeadId || !messages.length) return;
     acknowledgeSeen(currentLeadId, messages);
   }, [currentLeadId, messages]);
+
+  useEffect(() => {
+    if (!currentLeadId) return;
+    subscribeToChatPresence(currentLeadId);
+  }, [currentLeadId]);
 
   const getVisitStatusColor = (status: string) => {
     switch (status) {
@@ -440,6 +470,53 @@ export default function BuyerMessageDetailPage() {
                   <MessageCircle className="h-5 w-5" />
                   Conversation
                 </h3>
+                <div className="mt-2 flex items-center gap-2 text-xs font-medium text-slate-500">
+                  <span
+                    className={`h-2 w-2 rounded-full ${isSellerOnline ? "bg-emerald-500" : "bg-slate-300"}`}
+                  />
+                  <span>{isSellerOnline ? "Online" : "Offline"}</span>
+                </div>
+                <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f5faf7_100%)]">
+                  <div className="grid gap-0 sm:grid-cols-[140px_minmax(0,1fr)]">
+                    <div className="h-28 bg-slate-100 sm:h-full">
+                      {lead.propertyId?.images?.[0]?.url ? (
+                        <img
+                          src={lead.propertyId.images[0].url}
+                          alt={lead.propertyId.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-full place-items-center text-slate-400">
+                          <Building2 className="h-7 w-7" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-3 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Pinned Property
+                          </div>
+                          <div className="mt-1 truncate text-base font-bold text-slate-950">
+                            {lead.propertyId?.title || "Unknown Property"}
+                          </div>
+                        </div>
+                        {lead.propertyId?.status && (
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                            {lead.propertyId.status}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {formatCurrency(lead.propertyId?.price, lead.propertyId?.currency)}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <MapPin className="h-4 w-4 text-slate-400" />
+                        <span className="truncate">{lead.propertyId?.location || "Unknown Location"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Messages List */}

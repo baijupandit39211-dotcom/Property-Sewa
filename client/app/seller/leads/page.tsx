@@ -35,6 +35,7 @@ import {
   emitChatSeen,
   emitChatTypingStart,
   emitChatTypingStop,
+  subscribeToChatPresence,
   subscribeToChatSocket,
 } from "@/app/lib/chatSocket";
 import { subscribeToNotificationSocket } from "@/app/lib/notificationsSocket";
@@ -252,6 +253,7 @@ export default function SellerLeadsPage() {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
+  const [isBuyerOnline, setIsBuyerOnline] = useState(false);
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const selectedIdRef = useRef("");
@@ -392,6 +394,11 @@ export default function SellerLeadsPage() {
 
   useEffect(() => {
     return subscribeToChatSocket({
+      onConnect: () => {
+        if (selectedIdRef.current) {
+          subscribeToChatPresence(selectedIdRef.current);
+        }
+      },
       onNewMessage: ({ message }) => {
         if (!message?.leadId) return;
 
@@ -431,6 +438,14 @@ export default function SellerLeadsPage() {
       onMessageSeen: ({ leadId, messageIds, deliveredAt, seenAt }) => {
         if (leadId !== selectedIdRef.current) return;
         setMessages((prev) => applySeenStatus(prev, messageIds, deliveredAt, seenAt));
+      },
+      onUserOnline: ({ leadId }) => {
+        if (leadId !== selectedIdRef.current) return;
+        setIsBuyerOnline(true);
+      },
+      onUserOffline: ({ leadId }) => {
+        if (leadId !== selectedIdRef.current) return;
+        setIsBuyerOnline(false);
       },
       onTypingStart: ({ leadId, senderRole }) => {
         if (senderRole !== "buyer" || leadId !== selectedIdRef.current) return;
@@ -496,6 +511,7 @@ export default function SellerLeadsPage() {
     }
     setIsTyping(false);
     setTypingUserRole(null);
+    setIsBuyerOnline(false);
     selectedIdRef.current = selectedId;
   }, [selectedId]);
 
@@ -503,6 +519,11 @@ export default function SellerLeadsPage() {
     if (!selectedId || !messages.length) return;
     acknowledgeSeen(selectedId, messages);
   }, [messages, selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    subscribeToChatPresence(selectedId);
+  }, [selectedId]);
 
   useEffect(() => {
     return () => {
@@ -876,6 +897,15 @@ export default function SellerLeadsPage() {
                       </div>
                       <div>
                         <h2 className="text-xl font-black tracking-tight text-slate-950">{selectedLead.name}</h2>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-medium text-slate-500">
+                          <span
+                            className={cn(
+                              "h-2 w-2 rounded-full",
+                              isBuyerOnline ? "bg-emerald-500" : "bg-slate-300"
+                            )}
+                          />
+                          <span>{isBuyerOnline ? "Online" : "Offline"}</span>
+                        </div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
                           <span className="inline-flex items-center gap-1.5">
                             <Building2 className="h-4 w-4 text-slate-400" />
@@ -901,6 +931,54 @@ export default function SellerLeadsPage() {
                         <Clock3 className="h-3.5 w-3.5" />
                         Opened {formatDateTime(selectedLead.createdAt)}
                       </span>
+                    </div>
+                  </div>
+                  <div className="mt-5 overflow-hidden rounded-[26px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f5faf7_100%)] shadow-sm">
+                    <div className="grid gap-0 sm:grid-cols-[160px_minmax(0,1fr)]">
+                      <div className="h-32 bg-slate-100 sm:h-full">
+                        {selectedLead.propertyId.images?.[0]?.url ? (
+                          <img
+                            src={selectedLead.propertyId.images[0].url}
+                            alt={selectedLead.propertyId.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="grid h-full place-items-center text-slate-400">
+                            <Building2 className="h-8 w-8" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-4 p-4 sm:p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                              Pinned Property
+                            </div>
+                            <div className="mt-1 text-lg font-black tracking-tight text-slate-950">
+                              {selectedLead.propertyId.title}
+                            </div>
+                          </div>
+                          {selectedLead.propertyId.status && (
+                            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                              {selectedLead.propertyId.status}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-sm">
+                          <span className="font-semibold text-slate-900">
+                            {formatCurrency(selectedLead.propertyId.price, selectedLead.propertyId.currency)}
+                          </span>
+                          {selectedLead.propertyId.listingType && (
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                              {selectedLead.propertyId.listingType}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <MapPin className="h-4 w-4 text-slate-400" />
+                          <span className="truncate">{selectedLead.propertyId.location}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
