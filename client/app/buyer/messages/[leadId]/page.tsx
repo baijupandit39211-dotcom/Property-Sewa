@@ -11,7 +11,7 @@ import {
   subscribeToChatPresence,
   subscribeToChatSocket,
 } from "@/app/lib/chatSocket";
-import { ArrowLeft, Send, MessageCircle, Calendar, Building2, Check, CheckCheck, MapPin } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, Calendar, Building2, Check, CheckCheck, MapPin, Paperclip, FileText, Download } from "lucide-react";
 
 type Lead = {
   _id: string;
@@ -42,6 +42,9 @@ type Message = {
   } | null;
   senderRole: "seller" | "buyer";
   text: string;
+  fileUrl?: string | null;
+  fileType?: "image" | "file" | null;
+  fileName?: string | null;
   createdAt: string;
   deliveredAt?: string | null;
   seenAt?: string | null;
@@ -99,6 +102,30 @@ function renderMessageStatus(message: Message) {
     return <CheckCheck className="h-3.5 w-3.5 text-white/80" />;
   }
   return <Check className="h-3.5 w-3.5 text-white/70" />;
+}
+
+function renderAttachmentContent(message: Message) {
+  if (!message.fileUrl || !message.fileType) return null;
+
+  if (message.fileType === "image") {
+    return (
+      <a href={message.fileUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl">
+        <img src={message.fileUrl} alt={message.fileName || "Shared image"} className="max-h-72 w-full rounded-2xl object-cover" />
+      </a>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-black/5 px-3 py-3 ring-1 ring-inset ring-current/10">
+      <FileText className="h-5 w-5 flex-none" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold">{message.fileName || "Attachment"}</div>
+      </div>
+      <a href={message.fileUrl} target="_blank" rel="noreferrer" download={message.fileName || undefined} className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/70 text-slate-700 transition hover:bg-white">
+        <Download className="h-4 w-4" />
+      </a>
+    </div>
+  );
 }
 
 function formatCurrency(amount?: number, currency?: string) {
@@ -174,6 +201,7 @@ export default function BuyerMessageDetailPage() {
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const activeLeadIdRef = useRef("");
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const visitSystemMessage = getVisitSystemMessage(lead?.visit);
 
   const acknowledgeDelivered = (leadId: string, thread: Message[]) => {
@@ -390,41 +418,73 @@ export default function BuyerMessageDetailPage() {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
+  const sendChatMessage = async (text: string, file?: File | null) => {
+    const trimmedText = text.trim();
+    if ((!trimmedText && !file) || !currentLeadId) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticUrl = file && file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+    const optimisticMessage: Message = {
+      _id: tempId,
+      leadId: currentLeadId,
+      senderId: null,
+      senderRole: "buyer",
+      text: trimmedText,
+      fileUrl: optimisticUrl,
+      fileType: file ? (file.type.startsWith("image/") ? "image" : "file") : null,
+      fileName: file?.name || null,
+      createdAt: new Date().toISOString(),
+    };
 
     setSending(true);
+    setError("");
+    setMessages((prev) => [...prev, optimisticMessage]);
+    if (!file) setNewMessage("");
     try {
       if (typingTimeoutRef.current) {
         window.clearTimeout(typingTimeoutRef.current);
       }
       emitChatTypingStop(currentLeadId);
 
-      // Send message
-      const response = await apiFetch<{ success: boolean; message: Message }>(`/messages/${params.leadId}`, {
-        method: "POST",
-        body: JSON.stringify({ text: newMessage }),
-      });
+      const requestInit: RequestInit =
+        file
+          ? (() => {
+              const formData = new FormData();
+              if (trimmedText) formData.append("text", trimmedText);
+              formData.append("file", file);
+              return { method: "POST", body: formData };
+            })()
+          : {
+              method: "POST",
+              body: JSON.stringify({ text: trimmedText }),
+            };
+
+      const response = await apiFetch<{ success: boolean; message: Message }>(`/messages/${params.leadId}`, requestInit);
 
       if (response.success) {
-        // Clear input
         setNewMessage("");
-        
-        // Re-fetch messages to get updated list
-        const messageResponse = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${params.leadId}`);
-        if (messageResponse.success) {
-          const thread = messageResponse.items || [];
-          setMessages(thread);
-          acknowledgeDelivered(currentLeadId, thread);
-          acknowledgeSeen(currentLeadId, thread);
-        }
+        setMessages((prev) => prev.map((item) => (item._id === tempId ? response.message : item)));
       }
     } catch (err: any) {
+      setMessages((prev) => prev.filter((item) => item._id !== tempId));
+      if (!file) setNewMessage(trimmedText);
       setError(err.message || "Failed to send message");
     } finally {
+      if (optimisticUrl) URL.revokeObjectURL(optimisticUrl);
       setSending(false);
     }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendChatMessage(newMessage);
+  };
+
+  const handleAttachmentChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    await sendChatMessage("", file);
   };
 
   const handleMessageInput = (value: string) => {
@@ -750,10 +810,11 @@ export default function BuyerMessageDetailPage() {
                             : "bg-slate-100 text-slate-900"
                         }`}
                       >
-                        <p className="text-sm">{message.text}</p>
-                        <div className={`mt-1 flex items-center gap-1.5 text-xs ${
-                          message.senderRole === "buyer" ? "text-emerald-100" : "text-slate-500"
-                        }`}>
+                          {renderAttachmentContent(message)}
+                          {message.text ? <p className={`text-sm ${message.fileUrl ? "mt-3" : ""}`}>{message.text}</p> : null}
+                          <div className={`mt-1 flex items-center gap-1.5 text-xs ${
+                            message.senderRole === "buyer" ? "text-emerald-100" : "text-slate-500"
+                          }`}>
                           <span>
                             {new Date(message.createdAt).toLocaleTimeString([], {
                               hour: "2-digit",
@@ -769,7 +830,14 @@ export default function BuyerMessageDetailPage() {
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-slate-200">
+                <div className="p-4 border-t border-slate-200">
+                <input
+                  ref={attachmentInputRef}
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={handleAttachmentChange}
+                />
                 {isTyping && typingUserRole === "seller" && (
                   <div className="mb-2 flex items-center gap-1.5 text-slate-400">
                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:0ms]" />
@@ -778,6 +846,14 @@ export default function BuyerMessageDetailPage() {
                   </div>
                 )}
                 <form onSubmit={handleSendMessage} className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => attachmentInputRef.current?.click()}
+                    disabled={sending}
+                    className="px-3 py-2 border border-slate-300 rounded-lg text-slate-600 hover:border-emerald-500 hover:text-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </button>
                   <input
                     type="text"
                     value={newMessage}

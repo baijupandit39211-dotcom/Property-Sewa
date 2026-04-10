@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireUserAuth } from "../../auth/middleware/auth.middleware";
+import { chatUpload } from "../../../middleware/upload.middleware";
 import * as messageController from "../controllers/message.controller";
 
 const router = Router();
@@ -9,6 +10,6 @@ router.get("/:leadId/suggestions", requireUserAuth, messageController.getSellerR
 router.get("/:leadId", requireUserAuth, messageController.getMessagesByLead);
 
 // POST /messages/:leadId (requireUserAuth)
-router.post("/:leadId", requireUserAuth, messageController.createMessage);
+router.post("/:leadId", requireUserAuth, chatUpload.single("file"), messageController.createMessage);
 
 export default router;

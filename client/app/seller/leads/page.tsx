@@ -17,10 +17,13 @@ import {
   CheckCheck,
   ChevronRight,
   Clock3,
+  Download,
+  FileText,
   LoaderCircle,
   Mail,
   MapPin,
   MessageCircle,
+  Paperclip,
   Phone,
   RefreshCw,
   Search,
@@ -78,6 +81,9 @@ type Message = {
   senderId: { _id: string; name: string; email: string } | null;
   senderRole: "seller" | "buyer";
   text: string;
+  fileUrl?: string | null;
+  fileType?: "image" | "file" | null;
+  fileName?: string | null;
   createdAt: string;
   deliveredAt?: string | null;
   seenAt?: string | null;
@@ -280,6 +286,39 @@ function renderMessageStatus(message: Message) {
   return <Check className="h-3.5 w-3.5 text-white/70" />;
 }
 
+function getMessagePreview(message: Message | null | undefined, fallback: string) {
+  if (!message) return fallback;
+  if (message.text?.trim()) return message.text;
+  if (message.fileType === "image") return "Photo";
+  if (message.fileName) return message.fileName;
+  if (message.fileType === "file") return "File attachment";
+  return fallback;
+}
+
+function renderAttachmentContent(message: Message) {
+  if (!message.fileUrl || !message.fileType) return null;
+
+  if (message.fileType === "image") {
+    return (
+      <a href={message.fileUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl">
+        <img src={message.fileUrl} alt={message.fileName || "Shared image"} className="max-h-72 w-full rounded-2xl object-cover" />
+      </a>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-black/5 px-3 py-3 ring-1 ring-inset ring-current/10">
+      <FileText className="h-5 w-5 flex-none" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold">{message.fileName || "Attachment"}</div>
+      </div>
+      <a href={message.fileUrl} target="_blank" rel="noreferrer" download={message.fileName || undefined} className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/70 text-slate-700 transition hover:bg-white">
+        <Download className="h-4 w-4" />
+      </a>
+    </div>
+  );
+}
+
 function getBuyerSnapshot(lead: Lead | null) {
   if (!lead) return null;
   const buyer = typeof lead.buyerId === "object" && lead.buyerId ? lead.buyerId : null;
@@ -331,6 +370,7 @@ export default function SellerLeadsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -785,17 +825,22 @@ export default function SellerLeadsPage() {
     }
   }
 
-  async function sendSellerMessage(text: string) {
-    if (!selectedLead || !text.trim() || sending) return;
+  async function sendSellerMessage(text: string, file?: File | null) {
+    if (!selectedLead || sending) return;
 
     const optimisticText = text.trim();
+    if (!optimisticText && !file) return;
     const tempId = `temp-${Date.now()}`;
+    const optimisticUrl = file && file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
     const optimisticMessage: Message = {
       _id: tempId,
       leadId: selectedLead._id,
       senderId: null,
       senderRole: "seller",
       text: optimisticText,
+      fileUrl: optimisticUrl,
+      fileType: file ? (file.type.startsWith("image/") ? "image" : "file") : null,
+      fileName: file?.name || null,
       createdAt: new Date().toISOString(),
     };
 
@@ -812,12 +857,22 @@ export default function SellerLeadsPage() {
     requestAnimationFrame(() => scrollToBottom());
 
     try {
+      const requestInit: RequestInit =
+        file
+          ? (() => {
+              const formData = new FormData();
+              if (optimisticText) formData.append("text", optimisticText);
+              formData.append("file", file);
+              return { method: "POST", body: formData };
+            })()
+          : {
+              method: "POST",
+              body: JSON.stringify({ text: optimisticText }),
+            };
+
       const response = await apiFetch<{ success: boolean; message: Message }>(
         `/messages/${selectedLead._id}`,
-        {
-          method: "POST",
-          body: JSON.stringify({ text: optimisticText }),
-        }
+        requestInit
       );
 
       setMessages((prev) => prev.map((item) => (item._id === tempId ? response.message : item)));
@@ -843,9 +898,10 @@ export default function SellerLeadsPage() {
       await loadThread(selectedLead._id, true);
     } catch (err: any) {
       setMessages((prev) => prev.filter((item) => item._id !== tempId));
-      setComposer(optimisticText);
+      if (!file) setComposer(optimisticText);
       setError(err?.message || "Failed to send message");
     } finally {
+      if (optimisticUrl) URL.revokeObjectURL(optimisticUrl);
       setSending(false);
     }
   }
@@ -857,6 +913,13 @@ export default function SellerLeadsPage() {
 
   async function handleQuickReplyClick(reply: string) {
     await sendSellerMessage(reply);
+  }
+
+  async function handleAttachmentChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    await sendSellerMessage("", file);
   }
 
   async function handleStatusChange(nextStatus: LeadStatus) {
@@ -1031,7 +1094,7 @@ export default function SellerLeadsPage() {
             ) : (
               filteredLeads.map((lead) => {
                 const active = selectedId === lead._id;
-                const preview = lead.lastMessage?.text || lead.message || "No message content";
+                const preview = getMessagePreview(lead.lastMessage, lead.message || "No message content");
                 return (
                   <button
                     key={lead._id}
@@ -1357,7 +1420,8 @@ export default function SellerLeadsPage() {
                                     : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200"
                                 )}
                               >
-                                <div className="text-sm leading-6">{message.text}</div>
+                                  {renderAttachmentContent(message)}
+                                  {message.text ? <div className={cn("text-sm leading-6", message.fileUrl && "mt-3")}>{message.text}</div> : null}
                                 <div className={cn("mt-2 flex items-center gap-1.5 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
                                   {mine ? (
                                     <>
@@ -1380,6 +1444,13 @@ export default function SellerLeadsPage() {
 
                 <div className="border-t border-slate-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(249,252,250,0.98)_100%)] px-6 py-5">
                   <form onSubmit={handleSendMessage} className="space-y-3">
+                    <input
+                      ref={attachmentInputRef}
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={handleAttachmentChange}
+                    />
                     <div className="flex flex-wrap gap-2">
                       {displayedSellerReplies.map((reply) => (
                         <button
@@ -1419,14 +1490,24 @@ export default function SellerLeadsPage() {
                           "Replies stay attached to this inquiry thread and trigger buyer notifications automatically."
                         )}
                       </div>
-                      <button
-                        type="submit"
-                        disabled={sending || !composer.trim()}
-                        className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(5,150,105,0.20)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_38px_rgba(5,150,105,0.26)] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        Send reply
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => attachmentInputRef.current?.click()}
+                          disabled={sending || !selectedLead}
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Paperclip className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={sending || !composer.trim()}
+                          className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(5,150,105,0.20)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_38px_rgba(5,150,105,0.26)] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                          Send reply
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>

@@ -16,10 +16,13 @@ import {
   CheckCheck,
   ChevronRight,
   Clock3,
+  Download,
+  FileText,
   LoaderCircle,
   Mail,
   MapPin,
   MessageCircle,
+  Paperclip,
   Phone,
   RefreshCw,
   Search,
@@ -54,6 +57,9 @@ type Message = {
   senderId: { _id: string; name: string; email: string } | null;
   senderRole: "seller" | "buyer";
   text: string;
+  fileUrl?: string | null;
+  fileType?: "image" | "file" | null;
+  fileName?: string | null;
   createdAt: string;
   deliveredAt?: string | null;
   seenAt?: string | null;
@@ -115,6 +121,39 @@ function renderMessageStatus(message: Message) {
   return <Check className="h-3.5 w-3.5 text-white/70" />;
 }
 
+function getMessagePreview(message: Message | null, fallback: string) {
+  if (!message) return fallback;
+  if (message.text?.trim()) return message.text;
+  if (message.fileType === "image") return "Photo";
+  if (message.fileName) return message.fileName;
+  if (message.fileType === "file") return "File attachment";
+  return fallback;
+}
+
+function renderAttachmentContent(message: Message) {
+  if (!message.fileUrl || !message.fileType) return null;
+
+  if (message.fileType === "image") {
+    return (
+      <a href={message.fileUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl">
+        <img src={message.fileUrl} alt={message.fileName || "Shared image"} className="max-h-72 w-full rounded-2xl object-cover" />
+      </a>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-black/5 px-3 py-3 ring-1 ring-inset ring-current/10">
+      <FileText className="h-5 w-5 flex-none" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold">{message.fileName || "Attachment"}</div>
+      </div>
+      <a href={message.fileUrl} target="_blank" rel="noreferrer" download={message.fileName || undefined} className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/70 text-slate-700 transition hover:bg-white">
+        <Download className="h-4 w-4" />
+      </a>
+    </div>
+  );
+}
+
 export default function SellerMessagesPage() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -131,6 +170,7 @@ export default function SellerMessagesPage() {
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
   const [isSocketDisconnected, setIsSocketDisconnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const selectedIdRef = useRef("");
@@ -459,6 +499,61 @@ export default function SellerMessagesPage() {
     }
   }
 
+  async function handleAttachmentChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !selectedConversation || sending) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticUrl = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+    const optimisticMessage: Message = {
+      _id: tempId,
+      leadId: selectedConversation._id,
+      senderId: null,
+      senderRole: "seller",
+      text: "",
+      fileUrl: optimisticUrl,
+      fileType: file.type.startsWith("image/") ? "image" : "file",
+      fileName: file.name,
+      createdAt: new Date().toISOString(),
+    };
+
+    setSending(true);
+    setError("");
+    setMessages((prev) => [...prev, optimisticMessage]);
+    requestAnimationFrame(() => scrollToBottom());
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await apiFetch<{ success: boolean; message: Message }>(
+        `/messages/${selectedConversation._id}`,
+        { method: "POST", body: formData }
+      );
+
+      setMessages((prev) => prev.map((item) => (item._id === tempId ? response.message : item)));
+      setConversations((prev) =>
+        prev
+          .map((item) =>
+            item._id === selectedConversation._id ? { ...item, lastMessage: response.message } : item
+          )
+          .sort((a, b) => {
+            const aTime = a.lastMessage?.createdAt || a.createdAt;
+            const bTime = b.lastMessage?.createdAt || b.createdAt;
+            return new Date(bTime).getTime() - new Date(aTime).getTime();
+          })
+      );
+      await loadThread(selectedConversation._id, true);
+    } catch (err: any) {
+      setMessages((prev) => prev.filter((item) => item._id !== tempId));
+      setError(err?.message || "Failed to send message");
+    } finally {
+      if (optimisticUrl) URL.revokeObjectURL(optimisticUrl);
+      setSending(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -550,7 +645,7 @@ export default function SellerMessagesPage() {
             ) : (
               filteredConversations.map((conversation) => {
                 const active = selectedId === conversation._id;
-                const preview = conversation.lastMessage?.text || conversation.message || "No message content";
+                const preview = getMessagePreview(conversation.lastMessage, conversation.message || "No message content");
                 const hasUnread = conversation.unreadCount > 0;
                 return (
                   <button
@@ -665,14 +760,15 @@ export default function SellerMessagesPage() {
                         </div>
                       </div>
                       {messages.map((message) => {
-                        const mine = message.senderRole === "seller";
-                        return (
-                          <div key={message._id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
-                            <div className={cn("max-w-[80%] rounded-[22px] px-4 py-3 shadow-sm transition-transform duration-200 ease-out hover:-translate-y-0.5", mine ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_16px_30px_rgba(5,150,105,0.18)]" : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200")}>
-                              <div className="text-sm leading-6">{message.text}</div>
-                              <div className={cn("mt-2 flex items-center gap-1.5 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
-                                {mine ? (
-                                  <>
+                          const mine = message.senderRole === "seller";
+                          return (
+                            <div key={message._id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                              <div className={cn("max-w-[80%] rounded-[22px] px-4 py-3 shadow-sm transition-transform duration-200 ease-out hover:-translate-y-0.5", mine ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_16px_30px_rgba(5,150,105,0.18)]" : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200")}>
+                                {renderAttachmentContent(message)}
+                                {message.text ? <div className={cn("text-sm leading-6", message.fileUrl && "mt-3")}>{message.text}</div> : null}
+                                <div className={cn("mt-2 flex items-center gap-1.5 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
+                                  {mine ? (
+                                    <>
                                     <span>{`You | ${formatDateTime(message.createdAt)}`}</span>
                                     {renderMessageStatus(message)}
                                   </>
@@ -690,6 +786,7 @@ export default function SellerMessagesPage() {
                 </div>
                 <div className="border-t border-slate-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(249,252,250,0.98)_100%)] px-6 py-5 backdrop-blur-sm">
                   <form onSubmit={handleSendMessage} className="space-y-3">
+                    <input ref={attachmentInputRef} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx" className="hidden" onChange={handleAttachmentChange} />
                     <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3 transition-all duration-200 ease-out focus-within:-translate-y-0.5 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_16px_34px_rgba(15,23,42,0.08)]">
                       <textarea value={composer} onChange={(event) => handleComposerTyping(event.target.value)} rows={2} placeholder="Type your reply to the buyer..." className="w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400" disabled={sending} />
                     </div>
@@ -709,10 +806,15 @@ export default function SellerMessagesPage() {
                           "Replies are sent into the buyer conversation and trigger message notifications."
                         )}
                       </div>
-                      <button type="submit" disabled={sending || !composer.trim()} className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(5,150,105,0.20)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_38px_rgba(5,150,105,0.26)] disabled:cursor-not-allowed disabled:opacity-60">
-                        {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        Send message
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button type="button" onClick={() => attachmentInputRef.current?.click()} disabled={sending || !selectedConversation} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
+                          <Paperclip className="h-4 w-4" />
+                        </button>
+                        <button type="submit" disabled={sending || !composer.trim()} className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(5,150,105,0.20)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_38px_rgba(5,150,105,0.26)] disabled:cursor-not-allowed disabled:opacity-60">
+                          {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                          Send message
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>

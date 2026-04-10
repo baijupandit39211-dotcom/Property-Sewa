@@ -12,6 +12,9 @@ export interface CreateMessageInput {
   receiverId: string;
   senderRole: "seller" | "buyer";
   text: string;
+  fileUrl?: string | null;
+  fileType?: "image" | "file" | null;
+  fileName?: string | null;
 }
 
 async function getSellerReplySuggestions(leadId: string, userId: string) {
@@ -135,6 +138,9 @@ async function createMessage(input: CreateMessageInput) {
     senderRole: input.senderRole,
     isAutoReply: false,
     text: input.text,
+    fileUrl: input.fileUrl || null,
+    fileType: input.fileType || null,
+    fileName: input.fileName || null,
   });
 
   await message.save();

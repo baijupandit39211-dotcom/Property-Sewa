@@ -1,9 +1,27 @@
 import type { Request, Response, NextFunction } from "express";
+import cloudinary from "../../../config/cloudinary";
 import { ApiError } from "../../../utils/apiError";
 import Lead from "../../../models/Lead.model";
 import messageService from "../services/message.services";
 import emailService from "../services/email.services";
 import notificationService from "../../notifications/services/notification.services";
+
+async function uploadMessageFile(buffer: Buffer) {
+  return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "property-sewa/chat",
+        resource_type: "auto",
+      },
+      (err, result) => {
+        if (err || !result) return reject(err || new Error("Upload failed"));
+        resolve({ url: result.secure_url, publicId: result.public_id });
+      }
+    );
+
+    uploadStream.end(buffer);
+  });
+}
 
 // GET /messages/:leadId (requireUserAuth)
 export async function getMessagesByLead(req: Request, res: Response, next: NextFunction) {
@@ -37,8 +55,9 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
     const userId = req.user?.userId as string;
     if (!userId) throw new ApiError(401, "Unauthorized");
 
-    const { text } = req.body;
-    if (!text) throw new ApiError(400, "Message text is required");
+    const rawText = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+    const uploadFile = req.file;
+    if (!rawText && !uploadFile) throw new ApiError(400, "Message text or file is required");
 
     // Get lead to determine user role and property info
     const lead = await Lead.findById(req.params.leadId).populate('propertyId');
@@ -67,12 +86,26 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
       throw new ApiError(403, "You can only send messages for your own leads");
     }
 
+    let fileUrl: string | null = null;
+    let fileType: "image" | "file" | null = null;
+    let fileName: string | null = null;
+
+    if (uploadFile) {
+      const uploaded = await uploadMessageFile(uploadFile.buffer);
+      fileUrl = uploaded.url;
+      fileType = uploadFile.mimetype.startsWith("image/") ? "image" : "file";
+      fileName = uploadFile.originalname || "attachment";
+    }
+
     const message = await messageService.createMessage({
       leadId: req.params.leadId,
       senderId: userId,
       receiverId: receiverId || "",
       senderRole,
-      text,
+      text: rawText,
+      fileUrl,
+      fileType,
+      fileName,
     });
 
     if (senderRole === "seller" && lead.status === "new") {
@@ -111,7 +144,7 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
             messageId: String(message._id),
             propertyId: lead.propertyId ? String((lead.propertyId as any)?._id || lead.propertyId) : null,
             senderRole,
-            previewText: text,
+            previewText: rawText || fileName || "Attachment",
           },
           entityType: "lead",
           entityId: req.params.leadId,
@@ -153,7 +186,7 @@ export async function createMessage(req: Request, res: Response, next: NextFunct
                   <strong>Message:</strong>
                 </div>
                 <div style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; color: #666; font-style: italic;">
-                  ${text}
+                  ${rawText || fileName || "Attachment"}
                 </div>
               </div>
               <div style="text-align: center; margin-top: 20px;">

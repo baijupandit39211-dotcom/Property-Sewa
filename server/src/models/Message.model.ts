@@ -10,7 +10,10 @@ const MessageSchema = new Schema(
       required: true 
     },
     isAutoReply: { type: Boolean, default: false },
-    text: { type: String, required: true, trim: true },
+    text: { type: String, default: "", trim: true },
+    fileUrl: { type: String, default: null },
+    fileType: { type: String, enum: ["image", "file"], default: null },
+    fileName: { type: String, default: null, trim: true },
     deliveredAt: { type: Date, default: null },
     seenAt: { type: Date, default: null },
   },
