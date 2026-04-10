@@ -11,10 +11,8 @@ import {
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  BellRing,
   Building2,
   CalendarClock,
-  CheckCircle2,
   ChevronRight,
   Clock3,
   LoaderCircle,
@@ -27,7 +25,6 @@ import {
   Send,
   Sparkles,
   UserRound,
-  XCircle,
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
 import {
@@ -40,7 +37,7 @@ import {
 } from "@/app/lib/chatSocket";
 import { subscribeToNotificationSocket } from "@/app/lib/notificationsSocket";
 
-type LeadStatus = "new" | "contacted" | "closed";
+type LeadStatus = "new" | "contacted" | "visit_scheduled" | "negotiating" | "reserved" | "closed";
 type FilterStatus = "all" | LeadStatus;
 
 type Buyer = {
@@ -101,39 +98,43 @@ type Lead = {
   latestVisit?: Visit | null;
 };
 
+type VisitResponse = {
+  _id: string;
+  requestedDate: string;
+  preferredTime: string;
+  status: Visit["status"];
+  message?: string;
+  sellerResponse?: string;
+  actualDate?: string;
+  actualTime?: string;
+  createdAt: string;
+};
+
 const cn = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(" ");
 
 const STATUS_OPTIONS: Array<{ value: FilterStatus; label: string }> = [
   { value: "all", label: "All" },
   { value: "new", label: "New" },
   { value: "contacted", label: "Contacted" },
+  { value: "visit_scheduled", label: "Visit Scheduled" },
+  { value: "negotiating", label: "Negotiating" },
+  { value: "reserved", label: "Reserved" },
   { value: "closed", label: "Closed" },
 ];
 
-const LEAD_STATUS_ACTIONS: Array<{
-  value: LeadStatus;
-  label: string;
-  icon: typeof MessageCircle;
-  tone: string;
-}> = [
-  {
-    value: "new",
-    label: "Reopen",
-    icon: BellRing,
-    tone: "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100",
-  },
-  {
-    value: "contacted",
-    label: "Mark contacted",
-    icon: CheckCircle2,
-    tone: "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100",
-  },
-  {
-    value: "closed",
-    label: "Close lead",
-    icon: XCircle,
-    tone: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
-  },
+const DEFAULT_SELLER_REPLIES = [
+  "Yes, it is available",
+  "Can we schedule a visit?",
+  "Please share your preferred time",
+];
+
+const LEAD_STAGE_OPTIONS: Array<{ value: LeadStatus; label: string }> = [
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "visit_scheduled", label: "Visit Scheduled" },
+  { value: "negotiating", label: "Negotiating" },
+  { value: "reserved", label: "Reserved" },
+  { value: "closed", label: "Closed" },
 ];
 
 const getStatusTone = (status: LeadStatus) =>
@@ -141,7 +142,18 @@ const getStatusTone = (status: LeadStatus) =>
     ? "bg-sky-50 text-sky-700 ring-sky-200"
     : status === "contacted"
       ? "bg-amber-50 text-amber-700 ring-amber-200"
-      : "bg-emerald-50 text-emerald-700 ring-emerald-200";
+      : status === "visit_scheduled"
+        ? "bg-cyan-50 text-cyan-700 ring-cyan-200"
+        : status === "negotiating"
+          ? "bg-violet-50 text-violet-700 ring-violet-200"
+          : status === "reserved"
+            ? "bg-orange-50 text-orange-700 ring-orange-200"
+            : "bg-emerald-50 text-emerald-700 ring-emerald-200";
+
+const formatLeadStageLabel = (status: LeadStatus) =>
+  status === "visit_scheduled"
+    ? "Visit Scheduled"
+    : status.charAt(0).toUpperCase() + status.slice(1);
 
 const getVisitTone = (status: Visit["status"]) =>
   status === "requested"
@@ -233,6 +245,42 @@ function getBuyerSnapshot(lead: Lead | null) {
   };
 }
 
+function getSmartSellerReplies(messages: Message[], lead: Lead | null) {
+  const latestBuyerMessage = [...messages].reverse().find((message) => message.senderRole === "buyer");
+  if (!latestBuyerMessage) return DEFAULT_SELLER_REPLIES;
+
+  const text = latestBuyerMessage.text.toLowerCase();
+  const suggestions: string[] = [];
+
+  if (text.includes("available")) {
+    suggestions.push("Yes, it is available");
+  }
+
+  if (
+    text.includes("visit") ||
+    text.includes("schedule") ||
+    text.includes("see property") ||
+    text.includes("see the property")
+  ) {
+    suggestions.push("Can we schedule a visit?");
+  }
+
+  if (text.includes("price") || text.includes("negotiable") || text.includes("final")) {
+    suggestions.push("The price is negotiable");
+  }
+
+  if (text.includes("time") || text.includes("when")) {
+    suggestions.push("Please share your preferred time");
+  }
+
+  if ((text.includes("location") || text.includes("where")) && lead?.propertyId?.location) {
+    suggestions.push(`The property is located in ${lead.propertyId.location}.`);
+  }
+
+  const uniqueSuggestions = [...new Set(suggestions)];
+  return uniqueSuggestions.length > 0 ? uniqueSuggestions : DEFAULT_SELLER_REPLIES;
+}
+
 export default function SellerLeadsPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -254,6 +302,15 @@ export default function SellerLeadsPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
   const [isBuyerOnline, setIsBuyerOnline] = useState(false);
+  const [aiSellerReplies, setAiSellerReplies] = useState<string[]>([]);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleError, setScheduleError] = useState("");
+  const [scheduleForm, setScheduleForm] = useState({
+    requestedDate: "",
+    preferredTime: "10:00",
+    message: "",
+  });
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const selectedIdRef = useRef("");
@@ -263,14 +320,21 @@ export default function SellerLeadsPage() {
     () => leads.find((lead) => lead._id === selectedId) || null,
     [leads, selectedId]
   );
+  const smartSellerReplies = useMemo(
+    () => getSmartSellerReplies(messages, selectedLead),
+    [messages, selectedLead]
+  );
+  const displayedSellerReplies = aiSellerReplies.length > 0 ? aiSellerReplies : smartSellerReplies;
 
   const stats = useMemo(() => {
     const total = leads.length;
     const fresh = leads.filter((lead) => lead.status === "new").length;
-    const contacted = leads.filter((lead) => lead.status === "contacted").length;
+    const active = leads.filter((lead) =>
+      ["contacted", "visit_scheduled", "negotiating", "reserved"].includes(lead.status)
+    ).length;
     const closed = leads.filter((lead) => lead.status === "closed").length;
     const withVisit = leads.filter((lead) => lead.latestVisit).length;
-    return { total, fresh, contacted, closed, withVisit };
+    return { total, fresh, active, closed, withVisit };
   }, [leads]);
 
   const filteredLeads = useMemo(() => {
@@ -521,6 +585,36 @@ export default function SellerLeadsPage() {
   }, [messages, selectedId]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadAiSellerReplies() {
+      if (!selectedLead) {
+        setAiSellerReplies([]);
+        return;
+      }
+
+      try {
+        const response = await apiFetch<{ success: boolean; suggestions?: string[] }>(
+          `/messages/${selectedLead._id}/suggestions`
+        );
+
+        if (cancelled) return;
+        const suggestions = (response.suggestions || []).filter(Boolean);
+        setAiSellerReplies([...new Set(suggestions)].slice(0, 3));
+      } catch {
+        if (!cancelled) {
+          setAiSellerReplies([]);
+        }
+      }
+    }
+
+    loadAiSellerReplies();
+    return () => {
+      cancelled = true;
+    };
+  }, [messages, selectedLead]);
+
+  useEffect(() => {
     if (!selectedId) return;
     subscribeToChatPresence(selectedId);
   }, [selectedId]);
@@ -574,11 +668,73 @@ export default function SellerLeadsPage() {
     }
   }
 
-  async function handleSendMessage(event: React.FormEvent) {
-    event.preventDefault();
-    if (!selectedLead || !composer.trim() || sending) return;
+  function openScheduleVisit() {
+    const now = new Date();
+    const defaultDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      .toISOString()
+      .slice(0, 10);
 
-    const optimisticText = composer.trim();
+    setScheduleError("");
+    setScheduleForm({
+      requestedDate: scheduleForm.requestedDate || defaultDate,
+      preferredTime: scheduleForm.preferredTime || "10:00",
+      message:
+        scheduleForm.message ||
+        `Visit request for ${selectedLead?.propertyId.title || "this property"}.`,
+    });
+    setScheduleOpen(true);
+  }
+
+  function closeScheduleVisit() {
+    setScheduleOpen(false);
+    setScheduleLoading(false);
+    setScheduleError("");
+  }
+
+  async function handleScheduleVisit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!selectedLead || !scheduleForm.requestedDate || !scheduleForm.preferredTime || scheduleLoading) return;
+
+    setScheduleLoading(true);
+    setScheduleError("");
+
+    try {
+      const response = await apiFetch<{ success: boolean; visit: VisitResponse }>(
+        `/visits/lead/${selectedLead._id}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            requestedDate: scheduleForm.requestedDate,
+            preferredTime: scheduleForm.preferredTime,
+            message: scheduleForm.message,
+          }),
+        }
+      );
+
+      const nextVisit = response.visit;
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead._id === selectedLead._id
+            ? {
+                ...lead,
+                latestVisit: nextVisit,
+              }
+            : lead
+        )
+      );
+      await loadInbox();
+      await loadThread(selectedLead._id, true);
+      closeScheduleVisit();
+    } catch (err: any) {
+      setScheduleError(err?.message || "Failed to schedule visit");
+      setScheduleLoading(false);
+    }
+  }
+
+  async function sendSellerMessage(text: string) {
+    if (!selectedLead || !text.trim() || sending) return;
+
+    const optimisticText = text.trim();
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage: Message = {
       _id: tempId,
@@ -638,6 +794,15 @@ export default function SellerLeadsPage() {
     } finally {
       setSending(false);
     }
+  }
+
+  async function handleSendMessage(event: React.FormEvent) {
+    event.preventDefault();
+    await sendSellerMessage(composer);
+  }
+
+  async function handleQuickReplyClick(reply: string) {
+    await sendSellerMessage(reply);
   }
 
   async function handleStatusChange(nextStatus: LeadStatus) {
@@ -704,8 +869,8 @@ export default function SellerLeadsPage() {
                 <div className="mt-1 text-2xl font-black">{stats.fresh}</div>
               </div>
               <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Contacted</div>
-                <div className="mt-1 text-2xl font-black">{stats.contacted}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Active</div>
+                <div className="mt-1 text-2xl font-black">{stats.active}</div>
               </div>
               <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
                 <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">With visits</div>
@@ -850,7 +1015,7 @@ export default function SellerLeadsPage() {
                               getStatusTone(lead.status)
                             )}
                           >
-                            {lead.status}
+                            {formatLeadStageLabel(lead.status)}
                           </span>
                           {lead.latestVisit && (
                             <span
@@ -925,7 +1090,7 @@ export default function SellerLeadsPage() {
                           getStatusTone(selectedLead.status)
                         )}
                       >
-                        {selectedLead.status}
+                        {formatLeadStageLabel(selectedLead.status)}
                       </span>
                       <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
                         <Clock3 className="h-3.5 w-3.5" />
@@ -981,32 +1146,109 @@ export default function SellerLeadsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {LEAD_STATUS_ACTIONS.map((action) => {
-                      const Icon = action.icon;
-                      const active = selectedLead.status === action.value;
-                      return (
-                        <button
-                          key={action.value}
-                          type="button"
-                          disabled={!!statusSaving}
-                          onClick={() => handleStatusChange(action.value)}
-                          className={cn(
-                            "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
-                            active ? "border-slate-950 bg-slate-950 text-white" : action.tone
-                          )}
-                        >
-                          {statusSaving === action.value ? (
-                            <LoaderCircle className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Icon className="h-4 w-4" />
-                          )}
-                          {action.label}
-                        </button>
-                      );
-                    })}
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={openScheduleVisit}
+                      className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                    >
+                      <CalendarClock className="h-4 w-4" />
+                      Schedule Visit
+                    </button>
+                    <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                        Stage
+                      </span>
+                      <select
+                        value={selectedLead.status}
+                        onChange={(event) => handleStatusChange(event.target.value as LeadStatus)}
+                        disabled={!!statusSaving}
+                        className="bg-transparent text-sm font-semibold text-slate-800 outline-none disabled:cursor-not-allowed"
+                      >
+                        {LEAD_STAGE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      {statusSaving && <LoaderCircle className="h-4 w-4 animate-spin text-slate-500" />}
+                    </div>
                   </div>
                 </div>
+
+                {scheduleOpen && selectedLead && (
+                  <div className="border-t border-slate-100 bg-slate-50 px-6 py-5">
+                    <form onSubmit={handleScheduleVisit} className="space-y-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-bold text-slate-950">Schedule Visit</div>
+                          <div className="text-xs text-slate-500">
+                            Create a visit request for {selectedLead.propertyId.title}.
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={closeScheduleVisit}
+                          className="text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                        >
+                          Close
+                        </button>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="space-y-1">
+                          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Date</span>
+                          <input
+                            type="date"
+                            value={scheduleForm.requestedDate}
+                            onChange={(event) =>
+                              setScheduleForm((prev) => ({ ...prev, requestedDate: event.target.value }))
+                            }
+                            className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-400"
+                            min={new Date().toISOString().slice(0, 10)}
+                          />
+                        </label>
+                        <label className="space-y-1">
+                          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Time</span>
+                          <input
+                            type="time"
+                            value={scheduleForm.preferredTime}
+                            onChange={(event) =>
+                              setScheduleForm((prev) => ({ ...prev, preferredTime: event.target.value }))
+                            }
+                            className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-400"
+                          />
+                        </label>
+                      </div>
+                      <label className="block space-y-1">
+                        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Note</span>
+                        <textarea
+                          value={scheduleForm.message}
+                          onChange={(event) =>
+                            setScheduleForm((prev) => ({ ...prev, message: event.target.value }))
+                          }
+                          rows={2}
+                          className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-400"
+                          placeholder="Optional note for the visit request"
+                        />
+                      </label>
+                      {scheduleError && (
+                        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                          {scheduleError}
+                        </div>
+                      )}
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={scheduleLoading || !scheduleForm.requestedDate || !scheduleForm.preferredTime}
+                          className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-5 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {scheduleLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CalendarClock className="h-4 w-4" />}
+                          Create visit request
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
 
                 <div className="min-h-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f4f8f5_0%,#ffffff_26%)] px-6 py-6">
                   {threadLoading ? (
@@ -1060,6 +1302,19 @@ export default function SellerLeadsPage() {
 
                 <div className="border-t border-slate-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(249,252,250,0.98)_100%)] px-6 py-5">
                   <form onSubmit={handleSendMessage} className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {displayedSellerReplies.map((reply) => (
+                        <button
+                          key={reply}
+                          type="button"
+                          disabled={sending}
+                          onClick={() => handleQuickReplyClick(reply)}
+                          className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {reply}
+                        </button>
+                      ))}
+                    </div>
                     <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3 transition focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_16px_34px_rgba(15,23,42,0.08)]">
                       <textarea
                         value={composer}
@@ -1137,7 +1392,7 @@ export default function SellerLeadsPage() {
                             getStatusTone(selectedLead.status)
                           )}
                         >
-                          {selectedLead.status}
+                          {formatLeadStageLabel(selectedLead.status)}
                         </span>
                       </div>
                     </div>

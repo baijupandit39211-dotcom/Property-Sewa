@@ -1,7 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { ApiError } from "../../../utils/apiError";
+import Lead from "../../../models/Lead.model";
 import Property from "../../../models/Property.model";
 import visitService from "../services/visit.services";
+import notificationService from "../../notifications/services/notification.services";
 
 // POST /visits (create visit request)
 export async function createVisit(req: Request, res: Response, next: NextFunction) {
@@ -36,6 +38,81 @@ export async function createVisit(req: Request, res: Response, next: NextFunctio
       preferredTime,
       message,
     });
+
+    return res.status(201).json({ success: true, visit });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// POST /visits/lead/:leadId (create visit request from active chat lead)
+export async function createVisitFromLead(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+
+    const { requestedDate, preferredTime, message } = req.body;
+    if (!requestedDate || !preferredTime) {
+      throw new ApiError(400, "Requested date and preferred time are required");
+    }
+
+    const lead = await Lead.findById(req.params.leadId).populate("propertyId");
+    if (!lead) throw new ApiError(404, "Lead not found");
+    if (!lead.buyerId) throw new ApiError(400, "Lead buyer not found");
+
+    const sellerId = String(lead.sellerId);
+    const buyerId = String(lead.buyerId);
+    const propertyId = String((lead.propertyId as any)?._id || lead.propertyId);
+
+    if (sellerId !== userId && buyerId !== userId) {
+      throw new ApiError(403, "You can only schedule visits for your own lead chats");
+    }
+
+    const normalizedRequestedDate = new Date(requestedDate);
+    normalizedRequestedDate.setHours(0, 0, 0, 0);
+
+    const visit = await visitService.createVisit({
+      propertyId,
+      buyerId,
+      sellerId,
+      requestedDate: normalizedRequestedDate,
+      preferredTime,
+      message,
+    });
+
+    const initiatedBySeller = sellerId === userId;
+    const recipientId = initiatedBySeller ? buyerId : sellerId;
+    const recipientRole = initiatedBySeller ? "buyer" : "seller";
+    const propertyTitle = (lead.propertyId as any)?.title || "Property";
+    const notificationLink = initiatedBySeller
+      ? `/buyer/messages/${req.params.leadId}`
+      : `/seller/leads?lead=${req.params.leadId}`;
+
+    try {
+      await notificationService.createNotification({
+        recipientId,
+        recipientRole,
+        actorId: userId,
+        type: "alert.general",
+        category: "alert",
+        title: "Visit request created",
+        body: `A visit request was created for ${propertyTitle} on ${normalizedRequestedDate.toLocaleDateString()} at ${preferredTime}.`,
+        data: {
+          leadId: req.params.leadId,
+          propertyId,
+          visitId: String((visit as any)._id),
+          requestedDate: normalizedRequestedDate.toISOString(),
+          preferredTime,
+        },
+        entityType: "lead",
+        entityId: req.params.leadId,
+        link: notificationLink,
+        priority: "medium",
+        deliveryChannels: ["in_app"],
+      });
+    } catch (notificationError) {
+      console.error("Failed to create visit notification:", notificationError);
+    }
 
     return res.status(201).json({ success: true, visit });
   } catch (err) {

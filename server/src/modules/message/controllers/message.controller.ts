@@ -18,6 +18,19 @@ export async function getMessagesByLead(req: Request, res: Response, next: NextF
   }
 }
 
+// GET /messages/:leadId/suggestions (requireUserAuth)
+export async function getSellerReplySuggestions(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+
+    const suggestions = await messageService.getSellerReplySuggestions(req.params.leadId, userId);
+    return res.status(200).json({ success: true, suggestions });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 // POST /messages/:leadId (requireUserAuth)
 export async function createMessage(req: Request, res: Response, next: NextFunction) {
   try {

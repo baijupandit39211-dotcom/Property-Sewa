@@ -60,6 +60,19 @@ type LeadWithVisit = Lead & {
   visit?: Visit;
 };
 
+type VisitResponse = {
+  _id: string;
+  propertyId?: string;
+  status: Visit["status"];
+  requestedDate: string;
+  preferredTime: string;
+  actualDate?: string;
+  actualTime?: string;
+  message?: string;
+  sellerResponse?: string;
+  createdAt: string;
+};
+
 function applyDeliveredStatus(messages: Message[], messageIds: string[], deliveredAt?: string) {
   if (!messageIds.length || !deliveredAt) return messages;
   const targets = new Set(messageIds);
@@ -102,6 +115,14 @@ export default function BuyerMessageDetailPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
   const [isSellerOnline, setIsSellerOnline] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleError, setScheduleError] = useState("");
+  const [scheduleForm, setScheduleForm] = useState({
+    requestedDate: "",
+    preferredTime: "10:00",
+    message: "",
+  });
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const activeLeadIdRef = useRef("");
@@ -376,6 +397,55 @@ export default function BuyerMessageDetailPage() {
     }, 1200);
   };
 
+  const openScheduleVisit = () => {
+    const now = new Date();
+    const defaultDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      .toISOString()
+      .slice(0, 10);
+
+    setScheduleError("");
+    setScheduleForm({
+      requestedDate: scheduleForm.requestedDate || defaultDate,
+      preferredTime: scheduleForm.preferredTime || "10:00",
+      message: scheduleForm.message || `I'd like to schedule a visit for ${lead?.propertyId?.title || "this property"}.`,
+    });
+    setScheduleOpen(true);
+  };
+
+  const closeScheduleVisit = () => {
+    setScheduleOpen(false);
+    setScheduleLoading(false);
+    setScheduleError("");
+  };
+
+  const handleScheduleVisit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!currentLeadId || !lead || !scheduleForm.requestedDate || !scheduleForm.preferredTime || scheduleLoading) return;
+
+    setScheduleLoading(true);
+    setScheduleError("");
+
+    try {
+      const response = await apiFetch<{ success: boolean; visit: VisitResponse }>(
+        `/visits/lead/${currentLeadId}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            requestedDate: scheduleForm.requestedDate,
+            preferredTime: scheduleForm.preferredTime,
+            message: scheduleForm.message,
+          }),
+        }
+      );
+
+      setLead((prev) => (prev ? { ...prev, visit: response.visit as Visit } : prev));
+      closeScheduleVisit();
+    } catch (err: any) {
+      setScheduleError(err?.message || "Failed to schedule visit");
+      setScheduleLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen bg-emerald-50 px-6 py-8">
@@ -476,6 +546,16 @@ export default function BuyerMessageDetailPage() {
                   />
                   <span>{isSellerOnline ? "Online" : "Offline"}</span>
                 </div>
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={openScheduleVisit}
+                    className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Schedule Visit
+                  </button>
+                </div>
                 <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f5faf7_100%)]">
                   <div className="grid gap-0 sm:grid-cols-[140px_minmax(0,1fr)]">
                     <div className="h-28 bg-slate-100 sm:h-full">
@@ -521,6 +601,70 @@ export default function BuyerMessageDetailPage() {
 
               {/* Messages List */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {scheduleOpen && (
+                  <form onSubmit={handleScheduleVisit} className="mb-4 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold text-slate-950">Schedule Visit</div>
+                        <div className="text-xs text-slate-500">Create a visit request from this chat.</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={closeScheduleVisit}
+                        className="text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        type="date"
+                        value={scheduleForm.requestedDate}
+                        onChange={(event) =>
+                          setScheduleForm((prev) => ({ ...prev, requestedDate: event.target.value }))
+                        }
+                        min={new Date().toISOString().slice(0, 10)}
+                        className="rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-400"
+                      />
+                      <input
+                        type="time"
+                        value={scheduleForm.preferredTime}
+                        onChange={(event) =>
+                          setScheduleForm((prev) => ({ ...prev, preferredTime: event.target.value }))
+                        }
+                        className="rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-400"
+                      />
+                    </div>
+                    <textarea
+                      value={scheduleForm.message}
+                      onChange={(event) =>
+                        setScheduleForm((prev) => ({ ...prev, message: event.target.value }))
+                      }
+                      rows={2}
+                      placeholder="Optional note"
+                      className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-400"
+                    />
+                    {scheduleError && (
+                      <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                        {scheduleError}
+                      </div>
+                    )}
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={scheduleLoading || !scheduleForm.requestedDate || !scheduleForm.preferredTime}
+                        className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {scheduleLoading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-r-2 border-white"></div>
+                        ) : (
+                          <Calendar className="h-4 w-4" />
+                        )}
+                        Create visit request
+                      </button>
+                    </div>
+                  </form>
+                )}
                 {messages.length === 0 ? (
                   <div className="text-center text-slate-500 py-8">
                     No messages yet. Start the conversation below.

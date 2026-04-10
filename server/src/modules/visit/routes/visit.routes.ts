@@ -6,6 +6,7 @@ const router = Router();
 
 // POST /visits (create visit request - buyer)
 router.post("/", requireUserAuth, visitController.createVisit);
+router.post("/lead/:leadId", requireUserAuth, visitController.createVisitFromLead);
 
 // GET /visits (seller's visits with filtering)
 router.get("/", requireUserAuth, visitController.getSellerVisits);

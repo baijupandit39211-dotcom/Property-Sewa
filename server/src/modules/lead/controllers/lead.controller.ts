@@ -91,14 +91,14 @@ export async function updateLeadStatus(req: Request, res: Response, next: NextFu
     if (!sellerId) throw new ApiError(401, "Unauthorized");
 
     const status = String(req.body?.status || "").trim().toLowerCase();
-    if (!["new", "contacted", "closed"].includes(status)) {
+    if (!["new", "contacted", "visit_scheduled", "negotiating", "reserved", "closed"].includes(status)) {
       throw new ApiError(400, "Invalid lead status");
     }
 
     const lead = await leadService.updateLeadStatus({
       leadId: req.params.leadId,
       sellerId,
-      status: status as "new" | "contacted" | "closed",
+      status: status as "new" | "contacted" | "visit_scheduled" | "negotiating" | "reserved" | "closed",
     });
 
     return res.status(200).json({ success: true, lead });

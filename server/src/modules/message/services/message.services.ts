@@ -14,6 +14,84 @@ export interface CreateMessageInput {
   text: string;
 }
 
+async function getSellerReplySuggestions(leadId: string, userId: string) {
+  const lead = await Lead.findById(leadId).populate({
+    path: "propertyId",
+    select: "title location price currency status",
+  });
+  if (!lead) throw new ApiError(404, "Lead not found");
+
+  if (lead.sellerId.toString() !== userId) {
+    throw new ApiError(403, "Only the seller can access reply suggestions");
+  }
+
+  const latestMessages = await Message.find({ leadId })
+    .sort({ createdAt: -1 })
+    .limit(8)
+    .lean();
+
+  const latestBuyerMessage = latestMessages.find((message) => message.senderRole === "buyer" && !message.isAutoReply);
+  if (!latestBuyerMessage) {
+    return [];
+  }
+
+  const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
+  if (!apiKey) {
+    return [];
+  }
+
+  const property = lead.propertyId as any;
+  const propertySummary = [
+    property?.title ? `Title: ${property.title}` : "",
+    property?.location ? `Location: ${property.location}` : "",
+    property?.price ? `Price: ${property.currency || "Rs"} ${Number(property.price).toLocaleString()}` : "",
+    property?.status ? `Status: ${property.status}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const chatSummary = latestMessages
+    .slice()
+    .reverse()
+    .map((message) => `${message.senderRole === "seller" ? "Seller" : "Buyer"}: ${message.text}`)
+    .join("\n");
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_SMART_REPLY_MODEL || "gpt-4.1-mini",
+      input: [
+        {
+          role: "system",
+          content:
+            "You write concise seller smart replies for a real estate chat. Return exactly 3 short professional reply suggestions as plain lines, no numbering, no markdown.",
+        },
+        {
+          role: "user",
+          content: `Property summary:\n${propertySummary || "No property summary available"}\n\nRecent chat:\n${chatSummary}\n\nLatest buyer message:\n${latestBuyerMessage.text}`,
+        },
+      ],
+      max_output_tokens: 120,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI request failed with status ${response.status}`);
+  }
+
+  const data = (await response.json()) as { output_text?: string };
+  const suggestions = String(data.output_text || "")
+    .split("\n")
+    .map((line) => line.trim().replace(/^[-*\d.\s]+/, ""))
+    .filter(Boolean);
+
+  return [...new Set(suggestions)].slice(0, 3);
+}
+
 async function getMessagesByLead(leadId: string, userId: string) {
   // Verify user owns this lead (either as seller or buyer)
   const lead = await Lead.findById(leadId);
@@ -115,4 +193,5 @@ async function createMessage(input: CreateMessageInput) {
 export default {
   getMessagesByLead,
   createMessage,
+  getSellerReplySuggestions,
 };

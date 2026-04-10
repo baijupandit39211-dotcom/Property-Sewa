@@ -16,7 +16,7 @@ export interface CreateLeadInput {
 export interface UpdateLeadStatusInput {
   leadId: string;
   sellerId: string;
-  status: "new" | "contacted" | "closed";
+  status: "new" | "contacted" | "visit_scheduled" | "negotiating" | "reserved" | "closed";
 }
 
 async function enrichLead(lead: any) {
