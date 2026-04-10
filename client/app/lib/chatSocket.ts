@@ -45,6 +45,7 @@ type ChatPresencePayload = {
 
 type ChatSocketHandlers = {
   onConnect?: () => void;
+  onDisconnect?: () => void;
   onNewMessage?: (payload: ChatNewMessagePayload) => void;
   onMessageDelivered?: (payload: ChatStatusPayload) => void;
   onMessageSeen?: (payload: ChatStatusPayload) => void;
@@ -96,6 +97,7 @@ export function subscribeToChatSocket(handlers: ChatSocketHandlers) {
   if (!activeSocket) return () => {};
 
   const handleConnect = () => handlers.onConnect?.();
+  const handleDisconnect = () => handlers.onDisconnect?.();
   const handleNewMessage = (payload: ChatNewMessagePayload) =>
     handlers.onNewMessage?.(payload);
   const handleMessageDelivered = (payload: ChatStatusPayload) =>
@@ -116,6 +118,7 @@ export function subscribeToChatSocket(handlers: ChatSocketHandlers) {
   };
 
   activeSocket.on("connect", handleConnect);
+  activeSocket.on("disconnect", handleDisconnect);
   activeSocket.on("chat:new_message", handleNewMessage);
   activeSocket.on("chat:message_delivered", handleMessageDelivered);
   activeSocket.on("chat:message_seen", handleMessageSeen);
@@ -126,6 +129,7 @@ export function subscribeToChatSocket(handlers: ChatSocketHandlers) {
 
   return () => {
     activeSocket.off("connect", handleConnect);
+    activeSocket.off("disconnect", handleDisconnect);
     activeSocket.off("chat:new_message", handleNewMessage);
     activeSocket.off("chat:message_delivered", handleMessageDelivered);
     activeSocket.off("chat:message_seen", handleMessageSeen);

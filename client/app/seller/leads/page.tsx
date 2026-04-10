@@ -13,6 +13,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Building2,
   CalendarClock,
+  Check,
+  CheckCheck,
   ChevronRight,
   Clock3,
   LoaderCircle,
@@ -197,6 +199,45 @@ const formatCurrency = (amount?: number, currency?: string) => {
   return `${currency || "Rs"} ${Number(amount).toLocaleString()}`;
 };
 
+const formatVisitDateTime = (date?: string, time?: string) => {
+  if (!date && !time) return "";
+  if (!date) return time || "";
+  const dateLabel = formatDate(date);
+  return time ? `${dateLabel} at ${time}` : dateLabel;
+};
+
+const getVisitSystemMessage = (visit: Visit | null | undefined) => {
+  if (!visit) return null;
+
+  const scheduledDateTime = formatVisitDateTime(
+    visit.actualDate || visit.requestedDate,
+    visit.actualTime || visit.preferredTime
+  );
+
+  if (visit.status === "confirmed" || visit.status === "rescheduled" || visit.status === "completed") {
+    return {
+      label: `Visit scheduled for ${scheduledDateTime}`,
+      tone: "bg-emerald-50 text-emerald-800 ring-emerald-200",
+    };
+  }
+
+  if (visit.status === "requested") {
+    return {
+      label: `Visit requested for ${scheduledDateTime}`,
+      tone: "bg-sky-50 text-sky-800 ring-sky-200",
+    };
+  }
+
+  if (visit.status === "rejected") {
+    return {
+      label: `Visit request was declined for ${scheduledDateTime}`,
+      tone: "bg-rose-50 text-rose-800 ring-rose-200",
+    };
+  }
+
+  return null;
+};
+
 const initials = (name: string) =>
   name
     .split(" ")
@@ -229,10 +270,14 @@ function applySeenStatus(messages: Message[], messageIds: string[], deliveredAt?
   );
 }
 
-function getMessageStatus(message: Message) {
-  if (message.seenAt) return "Seen";
-  if (message.deliveredAt) return "Delivered";
-  return "Sent";
+function renderMessageStatus(message: Message) {
+  if (message.seenAt) {
+    return <CheckCheck className="h-3.5 w-3.5 text-sky-300" />;
+  }
+  if (message.deliveredAt) {
+    return <CheckCheck className="h-3.5 w-3.5 text-white/80" />;
+  }
+  return <Check className="h-3.5 w-3.5 text-white/70" />;
 }
 
 function getBuyerSnapshot(lead: Lead | null) {
@@ -302,6 +347,7 @@ export default function SellerLeadsPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
   const [isBuyerOnline, setIsBuyerOnline] = useState(false);
+  const [isSocketDisconnected, setIsSocketDisconnected] = useState(false);
   const [aiSellerReplies, setAiSellerReplies] = useState<string[]>([]);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleLoading, setScheduleLoading] = useState(false);
@@ -319,6 +365,10 @@ export default function SellerLeadsPage() {
   const selectedLead = useMemo(
     () => leads.find((lead) => lead._id === selectedId) || null,
     [leads, selectedId]
+  );
+  const visitSystemMessage = useMemo(
+    () => getVisitSystemMessage(selectedLead?.latestVisit),
+    [selectedLead]
   );
   const smartSellerReplies = useMemo(
     () => getSmartSellerReplies(messages, selectedLead),
@@ -459,9 +509,13 @@ export default function SellerLeadsPage() {
   useEffect(() => {
     return subscribeToChatSocket({
       onConnect: () => {
+        setIsSocketDisconnected(false);
         if (selectedIdRef.current) {
           subscribeToChatPresence(selectedIdRef.current);
         }
+      },
+      onDisconnect: () => {
+        setIsSocketDisconnected(true);
       },
       onNewMessage: ({ message }) => {
         if (!message?.leadId) return;
@@ -909,6 +963,11 @@ export default function SellerLeadsPage() {
           {error}
         </div>
       )}
+      {isSocketDisconnected && (
+        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+          Connection lost
+        </div>
+      )}
 
       <section className="grid min-h-0 min-w-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
         <aside className="flex min-h-[640px] min-w-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
@@ -1267,6 +1326,20 @@ export default function SellerLeadsPage() {
                         <p className="mt-3 text-sm leading-7 text-slate-700">{selectedLead.message}</p>
                       </div>
 
+                      {visitSystemMessage && selectedLead?.latestVisit && (
+                        <div className="flex justify-center">
+                          <div
+                            className={cn(
+                              "inline-flex max-w-full items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold ring-1",
+                              visitSystemMessage.tone
+                            )}
+                          >
+                            <CalendarClock className="h-3.5 w-3.5 flex-none" />
+                            <span className="truncate">{visitSystemMessage.label}</span>
+                          </div>
+                        </div>
+                      )}
+
                       {messages.length === 0 ? (
                         <div className="rounded-[24px] border border-dashed border-slate-300 bg-white px-5 py-8 text-center text-sm text-slate-500">
                           No follow-up messages yet. Reply below to start the conversation.
@@ -1285,10 +1358,15 @@ export default function SellerLeadsPage() {
                                 )}
                               >
                                 <div className="text-sm leading-6">{message.text}</div>
-                                <div className={cn("mt-2 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
-                                  {mine
-                                    ? `You | ${formatDateTime(message.createdAt)} | ${getMessageStatus(message)}`
-                                    : `${message.senderId?.name || selectedLead.name} | ${formatDateTime(message.createdAt)}`}
+                                <div className={cn("mt-2 flex items-center gap-1.5 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
+                                  {mine ? (
+                                    <>
+                                      <span>{`You | ${formatDateTime(message.createdAt)}`}</span>
+                                      {renderMessageStatus(message)}
+                                    </>
+                                  ) : (
+                                    <span>{`${message.senderId?.name || selectedLead.name} | ${formatDateTime(message.createdAt)}`}</span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1333,6 +1411,10 @@ export default function SellerLeadsPage() {
                             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
                             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
                           </div>
+                        ) : error ? (
+                          "Failed to send message"
+                        ) : isSocketDisconnected ? (
+                          "Connection lost"
                         ) : (
                           "Replies stay attached to this inquiry thread and trigger buyer notifications automatically."
                         )}

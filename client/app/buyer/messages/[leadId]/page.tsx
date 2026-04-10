@@ -11,7 +11,7 @@ import {
   subscribeToChatPresence,
   subscribeToChatSocket,
 } from "@/app/lib/chatSocket";
-import { ArrowLeft, Send, MessageCircle, Calendar, Building2, MapPin } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, Calendar, Building2, Check, CheckCheck, MapPin } from "lucide-react";
 
 type Lead = {
   _id: string;
@@ -91,15 +91,62 @@ function applySeenStatus(messages: Message[], messageIds: string[], deliveredAt?
   );
 }
 
-function getMessageStatus(message: Message) {
-  if (message.seenAt) return "Seen";
-  if (message.deliveredAt) return "Delivered";
-  return "Sent";
+function renderMessageStatus(message: Message) {
+  if (message.seenAt) {
+    return <CheckCheck className="h-3.5 w-3.5 text-sky-300" />;
+  }
+  if (message.deliveredAt) {
+    return <CheckCheck className="h-3.5 w-3.5 text-white/80" />;
+  }
+  return <Check className="h-3.5 w-3.5 text-white/70" />;
 }
 
 function formatCurrency(amount?: number, currency?: string) {
   if (!amount) return "Price on request";
   return `${currency || "Rs"} ${Number(amount).toLocaleString()}`;
+}
+
+function formatVisitDateTime(date?: string, time?: string) {
+  if (!date && !time) return "";
+  if (!date) return time || "";
+  const dateLabel = new Date(date).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  return time ? `${dateLabel} at ${time}` : dateLabel;
+}
+
+function getVisitSystemMessage(visit?: VisitResponse | Visit) {
+  if (!visit) return null;
+
+  const scheduledDateTime = formatVisitDateTime(
+    "actualDate" in visit ? visit.actualDate || visit.requestedDate : visit.actualDate || visit.requestedDate,
+    "actualTime" in visit ? visit.actualTime || visit.preferredTime : undefined
+  );
+
+  if (visit.status === "confirmed" || visit.status === "rescheduled" || visit.status === "completed") {
+    return {
+      label: `Visit scheduled for ${scheduledDateTime}`,
+      tone: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    };
+  }
+
+  if (visit.status === "requested") {
+    return {
+      label: `Visit requested for ${scheduledDateTime}`,
+      tone: "bg-sky-50 text-sky-800 border-sky-200",
+    };
+  }
+
+  if (visit.status === "rejected") {
+    return {
+      label: `Visit request was declined for ${scheduledDateTime}`,
+      tone: "bg-rose-50 text-rose-800 border-rose-200",
+    };
+  }
+
+  return null;
 }
 
 export default function BuyerMessageDetailPage() {
@@ -115,6 +162,7 @@ export default function BuyerMessageDetailPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
   const [isSellerOnline, setIsSellerOnline] = useState(false);
+  const [isSocketDisconnected, setIsSocketDisconnected] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState("");
@@ -126,6 +174,7 @@ export default function BuyerMessageDetailPage() {
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const activeLeadIdRef = useRef("");
+  const visitSystemMessage = getVisitSystemMessage(lead?.visit);
 
   const acknowledgeDelivered = (leadId: string, thread: Message[]) => {
     if (!leadId || !thread.some((message) => message.senderRole === "seller" && !message.deliveredAt)) return;
@@ -203,9 +252,13 @@ export default function BuyerMessageDetailPage() {
   useEffect(() => {
     return subscribeToChatSocket({
       onConnect: () => {
+        setIsSocketDisconnected(false);
         if (activeLeadIdRef.current) {
           subscribeToChatPresence(activeLeadIdRef.current);
         }
+      },
+      onDisconnect: () => {
+        setIsSocketDisconnected(true);
       },
       onNewMessage: ({ message }) => {
         if (String(message?.leadId || "") !== activeLeadIdRef.current) return;
@@ -601,6 +654,11 @@ export default function BuyerMessageDetailPage() {
 
               {/* Messages List */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {isSocketDisconnected && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Connection lost
+                  </div>
+                )}
                 {scheduleOpen && (
                   <form onSubmit={handleScheduleVisit} className="mb-4 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-center justify-between gap-3">
@@ -665,6 +723,16 @@ export default function BuyerMessageDetailPage() {
                     </div>
                   </form>
                 )}
+                {visitSystemMessage && (
+                  <div className="flex justify-center">
+                    <div
+                      className={`inline-flex max-w-full items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold ${visitSystemMessage.tone}`}
+                    >
+                      <Calendar className="h-3.5 w-3.5 flex-none" />
+                      <span className="truncate">{visitSystemMessage.label}</span>
+                    </div>
+                  </div>
+                )}
                 {messages.length === 0 ? (
                   <div className="text-center text-slate-500 py-8">
                     No messages yet. Start the conversation below.
@@ -683,15 +751,17 @@ export default function BuyerMessageDetailPage() {
                         }`}
                       >
                         <p className="text-sm">{message.text}</p>
-                        <p className={`text-xs mt-1 ${
+                        <div className={`mt-1 flex items-center gap-1.5 text-xs ${
                           message.senderRole === "buyer" ? "text-emerald-100" : "text-slate-500"
                         }`}>
-                          {new Date(message.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
-                          {message.senderRole === "buyer" ? ` | ${getMessageStatus(message)}` : ""}
-                        </p>
+                          <span>
+                            {new Date(message.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </span>
+                          {message.senderRole === "buyer" ? renderMessageStatus(message) : null}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -728,6 +798,7 @@ export default function BuyerMessageDetailPage() {
                     )}
                   </button>
                 </form>
+                {error && <div className="mt-3 text-sm text-rose-600">Failed to send message</div>}
               </div>
             </div>
           </div>

@@ -12,6 +12,8 @@ import {
 import {
   BellRing,
   Building2,
+  Check,
+  CheckCheck,
   ChevronRight,
   Clock3,
   LoaderCircle,
@@ -103,10 +105,14 @@ function applySeenStatus(messages: Message[], messageIds: string[], deliveredAt?
   );
 }
 
-function getMessageStatus(message: Message) {
-  if (message.seenAt) return "Seen";
-  if (message.deliveredAt) return "Delivered";
-  return "Sent";
+function renderMessageStatus(message: Message) {
+  if (message.seenAt) {
+    return <CheckCheck className="h-3.5 w-3.5 text-sky-300" />;
+  }
+  if (message.deliveredAt) {
+    return <CheckCheck className="h-3.5 w-3.5 text-white/80" />;
+  }
+  return <Check className="h-3.5 w-3.5 text-white/70" />;
 }
 
 export default function SellerMessagesPage() {
@@ -123,6 +129,7 @@ export default function SellerMessagesPage() {
   const [readMarkers, setReadMarkers] = useState<Record<string, string>>({});
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserRole, setTypingUserRole] = useState<"buyer" | "seller" | null>(null);
+  const [isSocketDisconnected, setIsSocketDisconnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
@@ -258,6 +265,12 @@ export default function SellerMessagesPage() {
 
   useEffect(() => {
     return subscribeToChatSocket({
+      onConnect: () => {
+        setIsSocketDisconnected(false);
+      },
+      onDisconnect: () => {
+        setIsSocketDisconnected(true);
+      },
       onNewMessage: ({ message }) => {
         if (!message?.leadId) return;
 
@@ -507,6 +520,11 @@ export default function SellerMessagesPage() {
       </section>
 
       {error && <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800">{error}</div>}
+      {isSocketDisconnected && (
+        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+          Connection lost
+        </div>
+      )}
       <section className="grid min-h-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="flex h-[720px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_20px_70px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_24px_80px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
           <div className="border-b border-slate-100 px-5 py-5">
@@ -533,22 +551,65 @@ export default function SellerMessagesPage() {
               filteredConversations.map((conversation) => {
                 const active = selectedId === conversation._id;
                 const preview = conversation.lastMessage?.text || conversation.message || "No message content";
+                const hasUnread = conversation.unreadCount > 0;
                 return (
-                  <button key={conversation._id} type="button" onClick={() => setSelectedId(conversation._id)} className={cn("group relative w-full border-b border-slate-100 px-5 py-4 text-left transition-all duration-200 ease-out hover:bg-[#f7fbf8] hover:pl-6", active && "bg-emerald-50/80 shadow-[inset_3px_0_0_0_#059669]")}>
+                  <button
+                    key={conversation._id}
+                    type="button"
+                    onClick={() => setSelectedId(conversation._id)}
+                    className={cn(
+                      "group relative w-full border-b border-slate-100 px-5 py-4 text-left transition-all duration-200 ease-out hover:bg-[#f7fbf8] hover:pl-6",
+                      active &&
+                        "bg-emerald-50/90 shadow-[inset_3px_0_0_0_#059669] ring-1 ring-inset ring-emerald-100"
+                    )}
+                  >
                     <div className="flex items-start gap-3">
-                      <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-emerald-600 text-sm font-black text-white shadow-[0_14px_28px_rgba(5,150,105,0.22)] transition-transform duration-200 ease-out group-hover:scale-[1.03]">{initials(conversation.name)}</div>
+                      <div className="relative">
+                        <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-emerald-600 text-sm font-black text-white shadow-[0_14px_28px_rgba(5,150,105,0.22)] transition-transform duration-200 ease-out group-hover:scale-[1.03]">
+                          {initials(conversation.name)}
+                        </div>
+                        {hasUnread && (
+                          <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-rose-500" />
+                        )}
+                      </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="truncate text-sm font-bold text-slate-950 transition-colors duration-200 group-hover:text-emerald-800">{conversation.name}</div>
+                            <div
+                              className={cn(
+                                "truncate text-sm font-bold text-slate-950 transition-colors duration-200 group-hover:text-emerald-800",
+                                hasUnread && "text-slate-950"
+                              )}
+                            >
+                              {conversation.name}
+                            </div>
                             <div className="mt-1 truncate text-xs text-slate-500">{conversation.propertyId.title}</div>
                           </div>
                           <div className="flex flex-col items-end gap-2">
-                            <span className="text-xs font-medium text-slate-500">{formatShortTime(conversation.lastMessage?.createdAt || conversation.createdAt)}</span>
-                            {conversation.unreadCount > 0 && <span className="inline-flex min-w-6 justify-center rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-bold text-white">{conversation.unreadCount}</span>}
+                            <span
+                              className={cn(
+                                "rounded-full px-2 py-1 text-[11px] font-medium",
+                                hasUnread ? "bg-emerald-50 text-emerald-700" : "text-slate-500"
+                              )}
+                            >
+                              {formatShortTime(conversation.lastMessage?.createdAt || conversation.createdAt)}
+                            </span>
+                            {hasUnread && (
+                              <span className="inline-flex min-w-6 justify-center rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-bold text-white">
+                                {conversation.unreadCount}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="mt-2 truncate text-sm text-slate-600 transition-colors duration-200 group-hover:text-slate-700">{conversation.lastMessage?.senderRole === "seller" ? "You: " : ""}{preview}</div>
+                        <div
+                          className={cn(
+                            "mt-2 truncate text-sm transition-colors duration-200 group-hover:text-slate-700",
+                            hasUnread ? "font-medium text-slate-800" : "text-slate-600"
+                          )}
+                        >
+                          {conversation.lastMessage?.senderRole === "seller" ? "You: " : ""}
+                          {preview}
+                        </div>
                         <div className="mt-3 flex items-center gap-2">
                           <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1", getStatusTone(conversation.status))}>{conversation.status}</span>
                           <span className="truncate text-xs text-slate-500">{conversation.propertyId.location}</span>
@@ -609,8 +670,15 @@ export default function SellerMessagesPage() {
                           <div key={message._id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
                             <div className={cn("max-w-[80%] rounded-[22px] px-4 py-3 shadow-sm transition-transform duration-200 ease-out hover:-translate-y-0.5", mine ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_16px_30px_rgba(5,150,105,0.18)]" : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200")}>
                               <div className="text-sm leading-6">{message.text}</div>
-                              <div className={cn("mt-2 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
-                                {mine ? `You | ${formatDateTime(message.createdAt)} | ${getMessageStatus(message)}` : `${message.senderId?.name || selectedConversation.name} | ${formatDateTime(message.createdAt)}`}
+                              <div className={cn("mt-2 flex items-center gap-1.5 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
+                                {mine ? (
+                                  <>
+                                    <span>{`You | ${formatDateTime(message.createdAt)}`}</span>
+                                    {renderMessageStatus(message)}
+                                  </>
+                                ) : (
+                                  <span>{`${message.senderId?.name || selectedConversation.name} | ${formatDateTime(message.createdAt)}`}</span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -633,6 +701,10 @@ export default function SellerMessagesPage() {
                             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
                             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
                           </div>
+                        ) : error ? (
+                          "Failed to send message"
+                        ) : isSocketDisconnected ? (
+                          "Connection lost"
                         ) : (
                           "Replies are sent into the buyer conversation and trigger message notifications."
                         )}
