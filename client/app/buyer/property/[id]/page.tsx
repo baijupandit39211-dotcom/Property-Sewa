@@ -591,13 +591,15 @@ function BuyerPropertyDetailsView({
   const handleCompare = () => {
     try {
       if (!property?._id) return;
-      const key = "property_compare_ids";
-      const current = JSON.parse(localStorage.getItem(key) || "[]");
-      const next = Array.isArray(current) ? current : [];
-      if (!next.includes(String(property._id))) {
-        next.push(String(property._id));
-      }
-      localStorage.setItem(key, JSON.stringify(next.slice(0, 4)));
+      const key = "property-sewa:compare:v1";
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : null;
+      const current = Array.isArray(parsed?.ids)
+        ? parsed.ids.filter((value: unknown): value is string => typeof value === "string")
+        : [];
+      const propertyId = String(property._id);
+      const next = current.includes(propertyId) ? current : [propertyId, ...current];
+      localStorage.setItem(key, JSON.stringify({ ids: next.slice(0, 2) }));
       router.push("/buyer/compare");
     } catch {
       router.push("/buyer/compare");
