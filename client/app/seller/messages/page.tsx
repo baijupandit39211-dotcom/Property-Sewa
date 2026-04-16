@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import {
+  BellOff,
   BellRing,
   Building2,
   Check,
@@ -40,6 +41,7 @@ import {
   emitChatTypingStop,
   subscribeToChatSocket,
 } from "@/app/lib/chatSocket";
+import { useMessageSound } from "@/app/lib/useMessageSound";
 
 type Lead = {
   _id: string;
@@ -233,6 +235,7 @@ export default function SellerMessagesPage() {
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const selectedIdRef = useRef("");
   const deferredSearch = useDeferredValue(search);
+  const { isMuted, isPlaybackBlocked, toggleMute, playIncomingMessageSound } = useMessageSound();
 
   const selectedConversation = useMemo(
     () => conversations.find((item) => item._id === selectedId) || null,
@@ -255,6 +258,9 @@ export default function SellerMessagesPage() {
 
   const scrollToBottom = useEffectEvent(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  });
+  const playMessageSound = useEffectEvent((message: Message) => {
+    void playIncomingMessageSound(message, "buyer");
   });
 
   const acknowledgeDelivered = useEffectEvent((leadId: string, thread: Message[]) => {
@@ -371,6 +377,7 @@ export default function SellerMessagesPage() {
       },
       onNewMessage: ({ message }) => {
         if (!message?.leadId) return;
+        let shouldPlaySound = false;
 
         setConversations((prev) => {
           const exists = prev.some((item) => item._id === message.leadId);
@@ -379,11 +386,21 @@ export default function SellerMessagesPage() {
           return prev
             .map((item) =>
               item._id === message.leadId
-                ? {
-                    ...item,
-                    lastMessage: message,
-                    unreadCount: selectedIdRef.current === message.leadId ? 0 : item.unreadCount + 1,
-                  }
+                ? (() => {
+                    const isNewConversationMessage = item.lastMessage?._id !== message._id;
+                    if (isNewConversationMessage) {
+                      shouldPlaySound = true;
+                    }
+
+                    return {
+                      ...item,
+                      lastMessage: message,
+                      unreadCount:
+                        selectedIdRef.current === message.leadId
+                          ? 0
+                          : item.unreadCount + (isNewConversationMessage ? 1 : 0),
+                    };
+                  })()
                 : item
             )
             .sort((a, b) => {
@@ -393,10 +410,15 @@ export default function SellerMessagesPage() {
             });
         });
 
+        if (shouldPlaySound) {
+          playMessageSound(message);
+        }
+
         if (selectedIdRef.current === message.leadId) {
-          setMessages((prev) =>
-            prev.some((item) => item._id === message._id) ? prev : [...prev, message]
-          );
+          setMessages((prev) => {
+            if (prev.some((item) => item._id === message._id)) return prev;
+            return [...prev, message];
+          });
           acknowledgeDelivered(message.leadId, [message]);
           acknowledgeSeen(message.leadId, [message]);
           requestAnimationFrame(() => scrollToBottom());
@@ -454,7 +476,7 @@ export default function SellerMessagesPage() {
         setTypingUserRole(null);
       },
     });
-  }, [scrollToBottom]);
+  }, [playMessageSound, scrollToBottom]);
 
   useEffect(() => {
     return () => {
@@ -951,11 +973,23 @@ export default function SellerMessagesPage() {
                           "Failed to send message"
                         ) : isSocketDisconnected ? (
                           "Connection lost"
+                        ) : isPlaybackBlocked && !isMuted ? (
+                          "Message sound is blocked by your browser until you interact with the page."
                         ) : (
                           "Replies are sent into the buyer conversation and trigger message notifications."
                         )}
                       </div>
                       <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={toggleMute}
+                          className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"
+                          aria-pressed={isMuted}
+                          aria-label={isMuted ? "Unmute message sound" : "Mute message sound"}
+                        >
+                          <BellOff className="h-4 w-4" />
+                          {isMuted ? "Unmute sound" : "Mute sound"}
+                        </button>
                         <button type="button" onClick={() => attachmentInputRef.current?.click()} disabled={sending || !selectedConversation} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
                           <Paperclip className="h-4 w-4" />
                         </button>

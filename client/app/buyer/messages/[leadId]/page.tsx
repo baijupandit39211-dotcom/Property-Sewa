@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import {
@@ -11,7 +11,8 @@ import {
   subscribeToChatPresence,
   subscribeToChatSocket,
 } from "@/app/lib/chatSocket";
-import { ArrowLeft, Send, MessageCircle, Calendar, Building2, Check, CheckCheck, MapPin, Paperclip, FileText, Download, Eye, Trash2 } from "lucide-react";
+import { useMessageSound } from "@/app/lib/useMessageSound";
+import { ArrowLeft, BellOff, Send, MessageCircle, Calendar, Building2, Check, CheckCheck, MapPin, Paperclip, FileText, Download, Eye, Trash2 } from "lucide-react";
 
 type Lead = {
   _id: string;
@@ -259,6 +260,7 @@ export default function BuyerMessageDetailPage() {
   const activeLeadIdRef = useRef("");
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const visitSystemMessage = getVisitSystemMessage(lead?.visit);
+  const { isMuted, isPlaybackBlocked, toggleMute, playIncomingMessageSound } = useMessageSound();
 
   const acknowledgeDelivered = (leadId: string, thread: Message[]) => {
     if (!leadId || !thread.some((message) => message.senderRole === "seller" && !message.deliveredAt)) return;
@@ -285,6 +287,10 @@ export default function BuyerMessageDetailPage() {
   useEffect(() => {
     activeLeadIdRef.current = currentLeadId;
   }, [currentLeadId]);
+
+  const playMessageSound = useEffectEvent((message: Message) => {
+    void playIncomingMessageSound(message, "seller");
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -347,7 +353,15 @@ export default function BuyerMessageDetailPage() {
       onNewMessage: ({ message }) => {
         if (String(message?.leadId || "") !== activeLeadIdRef.current) return;
 
-        setMessages((prev) => (prev.some((item) => item._id === message._id) ? prev : [...prev, message]));
+        let shouldPlaySound = false;
+        setMessages((prev) => {
+          if (prev.some((item) => item._id === message._id)) return prev;
+          shouldPlaySound = true;
+          return [...prev, message];
+        });
+        if (shouldPlaySound) {
+          playMessageSound(message);
+        }
         acknowledgeDelivered(String(message.leadId || ""), [message]);
         acknowledgeSeen(String(message.leadId || ""), [message]);
       },
@@ -392,7 +406,7 @@ export default function BuyerMessageDetailPage() {
         setTypingUserRole(null);
       },
     });
-  }, []);
+  }, [playMessageSound]);
 
   useEffect(() => {
     return () => {
@@ -768,14 +782,26 @@ export default function BuyerMessageDetailPage() {
                   <span>{isSellerOnline ? "Online" : "Offline"}</span>
                 </div>
                 <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={openScheduleVisit}
-                    className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Schedule Visit
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={openScheduleVisit}
+                      className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      Schedule Visit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={toggleMute}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"
+                      aria-pressed={isMuted}
+                      aria-label={isMuted ? "Unmute message sound" : "Mute message sound"}
+                    >
+                      <BellOff className="h-4 w-4" />
+                      {isMuted ? "Unmute sound" : "Mute sound"}
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f5faf7_100%)]">
                   <div className="grid gap-0 sm:grid-cols-[140px_minmax(0,1fr)]">
@@ -965,6 +991,11 @@ export default function BuyerMessageDetailPage() {
                   </div>
                 )}
                 {isUploadingAttachment && <div className="mb-2 text-xs text-slate-500">Uploading attachment...</div>}
+                {isPlaybackBlocked && !isMuted && (
+                  <div className="mb-2 text-xs text-slate-500">
+                    Message sound is blocked by your browser until you interact with the page.
+                  </div>
+                )}
                 <form onSubmit={handleSendMessage} className="flex gap-2">
                   <button
                     type="button"

@@ -11,6 +11,8 @@ import {
   ExternalLink,
   ClipboardPaste,
   Wand2,
+  Home,
+  ChevronRight,
 } from "lucide-react";
 
 const MAX_IMAGES = 6;
@@ -60,6 +62,14 @@ function extractLatLngFromGoogleUrl(url: string) {
 function isLatLng(value: string) {
   return /^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$/.test(value);
 }
+
+const FIELD_CLASS =
+  "mt-2 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 disabled:opacity-60";
+const TEXTAREA_CLASS =
+  "mt-2 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 disabled:opacity-60";
+const LABEL_CLASS = "block text-[15px] font-semibold text-slate-800";
+const SECTION_CLASS =
+  "rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)] sm:p-6";
 
 export default function SellerAddPropertyPage() {
   const router = useRouter();
@@ -377,44 +387,64 @@ export default function SellerAddPropertyPage() {
       formData.offerDiscountType === "fixed");
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-50 px-4 py-8 sm:px-6">
-      <div className="mx-auto max-w-5xl">
-        {/* Header */}
-        <div className="sticky top-0 z-10 -mx-4 mb-6 border-b border-slate-200 bg-white/75 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">
-                Add Property
-              </h1>
-              <p className="mt-1 text-sm text-slate-600">
-                Create a new listing (images, details, amenities).
-              </p>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_22%),linear-gradient(180deg,#eef6f1_0%,#f8fbf9_100%)] px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-6 overflow-hidden rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,250,248,0.96)_100%)] shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+          <div className="border-b border-slate-200/80 px-6 py-4 sm:px-8">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#316249] text-white shadow-[0_16px_30px_rgba(49,98,73,0.28)]">
+                  <Home className="h-7 w-7" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 text-[15px] text-slate-500">
+                    <span>Home</span>
+                    <ChevronRight className="h-4 w-4" />
+                    <span>Dashboard</span>
+                    <ChevronRight className="h-4 w-4" />
+                    <span className="font-semibold text-slate-800">Add Property</span>
+                  </div>
+                  <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-[44px]">
+                    Add Property
+                  </h1>
+                  <p className="mt-3 max-w-3xl text-[15px] leading-7 text-slate-600 sm:text-base">
+                    Create a new listing and keep every existing workflow intact: details, pricing,
+                    rent settings, coordinates, offers, amenities, media uploads, and post-create actions.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                  Listing Flow
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                  Back
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Back
-            </button>
           </div>
         </div>
 
         {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-[15px] font-medium leading-6 text-red-800 shadow-sm">
             {error}
           </div>
         )}
 
         {/* ✅ Success section showing Property ID */}
         {createdPropertyId && (
-          <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+          <div className="mb-6 rounded-[28px] border border-emerald-200 bg-[linear-gradient(180deg,#effcf5_0%,#f7fff9_100%)] px-5 py-5 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-sm font-extrabold text-emerald-900">
+                <div className="text-[15px] font-extrabold text-emerald-900">
                   Property Created Successfully ✅
                 </div>
-                <div className="mt-1 text-sm text-slate-700">
+                <div className="mt-2 text-[15px] leading-6 text-slate-700">
                   Property ID:{" "}
                   <span className="font-mono font-bold">{createdPropertyId}</span>
                 </div>
@@ -467,12 +497,33 @@ export default function SellerAddPropertyPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-7"
+          className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbf9_100%)] p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-7"
         >
-          {/* Basic */}
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <div className="rounded-full bg-[#316249] px-4 py-2 text-sm font-semibold text-white">
+              Seller Workspace
+            </div>
+            <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
+              Full listing creation flow
+            </div>
+            <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
+              {images.length}/{MAX_IMAGES} images selected
+            </div>
+          </div>
+
+          <div className="space-y-6">
+          <section className={SECTION_CLASS}>
+          <div className="mb-5">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+              Property Details
+            </h2>
+            <p className="mt-2 text-[15px] leading-7 text-slate-600">
+              Enter the listing basics exactly as they should appear to buyers.
+            </p>
+          </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Title *
               </label>
               <input
@@ -483,14 +534,14 @@ export default function SellerAddPropertyPage() {
                 required
                 disabled={loading}
                 placeholder="e.g., Modern Family House"
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
 
             {/* Price / Currency / Advance */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className="block text-sm font-semibold text-slate-800">
+                <label className={LABEL_CLASS}>
                   Price *
                 </label>
                 <input
@@ -502,12 +553,12 @@ export default function SellerAddPropertyPage() {
                   min="0"
                   step="0.01"
                   disabled={loading}
-                  className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  className={FIELD_CLASS}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-800">
+                <label className={LABEL_CLASS}>
                   Currency
                 </label>
                 <select
@@ -515,7 +566,7 @@ export default function SellerAddPropertyPage() {
                   value={formData.currency}
                   onChange={handleChange}
                   disabled={loading}
-                  className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  className={FIELD_CLASS}
                 >
                   <option value="USD">USD</option>
                   <option value="NPR">NPR</option>
@@ -524,7 +575,7 @@ export default function SellerAddPropertyPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-800">
+                <label className={LABEL_CLASS}>
                   Advance Amount
                 </label>
                 <input
@@ -536,18 +587,26 @@ export default function SellerAddPropertyPage() {
                   step="0.01"
                   disabled={loading}
                   placeholder="e.g., 5000"
-                  className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  className={FIELD_CLASS}
                 />
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-2 text-[13px] leading-6 text-slate-500">
                   Amount buyer pays to book (optional).
                 </p>
               </div>
             </div>
           </div>
+          </section>
 
-          {/* Description */}
-          <div className="mt-6">
-            <label className="block text-sm font-semibold text-slate-800">
+          <section className={SECTION_CLASS}>
+            <div className="mb-5">
+              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+                Description
+              </h2>
+              <p className="mt-2 text-[15px] leading-7 text-slate-600">
+                Keep the original listing copy flow, but make the highlights easy to scan.
+              </p>
+            </div>
+            <label className={LABEL_CLASS}>
               Description
             </label>
             <textarea
@@ -557,14 +616,22 @@ export default function SellerAddPropertyPage() {
               rows={5}
               disabled={loading}
               placeholder="Write key highlights: rooms, condition, nearby areas, etc."
-              className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+              className={TEXTAREA_CLASS}
             />
-          </div>
+          </section>
 
-          {/* Location */}
-          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <section className={SECTION_CLASS}>
+          <div className="mb-5">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+              Location
+            </h2>
+            <p className="mt-2 text-[15px] leading-7 text-slate-600">
+              Add searchable place details and a precise Google Maps reference when available.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Location *
               </label>
               <input
@@ -575,11 +642,11 @@ export default function SellerAddPropertyPage() {
                 required
                 disabled={loading}
                 placeholder="e.g., Kathmandu, Nepal"
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Address
               </label>
               <input
@@ -589,15 +656,24 @@ export default function SellerAddPropertyPage() {
                 onChange={handleChange}
                 disabled={loading}
                 placeholder="Full address (optional)"
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
           </div>
+          </section>
 
-          {/* Specs */}
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <section className={SECTION_CLASS}>
+          <div className="mb-5">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+              Specifications
+            </h2>
+            <p className="mt-2 text-[15px] leading-7 text-slate-600">
+              Define the property type, room counts, and size information buyers care about first.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Beds
               </label>
               <input
@@ -607,11 +683,11 @@ export default function SellerAddPropertyPage() {
                 onChange={handleChange}
                 min="0"
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Baths
               </label>
               <input
@@ -621,11 +697,11 @@ export default function SellerAddPropertyPage() {
                 onChange={handleChange}
                 min="0"
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Sqft
               </label>
               <input
@@ -635,12 +711,12 @@ export default function SellerAddPropertyPage() {
                 onChange={handleChange}
                 min="0"
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Property Type
               </label>
               <select
@@ -648,7 +724,7 @@ export default function SellerAddPropertyPage() {
                 value={formData.propertyType}
                 onChange={handleChange}
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               >
                 <option value="house">House</option>
                 <option value="apartment">Apartment</option>
@@ -657,11 +733,20 @@ export default function SellerAddPropertyPage() {
               </select>
             </div>
           </div>
+          </section>
 
-          {/* Listing Type + Furnishing */}
-          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <section className={SECTION_CLASS}>
+          <div className="mb-5">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+              Listing Setup
+            </h2>
+            <p className="mt-2 text-[15px] leading-7 text-slate-600">
+              Keep sale and rent behavior exactly as implemented while making the setup clearer.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Listing Type
               </label>
               <select
@@ -669,7 +754,7 @@ export default function SellerAddPropertyPage() {
                 value={formData.listingType}
                 onChange={handleChange}
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               >
                 <option value="buy">For Sale</option>
                 <option value="rent">For Rent</option>
@@ -677,7 +762,7 @@ export default function SellerAddPropertyPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Furnishing
               </label>
               <select
@@ -685,7 +770,7 @@ export default function SellerAddPropertyPage() {
                 value={formData.furnishing}
                 onChange={handleChange}
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               >
                 <option value="unfurnished">Unfurnished</option>
                 <option value="semi">Semi Furnished</option>
@@ -693,16 +778,17 @@ export default function SellerAddPropertyPage() {
               </select>
             </div>
           </div>
+          </section>
 
           {/* Rent-only */}
           {isRent && (
-            <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
-              <div className="mb-3 text-sm font-semibold text-emerald-900">
+            <section className="rounded-[28px] border border-emerald-200 bg-[linear-gradient(180deg,#effcf5_0%,#f7fff9_100%)] p-5 shadow-sm">
+              <div className="mb-3 text-[15px] font-semibold text-emerald-900">
                 Rent Details
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800">
+                  <label className={LABEL_CLASS}>
                     Monthly Rent
                   </label>
                   <input
@@ -712,11 +798,11 @@ export default function SellerAddPropertyPage() {
                     onChange={handleChange}
                     min="0"
                     disabled={loading}
-                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    className={FIELD_CLASS}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800">
+                  <label className={LABEL_CLASS}>
                     Deposit
                   </label>
                   <input
@@ -726,11 +812,11 @@ export default function SellerAddPropertyPage() {
                     onChange={handleChange}
                     min="0"
                     disabled={loading}
-                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    className={FIELD_CLASS}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800">
+                  <label className={LABEL_CLASS}>
                     Availability Date
                   </label>
                   <input
@@ -739,17 +825,25 @@ export default function SellerAddPropertyPage() {
                     value={formData.availabilityDate}
                     onChange={handleChange}
                     disabled={loading}
-                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    className={FIELD_CLASS}
                   />
                 </div>
               </div>
-            </div>
+            </section>
           )}
 
-          {/* Extra details */}
-          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <section className={SECTION_CLASS}>
+          <div className="mb-5">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+              Extra Details
+            </h2>
+            <p className="mt-2 text-[15px] leading-7 text-slate-600">
+              Keep structural details, access data, and map helpers complete for downstream pages.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Year Built
               </label>
               <input
@@ -759,12 +853,12 @@ export default function SellerAddPropertyPage() {
                 onChange={handleChange}
                 min="0"
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Floor
               </label>
               <input
@@ -774,12 +868,12 @@ export default function SellerAddPropertyPage() {
                 onChange={handleChange}
                 min="0"
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Total Floors
               </label>
               <input
@@ -789,14 +883,14 @@ export default function SellerAddPropertyPage() {
                 onChange={handleChange}
                 min="0"
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Facing
               </label>
               <select
@@ -804,7 +898,7 @@ export default function SellerAddPropertyPage() {
                 value={formData.facing}
                 onChange={handleChange}
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               >
                 <option value="east">East</option>
                 <option value="west">West</option>
@@ -814,7 +908,7 @@ export default function SellerAddPropertyPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Road Access (ft)
               </label>
               <input
@@ -824,13 +918,13 @@ export default function SellerAddPropertyPage() {
                 onChange={handleChange}
                 min="0"
                 disabled={loading}
-                className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                className={FIELD_CLASS}
               />
             </div>
 
             {/* Google Map */}
             <div>
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className={LABEL_CLASS}>
                 Google Map (optional)
               </label>
 
@@ -842,14 +936,14 @@ export default function SellerAddPropertyPage() {
                   onChange={handleChange}
                   disabled={loading}
                   placeholder="Paste Google Maps share link OR lat,lng"
-                  className="block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  className={FIELD_CLASS}
                 />
 
                 <button
                   type="button"
                   onClick={openGoogleMapsPicker}
                   disabled={loading}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
+                  className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
                   title="Open Google Maps and pick the exact location"
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -862,7 +956,7 @@ export default function SellerAddPropertyPage() {
                   type="button"
                   onClick={pasteFromClipboard}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-60"
                   title="Paste copied Google Maps link"
                 >
                   <ClipboardPaste className="h-4 w-4" />
@@ -874,7 +968,7 @@ export default function SellerAddPropertyPage() {
                   type="button"
                   onClick={convertLandmarkToLatLng}
                   disabled={loading || !landmarkValue || landmarkIsCoord}
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50"
                   title="Convert a Google Maps link to coordinates (lat,lng)"
                 >
                   <Wand2 className="h-4 w-4" />
@@ -887,28 +981,29 @@ export default function SellerAddPropertyPage() {
                     onClick={() =>
                       window.open(formData.landmark, "_blank", "noopener,noreferrer")
                     }
-                    className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50"
                   >
                     <ExternalLink className="h-4 w-4" />
                     Preview link
                   </button>
                 )}
 
-                <p className="text-xs text-slate-500">
+                <p className="text-[13px] leading-6 text-slate-500">
                   Best: store coordinates like <b>27.6663,85.3302</b> for perfect
                   embed map on buyer page.
                 </p>
               </div>
             </div>
           </div>
+          </section>
 
-          <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
-            <div className="mb-3 text-sm font-semibold text-emerald-900">
+          <section className="rounded-[28px] border border-emerald-200 bg-[linear-gradient(180deg,#effcf5_0%,#f7fff9_100%)] p-5 shadow-sm">
+            <div className="mb-3 text-[15px] font-semibold text-emerald-900">
               Property Offer
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-semibold text-slate-800">
+                <label className={LABEL_CLASS}>
                   Offer Category
                 </label>
                 <select
@@ -916,7 +1011,7 @@ export default function SellerAddPropertyPage() {
                   value={formData.offerCategory}
                   onChange={handleChange}
                   disabled={loading}
-                  className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                  className={FIELD_CLASS}
                 >
                   {OFFER_CATEGORIES.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -926,7 +1021,7 @@ export default function SellerAddPropertyPage() {
                 </select>
               </div>
 
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 mt-7 md:mt-0">
+              <label className="mt-7 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 md:mt-0">
                 <input
                   type="checkbox"
                   name="offerActive"
@@ -935,7 +1030,7 @@ export default function SellerAddPropertyPage() {
                   disabled={loading || !hasOffer}
                   className="h-4 w-4 accent-emerald-600"
                 />
-                <span className="text-sm font-semibold text-slate-800">
+                <span className="text-[15px] font-semibold text-slate-800">
                   Activate this offer
                 </span>
               </label>
@@ -944,7 +1039,7 @@ export default function SellerAddPropertyPage() {
             {hasOffer && (
               <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800">
+                  <label className={LABEL_CLASS}>
                     Offer Title
                   </label>
                   <input
@@ -954,12 +1049,12 @@ export default function SellerAddPropertyPage() {
                     onChange={handleChange}
                     disabled={loading}
                     placeholder="e.g., Dashain Special Discount"
-                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    className={FIELD_CLASS}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800">
+                  <label className={LABEL_CLASS}>
                     Offer Badge
                   </label>
                   <input
@@ -969,12 +1064,12 @@ export default function SellerAddPropertyPage() {
                     onChange={handleChange}
                     disabled={loading}
                     placeholder="e.g., Save 15%"
-                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    className={FIELD_CLASS}
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-800">
+                  <label className={LABEL_CLASS}>
                     Offer Description
                   </label>
                   <textarea
@@ -984,12 +1079,12 @@ export default function SellerAddPropertyPage() {
                     rows={3}
                     disabled={loading}
                     placeholder="Short offer details for cards and property detail page."
-                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    className={TEXTAREA_CLASS}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800">
+                  <label className={LABEL_CLASS}>
                     Discount Type
                   </label>
                   <select
@@ -997,7 +1092,7 @@ export default function SellerAddPropertyPage() {
                     value={formData.offerDiscountType}
                     onChange={handleChange}
                     disabled={loading}
-                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    className={FIELD_CLASS}
                   >
                     {OFFER_DISCOUNT_TYPES.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -1008,7 +1103,7 @@ export default function SellerAddPropertyPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800">
+                  <label className={LABEL_CLASS}>
                     Discount Value
                   </label>
                   <input
@@ -1022,12 +1117,12 @@ export default function SellerAddPropertyPage() {
                     placeholder={
                       formData.offerDiscountType === "percentage" ? "e.g., 10" : "e.g., 5000"
                     }
-                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    className={FIELD_CLASS}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800">
+                  <label className={LABEL_CLASS}>
                     Valid Until
                   </label>
                   <input
@@ -1036,20 +1131,19 @@ export default function SellerAddPropertyPage() {
                     value={formData.offerValidUntil}
                     onChange={handleChange}
                     disabled={loading}
-                    className="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:opacity-60"
+                    className={FIELD_CLASS}
                   />
                 </div>
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Amenities */}
-          <div className="mt-8">
+          <section className={SECTION_CLASS}>
             <div className="flex items-center justify-between">
-              <label className="block text-sm font-semibold text-slate-800">
+              <label className="block text-2xl font-extrabold tracking-tight text-slate-950">
                 Amenities
               </label>
-              <span className="text-xs text-slate-500">
+              <span className="text-[13px] text-slate-500">
                 {amenities.length} selected
               </span>
             </div>
@@ -1076,26 +1170,25 @@ export default function SellerAddPropertyPage() {
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          {/* Images */}
-          <div className="mt-8">
+          <section className={SECTION_CLASS}>
             <div className="flex items-end justify-between gap-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-800">
+                <label className="block text-2xl font-extrabold tracking-tight text-slate-950">
                   Images * (up to {MAX_IMAGES})
                 </label>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-2 text-[13px] leading-6 text-slate-500">
                   Select a cover image (shown first to buyers).
                 </p>
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-[13px] text-slate-500">
                 {images.length}/{MAX_IMAGES}
               </div>
             </div>
 
             <div className="mt-3 flex flex-col gap-4">
-              <label className="group relative flex cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-700 hover:border-emerald-400 hover:bg-emerald-50/30">
+              <label className="group relative flex cursor-pointer items-center justify-center rounded-[24px] border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-sm text-slate-700 hover:border-emerald-400 hover:bg-emerald-50/30">
                 <div className="flex items-center gap-2">
                   <UploadCloud className="h-5 w-5" />
                   <span className="font-semibold">Upload images</span>
@@ -1154,15 +1247,15 @@ export default function SellerAddPropertyPage() {
                 </div>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* Actions */}
-          <div className="mt-10 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <div className="sticky bottom-0 mt-8 rounded-[24px] border border-slate-200 bg-white/95 px-4 py-4 shadow-[0_-8px_30px_rgba(15,23,42,0.06)] backdrop-blur">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={() => router.back()}
               disabled={loading}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+              className="rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
             >
               Cancel
             </button>
@@ -1170,10 +1263,12 @@ export default function SellerAddPropertyPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Creating..." : "Create Property"}
             </button>
+          </div>
+          </div>
           </div>
         </form>
       </div>
