@@ -303,6 +303,12 @@ export default function DashboardLandingLike() {
               >
                 Browse All
               </Link>
+              <Link
+                className="text-white/80 transition hover:text-white"
+                href="/faq"
+              >
+                FAQ
+              </Link>
             </div>
 
             <div className="flex items-center gap-3">

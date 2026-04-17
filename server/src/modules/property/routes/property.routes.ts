@@ -8,6 +8,7 @@ const router = Router();
 
 // buyer/public: approved listings
 router.get("/", optionalAuth, propertyController.listApproved);
+router.get("/suggestions", optionalAuth, propertyController.listSuggestions);
 
 // seller: get my properties (MUST be before "/:id")
 router.get("/mine", requireUserAuth, propertyController.getMyProperties);

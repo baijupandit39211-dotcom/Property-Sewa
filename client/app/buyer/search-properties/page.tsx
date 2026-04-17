@@ -26,6 +26,16 @@ type ListResponse = {
   total: number;
 };
 
+type PropertySuggestion = {
+  label: string;
+  type: "title" | "location" | "address";
+};
+
+type PropertySuggestionsResponse = {
+  success: boolean;
+  items: PropertySuggestion[];
+};
+
 function isOfferActive(property: Property) {
   return property.offerActive === true || String(property.offerActive).toLowerCase() === "true";
 }
@@ -226,7 +236,11 @@ export default function SearchPropertiesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [debouncedLocation, setDebouncedLocation] = useState("");
   const [smartSearch, setSmartSearch] = useState("");
+  const [debouncedSmartSearch, setDebouncedSmartSearch] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [smartSearchOpen, setSmartSearchOpen] = useState(false);
+  const [smartSearchSuggestions, setSmartSearchSuggestions] = useState<PropertySuggestion[]>([]);
+  const smartSearchRef = useRef<HTMLDivElement | null>(null);
 
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
@@ -264,6 +278,14 @@ export default function SearchPropertiesPage() {
 
     return () => window.clearTimeout(timer);
   }, [location]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSmartSearch(smartSearch.trim());
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [smartSearch]);
 
   useEffect(() => {
     setCompareIds(readIds(COMPARE_KEY));
@@ -316,6 +338,47 @@ export default function SearchPropertiesPage() {
       });
   }, [debouncedSearch, debouncedLocation, listingType, minPrice, maxPrice, page, limit, sort, showOnlyOffers]);
 
+  useEffect(() => {
+    if (debouncedSmartSearch.length < 2) {
+      setSmartSearchSuggestions([]);
+      setSmartSearchOpen(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    apiFetch<PropertySuggestionsResponse>(
+      `/properties/suggestions?q=${encodeURIComponent(debouncedSmartSearch)}&limit=8`
+    )
+      .then((response) => {
+        if (cancelled) return;
+        setSmartSearchSuggestions(response.items || []);
+        setSmartSearchOpen((response.items || []).length > 0);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSmartSearchSuggestions([]);
+        setSmartSearchOpen(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSmartSearch]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!smartSearchRef.current) return;
+      if (smartSearchRef.current.contains(event.target as Node)) return;
+      setSmartSearchOpen(false);
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, []);
+
   const wishlistSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const compareSet = useMemo(() => new Set(compareIds), [compareIds]);
   const visibleItems = useMemo(
@@ -323,7 +386,6 @@ export default function SearchPropertiesPage() {
     [items, showOnlyOffers]
   );
   const totalPages = Math.max(1, Math.ceil(total / limit));
-
   function showToast(text: string) {
     setToast({ show: true, text });
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
@@ -364,6 +426,7 @@ export default function SearchPropertiesPage() {
 
   function applySmartSearch() {
     const parsed = parseSmartSearch(smartSearch);
+    setSmartSearchOpen(false);
     setSearch(parsed.search);
     setLocation(parsed.location);
     setListingType(parsed.listingType);
@@ -426,7 +489,7 @@ export default function SearchPropertiesPage() {
       <Toast show={toast.show} text={toast.text} />
 
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+        <section className="ps-fade-up overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
@@ -443,7 +506,7 @@ export default function SearchPropertiesPage() {
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/buyer/wishlist"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-[0_14px_30px_rgba(255,255,255,0.08)]"
               >
                 Wishlist
                 <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-bold">
@@ -452,7 +515,7 @@ export default function SearchPropertiesPage() {
               </Link>
               <Link
                 href="/buyer/compare"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-emerald-900 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-[0_18px_36px_rgba(255,255,255,0.16)]"
               >
                 Compare
                 <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-900">
@@ -463,7 +526,7 @@ export default function SearchPropertiesPage() {
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-emerald-100 shadow-sm bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)]">
+        <section className="ps-fade-up ps-fade-up-delay-1 rounded-[28px] border border-emerald-100 shadow-sm bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)]">
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Smart property search</h2>
@@ -471,9 +534,6 @@ export default function SearchPropertiesPage() {
                 Search like a buyer: try keywords, places, price intent, or simple natural phrases.
               </p>
             </div>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
-              Zillow-style UX
-            </span>
           </div>
 
           <div className="px-5 pb-5">
@@ -482,24 +542,62 @@ export default function SearchPropertiesPage() {
                 event.preventDefault();
                 applySmartSearch();
               }}
-              className="rounded-[24px] border border-emerald-100 bg-white p-3 shadow-[0_12px_40px_rgba(15,23,42,0.05)]"
+              className="rounded-[30px] border border-emerald-100 bg-white p-3 shadow-[0_18px_48px_rgba(15,23,42,0.08)] transition-all duration-300 hover:shadow-[0_24px_56px_rgba(15,23,42,0.1)]"
             >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <div className="relative flex-1">
+                <div ref={smartSearchRef} className="relative flex-1">
                   <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={smartSearch}
-                    onChange={(event) => setSmartSearch(event.target.value)}
+                    onChange={(event) => {
+                      const nextValue = event.target.value;
+                      setSmartSearch(nextValue);
+                      if (nextValue.trim().length < 2) {
+                        setSmartSearchOpen(false);
+                      }
+                    }}
+                    onFocus={() => setSmartSearchOpen(smartSearchSuggestions.length > 0)}
                     placeholder='Search "villa in kathmandu" or "apartment in lalitpur under 5000000"'
-                    className="h-14 w-full rounded-2xl border border-transparent bg-slate-50 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    className="ps-soft-pulse h-16 w-full rounded-3xl border border-transparent bg-slate-50 pl-11 pr-5 text-[15px] text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.05)] outline-none transition-all duration-300 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                   />
+
+                  {smartSearchOpen && smartSearchSuggestions.length > 0 ? (
+                    <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-20 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
+                      {smartSearchSuggestions.map((suggestion) => (
+                        <button
+                          key={`${suggestion.type}:${suggestion.label}`}
+                          type="button"
+                          onMouseDown={() => {
+                            setSmartSearch(suggestion.label);
+                            setSmartSearchOpen(false);
+                            const parsed = parseSmartSearch(suggestion.label);
+                            setSearch(parsed.search);
+                            setLocation(parsed.location);
+                            setListingType(parsed.listingType);
+                            setMinPrice(parsed.minPrice);
+                            setMaxPrice(parsed.maxPrice);
+                            setPage(1);
+                          }}
+                          className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800 last:border-b-0"
+                        >
+                          <Search className="h-4 w-4 shrink-0 text-slate-400" />
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate font-medium">{suggestion.label}</div>
+                            <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                              {suggestion.type}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row lg:items-center">
                   <button
                     type="submit"
-                    className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+                    className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-[0_18px_30px_rgba(14,159,110,0.24)]"
                   >
                     <Sparkles className="h-4 w-4" />
                     Search
@@ -508,7 +606,7 @@ export default function SearchPropertiesPage() {
                   <button
                     type="button"
                     onClick={() => setAdvancedOpen((current) => !current)}
-                    className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]"
                   >
                     <SlidersHorizontal className="h-4 w-4" />
                     Advanced Filters
@@ -666,7 +764,7 @@ export default function SearchPropertiesPage() {
           ) : null}
         </section>
 
-        <section className="rounded-[28px] border border-emerald-100 shadow-sm bg-[linear-gradient(180deg,#ffffff_0%,#f4fff8_100%)]">
+        <section className="ps-fade-up ps-fade-up-delay-2 rounded-[28px] border border-emerald-100 shadow-sm bg-[linear-gradient(180deg,#ffffff_0%,#f4fff8_100%)]">
           <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -705,7 +803,7 @@ export default function SearchPropertiesPage() {
         ) : visibleItems.length === 0 ? (
           <EmptyState />
         ) : (
-          <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <section className="ps-fade-up ps-fade-up-delay-3 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visibleItems.map((p) => {
               const saved = wishlistSet.has(p._id);
               const compareOn = compareSet.has(p._id);
@@ -719,7 +817,7 @@ export default function SearchPropertiesPage() {
               return (
                 <div key={p._id} className="mx-auto w-full max-w-[340px]">
                   <article
-                    className="group flex h-full min-h-[438px] flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.1)]"
+                    className="group flex h-full min-h-[438px] flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1.5 hover:border-emerald-200 hover:shadow-[0_22px_44px_rgba(15,23,42,0.12)]"
                     style={{ contentVisibility: "auto", containIntrinsicSize: "438px" }}
                   >
                     <div className="relative flex h-full flex-col">
@@ -727,7 +825,7 @@ export default function SearchPropertiesPage() {
                         type="button"
                         onClick={() => toggleCompare(p._id)}
                         className={[
-                          "absolute right-[4.15rem] top-4 z-20 inline-flex h-10 min-w-[38px] items-center justify-center rounded-full px-2 text-[10px] shadow-sm ring-1 transition-all duration-200 active:scale-95",
+                          "absolute right-[4.15rem] top-4 z-20 inline-flex h-10 min-w-[38px] items-center justify-center rounded-full px-2 text-[10px] shadow-sm ring-1 transition-all duration-300 active:scale-95",
                           compareOn
                             ? "bg-slate-900/80 text-white ring-slate-900/70"
                             : "bg-white/92 text-slate-700 ring-black/5 backdrop-blur-sm hover:bg-white",
@@ -743,7 +841,7 @@ export default function SearchPropertiesPage() {
                         type="button"
                         onClick={() => toggleWishlist(p._id)}
                         className={[
-                          "absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-all duration-200 active:scale-95",
+                          "absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-all duration-300 active:scale-95",
                           saved ? "text-emerald-600" : "text-slate-700 hover:bg-slate-50",
                           heartPop ? "scale-110" : "",
                         ].join(" ")}
@@ -766,9 +864,10 @@ export default function SearchPropertiesPage() {
                             alt={p.title ?? "Property image"}
                             loading="lazy"
                             decoding="async"
-                            className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                            className="aspect-[4/3] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035]"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/28 via-slate-950/4 to-transparent" />
+                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_28%)] opacity-70 transition-opacity duration-500 group-hover:opacity-100" />
 
                           <div className="absolute left-4 top-4 z-20">
                             <span
@@ -782,7 +881,7 @@ export default function SearchPropertiesPage() {
                           </div>
 
                           <div className="absolute bottom-4 right-4 z-20">
-                            <div className="inline-flex items-center gap-2 rounded-xl bg-slate-900/78 px-3 py-2 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] backdrop-blur-sm">
+                            <div className="inline-flex items-center gap-2 rounded-xl bg-slate-900/78 px-3 py-2 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:bg-slate-900/84">
                               <Camera className="h-[14px] w-[14px]" />
                               <span className="text-[13px] font-semibold">
                                 {photoCount || 1} Photo{photoCount === 1 ? "" : "s"}
@@ -833,7 +932,7 @@ export default function SearchPropertiesPage() {
                           </div>
 
                           <div className="mt-auto pt-4">
-                            <div className="flex items-center justify-center gap-2.5 rounded-[12px] border border-emerald-600 px-4 py-2 text-center text-[13px] font-bold text-emerald-700 transition-all duration-300 group-hover:bg-emerald-50">
+                            <div className="flex items-center justify-center gap-2.5 rounded-[12px] border border-emerald-600 px-4 py-2 text-center text-[13px] font-bold text-emerald-700 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:bg-emerald-50 group-hover:shadow-[0_14px_26px_rgba(14,159,110,0.12)]">
                               <span>View details</span>
                               <ArrowRight className="h-[15px] w-[15px]" />
                             </div>
@@ -849,7 +948,7 @@ export default function SearchPropertiesPage() {
         )}
 
         {!error && !loading && items.length > 0 && (
-          <section className="rounded-[28px] border border-emerald-100 shadow-sm bg-[linear-gradient(180deg,#ffffff_0%,#f4fff8_100%)]">
+          <section className="ps-fade-up rounded-[28px] border border-emerald-100 shadow-sm bg-[linear-gradient(180deg,#ffffff_0%,#f4fff8_100%)]">
             <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">

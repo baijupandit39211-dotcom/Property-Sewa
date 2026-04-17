@@ -9,6 +9,7 @@ import {
   Scale,
   Bell,
   MessageCircle,
+  Settings,
   HelpCircle,
   Flag,
 } from "lucide-react";
@@ -20,6 +21,7 @@ const links = [
   { label: "Compare Properties", href: "/buyer/compare", icon: Scale },
   { label: "Alerts / Notifications", href: "/buyer/notifications", icon: Bell },
   { label: "Messages / Chat", href: "/buyer/messages", icon: MessageCircle },
+  { label: "Profile Settings", href: "/buyer/profile", icon: Settings },
 ];
 
 const bottomLinks = [

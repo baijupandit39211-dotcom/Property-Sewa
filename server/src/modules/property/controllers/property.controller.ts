@@ -199,6 +199,18 @@ export async function listApproved(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function listSuggestions(req: Request, res: Response, next: NextFunction) {
+  try {
+    const q = String(req.query?.q || "").trim();
+    const limit = Number(req.query?.limit || 8);
+
+    const items = await propertyService.listSuggestions(q, limit);
+    return res.status(200).json({ success: true, items });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 // GET /properties/:id (buyer approved)
 export async function getApprovedById(req: Request, res: Response, next: NextFunction) {
   try {

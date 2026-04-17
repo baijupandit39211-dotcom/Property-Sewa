@@ -314,6 +314,56 @@ async function listApproved(query: any, viewer?: ViewerContext) {
   return { items, total, page, limit };
 }
 
+async function listSuggestions(queryText: string, limitRaw?: number) {
+  const query = String(queryText || "").trim();
+  if (query.length < 2) {
+    return [];
+  }
+
+  const safeQuery = escapeRegex(query);
+  const limit = Math.min(10, Math.max(1, Number(limitRaw || 8)));
+
+  const items = await Property.find({
+    ...buildApprovedVisibilityQuery(),
+    $or: [
+      { title: { $regex: safeQuery, $options: "i" } },
+      { location: { $regex: safeQuery, $options: "i" } },
+      { address: { $regex: safeQuery, $options: "i" } },
+    ],
+  })
+    .select("title location address")
+    .sort({ createdAt: -1, _id: -1 })
+    .limit(24)
+    .lean();
+
+  const suggestions: Array<{
+    label: string;
+    type: "title" | "location" | "address";
+  }> = [];
+  const seen = new Set<string>();
+
+  function addSuggestion(value: unknown, type: "title" | "location" | "address") {
+    const label = String(value || "").trim();
+    if (!label) return;
+    if (!new RegExp(safeQuery, "i").test(label)) return;
+
+    const key = `${type}:${label.toLowerCase()}`;
+    if (seen.has(key)) return;
+
+    seen.add(key);
+    suggestions.push({ label, type });
+  }
+
+  for (const item of items) {
+    addSuggestion(item.title, "title");
+    addSuggestion(item.location, "location");
+    addSuggestion(item.address, "address");
+    if (suggestions.length >= limit) break;
+  }
+
+  return suggestions.slice(0, limit);
+}
+
 async function getApprovedById(id: string, viewer?: ViewerContext) {
   await expireStalePropertyReservations();
 
@@ -648,6 +698,7 @@ export default {
   getMyPropertyById,
   deleteProperty,
   listApproved,
+  listSuggestions,
   getApprovedById,
   previewById,
   listPending,
