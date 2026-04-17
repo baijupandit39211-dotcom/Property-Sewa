@@ -6,6 +6,7 @@ export const NOTIFICATION_TYPES = [
   "order.cancelled",
   "payment.success",
   "payment.failed",
+  "contact.created",
   "alert.general",
 ] as const;
 
@@ -13,6 +14,7 @@ export const NOTIFICATION_CATEGORIES = [
   "message",
   "order",
   "payment",
+  "contact",
   "alert",
 ] as const;
 
@@ -25,13 +27,14 @@ export const NOTIFICATION_ENTITY_TYPES = [
   "reservation",
   "payment",
   "property",
+  "contact_message",
   "user",
   "system",
 ] as const;
 
 export const NOTIFICATION_DELIVERY_CHANNELS = ["in_app", "email"] as const;
 
-export const NOTIFICATION_RECIPIENT_ROLES = ["buyer", "seller"] as const;
+export const NOTIFICATION_RECIPIENT_ROLES = ["buyer", "seller", "admin"] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];

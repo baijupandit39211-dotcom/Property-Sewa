@@ -7,19 +7,22 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  Mail,
   MessageSquare,
   ReceiptText,
 } from "lucide-react";
-import { apiFetch } from "@/app/lib/api";
+import { apiFetch, apiFetchAdmin } from "@/app/lib/api";
 import { subscribeToNotificationSocket } from "@/app/lib/notificationsSocket";
 
 type NotificationItem = {
   _id: string;
   title: string;
   body: string;
-  category: "message" | "order" | "payment" | "alert";
+  category: "message" | "order" | "payment" | "contact" | "alert";
   priority: "low" | "medium" | "high";
+  type?: string;
   link?: string | null;
+  data?: Record<string, unknown>;
   isRead: boolean;
   createdAt: string;
 };
@@ -36,16 +39,19 @@ type NotificationListResponse = {
 };
 
 type Props = {
-  roleLabel: "Buyer" | "Seller";
+  roleLabel: "Buyer" | "Seller" | "Admin";
+  endpointBase?: string;
+  authMode?: "user" | "admin";
 };
 
 type SocketNotificationItem = NotificationItem & {
-  category: "message" | "order" | "payment" | "alert";
+  category: "message" | "order" | "payment" | "contact" | "alert";
 };
 
 function getNotificationIcon(category: NotificationItem["category"]) {
   if (category === "message") return MessageSquare;
   if (category === "order" || category === "payment") return ReceiptText;
+  if (category === "contact") return Mail;
   return AlertCircle;
 }
 
@@ -62,7 +68,11 @@ function notifyNotificationStateChanged() {
   window.dispatchEvent(new Event("notifications:refresh"));
 }
 
-export default function NotificationsPageContent({ roleLabel }: Props) {
+export default function NotificationsPageContent({
+  roleLabel,
+  endpointBase = "/notifications",
+  authMode = "user",
+}: Props) {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -78,12 +88,13 @@ export default function NotificationsPageContent({ roleLabel }: Props) {
     hasPrev: false,
   });
   const unreadCount = data.items.filter((item) => !item.isRead).length;
+  const fetcher = authMode === "admin" ? apiFetchAdmin : apiFetch;
 
   const fetchNotifications = async (nextPage: number) => {
     try {
       setLoading(true);
-      const response = await apiFetch<NotificationListResponse>(
-        `/notifications?page=${nextPage}&limit=10`
+      const response = await fetcher<NotificationListResponse>(
+        `${endpointBase}?page=${nextPage}&limit=10`
       );
       setData(response);
     } catch {
@@ -135,7 +146,7 @@ export default function NotificationsPageContent({ roleLabel }: Props) {
   const handleOpenNotification = async (notification: NotificationItem) => {
     try {
       if (!notification.isRead) {
-        await apiFetch(`/notifications/${notification._id}/read`, { method: "PATCH" });
+        await fetcher(`${endpointBase}/${notification._id}/read`, { method: "PATCH" });
         notifyNotificationStateChanged();
       }
     } catch {
@@ -152,7 +163,7 @@ export default function NotificationsPageContent({ roleLabel }: Props) {
   const handleMarkAllAsRead = async () => {
     try {
       setMarkingAll(true);
-      await apiFetch("/notifications/read-all", { method: "PATCH" });
+      await fetcher(`${endpointBase}/read-all`, { method: "PATCH" });
       notifyNotificationStateChanged();
       await fetchNotifications(page);
     } finally {

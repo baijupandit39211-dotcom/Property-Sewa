@@ -111,6 +111,20 @@ function verify(token: string) {
   return jwt.verify(token, getSecret()) as JwtPayloadShape;
 }
 
+function getSocketAuthToken(rawCookie: string | undefined) {
+  const cookieNames = [
+    process.env.COOKIE_NAME || "accessToken",
+    process.env.ADMIN_COOKIE_NAME || "adminToken",
+  ];
+
+  for (const cookieName of cookieNames) {
+    const token = getCookieValue(rawCookie, cookieName);
+    if (token) return token;
+  }
+
+  return "";
+}
+
 async function resolveChatParticipants(leadId: string, userId: string) {
   const lead = await Lead.findById(leadId).select("sellerId buyerId").lean();
   if (!lead?.sellerId || !lead?.buyerId) return null;
@@ -267,9 +281,8 @@ export function initNotificationSocket(server: HttpServer) {
 
   io.use(async (socket, next) => {
     try {
-      const cookieName = process.env.COOKIE_NAME || "accessToken";
       const rawCookie = socket.handshake.headers.cookie;
-      const token = getCookieValue(rawCookie, cookieName);
+      const token = getSocketAuthToken(rawCookie);
 
       if (!token) {
         return next(new Error("Authentication required"));

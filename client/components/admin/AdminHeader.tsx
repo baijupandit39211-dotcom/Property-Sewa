@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 type AdminMeResponse = {
   success: boolean;
@@ -61,6 +62,13 @@ export default function AdminHeader() {
 
         {user && (
           <div className="flex items-center gap-4">
+            <NotificationBell
+              notificationsPageHref="/admin/notifications"
+              endpointBase="/api/admin/notifications"
+              authMode="admin"
+              buttonClassName="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
+            />
+
             <span className="rounded-full bg-emerald-400/90 px-3 py-1 text-xs font-bold text-emerald-950">
               {roleLabel}
             </span>

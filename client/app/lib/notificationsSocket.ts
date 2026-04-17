@@ -7,9 +7,11 @@ type NotificationItem = {
   _id: string;
   title: string;
   body: string;
-  category: "message" | "order" | "payment" | "alert";
+  category: "message" | "order" | "payment" | "contact" | "alert";
+  type?: string;
   priority?: "low" | "medium" | "high";
   link?: string | null;
+  data?: Record<string, unknown>;
   isRead: boolean;
   createdAt: string;
 };

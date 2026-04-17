@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  Bell,
   Building2,
   ClipboardCheck,
   Flag,
   HelpCircle,
   LayoutDashboard,
+  Mail,
   MessageSquare,
   Settings,
   SquarePlus,
@@ -34,6 +36,8 @@ const navigationItems: LinkItem[] = [
   { label: "Users Management", href: "/admin/users", icon: Users },
   { label: "Listings Approval", href: "/admin/listings-approval", icon: ClipboardCheck },
   { label: "Recent Activity", href: "/admin/recent-activity", icon: Activity },
+  { label: "Contact Messages", href: "/admin/contact-messages", icon: Mail },
+  { label: "Notifications", href: "/admin/notifications", icon: Bell },
   { label: "Reports", href: "/admin/reports", icon: Flag },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];

@@ -2,16 +2,25 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { AlertCircle, Bell, ChevronRight, MessageSquare, ReceiptText } from "lucide-react";
-import { apiFetch } from "@/app/lib/api";
+import {
+  AlertCircle,
+  Bell,
+  ChevronRight,
+  Mail,
+  MessageSquare,
+  ReceiptText,
+} from "lucide-react";
+import { apiFetch, apiFetchAdmin } from "@/app/lib/api";
 import { subscribeToNotificationSocket } from "@/app/lib/notificationsSocket";
 
 type NotificationItem = {
   _id: string;
   title: string;
   body: string;
-  category: "message" | "order" | "payment" | "alert";
+  category: "message" | "order" | "payment" | "contact" | "alert";
+  type?: string;
   link?: string | null;
+  data?: Record<string, unknown>;
   isRead: boolean;
   createdAt: string;
 };
@@ -36,6 +45,8 @@ type Props = {
   notificationsPageHref: string;
   buttonClassName: string;
   panelAlignClassName?: string;
+  endpointBase?: string;
+  authMode?: "user" | "admin";
 };
 
 function formatRelativeTime(value: string) {
@@ -56,6 +67,7 @@ function formatRelativeTime(value: string) {
 function getNotificationIcon(category: NotificationItem["category"]) {
   if (category === "message") return MessageSquare;
   if (category === "order" || category === "payment") return ReceiptText;
+  if (category === "contact") return Mail;
   return AlertCircle;
 }
 
@@ -67,10 +79,14 @@ export default function NotificationBell({
   notificationsPageHref,
   buttonClassName,
   panelAlignClassName = "right-0",
+  endpointBase = "/notifications",
+  authMode = "user",
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const seenNotificationIdsRef = useRef(new Set<string>());
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -82,9 +98,42 @@ export default function NotificationBell({
     return String(unreadCount);
   }, [unreadCount]);
 
+  const fetcher = authMode === "admin" ? apiFetchAdmin : apiFetch;
+
+  const playNotificationSound = async (notificationId?: string) => {
+    const cleanId = String(notificationId || "").trim();
+    if (!cleanId || seenNotificationIdsRef.current.has(cleanId)) return;
+
+    seenNotificationIdsRef.current.add(cleanId);
+
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+      await audio.play();
+    } catch {
+      // Browser autoplay restrictions are expected until the user interacts.
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const audio = new Audio("/sounds/message.mp3?v=20260416-notify");
+    audio.preload = "auto";
+    audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
   const fetchUnreadCount = async () => {
     try {
-      const response = await apiFetch<UnreadCountResponse>("/notifications/unread-count");
+      const response = await fetcher<UnreadCountResponse>(`${endpointBase}/unread-count`);
       setUnreadCount(response.count || 0);
     } catch {
       setUnreadCount(0);
@@ -94,7 +143,7 @@ export default function NotificationBell({
   const fetchLatestNotifications = async () => {
     try {
       setLoading(true);
-      const response = await apiFetch<NotificationListResponse>("/notifications?limit=8");
+      const response = await fetcher<NotificationListResponse>(`${endpointBase}?limit=8`);
       setNotifications(response.items || []);
     } catch {
       setNotifications([]);
@@ -111,12 +160,13 @@ export default function NotificationBell({
 
   useEffect(() => {
     return subscribeToNotificationSocket({
-      onNew: ({ notification, unreadCount: nextUnreadCount }) => {
+      onNew: async ({ notification, unreadCount: nextUnreadCount }) => {
         setUnreadCount(nextUnreadCount);
         setNotifications((prev) => {
           const deduped = prev.filter((item) => item._id !== notification._id);
           return [notification, ...deduped].slice(0, 8);
         });
+        await playNotificationSound(notification._id);
         notifyNotificationStateChanged();
       },
       onRead: ({ notificationId, unreadCount: nextUnreadCount }) => {
@@ -171,7 +221,7 @@ export default function NotificationBell({
   const handleNotificationClick = async (notification: NotificationItem) => {
     try {
       if (!notification.isRead) {
-        await apiFetch(`/notifications/${notification._id}/read`, { method: "PATCH" });
+        await fetcher(`${endpointBase}/${notification._id}/read`, { method: "PATCH" });
         setUnreadCount((prev) => Math.max(0, prev - 1));
         setNotifications((prev) =>
           prev.map((item) =>

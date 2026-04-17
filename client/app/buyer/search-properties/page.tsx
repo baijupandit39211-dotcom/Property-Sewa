@@ -3,10 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Heart, Scale } from "lucide-react";
+import {
+  ArrowRight,
+  Bath,
+  BedDouble,
+  Camera,
+  Expand,
+  Heart,
+  MapPin,
+  Scale,
+  ShieldCheck,
+} from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
-import OfferBadge from "@/components/offers/OfferBadge";
 
 type ListResponse = {
   items: Property[];
@@ -124,6 +133,35 @@ function EmptyState() {
       </div>
     </div>
   );
+}
+
+function formatCardArea(property: Property) {
+  if (typeof property.sqft === "number" && property.sqft > 0) {
+    return `${property.sqft} sqft`;
+  }
+
+  return "Area on request";
+}
+
+function getCardTypeLabel(property: Property) {
+  const title = String(property.title || "").toLowerCase();
+
+  if (title.includes("villa")) return "Villa";
+  if (title.includes("apartment")) return "Apartment";
+  if (title.includes("house")) return "House";
+  if (title.includes("flat")) return "Flat";
+  if (title.includes("land")) return "Land";
+
+  return "Property";
+}
+
+function getStatusBadgeLabel(property: Property) {
+  if (isOfferActive(property)) return "Featured";
+  return "New Listing";
+}
+
+function getPrimaryImage(property: Property) {
+  return property.images?.[0]?.url || "https://placehold.co/900x700/e8f5ee/0f172a?text=Property+Sewa";
 }
 
 export default function SearchPropertiesPage() {
@@ -528,133 +566,151 @@ export default function SearchPropertiesPage() {
         ) : visibleItems.length === 0 ? (
           <EmptyState />
         ) : (
-          <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visibleItems.map((p) => {
               const saved = wishlistSet.has(p._id);
               const compareOn = compareSet.has(p._id);
               const offerExpiry = getOfferExpiryState(p);
-
+              const cardType = getCardTypeLabel(p);
+              const cardArea = formatCardArea(p);
+              const statusBadgeLabel = getStatusBadgeLabel(p);
+              const photoCount = Array.isArray(p.images) ? p.images.length : 0;
               const heartPop = !!poppingIds[p._id];
               const scalePop = !!comparePopIds[p._id];
 
               return (
-                <article
-                  key={p._id}
-                  className="group overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-sm transition duration-300 will-change-transform [transform:translateZ(0)] hover:-translate-y-1 hover:shadow-[0_18px_40px_-26px_rgba(16,185,129,0.22)]"
-                  style={{ contentVisibility: "auto", containIntrinsicSize: "420px" }}
-                >
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => toggleCompare(p._id)}
-                      className={[
-                        "absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold shadow-sm ring-1 backdrop-blur transition active:scale-95",
-                        compareOn
-                          ? "bg-slate-900 text-white ring-slate-900"
-                          : "bg-white/92 text-slate-700 ring-black/5 hover:bg-white",
-                        scalePop ? "scale-105" : "",
-                      ].join(" ")}
-                      aria-label={compareOn ? "Remove from compare" : "Add to compare"}
-                      title={compareOn ? "Remove from compare" : "Add to compare"}
-                    >
-                      <Scale className={["h-4 w-4", scalePop ? "scale-110" : ""].join(" ")} />
-                      {compareOn ? "Comparing" : "Compare"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => toggleWishlist(p._id)}
-                      className={[
-                        "absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full shadow-sm ring-1 backdrop-blur transition active:scale-95",
-                        saved
-                          ? "bg-emerald-600 text-white ring-emerald-600"
-                          : "bg-white/92 text-slate-700 ring-black/5 hover:bg-white",
-                        heartPop ? "scale-110" : "",
-                      ].join(" ")}
-                      aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
-                      title={saved ? "Saved" : "Save"}
-                    >
-                      <Heart
+                <div key={p._id} className="mx-auto w-full max-w-[340px]">
+                  <article
+                    className="group flex h-full min-h-[438px] flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.1)]"
+                    style={{ contentVisibility: "auto", containIntrinsicSize: "438px" }}
+                  >
+                    <div className="relative flex h-full flex-col">
+                      <button
+                        type="button"
+                        onClick={() => toggleCompare(p._id)}
                         className={[
-                          "h-5 w-5 transition-transform duration-200",
-                          saved ? "fill-white" : "",
+                          "absolute right-[4.15rem] top-4 z-20 inline-flex h-10 min-w-[38px] items-center justify-center rounded-full px-2 text-[10px] shadow-sm ring-1 transition-all duration-200 active:scale-95",
+                          compareOn
+                            ? "bg-slate-900/80 text-white ring-slate-900/70"
+                            : "bg-white/92 text-slate-700 ring-black/5 backdrop-blur-sm hover:bg-white",
+                          scalePop ? "scale-105" : "",
+                        ].join(" ")}
+                        aria-label={compareOn ? "Remove from compare" : "Add to compare"}
+                        title={compareOn ? "Remove from compare" : "Add to compare"}
+                      >
+                        <Scale className={["h-[13px] w-[13px]", scalePop ? "scale-110" : ""].join(" ")} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleWishlist(p._id)}
+                        className={[
+                          "absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-all duration-200 active:scale-95",
+                          saved ? "text-emerald-600" : "text-slate-700 hover:bg-slate-50",
                           heartPop ? "scale-110" : "",
                         ].join(" ")}
-                      />
-                    </button>
-
-                    <Link href={`/buyer/property/${p._id}`} className="block">
-                      <div className="relative overflow-hidden">
-                        <img
-                          src={p.images[0]?.url}
-                          alt={p.title ?? "Property image"}
-                          loading="lazy"
-                          decoding="async"
-                          className="h-[240px] w-full object-cover transition duration-500 [transform:translateZ(0)] group-hover:scale-[1.03]"
+                        aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+                        title={saved ? "Saved" : "Save"}
+                      >
+                        <Heart
+                          className={[
+                            "h-[18px] w-[18px] transition-transform duration-200",
+                            saved ? "fill-emerald-600" : "",
+                            heartPop ? "scale-110" : "",
+                          ].join(" ")}
                         />
-                        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/55 to-transparent" />
-                        <div className="absolute bottom-4 left-4 z-10">
-                          <OfferBadge
-                            category={p.offerCategory}
-                            active={isOfferActive(p)}
-                            label={p.offerBadge || p.offerTitle}
-                          />
-                        </div>
-                      </div>
+                      </button>
 
-                      <div className="space-y-4 p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              Starting Price
-                            </p>
-                            <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-                              {p.currency} {Number(p.price || 0).toLocaleString()}
-                            </p>
+                      <Link href={`/buyer/property/${p._id}`} className="block">
+                        <div className="relative overflow-hidden rounded-t-[24px]">
+                          <img
+                            src={getPrimaryImage(p)}
+                            alt={p.title ?? "Property image"}
+                            loading="lazy"
+                            decoding="async"
+                            className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/28 via-slate-950/4 to-transparent" />
+
+                          <div className="absolute left-4 top-4 z-20">
+                            <span
+                              className={[
+                                "inline-flex min-h-[40px] items-center rounded-full px-5 text-[14px] font-bold text-white shadow-[0_8px_20px_rgba(15,23,42,0.15)]",
+                                statusBadgeLabel === "Featured" ? "bg-[#0b7a5a]" : "bg-[#172554]",
+                              ].join(" ")}
+                            >
+                              {statusBadgeLabel}
+                            </span>
                           </div>
 
-                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 ring-1 ring-emerald-200">
-                            Featured
-                          </span>
+                          <div className="absolute bottom-4 right-4 z-20">
+                            <div className="inline-flex items-center gap-2 rounded-xl bg-slate-900/78 px-3 py-2 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] backdrop-blur-sm">
+                              <Camera className="h-[14px] w-[14px]" />
+                              <span className="text-[13px] font-semibold">
+                                {photoCount || 1} Photo{photoCount === 1 ? "" : "s"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
-                        <div>
-                          <h3 className="line-clamp-2 text-base font-bold leading-6 text-slate-900">
+                        <div className="flex min-h-[210px] flex-1 flex-col bg-white px-5 py-4">
+                          <p className="text-[18px] font-black tracking-tight text-slate-950">
+                            {p.currency} {Number(p.price || 0).toLocaleString()}
+                          </p>
+
+                          <div className="mt-2 flex flex-wrap items-center gap-3">
+                            <span className="text-[13px] font-bold text-emerald-700">{cardType}</span>
+                            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#2563eb]">
+                              <ShieldCheck className="h-[13px] w-[13px]" />
+                              Verified
+                            </span>
+                          </div>
+
+                          <h3 className="mt-3 line-clamp-2 text-xl font-extrabold leading-[1.25] tracking-tight text-slate-950">
                             {p.title || "Property listing"}
                           </h3>
-                          <p className="mt-2 text-sm text-slate-500">{p.address || p.location}</p>
-                        </div>
 
-                        <div className="flex flex-wrap gap-2">
-                          <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100">
-                            {p.beds} Beds
-                          </span>
-                          <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100">
-                            {p.baths} Baths
-                          </span>
-                          <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-100">
-                            {p.sqft} sqft
-                          </span>
-                        </div>
+                          <p className="mt-2 flex items-center gap-2 text-[13px] text-slate-500">
+                            <MapPin className="h-[14px] w-[14px] shrink-0 text-slate-500" />
+                            <span className="truncate">{p.address || p.location}</span>
+                          </p>
 
-                        {offerExpiry ? (
-                          <div
-                            className={[
-                              "inline-flex rounded-full px-3 py-1.5 text-[11px] font-semibold ring-1",
-                              offerExpiry.tone === "emerald"
-                                ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                                : offerExpiry.tone === "amber"
-                                ? "bg-amber-50 text-amber-700 ring-amber-200"
-                                : "bg-rose-50 text-rose-700 ring-rose-200",
-                            ].join(" ")}
-                          >
-                            {offerExpiry.text}
+                          {offerExpiry ? (
+                            <div className="mt-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold text-emerald-700">
+                              {offerExpiry.text}
+                            </div>
+                          ) : null}
+
+                          <div className="mt-3 border-t border-slate-200 pt-3">
+                            <div className="flex flex-wrap items-center gap-2 text-[13px] font-medium text-slate-600">
+                              <span className="inline-flex items-center gap-1.5">
+                                <BedDouble className="h-[14px] w-[14px]" />
+                                {p.beds} bd
+                              </span>
+                              <span className="text-slate-300">•</span>
+                              <span className="inline-flex items-center gap-1.5">
+                                <Bath className="h-[14px] w-[14px]" />
+                                {p.baths} ba
+                              </span>
+                              <span className="text-slate-300">•</span>
+                              <span className="inline-flex items-center gap-1.5">
+                                <Expand className="h-[14px] w-[14px]" />
+                                {cardArea.includes("sqft") ? cardArea : "Area"}
+                              </span>
+                            </div>
                           </div>
-                        ) : null}
-                      </div>
-                    </Link>
-                  </div>
-                </article>
+
+                          <div className="mt-auto pt-4">
+                            <div className="flex items-center justify-center gap-2.5 rounded-[12px] border border-emerald-600 px-4 py-2 text-center text-[13px] font-bold text-emerald-700 transition-all duration-300 group-hover:bg-emerald-50">
+                              <span>View details</span>
+                              <ArrowRight className="h-[15px] w-[15px]" />
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+                  </article>
+                </div>
               );
             })}
           </section>
