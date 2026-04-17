@@ -8,11 +8,15 @@ import {
   Bath,
   BedDouble,
   Camera,
+  ChevronDown,
   Expand,
   Heart,
   MapPin,
   Scale,
+  Search,
   ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
@@ -20,11 +24,6 @@ import type { Property } from "../../lib/property.types";
 type ListResponse = {
   items: Property[];
   total: number;
-};
-
-type OfferExpiryState = {
-  text: string;
-  tone: "emerald" | "amber" | "rose";
 };
 
 function isOfferActive(property: Property) {
@@ -48,29 +47,6 @@ function readIds(key: string): string[] {
 
 function writeIds(key: string, ids: string[]) {
   localStorage.setItem(key, JSON.stringify({ ids }));
-}
-
-function getOfferExpiryState(property: Property): OfferExpiryState | null {
-  if (!isOfferActive(property) || !property.offerValidUntil) return null;
-
-  const target = new Date(property.offerValidUntil);
-  if (Number.isNaN(target.getTime())) return null;
-
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const end = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-  const diffDays = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) {
-    return { text: "Offer expired", tone: "rose" };
-  }
-  if (diffDays === 0) {
-    return { text: "Ends today", tone: "amber" };
-  }
-  if (diffDays <= 2) {
-    return { text: `Ends in ${diffDays} day${diffDays === 1 ? "" : "s"}`, tone: "amber" };
-  }
-  return { text: `Ends in ${diffDays} days`, tone: "emerald" };
 }
 
 type ToastState = { show: boolean; text: string };
@@ -164,6 +140,74 @@ function getPrimaryImage(property: Property) {
   return property.images?.[0]?.url || "https://placehold.co/900x700/e8f5ee/0f172a?text=Property+Sewa";
 }
 
+function extractPriceValue(input: string) {
+  const normalized = input.replaceAll(",", "");
+  const match = normalized.match(/(\d+(?:\.\d+)?)/);
+  if (!match) return "";
+
+  const raw = Number(match[1]);
+  if (!Number.isFinite(raw)) return "";
+
+  if (/\b(cr|crore)\b/i.test(normalized)) return String(Math.round(raw * 10000000));
+  if (/\b(lac|lakh)\b/i.test(normalized)) return String(Math.round(raw * 100000));
+  if (/\bk\b/i.test(normalized)) return String(Math.round(raw * 1000));
+
+  return String(Math.round(raw));
+}
+
+function parseSmartSearch(input: string) {
+  const raw = input.trim();
+  const normalized = raw.toLowerCase();
+
+  let nextSearch = raw;
+  let nextLocation = "";
+  let nextListingType = "";
+  let nextMinPrice = "";
+  let nextMaxPrice = "";
+
+  if (/\bfor rent\b|\brent\b/.test(normalized)) {
+    nextListingType = "rent";
+  } else if (/\bfor buy\b|\bbuy\b|\bfor sale\b|\bsale\b/.test(normalized)) {
+    nextListingType = "buy";
+  }
+
+  const underMatch = normalized.match(/\b(?:under|below|max)\s+([a-z0-9.,\s]+)/i);
+  if (underMatch?.[1]) {
+    nextMaxPrice = extractPriceValue(underMatch[1]);
+  }
+
+  const aboveMatch = normalized.match(/\b(?:above|over|min)\s+([a-z0-9.,\s]+)/i);
+  if (aboveMatch?.[1]) {
+    nextMinPrice = extractPriceValue(aboveMatch[1]);
+  }
+
+  const inMatch = normalized.match(/\bin\s+([a-z\s]+?)(?=\s+(?:under|below|max|above|over|min|for)\b|$)/i);
+  if (inMatch?.[1]) {
+    nextLocation = inMatch[1].trim();
+  }
+
+  const cleanedSearch = normalized
+    .replace(/\bfor rent\b|\bfor buy\b|\bfor sale\b|\brent\b|\bbuy\b|\bsale\b/gi, " ")
+    .replace(/\bin\s+[a-z\s]+?(?=\s+(?:under|below|max|above|over|min|for)\b|$)/gi, " ")
+    .replace(/\b(?:under|below|max|above|over|min)\s+[a-z0-9.,\s]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (cleanedSearch) {
+    nextSearch = cleanedSearch;
+  } else if (nextLocation || nextListingType || nextMaxPrice || nextMinPrice) {
+    nextSearch = "";
+  }
+
+  return {
+    search: nextSearch,
+    location: nextLocation,
+    listingType: nextListingType,
+    minPrice: nextMinPrice,
+    maxPrice: nextMaxPrice,
+  };
+}
+
 export default function SearchPropertiesPage() {
   const searchParams = useSearchParams();
   const [items, setItems] = useState<Property[]>([]);
@@ -181,6 +225,8 @@ export default function SearchPropertiesPage() {
   const [total, setTotal] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [debouncedLocation, setDebouncedLocation] = useState("");
+  const [smartSearch, setSmartSearch] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
@@ -306,12 +352,23 @@ export default function SearchPropertiesPage() {
   }
 
   function clearFilters() {
+    setSmartSearch("");
     setSearch("");
     setLocation("");
     setListingType("");
     setMinPrice("");
     setMaxPrice("");
     setSort("");
+    setPage(1);
+  }
+
+  function applySmartSearch() {
+    const parsed = parseSmartSearch(smartSearch);
+    setSearch(parsed.search);
+    setLocation(parsed.location);
+    setListingType(parsed.listingType);
+    setMinPrice(parsed.minPrice);
+    setMaxPrice(parsed.maxPrice);
     setPage(1);
   }
 
@@ -409,113 +466,115 @@ export default function SearchPropertiesPage() {
         <section className="rounded-[28px] border border-emerald-100 shadow-sm bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)]">
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Search filters</h2>
+              <h2 className="text-lg font-bold text-slate-900">Smart property search</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Update any filter to refresh buyer search results.
+                Search like a buyer: try keywords, places, price intent, or simple natural phrases.
               </p>
             </div>
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
-              Live results
+              Zillow-style UX
             </span>
           </div>
 
-          <div className="grid gap-4 px-5 pb-5 md:grid-cols-2 xl:grid-cols-3">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Search
-              </label>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => updateTextFilter(setSearch, e.target.value)}
-                placeholder="Search title, address, amenities..."
-                className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-              />
-            </div>
+          <div className="px-5 pb-5">
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                applySmartSearch();
+              }}
+              className="rounded-[24px] border border-emerald-100 bg-white p-3 shadow-[0_12px_40px_rgba(15,23,42,0.05)]"
+            >
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={smartSearch}
+                    onChange={(event) => setSmartSearch(event.target.value)}
+                    placeholder='Search "villa in kathmandu" or "apartment in lalitpur under 5000000"'
+                    className="h-14 w-full rounded-2xl border border-transparent bg-slate-50 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Location
-              </label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => updateTextFilter(setLocation, e.target.value)}
-                placeholder="Kathmandu, Lalitpur..."
-                className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-              />
-            </div>
+                <div className="flex flex-col gap-3 sm:flex-row lg:items-center">
+                  <button
+                    type="submit"
+                    className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Search
+                  </button>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Listing Type
-              </label>
-              <select
-                value={listingType}
-                onChange={(e) => updateTextFilter(setListingType, e.target.value)}
-                className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-              >
-                <option value="">All listings</option>
-                <option value="buy">Buy</option>
-                <option value="rent">Rent</option>
-              </select>
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => setAdvancedOpen((current) => !current)}
+                    className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Advanced Filters
+                    <ChevronDown
+                      className={[
+                        "h-4 w-4 transition-transform duration-200",
+                        advancedOpen ? "rotate-180" : "",
+                      ].join(" ")}
+                    />
+                  </button>
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Min Price
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={minPrice}
-                onChange={(e) => updateTextFilter(setMinPrice, e.target.value)}
-                placeholder="0"
-                className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Max Price
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={maxPrice}
-                onChange={(e) => updateTextFilter(setMaxPrice, e.target.value)}
-                placeholder="1000000"
-                className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Sort
-              </label>
-              <select
-                value={sort}
-                onChange={(e) => updateTextFilter(setSort, e.target.value)}
-                className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-              >
-                <option value="">Latest</option>
-                <option value="latest">Latest</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-              </select>
-            </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span className="font-semibold text-slate-600">Try:</span>
+                <button
+                  type="button"
+                  onClick={() => setSmartSearch("villa in kathmandu")}
+                  className="rounded-full bg-slate-50 px-3 py-1.5 transition hover:bg-emerald-50 hover:text-emerald-700"
+                >
+                  villa in kathmandu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSmartSearch("apartment in lalitpur under 5000000")}
+                  className="rounded-full bg-slate-50 px-3 py-1.5 transition hover:bg-emerald-50 hover:text-emerald-700"
+                >
+                  apartment in lalitpur under 5000000
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSmartSearch("house for rent in bhaktapur")}
+                  className="rounded-full bg-slate-50 px-3 py-1.5 transition hover:bg-emerald-50 hover:text-emerald-700"
+                >
+                  house for rent in bhaktapur
+                </button>
+              </div>
+            </form>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-emerald-100/80 px-5 py-4">
-            <label className="inline-flex items-center gap-3 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-slate-800 ring-1 ring-emerald-200">
-              <input
-                type="checkbox"
-                checked={showOnlyOffers}
-                onChange={(e) => setShowOnlyOffers(e.target.checked)}
-                className="h-4 w-4 accent-emerald-600"
-              />
-              Show only offers
-            </label>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="inline-flex items-center gap-3 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-slate-800 ring-1 ring-emerald-200">
+                <input
+                  type="checkbox"
+                  checked={showOnlyOffers}
+                  onChange={(e) => setShowOnlyOffers(e.target.checked)}
+                  className="h-4 w-4 accent-emerald-600"
+                />
+                Show only offers
+              </label>
+
+              <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600 ring-1 ring-slate-200">
+                Sort
+                <select
+                  value={sort}
+                  onChange={(e) => updateTextFilter(setSort, e.target.value)}
+                  className="bg-transparent text-sm font-semibold text-slate-800 outline-none"
+                >
+                  <option value="">Latest</option>
+                  <option value="latest">Latest</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                </select>
+              </div>
+            </div>
 
             <button
               type="button"
@@ -525,6 +584,86 @@ export default function SearchPropertiesPage() {
               Clear Filters
             </button>
           </div>
+
+          {advancedOpen ? (
+            <div className="border-t border-emerald-100/80 px-5 py-5">
+              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <SlidersHorizontal className="h-4 w-4 text-emerald-700" />
+                Advanced filters
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Keyword
+                  </label>
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => updateTextFilter(setSearch, e.target.value)}
+                    placeholder="Modern villa, apartment, house..."
+                    className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => updateTextFilter(setLocation, e.target.value)}
+                    placeholder="Kathmandu, Lalitpur..."
+                    className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Listing Type
+                  </label>
+                  <select
+                    value={listingType}
+                    onChange={(e) => updateTextFilter(setListingType, e.target.value)}
+                    className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  >
+                    <option value="">All listings</option>
+                    <option value="buy">Buy</option>
+                    <option value="rent">Rent</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Min Price
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={minPrice}
+                    onChange={(e) => updateTextFilter(setMinPrice, e.target.value)}
+                    placeholder="0"
+                    className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Max Price
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={maxPrice}
+                    onChange={(e) => updateTextFilter(setMaxPrice, e.target.value)}
+                    placeholder="1000000"
+                    className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <section className="rounded-[28px] border border-emerald-100 shadow-sm bg-[linear-gradient(180deg,#ffffff_0%,#f4fff8_100%)]">
@@ -570,7 +709,6 @@ export default function SearchPropertiesPage() {
             {visibleItems.map((p) => {
               const saved = wishlistSet.has(p._id);
               const compareOn = compareSet.has(p._id);
-              const offerExpiry = getOfferExpiryState(p);
               const cardType = getCardTypeLabel(p);
               const cardArea = formatCardArea(p);
               const statusBadgeLabel = getStatusBadgeLabel(p);
@@ -654,7 +792,7 @@ export default function SearchPropertiesPage() {
                         </div>
 
                         <div className="flex min-h-[210px] flex-1 flex-col bg-white px-5 py-4">
-                          <p className="text-[18px] font-black tracking-tight text-slate-950">
+                          <p className="text-[18px] font-extrabold tracking-tight text-slate-900">
                             {p.currency} {Number(p.price || 0).toLocaleString()}
                           </p>
 
@@ -666,35 +804,29 @@ export default function SearchPropertiesPage() {
                             </span>
                           </div>
 
-                          <h3 className="mt-3 line-clamp-2 text-xl font-extrabold leading-[1.25] tracking-tight text-slate-950">
+                          <h3 className="mt-3 line-clamp-2 text-xl font-bold leading-[1.28] tracking-tight text-slate-900">
                             {p.title || "Property listing"}
                           </h3>
 
-                          <p className="mt-2 flex items-center gap-2 text-[13px] text-slate-500">
-                            <MapPin className="h-[14px] w-[14px] shrink-0 text-slate-500" />
+                          <p className="mt-2 flex items-center gap-2 text-[13px] font-semibold text-slate-600">
+                            <MapPin className="h-[16px] w-[16px] shrink-0 text-emerald-700" strokeWidth={2.1} />
                             <span className="truncate">{p.address || p.location}</span>
                           </p>
 
-                          {offerExpiry ? (
-                            <div className="mt-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold text-emerald-700">
-                              {offerExpiry.text}
-                            </div>
-                          ) : null}
-
                           <div className="mt-3 border-t border-slate-200 pt-3">
-                            <div className="flex flex-wrap items-center gap-2 text-[13px] font-medium text-slate-600">
+                            <div className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-slate-700">
                               <span className="inline-flex items-center gap-1.5">
-                                <BedDouble className="h-[14px] w-[14px]" />
+                                <BedDouble className="h-[16px] w-[16px] text-emerald-700" strokeWidth={2.1} />
                                 {p.beds} bd
                               </span>
-                              <span className="text-slate-300">•</span>
+                              <span className="text-slate-300">&bull;</span>
                               <span className="inline-flex items-center gap-1.5">
-                                <Bath className="h-[14px] w-[14px]" />
+                                <Bath className="h-[16px] w-[16px] text-emerald-700" strokeWidth={2.1} />
                                 {p.baths} ba
                               </span>
-                              <span className="text-slate-300">•</span>
+                              <span className="text-slate-300">&bull;</span>
                               <span className="inline-flex items-center gap-1.5">
-                                <Expand className="h-[14px] w-[14px]" />
+                                <Expand className="h-[16px] w-[16px] text-emerald-700" strokeWidth={2.1} />
                                 {cardArea.includes("sqft") ? cardArea : "Area"}
                               </span>
                             </div>
