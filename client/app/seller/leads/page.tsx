@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  Suspense,
   useDeferredValue,
   useEffect,
   useEffectEvent,
@@ -421,7 +422,7 @@ function getSmartSellerReplies(messages: Message[], lead: Lead | null) {
   return uniqueSuggestions.length > 0 ? uniqueSuggestions : DEFAULT_SELLER_REPLIES;
 }
 
-export default function SellerLeadsPage() {
+function SellerLeadsPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -1839,5 +1840,13 @@ export default function SellerLeadsPage() {
         </section>
       </section>
     </div>
+  );
+}
+
+export default function SellerLeadsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SellerLeadsPageContent />
+    </Suspense>
   );
 }

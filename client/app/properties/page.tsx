@@ -65,7 +65,7 @@ function pageCopy(listingType: string) {
   };
 }
 
-export default function PublicPropertiesPage() {
+function PublicPropertiesPageContent() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
   const searchParam = searchParams.get("search") || "";
@@ -327,5 +327,23 @@ export default function PublicPropertiesPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function PublicPropertiesPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6">
+          <div className="mx-auto max-w-7xl">
+            <div className="rounded-3xl border border-emerald-100 bg-white p-8 text-sm text-slate-500 shadow-sm">
+              Loading properties...
+            </div>
+          </div>
+        </main>
+      }
+    >
+      <PublicPropertiesPageContent />
+    </React.Suspense>
   );
 }

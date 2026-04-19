@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { apiFetch } from "../lib/api";
 import { Mail, Lock, Eye, EyeOff, Phone, Menu } from "lucide-react";
 
@@ -26,12 +26,12 @@ function loadGoogleScript(): Promise<void> {
   });
 }
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
   show: (delay = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, delay, ease: "easeOut" },
+    transition: { duration: 0.6, delay, ease: "easeOut" as const },
   }),
 };
 

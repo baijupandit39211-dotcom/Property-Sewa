@@ -158,7 +158,7 @@ function StatCard({
   );
 }
 
-export default function AdminContactMessagesPage() {
+function AdminContactMessagesPageContent() {
   const searchParams = useSearchParams();
   const [data, setData] = React.useState<ContactMessagesResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -645,5 +645,13 @@ export default function AdminContactMessagesPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function AdminContactMessagesPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <AdminContactMessagesPageContent />
+    </React.Suspense>
   );
 }

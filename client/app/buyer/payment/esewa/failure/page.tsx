@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { XCircle, ArrowLeft } from "lucide-react";
 
@@ -48,7 +48,7 @@ function cleanPid(raw: string) {
   return raw.split("?")[0].split("&")[0].trim();
 }
 
-export default function EsewaFailurePage() {
+function EsewaFailurePageContent() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -137,5 +137,13 @@ export default function EsewaFailurePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function EsewaFailurePage() {
+  return (
+    <Suspense fallback={null}>
+      <EsewaFailurePageContent />
+    </Suspense>
   );
 }

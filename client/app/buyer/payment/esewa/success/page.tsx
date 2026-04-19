@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import { CheckCircle2, ArrowLeft, ShieldCheck } from "lucide-react";
@@ -49,7 +49,7 @@ function cleanPid(raw: string) {
   return raw.split("?")[0].split("&")[0].trim();
 }
 
-export default function EsewaSuccessPage() {
+function EsewaSuccessPageContent() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -246,5 +246,13 @@ export default function EsewaSuccessPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function EsewaSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <EsewaSuccessPageContent />
+    </Suspense>
   );
 }

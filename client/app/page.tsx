@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import OfferBadge from "@/components/offers/OfferBadge";
 import { apiFetch, apiFetchSafe } from "@/app/lib/api";
 import { getDashboardPath, logoutByRole } from "@/app/lib/auth";
@@ -77,12 +77,12 @@ function cn(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
 }
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 18 },
   show: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: 0.08 * i, duration: 0.55, ease: "easeOut" },
+    transition: { delay: 0.08 * i, duration: 0.55, ease: "easeOut" as const },
   }),
 };
 

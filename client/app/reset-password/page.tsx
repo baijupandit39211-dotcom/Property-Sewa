@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, Eye, EyeOff } from "lucide-react";
 import { apiFetch } from "../lib/api";
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageContent() {
   const router = useRouter();
   const params = useSearchParams();
   const token = params.get("token") || "";
@@ -185,5 +185,13 @@ export default function ResetPasswordPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <ResetPasswordPageContent />
+    </React.Suspense>
   );
 }

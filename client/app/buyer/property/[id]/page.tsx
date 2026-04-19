@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
@@ -625,6 +625,34 @@ function BuyerPropertyDetailsView({
     (listingType === "rent" ? "For Rent" : "For Sale");
 
   const amenityDisplay = amenities.length ? amenities : [];
+  const propertyTypeLabel =
+    String(property?.propertyType || property?.type || property?.category || "Property").trim() ||
+    "Property";
+  const locationText = property?.address || property?.location || "Location not provided";
+  const fullAddressText =
+    [property?.address, property?.location].filter(Boolean).join(", ") || "Location not provided";
+  const keyFacts = [
+    showBeds ? { label: "Bedrooms", value: `${property?.beds} bd`, icon: BedDouble } : null,
+    showBaths ? { label: "Bathrooms", value: `${property?.baths} ba`, icon: Bath } : null,
+    showSqft ? { label: "Area", value: `${property?.sqft} sqft`, icon: Ruler } : null,
+    { label: "Property Type", value: propertyTypeLabel, icon: Building2 },
+    showParking
+      ? { label: "Parking", value: `${property?.parkingSpaces} spaces`, icon: CarFront }
+      : null,
+    { label: "Status", value: statusLabel, icon: ShieldCheck },
+  ].filter(Boolean) as Array<{ label: string; value: string; icon: any }>;
+  const highlightItems = [
+    showOffer && offerDiscountText ? `Offer available: ${offerDiscountText}` : null,
+    showAdvance ? `Advance payment: ${money(property?.advanceAmount, property?.currency)}` : null,
+    showMonthlyRent ? `Monthly rent: ${money(property?.monthlyRent, property?.currency)}` : null,
+    showDeposit ? `Security deposit: ${money(property?.deposit, property?.currency)}` : null,
+    showAvailability && property?.availabilityDate
+      ? `Available from: ${String(property?.availabilityDate)}`
+      : null,
+    isReserved && reservedUntilText ? `Reserved until ${reservedUntilText}` : null,
+    isBooked ? "Reservation completed for this listing" : null,
+    property?.furnishingStatus ? `Furnishing: ${property.furnishingStatus}` : null,
+  ].filter(Boolean) as string[];
 
   const usedSimilarImgs = new Set<string>();
   if (activeImg) usedSimilarImgs.add(activeImg);
@@ -1563,7 +1591,7 @@ function BuyerPropertyDetailsView({
   );
 }
 
-export default function PropertyDetailsPage() {
+function PropertyDetailsPageContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1644,4 +1672,12 @@ export default function PropertyDetailsPage() {
   }
 
   return <BuyerPropertyDetailsView property={property} paramsId={params?.id} />;
+}
+
+export default function PropertyDetailsPage() {
+  return (
+    <Suspense fallback={null}>
+      <PropertyDetailsPageContent />
+    </Suspense>
+  );
 }

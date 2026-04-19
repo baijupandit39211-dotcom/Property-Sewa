@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 type RoleApi = "buyer" | "seller" | "agent" | "admin" | "superadmin";
-type StatusApi = "active" | "archived" | "suspended";
+type StatusApi = "active" | "archived" | "suspended" | "inactive";
 
 type UserDetail = {
   _id: string;

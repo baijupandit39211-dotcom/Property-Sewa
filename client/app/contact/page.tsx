@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import {
   ArrowUpRight,
   Clock3,
@@ -38,7 +38,7 @@ const INQUIRY_OPTIONS = [
   "General Inquiry",
 ] as const;
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
   show: (index = 0) => ({
     opacity: 1,
