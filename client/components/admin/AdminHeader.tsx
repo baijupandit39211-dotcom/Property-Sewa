@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import { logoutByRole } from "@/app/lib/auth";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
 type AdminMeResponse = {
@@ -37,7 +38,7 @@ export default function AdminHeader() {
 
   const logout = async () => {
     try {
-      await apiFetch("/auth/admin/logout", { method: "POST" });
+      await logoutByRole(user?.role);
     } finally {
       router.replace("/admin-login");
       router.refresh();

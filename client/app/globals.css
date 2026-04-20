@@ -2,6 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .ps-page-title {
+    @apply text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl;
+  }
+
+  .ps-page-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700/70;
+  }
+
+  .ps-page-subtitle {
+    @apply text-sm leading-6 text-slate-600;
+  }
+
+  .ps-section-title {
+    @apply text-lg font-semibold tracking-tight text-slate-900;
+  }
+
+  .ps-card-title {
+    @apply text-sm font-medium text-slate-600;
+  }
+
+  .ps-stat-value {
+    @apply text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl;
+  }
+
+  .ps-helper-text {
+    @apply text-xs font-normal text-slate-500;
+  }
+
+  .ps-profile-name {
+    @apply text-sm font-semibold text-slate-900;
+  }
+
+  .ps-profile-meta {
+    @apply text-xs text-slate-500;
+  }
+
+  .ps-button-text {
+    @apply text-sm font-semibold;
+  }
+
+  .ps-input-text {
+    @apply text-sm text-slate-700 placeholder:text-slate-400;
+  }
+
+  .ps-table-header {
+    @apply text-xs font-semibold uppercase tracking-[0.12em] text-slate-500;
+  }
+
+  .ps-admin-type input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  .ps-admin-type textarea,
+  .ps-admin-type select {
+    @apply text-sm text-slate-700 placeholder:text-slate-400;
+  }
+
+  .ps-admin-type table thead th {
+    @apply text-xs font-semibold uppercase tracking-[0.12em] text-slate-500;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

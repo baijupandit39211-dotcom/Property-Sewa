@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { apiFetchAdmin } from "@/app/lib/api";
+import { typography } from "@/app/lib/typography";
 import AdminToast from "@/components/admin/AdminToast";
 import {
   BellRing,
@@ -174,8 +175,8 @@ function Shell({
     <section className="rounded-[30px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-sm">
       <div className="flex flex-col gap-4 border-b border-emerald-100 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-slate-900">{title}</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">{description}</p>
+          <h2 className={typography.sectionTitle}>{title}</h2>
+          <p className={`mt-1 max-w-2xl ${typography.pageSubtitle}`}>{description}</p>
         </div>
         {action}
       </div>
@@ -201,9 +202,9 @@ function Stat({
     <div className={cn("rounded-[28px] border p-5 shadow-sm", tone)}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-slate-600">{title}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
-          <p className="mt-2 text-sm text-slate-500">{detail}</p>
+          <p className={typography.cardTitle}>{title}</p>
+          <p className={`mt-2 ${typography.statValue}`}>{value}</p>
+          <p className={`mt-2 ${typography.helperText}`}>{detail}</p>
         </div>
         <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white">{icon}</div>
       </div>
@@ -226,12 +227,12 @@ function Field({
 }) {
   return (
     <label className={className}>
-      <span className="mb-2 block text-sm font-semibold text-slate-700">{title}</span>
+      <span className={`mb-2 block ${typography.cardTitle}`}>{title}</span>
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+        className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
       />
     </label>
   );
@@ -252,12 +253,12 @@ function Area({
 }) {
   return (
     <label className={className}>
-      <span className="mb-2 block text-sm font-semibold text-slate-700">{title}</span>
+      <span className={`mb-2 block ${typography.cardTitle}`}>{title}</span>
       <textarea
         rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+        className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
       />
     </label>
   );
@@ -277,8 +278,8 @@ function Toggle({
   return (
     <div className="flex items-start justify-between gap-4 rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
       <div>
-        <p className="text-sm font-semibold text-slate-900">{title}</p>
-        <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+        <p className="text-sm font-medium text-slate-900">{title}</p>
+        <p className={`mt-1 ${typography.pageSubtitle}`}>{description}</p>
       </div>
       <button
         type="button"
@@ -532,12 +533,12 @@ export default function AdminSettingsWorkspace() {
               <TriangleAlert className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Settings failed to load</h1>
-              <p className="mt-2 text-sm text-slate-500">{error}</p>
+              <h1 className={typography.pageTitle}>Settings failed to load</h1>
+              <p className={`mt-2 ${typography.pageSubtitle}`}>{error}</p>
               <button
                 type="button"
                 onClick={() => void loadSettings()}
-                className="mt-5 rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+                className={`mt-5 rounded-2xl bg-emerald-700 px-5 py-3 text-white hover:bg-emerald-800 ${typography.buttonText}`}
               >
                 Retry
               </button>
@@ -560,17 +561,17 @@ export default function AdminSettingsWorkspace() {
         <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
                 Admin control center
               </span>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Settings</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
+              <h1 className="ps-page-title mt-4 text-white">Settings</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90">
                 Manage your admin profile, platform defaults, moderation rules,
                 alerts, and password flow from one production-ready workspace.
               </p>
               {operations.maintenanceMode ? (
-                <div className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-emerald-50">
+                <div className={`mt-5 inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-emerald-50 ${typography.buttonText}`}>
                   <TriangleAlert className="h-4 w-4" />
                   Maintenance mode is enabled for the shared platform settings.
                 </div>
@@ -580,7 +581,7 @@ export default function AdminSettingsWorkspace() {
               type="button"
               onClick={() => void loadSettings(true)}
               disabled={refreshing}
-              className="inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/15 disabled:opacity-60"
+              className={`inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-white backdrop-blur-sm hover:bg-white/15 disabled:opacity-60 ${typography.buttonText}`}
             >
               <RefreshCcw className={cn("h-4 w-4", refreshing && "animate-spin")} />
               {refreshing ? "Refreshing..." : "Refresh"}

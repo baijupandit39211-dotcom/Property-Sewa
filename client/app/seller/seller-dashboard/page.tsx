@@ -21,6 +21,7 @@ import {
   Users,
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
+import { typography } from "@/app/lib/typography";
 
 type RangeOption = "7d" | "30d" | "90d";
 type Summary = {
@@ -126,7 +127,7 @@ function HeaderSearch({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search by property, location, or client"
-        className="h-12 w-full rounded-2xl border-2 border-emerald-200 bg-[#fcfffd] pl-11 pr-4 text-sm font-medium text-slate-800 shadow-[0_8px_20px_rgba(16,185,129,0.08)] outline-none placeholder:text-slate-500 focus:border-emerald-500 focus:bg-white"
+        className={`h-12 w-full rounded-2xl border-2 border-emerald-200 bg-[#fcfffd] pl-11 pr-4 shadow-[0_8px_20px_rgba(16,185,129,0.08)] outline-none focus:border-emerald-500 focus:bg-white ${typography.inputText}`}
       />
     </div>
   );
@@ -149,9 +150,9 @@ function MetricCard({
     <article className={cn(CARD, "seller-reveal seller-hover-card min-h-[150px] p-6")}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-[15px] font-semibold text-slate-700">{title}</div>
-          <div className="mt-6 text-[44px] font-semibold leading-none tracking-[-0.05em] text-slate-950">{value}</div>
-          <div className={cn("mt-5 inline-flex items-center gap-2 text-sm font-medium", positive ? "text-emerald-600" : "text-rose-500")}>
+          <div className={typography.cardTitle}>{title}</div>
+          <div className={`mt-6 ${typography.statValue}`}>{value}</div>
+          <div className={cn(`mt-5 inline-flex items-center gap-2 ${typography.helperText}`, positive ? "text-emerald-600" : "text-rose-500")}>
             <TrendingUp className={cn("h-4 w-4", !positive && "rotate-180")} />
             {helper}
           </div>
@@ -223,7 +224,7 @@ function TrendChartCard({
     <section className={cn(CARD, "seller-reveal seller-delay-1 seller-hover-card p-5 sm:p-6")}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-[20px] font-semibold tracking-tight text-slate-900">Market Activity Trends</h2>
+          <h2 className={typography.sectionTitle}>Market Activity Trends</h2>
           <div className="mt-3 flex flex-wrap items-center gap-6 text-sm text-slate-500">
             <span className="inline-flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />
@@ -238,7 +239,7 @@ function TrendChartCard({
 
         <div className="inline-flex items-center gap-1 rounded-full bg-[#f4f6f5] p-1">
           {([{ value: "7d", label: "7D" }, { value: "30d", label: "30D" }, { value: "90d", label: "90D" }] as Array<{ value: RangeOption; label: string }>).map((option) => (
-            <button key={option.value} type="button" onClick={() => setRange(option.value)} className={cn("rounded-full px-4 py-2 text-sm font-medium transition", range === option.value ? "bg-emerald-600 text-white shadow-sm" : "text-slate-500 hover:bg-white hover:text-slate-900")}>
+            <button key={option.value} type="button" onClick={() => setRange(option.value)} className={cn(`rounded-full px-4 py-2 transition ${typography.buttonTextMuted}`, range === option.value ? "bg-emerald-600 text-white shadow-sm" : "text-slate-500 hover:bg-white hover:text-slate-900")}>
               {option.label}
             </button>
           ))}
@@ -307,7 +308,7 @@ function DistributionCard({ items }: { items: Breakdown[] }) {
 
   return (
     <section className={cn(CARD, "seller-reveal seller-delay-2 seller-hover-card h-full p-5 sm:p-6")}>
-      <h2 className="text-[20px] font-semibold tracking-tight text-slate-900">Property Type Distribution</h2>
+      <h2 className={typography.sectionTitle}>Property Type Distribution</h2>
       <div className="mt-5 grid gap-5 md:grid-cols-[140px_minmax(0,1fr)] md:items-center">
         <div className="flex justify-center">
           <div className="relative h-[148px] w-[148px]">
@@ -346,10 +347,10 @@ function DistributionCard({ items }: { items: Breakdown[] }) {
             </svg>
             <div className="absolute inset-[34px] rounded-full bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]" />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-[26px] font-semibold tracking-[-0.04em] text-slate-950">
+              <div className={typography.statValue}>
                 {leadPct}%
               </div>
-              <div className="mt-1 text-[14px] text-slate-500">
+              <div className={`mt-1 ${typography.helperText}`}>
                 {leadLabel}
               </div>
             </div>
@@ -363,9 +364,9 @@ function DistributionCard({ items }: { items: Breakdown[] }) {
               <div key={item.label} className="flex items-center justify-between gap-3 border-b border-[#edf2ef] pb-3 last:border-b-0 last:pb-0">
                 <div className="flex items-center gap-3">
                   <span className="inline-block h-4 w-4 rounded-[4px]" style={{ backgroundColor: palette[index % palette.length] }} />
-                  <span className="text-[15px] font-medium text-[#334e68]">{item.label}</span>
+                  <span className={typography.tableCell}>{item.label}</span>
                 </div>
-                <span className="text-[15px] font-bold text-[#243b53]">{pct}%</span>
+                <span className={typography.tableCellStrong}>{pct}%</span>
               </div>
             );
           })}
@@ -389,7 +390,7 @@ function PropertyCard({ listing }: { listing: Listing }) {
         </div>
       </div>
       <div className="p-4">
-        <h3 className="line-clamp-1 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">
+        <h3 className={typography.sectionTitle}>
           {listing.title}
         </h3>
         <div className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-500">
@@ -397,18 +398,18 @@ function PropertyCard({ listing }: { listing: Listing }) {
           {listing.location}
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <span className="rounded-full bg-[#f6f7f7] px-3 py-1 text-[11px] font-medium text-slate-500">
+          <span className={`rounded-full bg-[#f6f7f7] px-3 py-1 ${typography.helperText}`}>
             {fmtNum(listing.views)} Views
           </span>
-          <span className="rounded-full bg-[#f6f7f7] px-3 py-1 text-[11px] font-medium text-slate-500">
+          <span className={`rounded-full bg-[#f6f7f7] px-3 py-1 ${typography.helperText}`}>
             {fmtNum(listing.leads)} Leads
           </span>
-          <span className="rounded-full bg-[#f6f7f7] px-3 py-1 text-[11px] font-medium text-slate-500">
+          <span className={`rounded-full bg-[#f6f7f7] px-3 py-1 ${typography.helperText}`}>
             {fmtNum(listing.visits)} Visits
           </span>
         </div>
         <div className="mt-5 flex items-center justify-between gap-3">
-          <div className="text-[22px] font-semibold leading-none tracking-[-0.03em] text-slate-950 sm:text-[24px]">
+          <div className={typography.statValue}>
             {fmtCurrency(listing.price, listing.currency)}
           </div>
           <span className={cn("inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ring-1", statusTone(listing.status))}>
@@ -513,13 +514,13 @@ export default function SellerDashboardPage() {
           <header className={cn(CARD, "seller-reveal px-5 py-4 sm:px-6")}>
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="min-w-0">
-                <h1 className="text-[34px] font-semibold tracking-[-0.055em] text-slate-900">
+                <h1 className={typography.pageTitle}>
                   {`Welcome back, ${userName || userEmail || "Seller"}`} <span aria-hidden="true">👋</span>
                 </h1>
-                <p className="mt-1.5 text-sm text-slate-500">
+                <p className={`mt-1.5 ${typography.pageSubtitle}`}>
                   Get a clear view of your real estate portfolio.
                 </p>
-                <Link href="/" className="mt-2.5 inline-flex items-center gap-1 text-sm font-medium text-emerald-700 transition duration-300 hover:translate-x-1 hover:text-emerald-800">
+                <Link href="/" className={`mt-2.5 inline-flex items-center gap-1 text-emerald-700 transition duration-300 hover:translate-x-1 hover:text-emerald-800 ${typography.buttonTextMuted}`}>
                   Back to Home
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -528,7 +529,7 @@ export default function SellerDashboardPage() {
               <div className="flex flex-col gap-3 xl:min-w-[780px] xl:flex-row xl:items-center xl:justify-end">
                 <HeaderSearch value={search} onChange={setSearch} />
 
-                <Link href="/seller/add-property" className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 text-sm font-medium text-white shadow-[0_10px_24px_rgba(16,185,129,0.20)] transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-[0_16px_28px_rgba(16,185,129,0.28)]">
+                <Link href="/seller/add-property" className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 text-white shadow-[0_10px_24px_rgba(16,185,129,0.20)] transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-[0_16px_28px_rgba(16,185,129,0.28)] ${typography.buttonTextMuted}`}>
                   <Plus className="h-4 w-4" />
                   Add Property
                 </Link>
@@ -551,10 +552,10 @@ export default function SellerDashboardPage() {
             <section className={cn(CARD, "seller-reveal seller-delay-1 seller-hover-card p-5 sm:p-6")}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-[22px] font-semibold tracking-tight text-slate-900">
+                  <h2 className={typography.sectionTitle}>
                     Search Results
                   </h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className={`mt-1 ${typography.pageSubtitle}`}>
                     {filteredPropertyPerformance.length > 0
                       ? `${filteredPropertyPerformance.length} matching properties for "${search.trim()}".`
                       : `No properties matched "${search.trim()}".`}
@@ -563,7 +564,7 @@ export default function SellerDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setSearch("")}
-                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#e8ece9] bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className={`inline-flex h-10 items-center justify-center rounded-2xl border border-[#e8ece9] bg-white px-4 text-slate-700 transition hover:bg-slate-50 ${typography.buttonTextMuted}`}
                 >
                   Clear Search
                 </button>
@@ -580,17 +581,17 @@ export default function SellerDashboardPage() {
               <div className="mt-6 rounded-[18px] border border-[#e8ece9] bg-[#fafcfb] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-[18px] font-semibold tracking-tight text-slate-900">
+                    <h3 className={typography.sectionTitle}>
                       Matching Buyer Activity
                     </h3>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className={`mt-1 ${typography.pageSubtitle}`}>
                       {filteredRecentActivity.length > 0
                         ? `${filteredRecentActivity.length} activity items matched your search.`
                         : "No buyer activity matched your search."}
                     </p>
                   </div>
                   {filteredRecentActivity.length > 0 ? (
-                    <Link href="/seller/leads" className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800">
+                    <Link href="/seller/leads" className={`text-emerald-700 transition hover:text-emerald-800 ${typography.buttonTextMuted}`}>
                       Open Inbox
                     </Link>
                   ) : null}
@@ -610,10 +611,10 @@ export default function SellerDashboardPage() {
                                 {item.type}
                               </span>
                             </div>
-                            <div className="mt-2 text-base font-bold tracking-tight text-slate-950">
+                            <div className="mt-2 text-sm font-medium tracking-tight text-slate-950">
                               {item.actorName} {item.type === "lead" ? "sent a lead" : `${titleCase(item.status)} a visit`}
                             </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
+                            <div className={`mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 ${typography.pageSubtitle}`}>
                               <span className="inline-flex items-center gap-1.5">
                                 <MapPin className="h-4 w-4 text-slate-400" />
                                 {item.propertyTitle}
@@ -667,7 +668,7 @@ export default function SellerDashboardPage() {
                   <h2 className="text-[20px] font-semibold tracking-tight text-slate-900">
                     Live Snapshot
                   </h2>
-                  <span className="text-xs text-slate-500">
+                  <span className={typography.helperText}>
                     {lastUpdatedAt ? fmtDateTime(lastUpdatedAt) : "Just now"}
                   </span>
                 </div>
@@ -714,15 +715,15 @@ export default function SellerDashboardPage() {
           <section className="seller-reveal seller-delay-2" style={DEFER}>
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-[30px] font-semibold tracking-[-0.05em] text-slate-900">
+                <h2 className={typography.sectionTitle}>
                   Featured Properties
                 </h2>
-                <p className="mt-1.5 text-sm text-slate-500">
+                <p className={`mt-1.5 ${typography.pageSubtitle}`}>
                   Your best performing and recent listings.
                 </p>
               </div>
 
-              <Link href="/seller/my-properties" className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800">
+              <Link href="/seller/my-properties" className={`text-emerald-700 transition hover:text-emerald-800 ${typography.buttonTextMuted}`}>
                 View All
               </Link>
             </div>
@@ -737,16 +738,16 @@ export default function SellerDashboardPage() {
                   <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
                     <Home className="h-6 w-6" />
                   </div>
-                  <h3 className="mt-4 text-xl font-semibold text-slate-900">
+                  <h3 className={typography.sectionTitle}>
                     {normalizedSearch ? "No matching properties" : "No listings yet"}
                   </h3>
-                  <p className="mt-2 text-sm text-slate-500">
+                  <p className={`mt-2 ${typography.pageSubtitle}`}>
                     {normalizedSearch
                       ? `Nothing matched "${search.trim()}". Try a property title, location, or client name.`
                       : "Add your first property to start seeing portfolio insights."}
                   </p>
                   {!normalizedSearch ? (
-                    <Link href="/seller/add-property" className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 text-sm font-medium text-white transition hover:bg-emerald-700">
+                    <Link href="/seller/add-property" className={`mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 text-white transition hover:bg-emerald-700 ${typography.buttonTextMuted}`}>
                       <Plus className="h-4 w-4" />
                       Add Property
                     </Link>
@@ -762,14 +763,14 @@ export default function SellerDashboardPage() {
               <section className={cn(CARD, "seller-reveal seller-delay-3 seller-hover-card p-5 sm:p-6")}>
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-[24px] font-semibold tracking-tight text-slate-900">
+                    <h2 className={typography.sectionTitle}>
                       Recent Buyer Movement
                     </h2>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className={`mt-1 ${typography.pageSubtitle}`}>
                       Latest lead and visit activity across your properties.
                     </p>
                   </div>
-                  <Link href="/seller/leads" className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800">
+                  <Link href="/seller/leads" className={`text-emerald-700 transition hover:text-emerald-800 ${typography.buttonTextMuted}`}>
                     Open Inbox
                   </Link>
                 </div>
@@ -783,13 +784,13 @@ export default function SellerDashboardPage() {
                             <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ring-1", statusTone(item.status))}>{titleCase(item.status)}</span>
                             <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{item.type}</span>
                           </div>
-                          <div className="mt-2 text-base font-bold tracking-tight text-slate-950">{item.actorName} {item.type === "lead" ? "sent a lead" : `${titleCase(item.status)} a visit`}</div>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
+                          <div className="mt-2 text-sm font-medium tracking-tight text-slate-950">{item.actorName} {item.type === "lead" ? "sent a lead" : `${titleCase(item.status)} a visit`}</div>
+                          <div className={`mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 ${typography.pageSubtitle}`}>
                             <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" />{item.propertyTitle}</span>
                             <span>{fmtDateTime(item.occurredAt)}</span>
                           </div>
                           {item.message ? (
-                            <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
+                            <p className={`mt-2 line-clamp-2 ${typography.pageSubtitle}`}>
                               {item.message}
                             </p>
                           ) : null}
@@ -804,7 +805,7 @@ export default function SellerDashboardPage() {
               <div className="space-y-5">
                 <section className={cn(CARD, "seller-reveal seller-delay-4 seller-hover-card p-5 sm:p-6")}>
                   <div className="flex items-center justify-between">
-                    <h2 className="text-[20px] font-semibold tracking-tight text-slate-900">
+                    <h2 className={typography.sectionTitle}>
                       Quick Actions
                     </h2>
                     <Sparkles className="h-4 w-4 text-emerald-600" />
@@ -825,8 +826,8 @@ export default function SellerDashboardPage() {
                               <Icon className="h-5 w-5" />
                             </div>
                             <div>
-                              <div className="font-semibold text-slate-900">{item.label}</div>
-                              <div className="text-sm text-slate-500">{item.desc}</div>
+                              <div className="text-sm font-medium text-slate-900">{item.label}</div>
+                              <div className={typography.pageSubtitle}>{item.desc}</div>
                             </div>
                           </div>
                           <ChevronRight className="h-4 w-4 text-slate-400" />

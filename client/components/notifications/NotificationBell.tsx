@@ -10,7 +10,7 @@ import {
   MessageSquare,
   ReceiptText,
 } from "lucide-react";
-import { apiFetch, apiFetchAdmin } from "@/app/lib/api";
+import { apiFetch, apiFetchAdmin, apiFetchSafe } from "@/app/lib/api";
 import { subscribeToNotificationSocket } from "@/app/lib/notificationsSocket";
 
 type NotificationItem = {
@@ -133,7 +133,12 @@ export default function NotificationBell({
 
   const fetchUnreadCount = async () => {
     try {
-      const response = await fetcher<UnreadCountResponse>(`${endpointBase}/unread-count`);
+      const response = await apiFetchSafe<UnreadCountResponse>(`${endpointBase}/unread-count`);
+      if (!response) {
+        setUnreadCount(0);
+        return;
+      }
+
       setUnreadCount(response.count || 0);
     } catch {
       setUnreadCount(0);
@@ -143,8 +148,8 @@ export default function NotificationBell({
   const fetchLatestNotifications = async () => {
     try {
       setLoading(true);
-      const response = await fetcher<NotificationListResponse>(`${endpointBase}?limit=8`);
-      setNotifications(response.items || []);
+      const response = await apiFetchSafe<NotificationListResponse>(`${endpointBase}?limit=8`);
+      setNotifications(response?.items || []);
     } catch {
       setNotifications([]);
     } finally {

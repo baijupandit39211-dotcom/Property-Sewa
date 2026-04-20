@@ -4,7 +4,6 @@ import React from "react";
 import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
-
 import AdminHeader from "@/components/admin/AdminHeader";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
@@ -50,11 +49,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   if (checking) {
     return (
-      <div className="min-h-screen grid place-items-center bg-[#f4fbf7]">
+      <div className="grid min-h-screen place-items-center bg-[#f4fbf7]">
         <div className="rounded-2xl bg-white px-6 py-4 shadow-sm ring-1 ring-black/5">
-          <div className="text-sm font-semibold text-slate-700">
-            Checking admin access...
-          </div>
+          <div className="text-sm font-semibold text-slate-700">Checking admin access...</div>
         </div>
       </div>
     );
@@ -62,16 +59,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="h-screen bg-[#f4fbf7] overflow-hidden">
-      {/* Fixed Header */}
       <AdminHeader />
 
-      {/* Body Area */}
       <div className="flex h-[calc(100vh-64px)]">
-        {/* Fixed Sidebar */}
         <AdminSidebar />
-
-        {/* Scrollable Content */}
-        <main className="w-full overflow-y-auto px-10 py-8">
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
           {children}
         </main>
       </div>

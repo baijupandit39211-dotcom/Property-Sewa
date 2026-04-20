@@ -45,7 +45,6 @@ export default function BuyerSidebar() {
         flex flex-col
       "
     >
-      {/* ✅ NO extra card / NO outer gap */}
       <nav className="flex flex-col gap-1 px-3 py-4">
         {links.map((item) => {
           const Icon = item.icon;
@@ -69,7 +68,6 @@ export default function BuyerSidebar() {
         })}
       </nav>
 
-      {/* bottom */}
       <div className="mt-auto px-3 pb-4">
         <div className="border-t border-slate-200 pt-4">
           <div className="space-y-1">

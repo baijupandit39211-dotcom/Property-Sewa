@@ -28,13 +28,5 @@ export async function logoutUser() {
 }
 
 export async function logoutByRole(role?: string) {
-  const normalizedRole = (role || "").toLowerCase();
-
-  if (normalizedRole === "admin" || normalizedRole === "superadmin") {
-    return apiFetch<{ success?: boolean; message?: string }>("/auth/admin/logout", {
-      method: "POST",
-    });
-  }
-
   return logoutUser();
 }

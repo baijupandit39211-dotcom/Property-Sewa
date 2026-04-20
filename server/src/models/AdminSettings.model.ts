@@ -46,8 +46,6 @@ const AdminSettingsSchema = new Schema(
   { timestamps: true }
 );
 
-AdminSettingsSchema.index({ singletonKey: 1 }, { unique: true });
-
 export type AdminSettingsDoc = InferSchemaType<typeof AdminSettingsSchema>;
 
 const AdminSettings =

@@ -191,15 +191,15 @@ export default function DashboardLandingLike() {
     user?.role === "seller" || user?.role === "agent"
       ? "/seller/add-property"
       : user?.role === "admin" || user?.role === "superadmin"
-      ? "/admin/add-property"
-      : "/register";
+        ? "/admin/add-property"
+        : "/register";
 
   const browseHref =
     mode === "rent"
       ? "/properties?type=rent"
       : mode === "buy"
-      ? "/properties?type=sale"
-      : "/properties";
+        ? "/properties?type=sale"
+        : "/properties";
 
   const handleSearch = () => {
     if (mode === "sell") {
@@ -230,10 +230,7 @@ export default function DashboardLandingLike() {
     window.localStorage.setItem("property-sewa:theme", nextTheme);
   };
 
-  const featuredProperties = React.useMemo(
-    () => allProperties.slice(0, 4),
-    [allProperties]
-  );
+  const featuredProperties = React.useMemo(() => allProperties.slice(0, 4), [allProperties]);
 
   const dashainOffers = React.useMemo(
     () =>
@@ -244,9 +241,7 @@ export default function DashboardLandingLike() {
   );
   const hotDeals = React.useMemo(
     () =>
-      allProperties
-        .filter((item) => item.offerActive && item.offerCategory === "hot")
-        .slice(0, 6),
+      allProperties.filter((item) => item.offerActive && item.offerCategory === "hot").slice(0, 6),
     [allProperties]
   );
   const latestDeals = React.useMemo(
@@ -270,8 +265,7 @@ export default function DashboardLandingLike() {
         <div
           className="border-b border-white/10"
           style={{
-            background:
-              "linear-gradient(90deg, #12392B 0%, #37604E 50%, #5B786A 100%)",
+            background: "linear-gradient(90deg, #12392B 0%, #37604E 50%, #5B786A 100%)",
           }}
         >
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
@@ -279,16 +273,11 @@ export default function DashboardLandingLike() {
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/15">
                 <Home className="h-5 w-5 text-white" />
               </div>
-              <span className="text-sm font-semibold tracking-wide text-white">
-                PROPERTY SEWA
-              </span>
+              <span className="text-sm font-semibold tracking-wide text-white">PROPERTY SEWA</span>
             </div>
 
             <div className="hidden items-center gap-10 text-sm md:flex">
-              <Link
-                className="text-white transition hover:text-white"
-                href="/properties?type=sale"
-              >
+              <Link className="text-white transition hover:text-white" href="/properties?type=sale">
                 For Sale
               </Link>
               <Link
@@ -297,16 +286,10 @@ export default function DashboardLandingLike() {
               >
                 For Rent
               </Link>
-              <Link
-                className="text-white/80 transition hover:text-white"
-                href="/properties"
-              >
+              <Link className="text-white/80 transition hover:text-white" href="/properties">
                 Browse All
               </Link>
-              <Link
-                className="text-white/80 transition hover:text-white"
-                href="/faq"
-              >
+              <Link className="text-white/80 transition hover:text-white" href="/faq">
                 FAQ
               </Link>
             </div>
@@ -419,16 +402,14 @@ export default function DashboardLandingLike() {
         <div
           className="absolute inset-0"
           style={{
-            background:
-              "linear-gradient(180deg, #012C21 0%, #1DBF85 45%, #A5EFD1 100%)",
+            background: "linear-gradient(180deg, #012C21 0%, #1DBF85 45%, #A5EFD1 100%)",
           }}
         />
 
         <div
           className="absolute inset-0 opacity-[0.14]"
           style={{
-            backgroundImage:
-              "radial-gradient(rgba(255,255,255,0.45) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.45) 1px, transparent 1px)",
             backgroundSize: "18px 18px",
           }}
         />
@@ -458,8 +439,7 @@ export default function DashboardLandingLike() {
               custom={1}
               className="mt-6 max-w-xl text-sm text-white/85 sm:text-base"
             >
-              Discover your next chapter with us. Effortless, elegant, and
-              exclusively yours.
+              Discover your next chapter with us. Effortless, elegant, and exclusively yours.
             </motion.p>
 
             <motion.div
@@ -473,16 +453,10 @@ export default function DashboardLandingLike() {
                 <TabButton active={mode === "buy"} onClick={() => setMode("buy")}>
                   Buy
                 </TabButton>
-                <TabButton
-                  active={mode === "rent"}
-                  onClick={() => setMode("rent")}
-                >
+                <TabButton active={mode === "rent"} onClick={() => setMode("rent")}>
                   Rent
                 </TabButton>
-                <TabButton
-                  active={mode === "sell"}
-                  onClick={() => setMode("sell")}
-                >
+                <TabButton active={mode === "sell"} onClick={() => setMode("sell")}>
                   Sell
                 </TabButton>
               </div>
@@ -523,7 +497,11 @@ export default function DashboardLandingLike() {
                   href={browseHref}
                   className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-[0.98]"
                 >
-                  {mode === "rent" ? "Browse Rentals" : mode === "buy" ? "Browse Properties" : "Explore Listings"}
+                  {mode === "rent"
+                    ? "Browse Rentals"
+                    : mode === "buy"
+                      ? "Browse Properties"
+                      : "Explore Listings"}
                 </Link>
                 <Link
                   href={addPropertyHref}
@@ -592,78 +570,59 @@ export default function DashboardLandingLike() {
           >
             Everything should be this easy.
           </motion.h2>
-          <p className="mt-3 text-center text-sm text-slate-500">
-            Three steps. Three minutes.
-          </p>
+          <p className="mt-3 text-center text-sm text-slate-500">Three steps. Three minutes.</p>
 
           <div className="mt-10 grid gap-4 md:grid-cols-5">
-            <MiniCard
-              icon={<Home className="h-5 w-5" />}
-              title="Buy a Home"
-              href="/properties?type=sale"
-            />
+            <MiniCard icon={<Home className="h-5 w-5" />} title="Buy a Home" href="/properties?type=sale" />
             <MiniCard
               icon={<Building2 className="h-5 w-5" />}
               title="Rent a Home"
               href="/properties?type=rent"
             />
-            <MiniCard
-              icon={<BarChart3 className="h-5 w-5" />}
-              title="Sell a Home"
-              href={addPropertyHref}
-            />
-            <MiniCard
-              icon={<Heart className="h-5 w-5" />}
-              title="Offers"
-              href="/properties?offersOnly=true"
-            />
-            <MiniCard
-              icon={<Search className="h-5 w-5" />}
-              title="All Listings"
-              href="/properties"
-            />
+            <MiniCard icon={<BarChart3 className="h-5 w-5" />} title="Sell a Home" href={addPropertyHref} />
+            <MiniCard icon={<Heart className="h-5 w-5" />} title="Offers" href="/properties?offersOnly=true" />
+            <MiniCard icon={<Search className="h-5 w-5" />} title="All Listings" href="/properties" />
           </div>
         </div>
       </section>
 
       {featuredProperties.length > 0 ? (
-      <section className="bg-white pb-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h3 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                Featured Properties
-              </h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Handpicked listings from the best locations, just for you.
-              </p>
+        <section className="bg-white pb-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h3 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                  Featured Properties
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Handpicked listings from the best locations, just for you.
+                </p>
+              </div>
+
+              <Link
+                href="/properties"
+                className="group inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+              >
+                View All{" "}
+                <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+              </Link>
             </div>
 
-            <Link
-              href="/properties"
-              className="group inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
-            >
-              View All{" "}
-              <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-            </Link>
+            <div className="mt-8 grid gap-5 md:grid-cols-4">
+              {featuredProperties.map((p, i) => (
+                <motion.div
+                  key={p._id || p.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{ duration: 0.5, delay: i * 0.06 }}
+                >
+                  <PropertyCard p={p} />
+                </motion.div>
+              ))}
+            </div>
           </div>
-
-          <div className="mt-8 grid gap-5 md:grid-cols-4">
-            {featuredProperties.map((p, i) => (
-              <motion.div
-                key={p._id || p.id}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.5, delay: i * 0.06 }}
-              >
-                <PropertyCard p={p} />
-              </motion.div>
-            ))}
-          </div>
-
-        </div>
-      </section>
+        </section>
       ) : null}
 
       <OfferSection
@@ -702,8 +661,7 @@ export default function DashboardLandingLike() {
             Your Partner in Finding a Home
           </h3>
           <p className="mt-2 text-center text-sm text-slate-500">
-            We provide a complete service for the sale, purchase, or rental of
-            real estate.
+            We provide a complete service for the sale, purchase, or rental of real estate.
           </p>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
@@ -754,8 +712,7 @@ export default function DashboardLandingLike() {
         <div
           className="absolute inset-0 opacity-[0.15]"
           style={{
-            backgroundImage:
-              "radial-gradient(rgba(0,0,0,0.22) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(rgba(0,0,0,0.22) 1px, transparent 1px)",
             backgroundSize: "18px 18px",
           }}
         />
@@ -783,9 +740,7 @@ export default function DashboardLandingLike() {
               </button>
             </div>
 
-            <p className="mt-2 text-xs text-emerald-950/60">
-              No spam. Unsubscribe anytime.
-            </p>
+            <p className="mt-2 text-xs text-emerald-950/60">No spam. Unsubscribe anytime.</p>
           </div>
 
           <div className="relative mx-auto aspect-[1.3/1] w-full max-w-[380px]">
@@ -811,9 +766,7 @@ export default function DashboardLandingLike() {
                 <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-950/10 ring-1 ring-emerald-950/15">
                   <Home className="h-5 w-5 text-emerald-950" />
                 </div>
-                <span className="text-sm font-bold text-emerald-950">
-                  Property Sewa
-                </span>
+                <span className="text-sm font-bold text-emerald-950">Property Sewa</span>
               </div>
               <p className="mt-3 text-sm text-emerald-950/70">
                 The modern way to find, buy, and sell your home.
@@ -991,9 +944,7 @@ function OfferSection({
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-extrabold tracking-tight text-slate-900">
-              {title}
-            </h3>
+            <h3 className="text-2xl font-extrabold tracking-tight text-slate-900">{title}</h3>
             <p className="mt-1 text-sm text-slate-500">{description}</p>
           </div>
 

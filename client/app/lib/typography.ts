@@ -1,0 +1,21 @@
+export const typography = {
+  pageTitle: "text-2xl md:text-3xl font-semibold tracking-tight text-slate-900",
+  pageEyebrow: "text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700/70",
+  pageSubtitle: "text-sm leading-6 text-slate-600",
+  sectionTitle: "text-lg font-semibold tracking-tight text-slate-900",
+  cardTitle: "text-sm font-medium text-slate-600",
+  statValue: "text-2xl md:text-3xl font-semibold tracking-tight text-slate-900",
+  helperText: "text-xs font-normal text-slate-500",
+  sidebarText: "text-[14px] font-medium text-slate-700",
+  sidebarTextActive: "text-[14px] font-semibold text-emerald-700",
+  profileName: "text-sm font-semibold text-slate-900",
+  profileMeta: "text-xs text-slate-500",
+  buttonText: "text-sm font-semibold",
+  buttonTextMuted: "text-sm font-medium",
+  inputText: "text-sm text-slate-700 placeholder:text-slate-400",
+  tableHeader: "text-xs font-semibold uppercase tracking-[0.12em] text-slate-500",
+  tableCell: "text-sm text-slate-700",
+  tableCellStrong: "text-sm font-medium text-slate-900",
+  badgeText: "text-xs font-semibold",
+} as const;
+

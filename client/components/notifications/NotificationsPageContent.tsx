@@ -12,6 +12,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { apiFetch, apiFetchAdmin } from "@/app/lib/api";
+import { typography } from "@/app/lib/typography";
 import { subscribeToNotificationSocket } from "@/app/lib/notificationsSocket";
 
 type NotificationItem = {
@@ -177,12 +178,12 @@ export default function NotificationsPageContent({
         <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="relative z-10 max-w-3xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
               <Bell className="h-3.5 w-3.5" />
               {roleLabel} Notification Center
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Notifications</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#edf6f0]/90 sm:text-base">
+            <h1 className="ps-page-title text-white">Notifications</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#edf6f0]/90">
               Review new messages, transaction updates, and account alerts in one polished workspace.
             </p>
           </div>
@@ -191,7 +192,7 @@ export default function NotificationsPageContent({
             type="button"
             onClick={handleMarkAllAsRead}
             disabled={markingAll || loading || data.items.length === 0}
-            className="relative z-10 inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-[#11392f] shadow-sm transition hover:bg-[#f5faf7] disabled:cursor-not-allowed disabled:opacity-60"
+            className={`relative z-10 inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-[#11392f] shadow-sm transition hover:bg-[#f5faf7] disabled:cursor-not-allowed disabled:opacity-60 ${typography.buttonText}`}
           >
             {markingAll ? "Updating..." : "Mark all as read"}
           </button>
@@ -202,9 +203,9 @@ export default function NotificationsPageContent({
         <div className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-slate-600">Unread now</p>
-              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{unreadCount}</p>
-              <p className="mt-2 text-sm text-slate-500">New notifications in this page view.</p>
+              <p className={typography.cardTitle}>Unread now</p>
+              <p className={`mt-2 ${typography.statValue}`}>{unreadCount}</p>
+              <p className={`mt-2 ${typography.helperText}`}>New notifications in this page view.</p>
             </div>
             <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white shadow-sm">
               <Bell className="h-5 w-5" />
@@ -215,9 +216,9 @@ export default function NotificationsPageContent({
         <div className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-slate-600">Total activity</p>
-              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{data.total}</p>
-              <p className="mt-2 text-sm text-slate-500">All notifications available from the backend.</p>
+              <p className={typography.cardTitle}>Total activity</p>
+              <p className={`mt-2 ${typography.statValue}`}>{data.total}</p>
+              <p className={`mt-2 ${typography.helperText}`}>All notifications available from the backend.</p>
             </div>
             <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white shadow-sm">
               <MessageSquare className="h-5 w-5" />
@@ -228,11 +229,11 @@ export default function NotificationsPageContent({
         <div className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-slate-600">Page status</p>
-              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+              <p className={typography.cardTitle}>Page status</p>
+              <p className={`mt-2 ${typography.statValue}`}>
                 {data.page}/{data.totalPages}
               </p>
-              <p className="mt-2 text-sm text-slate-500">Current notifications page position.</p>
+              <p className={`mt-2 ${typography.helperText}`}>Current notifications page position.</p>
             </div>
             <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white shadow-sm">
               <ReceiptText className="h-5 w-5" />
@@ -244,8 +245,8 @@ export default function NotificationsPageContent({
       <div className="overflow-hidden rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100/80 px-6 py-5">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Recent activity</h2>
-            <p className="mt-1 text-sm text-slate-500">{data.total} total notifications</p>
+            <h2 className={typography.sectionTitle}>Recent activity</h2>
+            <p className={`mt-1 ${typography.helperText}`}>{data.total} total notifications</p>
           </div>
           <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
             Page {data.page} of {data.totalPages}
@@ -270,8 +271,8 @@ export default function NotificationsPageContent({
             <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-[24px] bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
               <Bell className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">No notifications yet</h3>
-            <p className="mt-2 text-sm text-slate-500">
+            <h3 className={typography.sectionTitle}>No notifications yet</h3>
+            <p className={`mt-2 ${typography.pageSubtitle}`}>
               When something important happens, it will appear here.
             </p>
           </div>
@@ -296,7 +297,7 @@ export default function NotificationsPageContent({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <p className="text-base font-bold text-slate-900">{notification.title}</p>
+                      <p className="text-sm font-medium text-slate-900">{notification.title}</p>
                       {!notification.isRead && (
                         <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
                           New
@@ -309,12 +310,12 @@ export default function NotificationsPageContent({
                         {notification.priority}
                       </span>
                     </div>
-                    <p className="text-sm leading-6 text-slate-600">{notification.body}</p>
+                    <p className={typography.pageSubtitle}>{notification.body}</p>
                     <div className="mt-3 flex items-center justify-between gap-3">
-                      <p className="text-xs font-medium text-slate-500">
+                      <p className={typography.helperText}>
                         {formatTimestamp(notification.createdAt)}
                       </p>
-                      <span className="text-xs font-semibold text-emerald-700">Open</span>
+                      <span className={`${typography.badgeText} text-emerald-700`}>Open</span>
                     </div>
                   </div>
                 </button>
@@ -328,13 +329,13 @@ export default function NotificationsPageContent({
             type="button"
             onClick={() => setPage((prev) => Math.max(1, prev - 1))}
             disabled={!data.hasPrev || loading}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className={`inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 ${typography.buttonText}`}
           >
             <ChevronLeft className="h-4 w-4" />
             Previous
           </button>
 
-          <div className="text-sm text-slate-500">
+          <div className={typography.helperText}>
             Showing {(data.page - 1) * data.limit + (data.items.length ? 1 : 0)}-
             {(data.page - 1) * data.limit + data.items.length} of {data.total}
           </div>
@@ -343,7 +344,7 @@ export default function NotificationsPageContent({
             type="button"
             onClick={() => setPage((prev) => prev + 1)}
             disabled={!data.hasNext || loading}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className={`inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 ${typography.buttonText}`}
           >
             Next
             <ChevronRight className="h-4 w-4" />

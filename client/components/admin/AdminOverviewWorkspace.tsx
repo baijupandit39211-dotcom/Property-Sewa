@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { apiFetchAdmin } from "@/app/lib/api";
+import { typography } from "@/app/lib/typography";
 import AdminToast from "@/components/admin/AdminToast";
 import {
   ResponsiveContainer,
@@ -205,9 +206,9 @@ function StatCard({
     <div className="rounded-[14px] border border-[#dfe8e2] bg-white px-5 py-5 shadow-[0_6px_24px_rgba(16,24,40,0.04)]">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[15px] font-semibold text-[#3b4a54]">{title}</p>
-          <p className="mt-2 text-[24px] font-bold tracking-tight text-[#24323d]">{value}</p>
-          <p className="mt-2 text-[14px] text-[#6e7f8d]">{detail}</p>
+          <p className={typography.cardTitle}>{title}</p>
+          <p className={`mt-2 ${typography.statValue}`}>{value}</p>
+          <p className={`mt-2 ${typography.helperText}`}>{detail}</p>
         </div>
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#61b24a] text-white shadow-sm">
           {icon}
@@ -221,7 +222,7 @@ function LinkLike({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-md border border-[#dbe5de] bg-[#f3f8f4] px-3 py-2 text-sm font-semibold text-[#56725f] transition hover:bg-[#ebf3ed]"
+      className={`inline-flex items-center gap-1.5 rounded-md border border-[#dbe5de] bg-[#f3f8f4] px-3 py-2 text-[#56725f] transition hover:bg-[#ebf3ed] ${typography.buttonText}`}
     >
       {label}
       <ArrowRight className="h-4 w-4" />
@@ -437,12 +438,12 @@ export default function AdminOverviewWorkspace() {
               <TriangleAlert className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Overview failed to load</h1>
-              <p className="mt-2 text-sm text-slate-500">{error}</p>
+              <h1 className={typography.pageTitle}>Overview failed to load</h1>
+              <p className={`mt-2 ${typography.pageSubtitle}`}>{error}</p>
               <button
                 type="button"
                 onClick={() => void loadOverview()}
-                className="mt-5 rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+                className={`mt-5 rounded-2xl bg-emerald-700 px-5 py-3 text-white hover:bg-emerald-800 ${typography.buttonText}`}
               >
                 Retry
               </button>
@@ -465,14 +466,14 @@ export default function AdminOverviewWorkspace() {
         <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
                 Live admin overview
               </span>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="ps-page-title mt-4 text-white">
                 Admin dashboard
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90">
                 Review platform health, moderate pending listings, track revenue, and watch
                 user and report activity from one real-time control surface.
               </p>
@@ -482,7 +483,7 @@ export default function AdminOverviewWorkspace() {
               type="button"
               onClick={() => void loadOverview(true)}
               disabled={refreshing}
-              className="inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/15 disabled:opacity-60"
+              className={`inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-white backdrop-blur-sm hover:bg-white/15 disabled:opacity-60 ${typography.buttonText}`}
             >
               <RefreshCcw className={cn("h-4 w-4", refreshing && "animate-spin")} />
               {refreshing ? "Refreshing..." : "Refresh"}
@@ -491,7 +492,7 @@ export default function AdminOverviewWorkspace() {
           <div className="mt-4">
             <Link
               href="/"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15"
+              className={`inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-white backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}
             >
               Back to Home
             </Link>
@@ -528,7 +529,7 @@ export default function AdminOverviewWorkspace() {
         <section className="grid gap-6 lg:grid-cols-2">
           <CardShell>
             <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
-              <h2 className="text-[16px] font-bold text-[#243b53]">Revenue Stats</h2>
+              <h2 className={typography.sectionTitle}>Revenue Stats</h2>
             </div>
 
             <div className="p-4">
@@ -617,7 +618,7 @@ export default function AdminOverviewWorkspace() {
 
           <CardShell>
             <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
-              <h2 className="text-[16px] font-bold text-[#243b53]">Property Listings</h2>
+              <h2 className={typography.sectionTitle}>Property Listings</h2>
               <LinkLike href="/admin/listings-approval" label="View All" />
             </div>
 
@@ -690,7 +691,7 @@ export default function AdminOverviewWorkspace() {
         <section className="grid gap-6 lg:grid-cols-2">
           <CardShell>
             <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
-              <h2 className="text-[16px] font-bold text-[#243b53]">Recent Properties</h2>
+              <h2 className={typography.sectionTitle}>Recent Properties</h2>
               <LinkLike href="/admin/listings-approval" label="View All" />
             </div>
 
@@ -732,7 +733,7 @@ export default function AdminOverviewWorkspace() {
 
           <CardShell>
             <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
-              <h2 className="text-[16px] font-bold text-[#243b53]">Top Owners</h2>
+              <h2 className={typography.sectionTitle}>Top Owners</h2>
               <LinkLike href="/admin/users" label="View All" />
             </div>
 
@@ -779,7 +780,7 @@ export default function AdminOverviewWorkspace() {
         <section>
           <CardShell>
             <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
-              <h2 className="text-[16px] font-bold text-[#243b53]">Latest Leads</h2>
+              <h2 className={typography.sectionTitle}>Latest Leads</h2>
               <LinkLike href="/admin/reports" label="View All" />
             </div>
 
