@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import SellerHeader from "@/components/seller/SellerHeader";
 import SellerSidebar from "@/components/seller/SellerSidebar";
+import { SellerAuthProvider, type SellerUser } from "./SellerAuthContext";
 
 export default function SellerLayout({
   children,
@@ -13,15 +14,21 @@ export default function SellerLayout({
 }) {
   const router = useRouter();
   const [checking, setChecking] = React.useState(true);
+  const [user, setUser] = React.useState<SellerUser | null>(null);
 
   React.useEffect(() => {
     let mounted = true;
 
     (async () => {
       try {
-        const res = await apiFetch<{ success: boolean; user?: { role?: string } }>("/auth/me");
-        const role = (res?.user?.role || "").toLowerCase();
+        const res = await apiFetch<{ success: boolean; user?: SellerUser }>("/auth/me");
+        const nextUser = res?.user || null;
+        const role = (nextUser?.role || "").toLowerCase();
         const ok = role === "seller" || role === "agent";
+
+        if (mounted) {
+          setUser(nextUser);
+        }
 
         if (!ok) {
           if (role === "admin" || role === "superadmin") {
@@ -60,19 +67,21 @@ export default function SellerLayout({
   }
 
   return (
-    <div className="h-screen bg-[#F1F7F4] flex flex-col">
-      <div className="sticky top-0 z-50">
-        <SellerHeader />
-      </div>
-
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex-shrink-0">
-          <SellerSidebar />
+    <SellerAuthProvider value={{ user }}>
+      <div className="h-screen bg-[#F1F7F4] flex flex-col">
+        <div className="sticky top-0 z-50">
+          <SellerHeader />
         </div>
-        <main className="flex-1 overflow-y-auto px-8 py-8">
-          {children}
-        </main>
+
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex-shrink-0">
+            <SellerSidebar />
+          </div>
+          <main className="flex-1 overflow-y-auto px-8 py-8">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SellerAuthProvider>
   );
 }

@@ -1,11 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, LogOut } from "lucide-react";
 import { logoutUser } from "@/app/lib/auth";
-import NotificationBell from "@/components/notifications/NotificationBell";
+
+const NotificationBell = dynamic(() => import("@/components/notifications/NotificationBell"), {
+  ssr: false,
+  loading: () => (
+    <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30" />
+  ),
+});
 
 export default function SellerHeader() {
   const router = useRouter();

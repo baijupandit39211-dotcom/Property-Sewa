@@ -1,30 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import { useBuyerAuth } from "@/app/buyer/BuyerAuthContext";
 import { Search } from "lucide-react";
-import NotificationBell from "@/components/notifications/NotificationBell";
 
-type MeResponse = {
-  success: boolean;
-  user: {
-    name: string;
-    email: string;
-    role: string;
-  };
-};
+const NotificationBell = dynamic(() => import("@/components/notifications/NotificationBell"), {
+  ssr: false,
+  loading: () => (
+    <span className="grid h-10 w-10 place-items-center rounded-lg bg-white text-slate-700 ring-1 ring-white/30" />
+  ),
+});
 
 export default function BuyerHeader() {
   const router = useRouter();
-  const [user, setUser] = useState<MeResponse["user"] | null>(null);
-
-  useEffect(() => {
-    apiFetch<MeResponse>("/auth/me")
-      .then((res) => setUser(res.user))
-      .catch(() => {});
-  }, []);
+  const { user } = useBuyerAuth();
 
   const logout = async () => {
     try {
