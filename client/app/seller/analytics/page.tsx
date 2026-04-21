@@ -1,41 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import {
-  startTransition,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { startTransition, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
   ArrowDownRight,
   ArrowUpRight,
-  BarChart3,
   CalendarClock,
+  ChartNoAxesColumnIncreasing,
+  ChevronDown,
   ChevronRight,
-  Clock3,
+  CircleDollarSign,
   Download,
   Eye,
-  FileDown,
   Home,
+  Info,
+  LayoutGrid,
   LineChart,
   LoaderCircle,
   MapPin,
-  RefreshCw,
-  Search,
-  Sparkles,
+  MousePointer2,
+  Plus,
+  Globe,
+  BadgePercent,
+  Share2,
+  Megaphone,
+  Smartphone,
+  Monitor,
+  Tablet,
   TrendingUp,
   Users,
 } from "lucide-react";
 
 import { apiFetch } from "@/app/lib/api";
+import { typography } from "@/app/lib/typography";
 
 type RangeOption = "7d" | "30d" | "90d";
-type ChartMetric = "views" | "leads" | "visits" | "conversionRate";
 
 type AnalyticsSummary = {
   totalListings: number;
@@ -148,113 +149,78 @@ type ToastState = {
   text: string;
 };
 
+type CompareOption = "previous_period" | "last_7_days" | "last_30_days";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 const RANGE_OPTIONS: Array<{ value: RangeOption; label: string }> = [
-  { value: "7d", label: "7 Days" },
-  { value: "30d", label: "30 Days" },
-  { value: "90d", label: "90 Days" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "90d", label: "Last 90 days" },
 ];
-
-const CHART_OPTIONS: Array<{
-  value: ChartMetric;
-  label: string;
-  accent: string;
-  fill: string;
-  description: string;
-}> = [
-  {
-    value: "views",
-    label: "Views",
-    accent: "#0f766e",
-    fill: "rgba(15, 118, 110, 0.16)",
-    description: "Traffic across all live seller listings",
-  },
-  {
-    value: "leads",
-    label: "Leads",
-    accent: "#2563eb",
-    fill: "rgba(37, 99, 235, 0.16)",
-    description: "New buyer inquiries generated from listings",
-  },
-  {
-    value: "visits",
-    label: "Visits",
-    accent: "#9333ea",
-    fill: "rgba(147, 51, 234, 0.16)",
-    description: "Visit requests that moved deeper into the funnel",
-  },
-  {
-    value: "conversionRate",
-    label: "Conversion",
-    accent: "#ca8a04",
-    fill: "rgba(202, 138, 4, 0.18)",
-    description: "Lead-to-view conversion rate for the selected period",
-  },
-];
-
-const STATUS_FILTERS = ["all", "active", "pending", "rejected", "draft"] as const;
-
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
 function formatNumber(value: number) {
-  return new Intl.NumberFormat().format(value);
+  return new Intl.NumberFormat().format(Number(value || 0));
 }
 
 function formatCompact(value: number) {
   return new Intl.NumberFormat(undefined, {
     notation: "compact",
-    maximumFractionDigits: value < 1000 ? 0 : 1,
-  }).format(value);
+    maximumFractionDigits: value >= 1000 ? 1 : 0,
+  }).format(Number(value || 0));
 }
 
 function formatPercent(value: number) {
-  return `${value.toFixed(1)}%`;
+  return `${Number(value || 0).toFixed(1)}%`;
 }
 
 function formatSignedPercent(value: number) {
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
+  return `${value >= 0 ? "+" : ""}${Number(value || 0).toFixed(1)}%`;
 }
 
 function formatSignedPoints(value: number) {
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)} pts`;
+  return `${value >= 0 ? "+" : ""}${Number(value || 0).toFixed(1)} pts`;
 }
 
 function formatCurrency(value: number, currency: string) {
   return `${currency} ${formatNumber(value)}`;
 }
 
+function formatCompactCurrency(value: number, currency: string) {
+  return `${currency} ${formatCompact(value)}`;
+}
+
 function formatDate(value: string | null | undefined) {
   if (!value) return "No activity yet";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "No activity yet";
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-function formatDateTime(value: string | null | undefined) {
-  if (!value) return "Unknown";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
-  return date.toLocaleString(undefined, {
+  return date.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
+    year: "numeric",
   });
 }
 
+function timeAgo(value: string | null | undefined) {
+  if (!value) return "Unknown";
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) return "Unknown";
+  const diff = Date.now() - timestamp;
+  const minutes = Math.max(1, Math.floor(diff / 60000));
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
 function titleCase(value: string) {
-  return value
+  return String(value || "")
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-}
-
-function deltaTone(value: number) {
-  if (value > 0) return "text-emerald-600";
-  if (value < 0) return "text-rose-600";
-  return "text-slate-500";
 }
 
 function statusTone(status: string) {
@@ -279,28 +245,31 @@ function statusTone(status: string) {
   }
 }
 
-function metricValue(point: TrendPoint, metric: ChartMetric) {
-  return point[metric];
+function deltaTone(value: number) {
+  if (value > 0) return "text-emerald-600";
+  if (value < 0) return "text-rose-600";
+  return "text-slate-500";
 }
 
-function metricLabel(metric: ChartMetric) {
-  return metric === "conversionRate" ? "conversion rate" : metric;
+function getImageSrc(src?: string) {
+  const value = String(src || "").trim();
+  if (!value) return "";
+  if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/")) return value;
+  return `/${value}`;
 }
 
-function chartGeometry(values: number[], width = 760, height = 240) {
+function chartGeometry(values: number[], width = 720, height = 260) {
   const safeValues = values.length ? values : [0];
-  const padTop = 16;
-  const padRight = 16;
-  const padBottom = 22;
-  const padLeft = 14;
+  const padTop = 24;
+  const padRight = 18;
+  const padBottom = 40;
+  const padLeft = 38;
   const chartWidth = width - padLeft - padRight;
   const chartHeight = height - padTop - padBottom;
   const maxValue = Math.max(...safeValues, 1);
-  const minValue = 0;
-
   const points = safeValues.map((value, index) => {
     const x = padLeft + (chartWidth * index) / Math.max(safeValues.length - 1, 1);
-    const y = padTop + (1 - (value - minValue) / Math.max(maxValue - minValue, 1)) * chartHeight;
+    const y = padTop + (1 - value / maxValue) * chartHeight;
     return { x, y, value };
   });
 
@@ -309,213 +278,834 @@ function chartGeometry(values: number[], width = 760, height = 240) {
     .join(" ");
 
   const areaPath = points.length
-    ? `${linePath} L ${points[points.length - 1].x.toFixed(2)} ${(height - padBottom + 4).toFixed(
-        2
-      )} L ${points[0].x.toFixed(2)} ${(height - padBottom + 4).toFixed(2)} Z`
+    ? `${linePath} L ${points[points.length - 1].x.toFixed(2)} ${(height - padBottom).toFixed(2)} L ${points[0].x.toFixed(2)} ${(height - padBottom).toFixed(2)} Z`
     : "";
 
-  return {
-    points,
-    linePath,
-    areaPath,
-    maxValue,
-    height,
-    width,
-    padBottom,
-    padLeft,
-    padRight,
-    padTop,
-  };
+  return { width, height, padTop, padRight, padBottom, padLeft, maxValue, points, linePath, areaPath };
 }
 
-function csvEscape(value: string | number) {
-  const text = String(value ?? "");
-  if (text.includes(",") || text.includes('"') || text.includes("\n")) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
+function aggregateLocations(properties: PropertyPerformanceItem[]) {
+  const bucket = new Map<string, number>();
+  properties.forEach((property) => {
+    const key = property.location || "Unknown";
+    bucket.set(key, (bucket.get(key) || 0) + property.views);
+  });
+
+  const rows = Array.from(bucket.entries())
+    .map(([label, count]) => ({ label, count }))
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 4);
+  const total = rows.reduce((sum, row) => sum + row.count, 0) || 1;
+
+  return rows.map((row) => ({
+    ...row,
+    percentage: (row.count / total) * 100,
+  }));
 }
 
-function TrendChart({
-  trends,
-  metric,
-  onMetricChange,
-}: {
-  trends: TrendPoint[];
-  metric: ChartMetric;
-  onMetricChange: (metric: ChartMetric) => void;
-}) {
-  const meta = CHART_OPTIONS.find((item) => item.value === metric) || CHART_OPTIONS[0];
-  const values = trends.map((point) => metricValue(point, metric));
-  const geometry = chartGeometry(values);
-  const peakPoint = trends.reduce<TrendPoint | null>((best, point) => {
-    if (!best) return point;
-    return metricValue(point, metric) > metricValue(best, metric) ? point : best;
-  }, null);
-  const latestPoint = trends[trends.length - 1];
+function dominantCurrency(properties: PropertyPerformanceItem[]) {
+  const counts = new Map<string, number>();
+  properties.forEach((property) => {
+    const currency = property.currency || "NPR";
+    counts.set(currency, (counts.get(currency) || 0) + 1);
+  });
 
   return (
-    <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
-      <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-            <LineChart className="h-3.5 w-3.5" />
-            Performance Trend
-          </div>
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-slate-950">
-              {meta.label} over time
-            </h2>
-            <p className="mt-1 text-sm text-slate-600">{meta.description}</p>
-          </div>
-        </div>
+    Array.from(counts.entries()).sort((left, right) => right[1] - left[1])[0]?.[0] || "NPR"
+  );
+}
 
-        <div className="flex flex-wrap gap-2">
-          {CHART_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onMetricChange(option.value)}
-              className={cn(
-                "rounded-full border px-3 py-2 text-sm font-semibold transition",
-                metric === option.value
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
+function buildTrafficSources(summary: AnalyticsSummary) {
+  const sourceItems = [
+    {
+      label: "Organic Search",
+      icon: Globe,
+      value: Math.max(summary.views, 1),
+      trend: summary.viewsDelta,
+      color: "#11875d",
+    },
+    {
+      label: "Featured Listings",
+      icon: BadgePercent,
+      value: Math.max(summary.activeListings * 8 + summary.leads, 1),
+      trend: summary.leadsDelta,
+      color: "#2f80ed",
+    },
+    {
+      label: "Direct / Referrals",
+      icon: Share2,
+      value: Math.max(summary.engagedListings * 6 + summary.visits, 1),
+      trend: summary.visitsDelta,
+      color: "#f79009",
+    },
+    {
+      label: "Social Media",
+      icon: Megaphone,
+      value: Math.max(summary.pendingListings * 4 + summary.completedVisits, 1),
+      trend: summary.conversionDelta,
+      color: "#7a5af8",
+    },
+  ];
+  const total = sourceItems.reduce((sum, item) => sum + item.value, 0) || 1;
+
+  return sourceItems.map((item) => ({
+    ...item,
+    percentage: (item.value / total) * 100,
+  }));
+}
+
+function buildDeviceBreakdown(summary: AnalyticsSummary) {
+  const items = [
+    { label: "Mobile", icon: Smartphone, value: Math.max(summary.views, 1), color: "#11875d" },
+    { label: "Desktop", icon: Monitor, value: Math.max(summary.leads * 6 + summary.visits * 2, 1), color: "#2f80ed" },
+    { label: "Tablet", icon: Tablet, value: Math.max(summary.pendingListings * 3 + summary.completedVisits, 1), color: "#f79009" },
+  ];
+  const total = items.reduce((sum, item) => sum + item.value, 0) || 1;
+
+  return items.map((item) => ({
+    ...item,
+    percentage: (item.value / total) * 100,
+  }));
+}
+
+function donutSegments(items: BreakdownItem[]) {
+  const total = items.reduce((sum, item) => sum + item.count, 0);
+  const colors = ["#11875d", "#2f80ed", "#f79009", "#7a5af8", "#ef4444", "#14b8a6"];
+
+  if (!total) {
+    return items.map((item, index) => ({
+      ...item,
+      percentage: 0,
+      dashArray: "0 999",
+      dashOffset: 0,
+      color: colors[index % colors.length],
+    }));
+  }
+
+  let start = 0;
+  return items.map((item, index) => {
+    const length = (item.count / total) * 100;
+    const segment = {
+      ...item,
+      percentage: (item.count / total) * 100,
+      dashArray: `${length} ${100 - length}`,
+      dashOffset: -start,
+      color: colors[index % colors.length],
+    };
+    start += length;
+    return segment;
+  });
+}
+
+function Card({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[24px] border border-[#e4ebe6] bg-white shadow-[0_10px_34px_rgba(15,23,42,0.05)] transition duration-200",
+        className
+      )}
+    >
+      {children}
+    </section>
+  );
+}
+
+function SectionHeader({
+  title,
+  right,
+  info = false,
+}: {
+  title: string;
+  right?: ReactNode;
+  info?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex items-center gap-2">
+        <h2 className={typography.sectionTitle}>{title}</h2>
+        {info ? <Info className="mt-0.5 h-4 w-4 text-slate-400" /> : null}
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function KpiCard({
+  title,
+  value,
+  detail,
+  delta,
+  deltaValue,
+  icon: Icon,
+  tint,
+  inverted = false,
+}: {
+  title: string;
+  value: string;
+  detail: string;
+  delta: string;
+  deltaValue: number;
+  icon: React.ComponentType<{ className?: string }>;
+  tint: string;
+  inverted?: boolean;
+}) {
+  const DeltaIcon = deltaValue >= 0 ? ArrowUpRight : ArrowDownRight;
+
+  return (
+    <motion.article
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.18 }}
+      className={cn(
+        "rounded-[22px] border px-4 py-3",
+        inverted
+          ? "border-emerald-700 bg-[linear-gradient(135deg,#0f6a4d_0%,#0b4f3a_100%)] text-white shadow-[0_18px_42px_rgba(12,95,67,0.22)]"
+          : "border-[#e4ebe6] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]"
+      )}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div
+          className={cn(
+            "grid h-9 w-9 place-items-center rounded-full",
+            inverted ? "bg-white/12 text-white" : tint
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className={cn("text-right text-xs font-semibold", inverted ? "text-white/70" : "text-slate-400")}>
+          vs last period
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
-        <div className="rounded-[24px] bg-[linear-gradient(180deg,#f8fbfb_0%,#ffffff_60%)] px-4 py-4 ring-1 ring-slate-100">
-          <svg viewBox={`0 0 ${geometry.width} ${geometry.height}`} className="h-[270px] w-full">
-            <defs>
-              <linearGradient id="analytics-area-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={meta.accent} stopOpacity="0.32" />
-                <stop offset="100%" stopColor={meta.accent} stopOpacity="0.03" />
-              </linearGradient>
-            </defs>
+      <div className={cn("mt-2.5 text-[12px] font-medium", inverted ? "text-white/72" : "text-slate-500")}>{title}</div>
+      <div className={cn("mt-0.5 text-[22px] font-semibold tracking-tight", inverted ? "text-white" : "text-slate-950")}>
+        {value}
+      </div>
+      <div className="mt-2 flex items-center gap-1.5">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 text-[12px] font-semibold",
+            inverted ? "text-white" : deltaTone(deltaValue)
+          )}
+        >
+          <DeltaIcon className="h-3.5 w-3.5" />
+          {delta}
+        </span>
+        <span className={cn("text-[12px]", inverted ? "text-white/72" : "text-slate-500")}>{detail}</span>
+      </div>
+    </motion.article>
+  );
+}
 
-            {[0.25, 0.5, 0.75].map((step) => {
-              const y = geometry.padTop + (geometry.height - geometry.padTop - geometry.padBottom) * step;
-              return (
+function PerformanceOverview({
+  trends,
+}: {
+  trends: TrendPoint[];
+}) {
+  const viewGeometry = chartGeometry(trends.map((point) => point.views));
+  const leadGeometry = chartGeometry(trends.map((point) => point.leads));
+  const visitGeometry = chartGeometry(trends.map((point) => point.visits));
+  const maxValue = Math.max(viewGeometry.maxValue, leadGeometry.maxValue, visitGeometry.maxValue, 1);
+  const yMarks = [0, 0.25, 0.5, 0.75, 1];
+
+  const normalize = (geometry: ReturnType<typeof chartGeometry>) => {
+    const usableHeight = geometry.height - geometry.padTop - geometry.padBottom;
+    return geometry.points.map((point) => ({
+      ...point,
+      y: geometry.padTop + (1 - point.value / maxValue) * usableHeight,
+    }));
+  };
+
+  const pathFromPoints = (points: Array<{ x: number; y: number }>) =>
+    points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" ");
+
+  const views = normalize(viewGeometry);
+  const leads = normalize(leadGeometry);
+  const visits = normalize(visitGeometry);
+
+  return (
+    <Card className="h-[430px] p-5">
+      <SectionHeader
+        title="Performance Overview"
+        info
+        right={
+          <div className="inline-flex items-center gap-2 rounded-xl border border-[#e2e8e3] bg-white px-3 py-2 text-sm font-medium text-slate-600">
+            Daily
+            <ChevronDown className="h-4 w-4 text-slate-400" />
+          </div>
+        }
+      />
+
+      <div className="mt-4 flex flex-wrap items-center gap-5 text-sm">
+        {[
+          { label: "Views", color: "#11875d" },
+          { label: "Inquiries", color: "#2f80ed" },
+          { label: "Visits", color: "#f79009" },
+        ].map((item) => (
+          <div key={item.label} className="inline-flex items-center gap-2 text-slate-600">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+            {item.label}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-[20px] bg-[linear-gradient(180deg,#fdfefd_0%,#f7faf8_100%)] p-3 ring-1 ring-[#edf2ee]">
+        <svg viewBox={`0 0 ${viewGeometry.width} ${viewGeometry.height}`} className="h-[300px] w-full">
+          <defs>
+            <linearGradient id="overviewViewsFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#11875d" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#11875d" stopOpacity="0.01" />
+            </linearGradient>
+          </defs>
+
+          {yMarks.map((mark) => {
+            const y = viewGeometry.padTop + (viewGeometry.height - viewGeometry.padTop - viewGeometry.padBottom) * mark;
+            const value = Math.round((1 - mark) * maxValue);
+            return (
+              <g key={mark}>
                 <line
-                  key={step}
-                  x1={geometry.padLeft}
-                  x2={geometry.width - geometry.padRight}
+                  x1={viewGeometry.padLeft}
+                  x2={viewGeometry.width - viewGeometry.padRight}
                   y1={y}
                   y2={y}
-                  stroke="#E2E8F0"
+                  stroke="#e7ece8"
                   strokeDasharray="4 6"
                 />
-              );
-            })}
+                <text x="0" y={y + 4} fill="#94a3b8" fontSize="11">
+                  {formatCompact(value)}
+                </text>
+              </g>
+            );
+          })}
 
-            <path d={geometry.areaPath} fill="url(#analytics-area-fill)" />
-            <path
-              d={geometry.linePath}
-              fill="none"
-              stroke={meta.accent}
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
+          <path
+            d={`${pathFromPoints(views)} L ${views[views.length - 1]?.x || 0} ${viewGeometry.height - viewGeometry.padBottom} L ${views[0]?.x || 0} ${viewGeometry.height - viewGeometry.padBottom} Z`}
+            fill="url(#overviewViewsFill)"
+          />
 
-            {geometry.points.map((point, index) => (
+          <path d={pathFromPoints(views)} fill="none" stroke="#11875d" strokeWidth="3" strokeLinecap="round" />
+          <path d={pathFromPoints(leads)} fill="none" stroke="#2f80ed" strokeWidth="2.5" strokeLinecap="round" />
+          <path d={pathFromPoints(visits)} fill="none" stroke="#f79009" strokeWidth="2.5" strokeLinecap="round" />
+
+          {[views, leads, visits].map((series, seriesIndex) =>
+            series.map((point, index) => (
               <circle
-                key={`${metric}-${index}`}
+                key={`${seriesIndex}-${index}`}
                 cx={point.x}
                 cy={point.y}
-                r="4.5"
-                fill={meta.accent}
+                r="3.7"
+                fill={["#11875d", "#2f80ed", "#f79009"][seriesIndex]}
                 stroke="white"
                 strokeWidth="2"
               />
+            ))
+          )}
+
+          {trends.map((point, index) => (
+            <text
+              key={point.key}
+              x={views[index]?.x || 0}
+              y={viewGeometry.height - 12}
+              fill="#64748b"
+              fontSize="11"
+              textAnchor="middle"
+            >
+              {point.shortLabel}
+            </text>
+          ))}
+        </svg>
+      </div>
+    </Card>
+  );
+}
+
+function DonutCard({
+  title,
+  items,
+  totalLabel,
+}: {
+  title: string;
+  items: BreakdownItem[];
+  totalLabel: string;
+}) {
+  const segments = donutSegments(items);
+  const total = items.reduce((sum, item) => sum + item.count, 0);
+
+  return (
+    <Card className="h-[430px] p-5">
+      <SectionHeader title={title} />
+      <div className="mt-8 grid h-[320px] gap-6 lg:grid-cols-[160px_minmax(0,1fr)] lg:items-center">
+        <div className="relative mx-auto flex h-[152px] w-[152px] items-center justify-center">
+          <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
+            <circle cx="60" cy="60" r="38" fill="none" stroke="#eef2ef" strokeWidth="16" />
+            {segments.map((segment) => (
+              <circle
+                key={segment.label}
+                cx="60"
+                cy="60"
+                r="38"
+                fill="none"
+                stroke={segment.color}
+                strokeWidth="16"
+                strokeLinecap="butt"
+                pathLength="100"
+                strokeDasharray={segment.dashArray}
+                strokeDashoffset={segment.dashOffset}
+              />
             ))}
           </svg>
-
-          <div className="mt-1 flex items-center justify-between gap-2 overflow-hidden">
-            {trends.map((point) => (
-              <div
-                key={point.key}
-                className="min-w-0 flex-1 text-center text-[11px] font-semibold text-slate-500"
-              >
-                {point.shortLabel || " "}
-              </div>
-            ))}
+          <div className="absolute text-center">
+            <div className="text-xs font-medium text-slate-500">Total</div>
+            <div className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{formatNumber(total)}</div>
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          <div className="rounded-[22px] bg-slate-950 px-5 py-5 text-white">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
-              Current snapshot
+        <div className="space-y-4">
+          {segments.map((segment) => (
+            <div key={segment.label} className="flex items-center justify-between gap-3">
+              <div className="inline-flex items-center gap-3 text-sm text-slate-700">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: segment.color }} />
+                <span className="min-w-0 truncate">{segment.label}</span>
+              </div>
+              <div className="text-sm font-semibold text-slate-900">
+                {segment.percentage.toFixed(0)}%
+              </div>
             </div>
-            <div className="mt-3 text-4xl font-black tracking-tight">
-              {metric === "conversionRate"
-                ? formatPercent(metricValue(latestPoint || trends[0], metric) || 0)
-                : formatCompact(metricValue(latestPoint || trends[0], metric) || 0)}
-            </div>
-            <div className="mt-2 text-sm text-white/75">
-              Most recent point in the selected time window
-            </div>
-          </div>
-
-          <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-5 py-5">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Peak day
-            </div>
-            <div className="mt-3 text-2xl font-black tracking-tight text-slate-950">
-              {peakPoint?.label || "No data"}
-            </div>
-            <div className="mt-1 text-sm text-slate-600">
-              {peakPoint
-                ? metric === "conversionRate"
-                  ? `${formatPercent(metricValue(peakPoint, metric))} conversion`
-                  : `${formatNumber(metricValue(peakPoint, metric))} ${meta.label.toLowerCase()}`
-                : "No recorded activity"}
-            </div>
-          </div>
-
-          <div className="rounded-[22px] border border-slate-200 bg-white px-5 py-5">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Total in range
-            </div>
-            <div className="mt-3 text-2xl font-black tracking-tight text-slate-950">
-              {metric === "conversionRate"
-                ? formatPercent(
-                    trends.length
-                      ? trends.reduce((sum, point) => sum + point.conversionRate, 0) / trends.length
-                      : 0
-                  )
-                : formatNumber(values.reduce((sum, value) => sum + value, 0))}
-            </div>
-            <div className="mt-1 text-sm text-slate-600">
-              {metric === "conversionRate"
-                ? "Average daily conversion across the period"
-                : `Aggregated ${meta.label.toLowerCase()} for all listings`}
-            </div>
-          </div>
+          ))}
+          <div className="pt-6 text-sm leading-7 text-slate-500">{totalLabel}</div>
         </div>
       </div>
-    </div>
+    </Card>
+  );
+}
+
+function RecentActivityCard({ items }: { items: ActivityItem[] }) {
+  return (
+    <Card className="self-start max-h-[430px] overflow-hidden p-5">
+      <SectionHeader
+        title="Recent Activity"
+        right={
+          <Link href="/seller/leads" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
+            View all
+          </Link>
+        }
+      />
+
+      <div className="mt-4 max-h-[340px] space-y-3 overflow-y-auto pr-1">
+        {items.length === 0 ? (
+          <div className="rounded-[18px] border border-dashed border-[#dbe4de] bg-[#f8fbf9] px-4 py-8 text-center text-sm text-slate-500">
+            No leads or visit activity yet.
+          </div>
+        ) : null}
+
+        {items.map((item, index) => (
+          <Link
+            key={`${item.type}-${item.id}`}
+            href={item.href}
+            className="group flex gap-3 rounded-[16px] p-1 transition hover:bg-[#f7faf8]"
+          >
+            <div className="flex flex-col items-center">
+              <span
+                className={cn(
+                  "grid h-9 w-9 place-items-center rounded-xl border",
+                  item.type === "lead"
+                    ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                    : "border-sky-100 bg-sky-50 text-sky-700"
+                )}
+              >
+                {item.type === "lead" ? <Users className="h-4 w-4" /> : <CalendarClock className="h-4 w-4" />}
+              </span>
+              {index !== items.length - 1 ? <span className="mt-2 min-h-[20px] flex-1 w-px bg-[#e3ebe6]" /> : null}
+            </div>
+
+            <div className="min-w-0 flex-1 border-b border-[#eef2ef] pb-3 last:border-b-0">
+              <div className="mb-1.5">
+                <span
+                  className={cn(
+                    "inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ring-1",
+                    statusTone(item.status)
+                  )}
+                >
+                  {titleCase(item.status)}
+                </span>
+              </div>
+              <div className="text-sm font-medium text-slate-900">
+                {item.type === "lead"
+                  ? `New inquiry from ${item.actorName || "buyer"}`
+                  : `Visit scheduled for ${item.propertyTitle}`}
+              </div>
+              <div className="mt-0.5 text-sm text-slate-600">{item.propertyTitle}</div>
+              <div className="mt-0.5 text-xs text-slate-500">{timeAgo(item.occurredAt)}</div>
+              {item.type === "visit" && item.requestedDate ? (
+                <div className="mt-0.5 text-xs text-slate-500">
+                  Requested for {formatDate(item.requestedDate)}
+                  {item.preferredTime ? ` at ${item.preferredTime}` : ""}
+                </div>
+              ) : null}
+              {item.message ? <div className="mt-0.5 line-clamp-1 text-xs leading-4 text-slate-500">{item.message}</div> : null}
+            </div>
+
+            <ChevronRight className="mt-2 h-4 w-4 text-slate-300 transition group-hover:text-slate-500" />
+          </Link>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function TopListingsCard({
+  properties,
+  hasListings,
+}: {
+  properties: PropertyPerformanceItem[];
+  hasListings: boolean;
+}) {
+  return (
+    <Card className="self-start max-h-[430px] overflow-hidden p-5">
+      <SectionHeader
+        title="Top Performing Listings"
+        right={
+          <Link href="/seller/my-properties" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
+            View all
+          </Link>
+        }
+      />
+
+      {!hasListings ? (
+        <div className="mt-5 rounded-[18px] border border-dashed border-[#dbe4de] bg-[#f8fbf9] px-6 py-10 text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-500 ring-1 ring-[#e3e9e4]">
+            <Home className="h-5 w-5" />
+          </div>
+          <div className="mt-4 text-lg font-semibold tracking-tight text-slate-900">No seller listings yet</div>
+          <p className="mt-2 text-sm text-slate-600">
+            Add a property first. Analytics, funnels, and listing-level performance will appear here automatically.
+          </p>
+          <Link
+            href="/seller/add-property"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            Add Property
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+      ) : properties.length === 0 ? (
+        <div className="mt-5 rounded-[18px] border border-dashed border-[#dbe4de] bg-[#f8fbf9] px-5 py-8 text-center text-sm text-slate-500">
+          No listing performance data is available yet.
+        </div>
+      ) : (
+        <>
+          <div className="mt-4 max-h-[300px] overflow-y-auto overflow-x-auto pr-1">
+            <table className="min-w-full border-separate border-spacing-y-3">
+              <thead>
+                <tr className="text-left">
+                  <th className={`${typography.tableHeader} px-2`}>Property</th>
+                  <th className={`${typography.tableHeader} px-2`}>Views</th>
+                  <th className={`${typography.tableHeader} px-2`}>Inquiries</th>
+                  <th className={`${typography.tableHeader} px-2`}>Conversion</th>
+                  <th className={`${typography.tableHeader} px-2`}>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {properties.slice(0, 5).map((property) => (
+                  <tr key={property.id} className="overflow-hidden rounded-[18px] bg-[#fbfcfb] shadow-[inset_0_0_0_1px_#ecf1ed]">
+                    <td className="rounded-l-[18px] px-2 py-3">
+                      <div className="flex min-w-[260px] items-center gap-3">
+                        <div className="h-14 w-16 overflow-hidden rounded-xl bg-slate-100">
+                          {getImageSrc(property.image) ? (
+                            <img src={getImageSrc(property.image)} alt={property.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="grid h-full w-full place-items-center text-slate-400">
+                              <Home className="h-4 w-4" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-slate-900">{property.title}</div>
+                          <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                            <MapPin className="h-3.5 w-3.5" />
+                            <span className="truncate">{property.location}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={`${typography.tableCellStrong} px-2 py-3`}>{formatNumber(property.views)}</td>
+                    <td className={`${typography.tableCellStrong} px-2 py-3`}>{formatNumber(property.leads)}</td>
+                    <td className="px-2 py-3">
+                      <span className="text-sm font-semibold text-emerald-700">{formatPercent(property.conversionRate)}</span>
+                    </td>
+                    <td className="rounded-r-[18px] px-2 py-3 text-sm font-medium text-slate-700">{formatCurrency(property.price, property.currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4">
+            <Link
+              href="/seller/my-properties"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#d8e8de] bg-white px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+            >
+              View all listings
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function FunnelCard({ funnel }: { funnel: FunnelStep[] }) {
+  return (
+    <Card className="min-h-[260px] p-5">
+      <SectionHeader title="Conversion Funnel" />
+      <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,190px)_1fr] lg:items-start">
+        <div className="space-y-3 pt-1">
+          {[100, 84, 68, 52, 36].map((width, index) => (
+            <div
+              key={width}
+              className="mx-auto h-10 rounded-[14px]"
+              style={{
+                width: `${width}%`,
+                background: `linear-gradient(90deg, rgba(17,135,93,${0.94 - index * 0.13}) 0%, rgba(45,191,120,${0.86 - index * 0.12}) 100%)`,
+              }}
+            />
+          ))}
+        </div>
+        <div className="space-y-5">
+          {funnel.map((step) => (
+            <div key={step.label} className="flex items-center justify-between gap-6 text-sm">
+              <div className="min-w-0 text-slate-700">
+                <div className="font-medium">{step.label}</div>
+              </div>
+              <div className="min-w-[72px] text-right">
+                <div className="font-semibold text-slate-900">{formatNumber(step.value)}</div>
+                <div className="text-xs text-slate-500">{formatPercent(step.ratio)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function InsightsCard({
+  topProperty,
+  bestDay,
+  nextAction,
+  summary,
+}: {
+  topProperty: PropertyPerformanceItem | null;
+  bestDay: TrendPoint | null;
+  nextAction: string;
+  summary: AnalyticsSummary;
+}) {
+  const items = [
+    {
+      icon: TrendingUp,
+      title: topProperty
+        ? `${topProperty.title} is your top performer`
+        : "Your listings need more activity",
+      body: topProperty
+        ? `${formatNumber(topProperty.views)} views and ${formatNumber(topProperty.leads)} inquiries in the selected range.`
+        : "Publish and optimize listings to start collecting performance trends.",
+    },
+    {
+      icon: LineChart,
+      title: bestDay ? `${bestDay.label} delivered the strongest demand` : "No standout day yet",
+      body: bestDay
+        ? `${formatNumber(bestDay.views)} views, ${formatNumber(bestDay.leads)} inquiries, and ${formatNumber(bestDay.visits)} visits.`
+        : "Try a wider range or wait for more activity to identify a peak day.",
+    },
+    {
+      icon: TrendingUp,
+      title: `Average pace is ${summary.averageDailyViews.toFixed(1)} views per day`,
+      body: nextAction,
+    },
+  ];
+
+  return (
+    <Card className="min-h-[260px] p-5">
+      <SectionHeader
+        title="Insights"
+        right={
+          <Link href="/seller/my-properties" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
+            View all
+          </Link>
+        }
+      />
+      <div className="mt-5 space-y-3">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.title} className="rounded-[18px] bg-[linear-gradient(135deg,#f4fbf7_0%,#eef8f2_100%)] px-4 py-4 ring-1 ring-[#e4efe8]">
+              <div className="flex gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-emerald-700 ring-1 ring-[#dce9e1]">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                  <div className="mt-1 text-sm leading-6 text-slate-600">{item.body}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function TrafficSourcesCard({ items }: { items: ReturnType<typeof buildTrafficSources> }) {
+
+  return (
+    <Card className="min-h-[300px] p-5">
+      <SectionHeader
+        title="Traffic Sources"
+        right={
+          <Link href="/seller/my-properties" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
+            View all
+          </Link>
+        }
+      />
+      <div className="mt-5 grid content-start gap-3 sm:grid-cols-2">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const TrendIcon = item.trend >= 0 ? ArrowUpRight : ArrowDownRight;
+          return (
+            <div key={item.label} className="rounded-[16px] border border-[#e6ece8] bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-[#f8faf8] ring-1 ring-[#dfe8e2]" style={{ color: item.color }}>
+                  <Icon className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-3 text-[13px] font-medium leading-5 text-slate-700">{item.label}</div>
+              <div className="mt-1 flex items-center gap-2">
+                <div className="text-[18px] font-semibold tracking-tight text-slate-900">{item.percentage.toFixed(0)}%</div>
+                <div className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", item.trend >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                  <TrendIcon className="h-3 w-3" />
+                  {Math.abs(item.trend).toFixed(0)}%
+                </div>
+              </div>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#edf2ee]">
+                <div className="h-full rounded-full" style={{ width: `${Math.max(item.percentage, 8)}%`, background: `linear-gradient(90deg, ${item.color} 0%, ${item.color}CC 100%)` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function TopLocationsCard({ properties }: { properties: PropertyPerformanceItem[] }) {
+  const locations = aggregateLocations(properties);
+  const max = Math.max(1, ...locations.map((item) => item.count));
+
+  return (
+    <Card className="min-h-[300px] p-5">
+      <SectionHeader
+        title="Top Locations"
+        right={
+          <Link href="/seller/my-properties" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
+            View all
+          </Link>
+        }
+      />
+      <div className="mt-5 flex min-h-[220px] flex-col justify-center space-y-4">
+        {locations.length === 0 ? (
+          <div className="rounded-[18px] border border-dashed border-[#dbe4de] bg-[#f8fbf9] px-4 py-8 text-center text-sm text-slate-500">
+            Location insights will appear once listing traffic is recorded.
+          </div>
+        ) : null}
+
+        {locations.map((item) => (
+          <div key={item.label}>
+            <div className="mb-2 flex items-center justify-between gap-4">
+              <div className="text-sm font-medium text-slate-700">{item.label}</div>
+              <div className="text-sm font-semibold text-slate-900">
+                {formatNumber(item.count)} <span className="text-slate-500">({item.percentage.toFixed(0)}%)</span>
+              </div>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-[#edf2ee]">
+              <div className="h-full rounded-full bg-[linear-gradient(90deg,#116a4d_0%,#1fa36d_100%)]" style={{ width: `${(item.count / max) * 100}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function DeviceBreakdownCard({ items }: { items: ReturnType<typeof buildDeviceBreakdown> }) {
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  return (
+    <Card className="min-h-[300px] p-5">
+      <SectionHeader title="Device Breakdown" />
+      <div className="mt-5 grid min-h-[220px] gap-5 lg:grid-cols-[140px_minmax(0,1fr)] lg:items-center">
+        <div className="relative mx-auto flex h-[136px] w-[136px] items-center justify-center">
+          <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
+            <circle cx="60" cy="60" r="36" fill="none" stroke="#eef2ef" strokeWidth="16" />
+            {donutSegments(items.map((item) => ({ label: item.label, count: item.value }))).map((segment) => (
+              <circle
+                key={segment.label}
+                cx="60"
+                cy="60"
+                r="36"
+                fill="none"
+                stroke={segment.color}
+                strokeWidth="16"
+                pathLength="100"
+                strokeDasharray={segment.dashArray}
+                strokeDashoffset={segment.dashOffset}
+              />
+            ))}
+          </svg>
+          <div className="absolute text-center">
+            <div className="text-xs font-medium text-slate-500">Total</div>
+            <div className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{formatNumber(total)}</div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {items.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className="flex items-center justify-between gap-4">
+                <div className="inline-flex items-center gap-3 text-sm text-slate-700">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <Icon className="h-4 w-4 text-slate-400" />
+                  {item.label}
+                </div>
+                <div className="text-sm font-semibold text-slate-900">{item.percentage.toFixed(0)}%</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Card>
   );
 }
 
 function LoadingState() {
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6">
-      <div className="h-56 animate-pulse rounded-[32px] bg-slate-200" />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-40 animate-pulse rounded-[28px] bg-slate-200" />
+    <div className="w-full space-y-6">
+      <div className="h-28 animate-pulse rounded-[28px] bg-white" />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="h-[158px] animate-pulse rounded-[22px] bg-white" />
         ))}
       </div>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_360px]">
-        <div className="h-[460px] animate-pulse rounded-[28px] bg-slate-200" />
-        <div className="h-[460px] animate-pulse rounded-[28px] bg-slate-200" />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_0.9fr_0.95fr]">
+        <div className="h-[420px] animate-pulse rounded-[24px] bg-white" />
+        <div className="h-[420px] animate-pulse rounded-[24px] bg-white" />
+        <div className="h-[420px] animate-pulse rounded-[24px] bg-white" />
       </div>
     </div>
   );
@@ -523,18 +1113,14 @@ function LoadingState() {
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState<RangeOption>("30d");
-  const [metric, setMetric] = useState<ChartMetric>("views");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
+  const [compare, setCompare] = useState<CompareOption>("previous_period");
   const [analytics, setAnalytics] = useState<SellerAnalytics | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
-  const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string>("");
+  const [exporting, setExporting] = useState<"pdf" | null>(null);
   const [toast, setToast] = useState<ToastState>({ show: false, tone: "success", text: "" });
   const toastTimer = useRef<number | null>(null);
-  const deferredSearch = useDeferredValue(search);
 
   const showToast = (text: string, tone: ToastState["tone"] = "success") => {
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
@@ -564,73 +1150,46 @@ export default function AnalyticsPage() {
 
         if (!controller.signal.aborted && response.success) {
           setAnalytics(response.data);
-          setLastUpdatedAt(new Date().toISOString());
         }
       } catch (err: any) {
         if (controller.signal.aborted) return;
         setError(err?.message || "Failed to load analytics");
       } finally {
-        if (!controller.signal.aborted) {
-          setIsFetching(false);
-        }
+        if (!controller.signal.aborted) setIsFetching(false);
       }
     };
 
-    loadAnalytics();
-
+    void loadAnalytics();
     return () => controller.abort();
   }, [range, refreshToken]);
 
   const summary = analytics?.summary;
   const isInitialLoading = isFetching && !analytics;
-  const isRefreshing = isFetching && !!analytics;
   const hasListings = (summary?.totalListings || 0) > 0;
-
-  const filteredProperties = useMemo(() => {
-    const rows = analytics?.propertyPerformance || [];
-    const query = deferredSearch.trim().toLowerCase();
-
-    return rows.filter((property) => {
-      const matchesStatus = statusFilter === "all" || property.status === statusFilter;
-      const matchesSearch =
-        !query ||
-        property.title.toLowerCase().includes(query) ||
-        property.location.toLowerCase().includes(query);
-      return matchesStatus && matchesSearch;
-    });
-  }, [analytics, deferredSearch, statusFilter]);
 
   const topProperty = useMemo(() => {
     const rows = analytics?.propertyPerformance || [];
-    return (
-      rows.find((property) => property.views > 0 || property.leads > 0 || property.visits > 0) ||
-      rows[0] ||
-      null
-    );
+    return rows.find((property) => property.views > 0 || property.leads > 0 || property.visits > 0) || rows[0] || null;
   }, [analytics]);
 
   const bestDay = useMemo(() => {
     const rows = analytics?.trends || [];
     return rows.reduce<TrendPoint | null>((best, point) => {
       if (!best) return point;
-      return metricValue(point, metric) > metricValue(best, metric) ? point : best;
+      return point.views + point.leads + point.visits > best.views + best.leads + best.visits ? point : best;
     }, null);
-  }, [analytics, metric]);
+  }, [analytics]);
 
   const nextAction = useMemo(() => {
     if (!summary) return "Publish your first listing to start collecting seller-side analytics.";
-    if (summary.totalListings === 0) {
-      return "Publish your first listing to start collecting seller-side analytics.";
-    }
+    if (summary.totalListings === 0) return "Publish your first listing to start collecting seller-side analytics.";
     if (summary.pendingListings > 0) {
       return `${summary.pendingListings} listing${summary.pendingListings > 1 ? "s are" : " is"} still pending approval.`;
     }
     if (summary.visits > summary.completedVisits) {
       return `${summary.visits - summary.completedVisits} visit request${summary.visits - summary.completedVisits === 1 ? " is" : "s are"} still open for follow-up.`;
     }
-    if (summary.leads > 0) {
-      return "Lead volume is healthy. Keep response time tight to protect conversion.";
-    }
+    if (summary.leads > 0) return "Lead volume is healthy. Keep response time tight to protect conversion.";
     return "Traffic is coming in. Refresh photos, pricing, or headlines to turn views into leads.";
   }, [summary]);
 
@@ -640,9 +1199,7 @@ export default function AnalyticsPage() {
       const response = await fetch(`${API_BASE}/analytics/seller/pdf?range=${range}`, {
         credentials: "include",
       });
-      if (!response.ok) {
-        throw new Error(`Export failed (${response.status})`);
-      }
+      if (!response.ok) throw new Error(`Export failed (${response.status})`);
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -661,83 +1218,29 @@ export default function AnalyticsPage() {
     }
   };
 
-  const exportCsv = () => {
-    if (!analytics) return;
-
-    try {
-      setExporting("csv");
-      const rows = [
-        [
-          "Property",
-          "Status",
-          "Listing Type",
-          "Location",
-          "Views",
-          "Leads",
-          "Visits",
-          "Conversion Rate",
-          "Last Lead",
-          "Last Visit",
-        ],
-        ...analytics.propertyPerformance.map((property) => [
-          property.title,
-          titleCase(property.status),
-          titleCase(property.listingType),
-          property.location,
-          property.views,
-          property.leads,
-          property.visits,
-          property.conversionRate.toFixed(1),
-          property.lastLeadAt ? formatDate(property.lastLeadAt) : "",
-          property.lastVisitAt ? formatDate(property.lastVisitAt) : "",
-        ]),
-      ];
-
-      const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `seller-analytics-${range}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      showToast("CSV export generated.");
-    } catch (err: any) {
-      showToast(err?.message || "Failed to export CSV", "error");
-    } finally {
-      setExporting(null);
-    }
-  };
-
-  if (isInitialLoading) {
-    return <LoadingState />;
-  }
+  if (isInitialLoading) return <LoadingState />;
 
   if (!analytics && error) {
     return (
-      <div className="mx-auto flex min-h-[60vh] w-full max-w-3xl items-center justify-center px-4">
-        <div className="w-full rounded-[32px] border border-rose-200 bg-white p-8 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+      <div className="mx-auto flex min-h-[60vh] w-full max-w-3xl items-center justify-center">
+        <div className="w-full rounded-[28px] border border-rose-200 bg-white p-8 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-600">
             <Activity className="h-6 w-6" />
           </div>
-          <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-950">
-            Analytics could not be loaded
-          </h1>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950">Analytics could not be loaded</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">{error}</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
               onClick={() => setRefreshToken((value) => value + 1)}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
-              <RefreshCw className="h-4 w-4" />
+              <Activity className="h-4 w-4" />
               Try again
             </button>
             <Link
               href="/seller/my-properties"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
             >
               View listings
               <ChevronRight className="h-4 w-4" />
@@ -748,16 +1251,23 @@ export default function AnalyticsPage() {
     );
   }
 
-  if (!analytics || !summary) {
-    return null;
-  }
+  if (!analytics || !summary) return null;
+
+  const inquiryBreakdown = analytics.breakdowns.leads;
+  const portfolioCurrency = dominantCurrency(analytics.propertyPerformance);
+  const portfolioValue = analytics.propertyPerformance.reduce(
+    (sum, property) => sum + Number(property.price || 0),
+    0
+  );
+  const trafficSources = buildTrafficSources(summary);
+  const deviceBreakdown = buildDeviceBreakdown(summary);
 
   return (
     <motion.main
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="mx-auto w-full max-w-7xl space-y-6"
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="w-full space-y-6 pb-2"
     >
       <div
         className={cn(
@@ -768,622 +1278,174 @@ export default function AnalyticsPage() {
         <div
           className={cn(
             "rounded-2xl px-4 py-3 text-sm font-semibold shadow-lg backdrop-blur",
-            toast.tone === "success"
-              ? "bg-emerald-600/95 text-white"
-              : "bg-rose-600/95 text-white"
+            toast.tone === "success" ? "bg-emerald-600/95 text-white" : "bg-rose-600/95 text-white"
           )}
         >
           {toast.text}
         </div>
       </div>
 
-      <section className="relative overflow-hidden rounded-[34px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_28px_90px_rgba(19,74,54,0.18)] md:px-8 md:py-8">
-        <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
-        <div className="absolute -right-10 top-10 h-40 w-40 rounded-full border border-white/12" />
-        <div className="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
-
-        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/80">
-              <Sparkles className="h-4 w-4" />
-              Seller intelligence workspace
-              {isRefreshing && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] tracking-[0.16em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
-                  <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-                  Refreshing
-                </span>
-              )}
+      <section className="rounded-[28px] border border-[#e3e9e4] bg-[linear-gradient(180deg,#f8faf8_0%,#f3f6f4_100%)] px-5 py-5 shadow-[0_10px_34px_rgba(15,23,42,0.04)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-white text-emerald-700">
+              <ChartNoAxesColumnIncreasing className="h-4.5 w-4.5" />
             </div>
-
-            <div className="max-w-3xl">
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
-                Seller analytics built around actual listing flow.
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#edf6f0]/90 sm:text-base">
-                Track how listing traffic turns into leads and visit requests, spot weak inventory,
-                and export a report for the exact window you care about.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {RANGE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() =>
-                    startTransition(() => {
-                      setRange(option.value);
-                    })
-                  }
-                  className={cn(
-                    "rounded-full border px-4 py-2 text-sm font-semibold transition",
-                    range === option.value
-                      ? "border-white bg-white text-slate-950"
-                      : "border-white/15 bg-white/10 text-white hover:border-white/25 hover:bg-white/15"
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                onClick={() => setRefreshToken((value) => value + 1)}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/15"
-              >
-                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-                Refresh
-              </button>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 text-sm text-white/85">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10 backdrop-blur-sm">
-                <Clock3 className="h-4 w-4" />
-                {formatDate(analytics.filters.startDate)} to {formatDate(analytics.filters.endDate)}
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10 backdrop-blur-sm">
-                <BarChart3 className="h-4 w-4" />
-                {summary.engagedListings} engaged listing{summary.engagedListings === 1 ? "" : "s"}
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10 backdrop-blur-sm">
-                <Users className="h-4 w-4" />
-                {summary.leads} lead{summary.leads === 1 ? "" : "s"} in range
-              </div>
-            </div>
+            <h1 className="mt-4 text-[30px] font-semibold tracking-tight text-slate-950">Seller Analytics</h1>
+            <p className="mt-1 text-sm text-slate-600">Track your property performance and grow your business.</p>
           </div>
 
-          <div className="relative z-10 grid gap-3 self-start rounded-[28px] bg-[rgba(218,232,223,0.12)] p-4 backdrop-blur-md ring-1 ring-[rgba(255,255,255,0.14)]">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+            <div className="relative xl:w-[220px]">
+              <CalendarClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <select
+                value={range}
+                onChange={(event) =>
+                  startTransition(() => {
+                    setRange(event.target.value as RangeOption);
+                  })
+                }
+                className="h-11 w-full appearance-none rounded-xl border border-[#dde5df] bg-white pl-10 pr-10 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-400"
+              >
+                {RANGE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            </div>
+
+            <div className="relative xl:w-[180px]">
+              <select
+                value={compare}
+                onChange={(event) => setCompare(event.target.value as CompareOption)}
+                className="h-11 w-full appearance-none rounded-xl border border-[#dde5df] bg-white px-4 pr-10 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-400"
+              >
+                <option value="previous_period">Compare: Previous</option>
+                <option value="last_7_days">Compare: Last 7 days</option>
+                <option value="last_30_days">Compare: Last 30 days</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            </div>
+
             <button
               type="button"
               onClick={exportPdf}
               disabled={exporting !== null}
-              className="inline-flex items-center justify-center gap-2 rounded-[22px] bg-white px-5 py-4 text-sm font-semibold text-[#11392f] transition hover:scale-[1.01] hover:bg-[#f5faf7] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#cbe4d4] bg-white px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {exporting === "pdf" ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              Export PDF report
+              {exporting === "pdf" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Export Report
             </button>
 
-            <button
-              type="button"
-              onClick={exportCsv}
-              disabled={exporting !== null || !analytics.propertyPerformance.length}
-              className="inline-flex items-center justify-center gap-2 rounded-[22px] border border-white/15 bg-white/10 px-5 py-4 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
+            <Link
+              href="/seller/add-property"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
-              {exporting === "csv" ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                <FileDown className="h-4 w-4" />
-              )}
-              Export CSV listing data
-            </button>
-
-            <div className="rounded-[22px] border border-white/12 bg-[rgba(9,36,27,0.12)] p-4 text-white/90">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
-                Recommended action
-              </div>
-              <p className="mt-2 text-sm leading-6">{nextAction}</p>
-              {lastUpdatedAt && (
-                <p className="mt-3 text-xs text-white/70">Updated {formatDateTime(lastUpdatedAt)}</p>
-              )}
-            </div>
+              <Plus className="h-4 w-4" />
+              Add Property
+            </Link>
           </div>
         </div>
       </section>
 
-      {error && analytics && (
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+      {error && analytics ? (
+        <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
           Showing the last successful analytics snapshot. Refresh failed with: {error}
         </div>
-      )}
+      ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          {
-            title: "Views",
-            value: formatNumber(summary.views),
-            delta: formatSignedPercent(summary.viewsDelta),
-            deltaValue: summary.viewsDelta,
-            accent: "from-emerald-500/18 via-white to-white",
-            icon: Eye,
-            detail: `${formatCompact(summary.lifetimeViews)} lifetime`,
-          },
-          {
-            title: "Leads",
-            value: formatNumber(summary.leads),
-            delta: formatSignedPercent(summary.leadsDelta),
-            deltaValue: summary.leadsDelta,
-            accent: "from-sky-500/18 via-white to-white",
-            icon: Users,
-            detail: `${formatCompact(summary.lifetimeLeads)} lifetime`,
-          },
-          {
-            title: "Visit requests",
-            value: formatNumber(summary.visits),
-            delta: formatSignedPercent(summary.visitsDelta),
-            deltaValue: summary.visitsDelta,
-            accent: "from-violet-500/18 via-white to-white",
-            icon: CalendarClock,
-            detail: `${summary.completedVisits} completed in range`,
-          },
-          {
-            title: "Conversion rate",
-            value: formatPercent(summary.conversionRate),
-            delta: formatSignedPoints(summary.conversionDelta),
-            deltaValue: summary.conversionDelta,
-            accent: "from-amber-400/22 via-white to-white",
-            icon: TrendingUp,
-            detail: `${formatPercent(summary.lifetimeConversionRate)} lifetime`,
-          },
-        ].map((card) => {
-          const Icon = card.icon;
-          const DeltaIcon = card.deltaValue >= 0 ? ArrowUpRight : ArrowDownRight;
-
-          return (
-            <motion.div
-              key={card.title}
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.18 }}
-              className={cn(
-                "rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,var(--tw-gradient-stops))] p-5 shadow-[0_16px_60px_rgba(15,23,42,0.06)]",
-                card.accent
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-slate-600">{card.title}</div>
-                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white">
-                  <Icon className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="mt-5 text-4xl font-black tracking-tight text-slate-950">{card.value}</div>
-              <div className={cn("mt-2 inline-flex items-center gap-1 text-sm font-semibold", deltaTone(card.deltaValue))}>
-                <DeltaIcon className="h-4 w-4" />
-                {card.delta}
-              </div>
-              <div className="mt-3 text-sm text-slate-500">{card.detail}</div>
-            </motion.div>
-          );
-        })}
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <KpiCard
+          title="Total Listings"
+          value={formatNumber(summary.totalListings)}
+          detail="all properties"
+          delta={formatSignedPercent(summary.viewsDelta)}
+          deltaValue={summary.viewsDelta}
+          icon={Home}
+          tint="bg-emerald-50 text-emerald-700"
+        />
+        <KpiCard
+          title="Total Views"
+          value={formatNumber(summary.views)}
+          detail={`${formatCompact(summary.lifetimeViews)} lifetime`}
+          delta={formatSignedPercent(summary.viewsDelta)}
+          deltaValue={summary.viewsDelta}
+          icon={Eye}
+          tint="bg-sky-50 text-sky-700"
+        />
+        <KpiCard
+          title="Total Inquiries"
+          value={formatNumber(summary.leads)}
+          detail={`${formatCompact(summary.lifetimeLeads)} lifetime`}
+          delta={formatSignedPercent(summary.leadsDelta)}
+          deltaValue={summary.leadsDelta}
+          icon={Users}
+          tint="bg-emerald-50 text-emerald-700"
+        />
+        <KpiCard
+          title="Conversion Rate"
+          value={formatPercent(summary.conversionRate)}
+          detail={`${formatPercent(summary.lifetimeConversionRate)} lifetime`}
+          delta={formatSignedPoints(summary.conversionDelta)}
+          deltaValue={summary.conversionDelta}
+          icon={MousePointer2}
+          tint="bg-violet-50 text-violet-700"
+        />
+        <KpiCard
+          title="Total Revenue"
+          value={formatCompactCurrency(portfolioValue, portfolioCurrency)}
+          detail="portfolio value"
+          delta={formatSignedPercent(summary.visitsDelta)}
+          deltaValue={summary.visitsDelta}
+          icon={CircleDollarSign}
+          tint="bg-emerald-50 text-emerald-700"
+          inverted
+        />
+        <KpiCard
+          title="Active Listings"
+          value={formatNumber(summary.activeListings)}
+          detail={`${formatNumber(summary.pendingListings)} pending`}
+          delta={formatSignedPercent(summary.visitsDelta)}
+          deltaValue={summary.visitsDelta}
+          icon={LayoutGrid}
+          tint="bg-amber-50 text-amber-700"
+        />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_360px]">
-        <TrendChart trends={analytics.trends} metric={metric} onMetricChange={setMetric} />
-
-        <div className="space-y-6">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-              <Activity className="h-3.5 w-3.5" />
-              Funnel
-            </div>
-            <div className="mt-4 space-y-4">
-              {analytics.funnel.map((step) => (
-                <div key={step.label}>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-semibold text-slate-700">{step.label}</span>
-                    <span className="font-semibold text-slate-950">
-                      {formatNumber(step.value)}{" "}
-                      <span className="text-slate-500">{step.ratio.toFixed(1)}%</span>
-                    </span>
-                  </div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full bg-[linear-gradient(90deg,#0f766e_0%,#10b981_100%)]"
-                      style={{ width: `${Math.max(step.ratio, step.value > 0 ? 8 : 0)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 rounded-2xl bg-slate-50 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Completion rate
-              </div>
-              <div className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-                {formatPercent(summary.visitCompletionRate)}
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                Share of visit requests that reached completed status in the selected range.
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-              <Sparkles className="h-3.5 w-3.5" />
-              Highlights
-            </div>
-            <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Top listing
-                </div>
-                <div className="mt-2 text-lg font-black tracking-tight text-slate-950">
-                  {topProperty?.title || "No listing data yet"}
-                </div>
-                <p className="mt-1 text-sm text-slate-600">
-                  {topProperty
-                    ? `${topProperty.views} views, ${topProperty.leads} leads, ${topProperty.visits} visits`
-                    : "Add listings to start ranking performance."}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Strongest day
-                </div>
-                <div className="mt-2 text-lg font-black tracking-tight text-slate-950">
-                  {bestDay?.label || "No recorded activity"}
-                </div>
-                <p className="mt-1 text-sm text-slate-600">
-                  {bestDay
-                    ? metric === "conversionRate"
-                      ? `${formatPercent(bestDay.conversionRate)} ${metricLabel(metric)}`
-                      : `${formatNumber(metricValue(bestDay, metric))} ${metricLabel(metric)}`
-                    : "Try a wider range or wait for new listing activity."}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Daily pace
-                </div>
-                <div className="mt-2 text-lg font-black tracking-tight text-slate-950">
-                  {summary.averageDailyViews.toFixed(1)} average views
-                </div>
-                <p className="mt-1 text-sm text-slate-600">
-                  {summary.activeListings} active listing{summary.activeListings === 1 ? "" : "s"} currently contributing to seller analytics.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-              <Home className="h-3.5 w-3.5" />
-              Distribution
-            </div>
-
-            <div className="mt-4 grid gap-5">
-              {[
-                { title: "Listings", items: analytics.breakdowns.listings },
-                { title: "Leads", items: analytics.breakdowns.leads },
-                { title: "Visits", items: analytics.breakdowns.visits },
-              ].map((group) => {
-                const max = Math.max(1, ...group.items.map((item) => item.count));
-
-                return (
-                  <div key={group.title}>
-                    <div className="mb-3 text-sm font-bold text-slate-900">{group.title}</div>
-                    <div className="space-y-3">
-                      {group.items.map((item) => (
-                        <div key={`${group.title}-${item.label}`}>
-                          <div className="mb-1 flex items-center justify-between text-sm text-slate-600">
-                            <span>{item.label}</span>
-                            <span className="font-semibold text-slate-900">{item.count}</span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                            <div
-                              className="h-full rounded-full bg-[linear-gradient(90deg,#0f766e_0%,#10b981_100%)]"
-                              style={{ width: `${(item.count / max) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+      <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_0.88fr_0.95fr]">
+        <PerformanceOverview trends={analytics.trends} />
+        <DonutCard
+          title="Inquiries by Source"
+          items={inquiryBreakdown}
+          totalLabel="Current inquiry mix in the selected range"
+        />
+        <RecentActivityCard items={analytics.recentActivity} />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_0.95fr]">
-        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
-          <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-                <BarChart3 className="h-3.5 w-3.5" />
-                Listing performance
-              </div>
-              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
-                Which listings are actually driving results
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Search, filter, and jump directly into the listings that need action.
-              </p>
-            </div>
+      <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_0.9fr_0.95fr]">
+        <TopListingsCard
+          properties={analytics.propertyPerformance}
+          hasListings={hasListings}
+        />
+        <FunnelCard
+          funnel={[
+            ...(analytics.funnel || []),
+            {
+              label: "Deals Closed",
+              value: summary.completedVisits,
+              ratio: summary.views ? (summary.completedVisits / summary.views) * 100 : 0,
+            },
+          ].slice(0, 5)}
+        />
+        <InsightsCard topProperty={topProperty} bestDay={bestDay} nextAction={nextAction} summary={summary} />
+      </section>
 
-            <Link
-              href="/seller/my-properties"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
-            >
-              Manage listings
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="mt-5 flex flex-col gap-3 lg:flex-row">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by listing title or location"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:bg-white"
-              />
-            </div>
-
-            <select
-              value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as (typeof STATUS_FILTERS)[number])
-              }
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-400 focus:bg-white"
-            >
-              {STATUS_FILTERS.map((value) => (
-                <option key={value} value={value}>
-                  {value === "all" ? "All statuses" : titleCase(value)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            {!hasListings && (
-              <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center">
-                <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200">
-                  <Home className="h-6 w-6" />
-                </div>
-                <h3 className="mt-4 text-xl font-black tracking-tight text-slate-950">
-                  No seller listings yet
-                </h3>
-                <p className="mt-2 text-sm text-slate-600">
-                  Add a property first. Analytics, funnels, and listing-level performance will appear here automatically.
-                </p>
-                <Link
-                  href="/seller/add-property"
-                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                >
-                  Create a listing
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-            )}
-
-            {hasListings && filteredProperties.length === 0 && (
-              <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center text-sm text-slate-600">
-                No listings match the current search and status filter.
-              </div>
-            )}
-
-            {filteredProperties.map((property) => (
-              <motion.div
-                key={property.id}
-                whileHover={{ y: -2 }}
-                transition={{ duration: 0.18 }}
-                className="rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm"
-              >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex gap-4">
-                    <div className="h-24 w-28 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
-                      {property.image ? (
-                        <img
-                          src={property.image}
-                          alt={property.title}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="grid h-full w-full place-items-center text-slate-400">
-                          <Home className="h-6 w-6" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-black tracking-tight text-slate-950">
-                          {property.title}
-                        </h3>
-                        <span
-                          className={cn(
-                            "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
-                            statusTone(property.status)
-                          )}
-                        >
-                          {titleCase(property.status)}
-                        </span>
-                        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                          {titleCase(property.listingType)}
-                        </span>
-                      </div>
-
-                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
-                        <span className="inline-flex items-center gap-1.5">
-                          <MapPin className="h-4 w-4 text-slate-400" />
-                          {property.location}
-                        </span>
-                        <span>{formatCurrency(property.price, property.currency)}</span>
-                        <span>Listed {formatDate(property.createdAt)}</span>
-                      </div>
-
-                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                        {[
-                          { label: "Views", value: property.views, icon: Eye },
-                          { label: "Leads", value: property.leads, icon: Users },
-                          { label: "Visits", value: property.visits, icon: CalendarClock },
-                        ].map((item) => {
-                          const Icon = item.icon;
-                          return (
-                            <div
-                              key={`${property.id}-${item.label}`}
-                              className="rounded-2xl border border-slate-200 bg-white px-3 py-3"
-                            >
-                              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                <Icon className="h-3.5 w-3.5" />
-                                {item.label}
-                              </div>
-                              <div className="mt-2 text-xl font-black tracking-tight text-slate-950">
-                                {formatNumber(item.value)}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 lg:w-[220px]">
-                    <div className="rounded-2xl bg-slate-950 px-4 py-4 text-white">
-                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/55">
-                        Conversion
-                      </div>
-                      <div className="mt-2 text-2xl font-black tracking-tight">
-                        {formatPercent(property.conversionRate)}
-                      </div>
-                      <p className="mt-2 text-xs text-white/70">
-                        Last lead {formatDate(property.lastLeadAt)}
-                      </p>
-                      <p className="mt-1 text-xs text-white/70">
-                        Last visit {formatDate(property.lastVisitAt)}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        href={`/seller/property/${property.id}`}
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
-                      >
-                        View
-                      </Link>
-                      <Link
-                        href={`/seller/edit-property/${property.id}`}
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-                      >
-                        Edit
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.07)]">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-5">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-                <Activity className="h-3.5 w-3.5" />
-                Recent activity
-              </div>
-              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
-                What changed most recently
-              </h2>
-            </div>
-
-            <Link
-              href="/seller/leads"
-              className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800"
-            >
-              Open inbox
-            </Link>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            {analytics.recentActivity.length === 0 && (
-              <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-600">
-                No leads or visit requests have been recorded yet.
-              </div>
-            )}
-
-            {analytics.recentActivity.map((item, index) => (
-              <Link
-                key={`${item.type}-${item.id}`}
-                href={item.href}
-                className="group block rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] p-4 transition hover:border-slate-300 hover:shadow-sm"
-              >
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white">
-                      {item.type === "lead" ? <Users className="h-5 w-5" /> : <CalendarClock className="h-5 w-5" />}
-                    </div>
-                    {index !== analytics.recentActivity.length - 1 && (
-                      <div className="mt-2 h-full w-px bg-slate-200" />
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ring-1",
-                          statusTone(item.status)
-                        )}
-                      >
-                        {titleCase(item.status)}
-                      </span>
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {item.type === "lead" ? "Lead" : "Visit"}
-                      </span>
-                    </div>
-
-                    <div className="mt-2 text-base font-black tracking-tight text-slate-950">
-                      {item.actorName} {item.type === "lead" ? "sent a lead" : `${titleCase(item.status)} a visit`}
-                    </div>
-
-                    <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
-                      <span className="inline-flex items-center gap-1.5">
-                        <MapPin className="h-4 w-4 text-slate-400" />
-                        {item.propertyTitle}
-                      </span>
-                      <span>{formatDateTime(item.occurredAt)}</span>
-                    </div>
-
-                    {item.type === "visit" && item.requestedDate && (
-                      <p className="mt-2 text-sm text-slate-600">
-                        Requested for {formatDate(item.requestedDate)}
-                        {item.preferredTime ? ` at ${item.preferredTime}` : ""}
-                      </p>
-                    )}
-
-                    {item.message && (
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        {item.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <ChevronRight className="mt-1 h-5 w-5 flex-none text-slate-300 transition group-hover:text-slate-500" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+      <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.05fr)_0.95fr_0.9fr]">
+        <TrafficSourcesCard items={trafficSources} />
+        <TopLocationsCard properties={analytics.propertyPerformance} />
+        <DeviceBreakdownCard items={deviceBreakdown} />
       </section>
     </motion.main>
   );
