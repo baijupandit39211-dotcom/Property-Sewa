@@ -9,14 +9,20 @@ import sellerAnalyticsService from "../services/seller.analytics.services";
 const requireSellerOrAgent = requireRoles(["seller", "agent"]);
 
 const REPORT = {
-  margin: 36,
+  margin: 28,
   colors: {
-    brand: "#0F3B2D",
-    brandSoft: "#165645",
+    brand: "#0F5B43",
+    brandDark: "#0B3F31",
+    brandSoft: "#E8F4EE",
+    brandTint: "#F3FAF6",
     ink: "#0F172A",
-    muted: "#64748B",
-    line: "#E2E8F0",
+    muted: "#667085",
+    mutedSoft: "#98A2B3",
+    line: "#DCE6E1",
+    lineStrong: "#C8D5CF",
     panel: "#F8FAFC",
+    panelSoft: "#FBFDFC",
+    panelTint: "#F3F7F5",
     white: "#FFFFFF",
     teal: "#0F766E",
     blue: "#2563EB",
@@ -59,6 +65,11 @@ function formatCompact(value: number) {
     notation: "compact",
     maximumFractionDigits: value >= 1000 ? 1 : 0,
   }).format(Number(value || 0));
+}
+
+function formatAxisLabel(value: number) {
+  if (Number.isInteger(value)) return formatCompact(value);
+  return value.toFixed(1).replace(/\.0$/, "");
 }
 
 function formatPercent(value: number) {
@@ -155,38 +166,46 @@ function pill(
 
 function footer(doc: any, pageNumber: number) {
   const box = pageBox(doc);
-  const y = doc.page.height - 18;
+  const y = box.bottom - 18;
   doc
     .save()
-    .moveTo(box.left, y - 8)
-    .lineTo(box.right, y - 8)
+    .moveTo(box.left, y - 10)
+    .lineTo(box.right, y - 10)
     .strokeColor(REPORT.colors.line)
     .stroke()
     .restore();
 
   doc
-    .font("Helvetica")
+    .font("Helvetica-Bold")
     .fontSize(9)
     .fillColor(REPORT.colors.muted)
-    .text("Property Sewa | Seller Analytics", box.left, y, { width: box.width });
-  doc.text(`Page ${pageNumber}`, box.left, y, {
-    width: box.width,
-    align: "right",
-  });
+    .text("Property Sewa Seller Analytics Report", box.left, y, {
+      width: 220,
+      lineBreak: false,
+    });
+  doc
+    .font("Helvetica")
+    .text(`Page ${pageNumber}`, box.right - 60, y, {
+      width: 60,
+      align: "right",
+      lineBreak: false,
+    });
 }
 
 function startPage(doc: any, pageNumber: number, sectionLabel: string) {
-  if (pageNumber > 1) {
-    doc.addPage({ size: "A4", layout: "landscape", margin: REPORT.margin });
-  }
+  doc.addPage({ size: "A4", layout: "landscape", margin: REPORT.margin });
 
   const box = pageBox(doc);
   doc
     .font("Helvetica-Bold")
     .fontSize(10)
-    .fillColor(REPORT.colors.muted)
+    .fillColor(REPORT.colors.brand)
     .text("PROPERTY SEWA", box.left, 18, { lineBreak: false });
-  doc.text(sectionLabel, box.left, 18, {
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor(REPORT.colors.muted)
+    .text(sectionLabel, box.left, 18, {
     width: box.width,
     align: "right",
     lineBreak: false,
@@ -196,84 +215,90 @@ function startPage(doc: any, pageNumber: number, sectionLabel: string) {
 }
 
 function drawHero(doc: any, analytics: AnalyticsPayload, x: number, y: number, width: number, height: number) {
-  doc
-    .save()
-    .roundedRect(x, y, width, height, 24)
-    .fill(REPORT.colors.brand)
-    .restore();
+  card(doc, x, y, width, height, REPORT.colors.white);
 
   doc
     .save()
-    .fillOpacity(0.12)
-    .circle(x + width - 80, y + 34, 42)
-    .fill(REPORT.colors.white)
-    .restore();
-  doc
-    .save()
-    .fillOpacity(0.08)
-    .circle(x + width - 34, y + height - 16, 60)
-    .fill(REPORT.colors.white)
+    .roundedRect(x, y, width, 18, 18)
+    .fill(REPORT.colors.brandDark)
     .restore();
 
   const summary = analytics.summary;
   const rangeLabel = `${formatDate(analytics.filters.startDate)} - ${formatDate(analytics.filters.endDate)}`;
-  const panelX = x + width - 230;
-  const panelY = y + 22;
+  const panelX = x + width - 242;
+  const panelY = y + 20;
 
   doc
     .font("Helvetica-Bold")
     .fontSize(10)
-    .fillColor("#B7E4D4")
-    .text("SELLER PERFORMANCE REPORT", x + 24, y + 22, { lineBreak: false });
+    .fillColor(REPORT.colors.brand)
+    .text("SELLER ANALYTICS REPORT", x + 24, y + 30, { lineBreak: false });
   doc
     .font("Helvetica-Bold")
-    .fontSize(28)
-    .fillColor(REPORT.colors.white)
-    .text("Analytics Summary", x + 24, y + 42, { width: width - 290 });
+    .fontSize(30)
+    .fillColor(REPORT.colors.ink)
+    .text("Executive Performance Summary", x + 24, y + 48, { width: width - 300 });
   doc
     .font("Helvetica")
     .fontSize(11)
-    .fillColor("#D8EEE5")
+    .fillColor(REPORT.colors.muted)
     .text(
-      "A production export of listing traffic, lead flow, visit progression, and top-performing inventory.",
+      "A premium Property Sewa export covering listing traffic, inquiry flow, visit progression, and operational highlights for the selected seller window.",
       x + 24,
-      y + 82,
+      y + 86,
       { width: width - 300, lineGap: 2 }
     );
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor(REPORT.colors.mutedSoft)
+    .text("Prepared for seller review, client updates, and internal reporting.", x + 24, y + 118, {
+      width: width - 320,
+    });
 
   doc
     .save()
-    .roundedRect(panelX, panelY, 194, 92, 18)
-    .fill(REPORT.colors.brandSoft)
+    .roundedRect(panelX, panelY, 206, 96, 20)
+    .fill(REPORT.colors.brandTint)
     .restore();
+  doc
+    .save()
+    .roundedRect(panelX + 16, panelY + 16, 42, 42, 14)
+    .fill(REPORT.colors.brand)
+    .restore();
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(18)
+    .fillColor(REPORT.colors.white)
+    .text("PS", panelX + 27, panelY + 27);
 
   doc.font("Helvetica-Bold").fontSize(9).fillColor("#AFD9CB");
-  doc.text("Window", panelX + 16, panelY + 14);
-  doc.text("Listings tracked", panelX + 16, panelY + 41);
-  doc.text("Generated", panelX + 16, panelY + 68);
+  doc.fillColor(REPORT.colors.muted).text("Reporting window", panelX + 72, panelY + 18);
+  doc.text("Listings tracked", panelX + 72, panelY + 42);
+  doc.text("Generated", panelX + 72, panelY + 66);
 
-  doc.font("Helvetica-Bold").fontSize(10).fillColor(REPORT.colors.white);
-  doc.text(rangeLabel, panelX + 94, panelY + 14, { width: 84, align: "right" });
-  doc.text(String(summary.totalListings), panelX + 94, panelY + 41, { width: 84, align: "right" });
-  doc.text(formatDateTime(new Date()), panelX + 94, panelY + 68, { width: 84, align: "right" });
+  doc.font("Helvetica-Bold").fontSize(10).fillColor(REPORT.colors.ink);
+  doc.text(rangeLabel, panelX + 72, panelY + 29, { width: 118 });
+  doc.text(String(summary.totalListings), panelX + 72, panelY + 53, { width: 118 });
+  doc.text(formatDateTime(new Date()), panelX + 72, panelY + 77, { width: 118 });
 }
 
 function drawMetricCards(doc: any, analytics: AnalyticsPayload, x: number, y: number, width: number) {
   const summary = analytics.summary;
   const gap = 12;
   const cardWidth = (width - gap * 3) / 4;
-  const cardHeight = 96;
+  const cardHeight = 108;
 
   const metrics = [
     {
-      title: "Views",
+      title: "Total Views",
       value: formatNumber(summary.views),
       delta: formatSignedPercent(summary.viewsDelta),
       detail: `${formatCompact(summary.lifetimeViews)} lifetime`,
       accent: REPORT.colors.teal,
     },
     {
-      title: "Leads",
+      title: "Total Inquiries",
       value: formatNumber(summary.leads),
       delta: formatSignedPercent(summary.leadsDelta),
       detail: `${formatCompact(summary.lifetimeLeads)} lifetime`,
@@ -297,31 +322,31 @@ function drawMetricCards(doc: any, analytics: AnalyticsPayload, x: number, y: nu
 
   metrics.forEach((metric, index) => {
     const cardX = x + index * (cardWidth + gap);
-    card(doc, cardX, y, cardWidth, cardHeight);
+    card(doc, cardX, y, cardWidth, cardHeight, REPORT.colors.panelSoft);
 
     doc
       .save()
-      .roundedRect(cardX + 18, y + 14, 34, 6, 3)
+      .roundedRect(cardX + 18, y + 18, 46, 7, 3)
       .fill(metric.accent)
       .restore();
 
     doc
       .font("Helvetica-Bold")
-      .fontSize(10)
+      .fontSize(9)
       .fillColor(REPORT.colors.muted)
-      .text(metric.title.toUpperCase(), cardX + 18, y + 28);
+      .text(metric.title.toUpperCase(), cardX + 18, y + 32);
     doc
       .font("Helvetica-Bold")
-      .fontSize(24)
+      .fontSize(28)
       .fillColor(REPORT.colors.ink)
-      .text(metric.value, cardX + 18, y + 46, { lineBreak: false });
+      .text(metric.value, cardX + 18, y + 50, { lineBreak: false });
 
     pill(
       doc,
-      cardX + cardWidth - 74,
+      cardX + cardWidth - 76,
       y + 18,
       metric.delta,
-      "#F1F5F9",
+      "#F8FAFC",
       metric.delta.startsWith("-") ? REPORT.colors.rose : REPORT.colors.emerald,
       8
     );
@@ -330,7 +355,7 @@ function drawMetricCards(doc: any, analytics: AnalyticsPayload, x: number, y: nu
       .font("Helvetica")
       .fontSize(9)
       .fillColor(REPORT.colors.muted)
-      .text(metric.detail, cardX + 18, y + 74);
+      .text(metric.detail, cardX + 18, y + 84);
   });
 }
 
@@ -366,21 +391,157 @@ function drawLineSeries(
   });
 }
 
+function hasTrendData(trends: TrendPoint[]) {
+  return trends.some(
+    (row) => Number(row.views || 0) > 0 || Number(row.leads || 0) > 0 || Number(row.visits || 0) > 0
+  );
+}
+
+function getChartAxisConfig(maxValue: number) {
+  if (maxValue <= 1) {
+    return { axisMax: 1, ticks: [0, 0.5, 1] };
+  }
+
+  if (maxValue <= 2) {
+    return { axisMax: 2, ticks: [0, 1, 2] };
+  }
+
+  if (maxValue <= 5) {
+    return { axisMax: 5, ticks: [0, 1, 2, 3, 4, 5] };
+  }
+
+  const roughStep = maxValue / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const normalized = roughStep / magnitude;
+  const niceStep = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  const step = niceStep * magnitude;
+  const axisMax = Math.ceil(maxValue / step) * step;
+
+  return {
+    axisMax,
+    ticks: Array.from({ length: 5 }, (_, index) => (axisMax * index) / 4),
+  };
+}
+
+function getChartXAxisLabels(trends: TrendPoint[], sparseData: boolean) {
+  if (trends.length <= 7) {
+    return trends.map((row) => row.label);
+  }
+
+  const targetCount = sparseData ? 6 : 7;
+  const step = Math.max(1, Math.ceil((trends.length - 1) / Math.max(targetCount - 1, 1)));
+
+  return trends.map((row, index) => {
+    const shouldShow =
+      index === 0 ||
+      index === trends.length - 1 ||
+      index % step === 0;
+
+    if (!shouldShow) return "";
+    return sparseData ? row.label : row.shortLabel || row.label;
+  });
+}
+
+function linePoints(values: number[], x: number, y: number, width: number, height: number, maxValue: number) {
+  const step = width / Math.max(values.length - 1, 1);
+  return values.map((value, index) => ({
+    x: x + step * index,
+    y: y + height - (Number(value || 0) / Math.max(maxValue, 1)) * height,
+    value: Number(value || 0),
+  }));
+}
+
+function drawSmoothLine(
+  doc: any,
+  points: Array<{ x: number; y: number }>,
+  color: string,
+  lineWidth = 2
+) {
+  if (points.length <= 1) return;
+
+  doc.save().lineWidth(lineWidth).strokeColor(color).lineJoin("round").lineCap("round");
+  doc.moveTo(points[0].x, points[0].y);
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const controlX = (current.x + next.x) / 2;
+    doc.bezierCurveTo(controlX, current.y, controlX, next.y, next.x, next.y);
+  }
+
+  doc.stroke().restore();
+}
+
+function drawAreaFill(
+  doc: any,
+  points: Array<{ x: number; y: number; value: number }>,
+  baselineY: number,
+  color: string
+) {
+  if (points.length <= 1) return;
+
+  doc.save().fillColor(color).fillOpacity(0.12);
+  doc.moveTo(points[0].x, baselineY);
+  doc.lineTo(points[0].x, points[0].y);
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const controlX = (current.x + next.x) / 2;
+    doc.bezierCurveTo(controlX, current.y, controlX, next.y, next.x, next.y);
+  }
+
+  doc.lineTo(points[points.length - 1].x, baselineY);
+  doc.closePath().fill().restore();
+}
+
+function drawSparsePointGuide(
+  doc: any,
+  point: { x: number; y: number },
+  baselineY: number,
+  color: string
+) {
+  doc
+    .save()
+    .strokeColor(color)
+    .lineWidth(1)
+    .dash(3, { space: 4 })
+    .moveTo(point.x, point.y)
+    .lineTo(point.x, baselineY)
+    .stroke()
+    .undash()
+    .restore();
+
+  doc
+    .save()
+    .circle(point.x, point.y, 3.2)
+    .fill(color)
+    .restore();
+}
+
 function drawTrendCard(doc: any, analytics: AnalyticsPayload, x: number, y: number, width: number, height: number) {
-  card(doc, x, y, width, height);
+  card(doc, x, y, width, height, REPORT.colors.panelSoft);
 
   const trends = analytics.trends;
   const views = trends.map((row) => Number(row.views || 0));
   const leads = trends.map((row) => Number(row.leads || 0));
   const visits = trends.map((row) => Number(row.visits || 0));
-  const maxViews = Math.max(...views, 1);
-  const maxSecondary = Math.max(...leads, ...visits, 1);
+  const seriesMax = Math.max(...views, ...leads, ...visits, 0);
+  const { axisMax, ticks } = getChartAxisConfig(seriesMax);
+  const sparseData = seriesMax <= 2;
+  const xLabels = getChartXAxisLabels(trends, sparseData);
+  const anyTrendData = hasTrendData(trends);
 
-  const chartX = x + 22;
-  const chartY = y + 72;
-  const chartWidth = width - 44;
-  const chartHeight = height - 118;
-  const step = chartWidth / Math.max(trends.length, 1);
+  const chartX = x + 34;
+  const chartY = y + 78;
+  const chartWidth = width - 58;
+  const chartHeight = height - 140;
+  const plotLeft = chartX + 14;
+  const plotWidth = chartWidth - 24;
+  const baselineY = chartY + chartHeight;
+  const viewsPoints = linePoints(views, plotLeft, chartY, plotWidth, chartHeight, axisMax);
+  const leadsPoints = linePoints(leads, plotLeft, chartY, plotWidth, chartHeight, axisMax);
+  const visitsPoints = linePoints(visits, plotLeft, chartY, plotWidth, chartHeight, axisMax);
   const bestDay = trends.reduce<TrendPoint | null>((best, row) => {
     if (!best) return row;
     return row.views > best.views ? row : best;
@@ -388,19 +549,19 @@ function drawTrendCard(doc: any, analytics: AnalyticsPayload, x: number, y: numb
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(14)
+    .fontSize(16)
     .fillColor(REPORT.colors.ink)
-    .text("Traffic and inquiry trend", x + 22, y + 20);
+    .text("Performance overview", x + 22, y + 20);
   doc
     .font("Helvetica")
     .fontSize(10)
     .fillColor(REPORT.colors.muted)
-    .text("Bars show views. Lines show leads and visits across the selected window.", x + 22, y + 40);
+    .text("Daily views, inquiries, and visits across the selected reporting window.", x + 22, y + 40);
 
   let legendX = x + width - 210;
   [
     { label: "Views", color: REPORT.colors.teal },
-    { label: "Leads", color: REPORT.colors.blue },
+    { label: "Inquiries", color: REPORT.colors.blue },
     { label: "Visits", color: REPORT.colors.amber },
   ].forEach((item) => {
     doc.save().roundedRect(legendX, y + 24, 10, 10, 3).fill(item.color).restore();
@@ -412,51 +573,127 @@ function drawTrendCard(doc: any, analytics: AnalyticsPayload, x: number, y: numb
     legendX += 62;
   });
 
-  [0, 0.25, 0.5, 0.75, 1].forEach((ratio) => {
-    const lineY = chartY + chartHeight - chartHeight * ratio;
+  doc
+    .save()
+    .roundedRect(plotLeft, chartY, plotWidth, chartHeight, 16)
+    .fillAndStroke(REPORT.colors.white, REPORT.colors.line)
+    .restore();
+
+  if (!anyTrendData) {
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(12)
+      .fillColor(REPORT.colors.ink)
+      .text("No performance data yet", plotLeft, chartY + chartHeight / 2 - 12, {
+        width: plotWidth,
+        align: "center",
+      });
+    doc
+      .font("Helvetica")
+      .fontSize(10)
+      .fillColor(REPORT.colors.muted)
+      .text("Change the date range or wait for listing activity to appear here.", plotLeft, chartY + chartHeight / 2 + 6, {
+        width: plotWidth,
+        align: "center",
+      });
+  } else {
     doc
       .save()
-      .strokeColor(REPORT.colors.line)
-      .dash(3, { space: 4 })
-      .moveTo(chartX, lineY)
-      .lineTo(chartX + chartWidth, lineY)
+      .strokeColor("#D9E2DD")
+      .lineWidth(1)
+      .moveTo(plotLeft, baselineY)
+      .lineTo(plotLeft + plotWidth, baselineY)
       .stroke()
-      .undash()
-      .restore();
-  });
-
-  trends.forEach((row, index) => {
-    const barWidth = Math.max(3, step * 0.56);
-    const barX = chartX + index * step + (step - barWidth) / 2;
-    const barHeight = (Number(row.views || 0) / maxViews) * chartHeight;
-
-    doc
-      .save()
-      .roundedRect(barX, chartY + chartHeight - barHeight, barWidth, barHeight, 4)
-      .fill("#B6E6D8")
       .restore();
 
-    const labelStride = Math.max(1, Math.ceil(trends.length / 7));
-    if (index % labelStride === 0 || index === trends.length - 1) {
+    ticks.forEach((tick) => {
+      const lineY = chartY + chartHeight - (tick / Math.max(axisMax, 1)) * chartHeight;
       doc
-        .font("Helvetica")
-        .fontSize(8)
+        .font("Helvetica-Bold")
+        .fontSize(9)
         .fillColor(REPORT.colors.muted)
-        .text(row.label, chartX + index * step - 12, chartY + chartHeight + 8, {
-          width: 44,
+        .text(formatAxisLabel(tick), chartX - 26, lineY - 4, {
+          width: 22,
+          align: "right",
+        });
+      doc
+        .save()
+        .strokeColor(REPORT.colors.line)
+        .dash(3, { space: 5 })
+        .moveTo(plotLeft, lineY)
+        .lineTo(plotLeft + plotWidth, lineY)
+        .stroke()
+        .undash()
+        .restore();
+    });
+
+    if (views.filter((value) => value > 0).length > 1) {
+      drawAreaFill(doc, viewsPoints, baselineY, REPORT.colors.teal);
+      drawSmoothLine(doc, viewsPoints, REPORT.colors.teal, 2.2);
+    } else if (views.filter((value) => value > 0).length === 1) {
+      drawSparsePointGuide(
+        doc,
+        viewsPoints.find((point) => point.value > 0)!,
+        baselineY,
+        REPORT.colors.teal
+      );
+    }
+    if (leads.filter((value) => value > 0).length > 1) {
+      drawSmoothLine(doc, leadsPoints, REPORT.colors.blue, 2);
+    } else if (leads.filter((value) => value > 0).length === 1) {
+      drawSparsePointGuide(
+        doc,
+        leadsPoints.find((point) => point.value > 0)!,
+        baselineY,
+        REPORT.colors.blue
+      );
+    }
+    if (visits.filter((value) => value > 0).length > 1) {
+      drawSmoothLine(doc, visitsPoints, REPORT.colors.amber, 2);
+    } else if (visits.filter((value) => value > 0).length === 1) {
+      drawSparsePointGuide(
+        doc,
+        visitsPoints.find((point) => point.value > 0)!,
+        baselineY,
+        REPORT.colors.amber
+      );
+    }
+
+    [
+      { points: viewsPoints, color: REPORT.colors.teal },
+      { points: leadsPoints, color: REPORT.colors.blue },
+      { points: visitsPoints, color: REPORT.colors.amber },
+    ].forEach((series) => {
+      const positivePoints = series.points.filter((point) => point.value > 0);
+      if (positivePoints.length <= 1) return;
+
+      positivePoints.forEach((point) => {
+        doc
+          .save()
+          .circle(point.x, point.y, 2.8)
+          .fill(series.color)
+          .restore();
+      });
+    });
+
+    xLabels.forEach((label, index) => {
+      if (!label) return;
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(9)
+        .fillColor(REPORT.colors.muted)
+        .text(label, viewsPoints[index]?.x - 18, baselineY + 10, {
+          width: 36,
           align: "center",
         });
-    }
-  });
-
-  drawLineSeries(doc, leads, chartX + step / 2, chartY, chartWidth - step, chartHeight, REPORT.colors.blue, maxSecondary);
-  drawLineSeries(doc, visits, chartX + step / 2, chartY, chartWidth - step, chartHeight, REPORT.colors.amber, maxSecondary);
+    });
+  }
 
   doc
     .font("Helvetica-Bold")
     .fontSize(10)
     .fillColor(REPORT.colors.ink)
-    .text(
+      .text(
       bestDay
         ? `Best day: ${bestDay.label} with ${formatNumber(bestDay.views)} views`
         : "Best day: Not enough data",
@@ -466,21 +703,23 @@ function drawTrendCard(doc: any, analytics: AnalyticsPayload, x: number, y: numb
 }
 
 function drawFunnelCard(doc: any, analytics: AnalyticsPayload, x: number, y: number, width: number, height: number) {
-  card(doc, x, y, width, height);
+  card(doc, x, y, width, height, REPORT.colors.panelSoft);
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(14)
+    .fontSize(16)
     .fillColor(REPORT.colors.ink)
-    .text("Funnel health", x + 18, y + 18);
+    .text("Conversion funnel", x + 18, y + 18);
   doc
     .font("Helvetica")
     .fontSize(10)
     .fillColor(REPORT.colors.muted)
-    .text("How traffic is moving through the seller workflow.", x + 18, y + 38);
+    .text("How traffic is moving through the seller workflow.", x + 18, y + 38, {
+      width: width - 36,
+    });
 
   analytics.funnel.forEach((step, index) => {
-    const rowY = y + 64 + index * 22;
+    const rowY = y + 70 + index * 28;
     doc
       .font("Helvetica-Bold")
       .fontSize(9)
@@ -494,24 +733,19 @@ function drawFunnelCard(doc: any, analytics: AnalyticsPayload, x: number, y: num
 
     doc
       .save()
-      .roundedRect(x + 86, rowY + 2, width - 154, 8, 4)
+      .roundedRect(x + 86, rowY + 4, width - 154, 10, 5)
       .fill("#E2E8F0")
       .restore();
     if (step.value > 0) {
       doc
         .save()
-        .roundedRect(x + 86, rowY + 2, Math.max(8, ((width - 154) * step.ratio) / 100), 8, 4)
-        .fill(REPORT.colors.teal)
+        .roundedRect(x + 86, rowY + 4, Math.max(10, ((width - 154) * step.ratio) / 100), 10, 5)
+        .fill(index === 0 ? REPORT.colors.brand : index === 1 ? REPORT.colors.teal : index === 2 ? REPORT.colors.blue : REPORT.colors.amber)
         .restore();
     }
   });
 
-  const summary = analytics.summary;
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(10)
-    .fillColor(REPORT.colors.ink)
-    .text(`Visit completion rate: ${formatPercent(summary.visitCompletionRate)}`, x + 18, y + height - 28);
+  pill(doc, x + 18, y + height - 32, `Visit completion ${formatPercent(analytics.summary.visitCompletionRate)}`, REPORT.colors.brandTint, REPORT.colors.brand, 10);
 }
 
 function reportRecommendations(analytics: AnalyticsPayload) {
@@ -544,11 +778,7 @@ function reportRecommendations(analytics: AnalyticsPayload) {
 }
 
 function drawHighlightsCard(doc: any, analytics: AnalyticsPayload, x: number, y: number, width: number, height: number) {
-  doc
-    .save()
-    .roundedRect(x, y, width, height, 18)
-    .fill(REPORT.colors.ink)
-    .restore();
+  card(doc, x, y, width, height, REPORT.colors.brandDark);
 
   const topProperty =
     analytics.propertyPerformance.find(
@@ -557,7 +787,7 @@ function drawHighlightsCard(doc: any, analytics: AnalyticsPayload, x: number, y:
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(14)
+    .fontSize(16)
     .fillColor(REPORT.colors.white)
     .text("Highlights and next actions", x + 18, y + 18);
 
@@ -567,10 +797,15 @@ function drawHighlightsCard(doc: any, analytics: AnalyticsPayload, x: number, y:
     .fillColor("#94A3B8")
     .text("TOP LISTING", x + 18, y + 46);
   doc
+    .save()
+    .roundedRect(x + 18, y + 58, width - 36, 42, 14)
+    .fill("#114B39")
+    .restore();
+  doc
     .font("Helvetica-Bold")
     .fontSize(12)
     .fillColor(REPORT.colors.white)
-    .text(topProperty ? truncate(doc, topProperty.title, width - 36) : "No active listing data", x + 18, y + 60);
+    .text(topProperty ? truncate(doc, topProperty.title, width - 52) : "No active listing data", x + 26, y + 68);
   doc
     .font("Helvetica")
     .fontSize(9)
@@ -580,26 +815,31 @@ function drawHighlightsCard(doc: any, analytics: AnalyticsPayload, x: number, y:
         ? `${formatNumber(topProperty.views)} views | ${formatNumber(topProperty.leads)} leads | ${formatPercent(topProperty.conversionRate)} conversion`
         : "Performance details will appear once listing activity is recorded.",
       x + 18,
-      y + 78,
+      y + 110,
       { width: width - 36, lineGap: 2 }
     );
 
-  let noteY = y + 108;
+  let noteY = y + 150;
   reportRecommendations(analytics).forEach((item, index) => {
     doc
       .save()
-      .circle(x + 22, noteY + 7, 2.5)
-      .fill("#34D399")
+      .roundedRect(x + 18, noteY - 2, width - 36, 24, 10)
+      .fill("#114B39")
       .restore();
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(9)
+      .fillColor("#9AE6B4")
+      .text(`${index + 1}`, x + 24, noteY + 5);
     doc
       .font("Helvetica")
       .fontSize(9)
       .fillColor("#E2E8F0")
-      .text(`${index + 1}. ${item}`, x + 30, noteY, {
-        width: width - 44,
+      .text(item, x + 40, noteY + 4, {
+        width: width - 62,
         lineGap: 1,
       });
-    noteY += 28;
+    noteY += 30;
   });
 }
 
@@ -634,15 +874,15 @@ function statusBadge(doc: any, status: string, x: number, y: number) {
     text = REPORT.colors.violet;
   }
 
-  return pill(doc, x, y, label, fill, text, 8);
+  return pill(doc, x, y, label, fill, text, 9);
 }
 
 function drawPropertyTable(doc: any, properties: PropertyRow[], x: number, y: number, width: number, height: number) {
-  card(doc, x, y, width, height);
+  card(doc, x, y, width, height, REPORT.colors.panelSoft);
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(14)
+    .fontSize(16)
     .fillColor(REPORT.colors.ink)
     .text("Top performing listings", x + 18, y + 18);
   doc
@@ -663,19 +903,16 @@ function drawPropertyTable(doc: any, properties: PropertyRow[], x: number, y: nu
     { label: "Last lead", width: 66 },
   ];
 
-  const headerY = y + 72;
-  drawTableHeader(doc, columns, x + 18, headerY);
-
+  const headerY = y + 78;
   doc
     .save()
-    .moveTo(x + 18, headerY + 16)
-    .lineTo(x + width - 18, headerY + 16)
-    .strokeColor(REPORT.colors.line)
-    .stroke()
+    .roundedRect(x + 14, headerY - 10, width - 28, 26, 12)
+    .fill(REPORT.colors.panelTint)
     .restore();
+  drawTableHeader(doc, columns, x + 18, headerY);
 
-  const visibleRows = properties.slice(0, 8);
-  const rowHeight = 46;
+  const visibleRows = properties.slice(0, 5);
+  const rowHeight = 58;
 
   if (!visibleRows.length) {
     doc
@@ -687,22 +924,23 @@ function drawPropertyTable(doc: any, properties: PropertyRow[], x: number, y: nu
   }
 
   visibleRows.forEach((property, index) => {
-    const rowY = headerY + 26 + index * rowHeight;
+    const rowY = headerY + 30 + index * rowHeight;
 
-    if (index % 2 === 0) {
-      doc
-        .save()
-        .roundedRect(x + 12, rowY - 8, width - 24, rowHeight - 4, 12)
-        .fill(REPORT.colors.panel)
-        .restore();
-    }
+    doc
+      .save()
+      .roundedRect(x + 12, rowY - 10, width - 24, rowHeight - 8, 14)
+      .fill(index % 2 === 0 ? REPORT.colors.white : REPORT.colors.panelTint)
+      .stroke(REPORT.colors.line)
+      .restore();
 
     let cursor = x + 18;
 
     doc.font("Helvetica-Bold").fontSize(10).fillColor(REPORT.colors.ink);
     doc.text(truncate(doc, property.title, 186), cursor, rowY - 2, { width: 186 });
     doc.font("Helvetica").fontSize(8).fillColor(REPORT.colors.muted);
-    doc.text(truncate(doc, `${property.location} | ${currencyLabel(property)}`, 186), cursor, rowY + 13, { width: 186 });
+    doc.text(truncate(doc, property.location, 186), cursor, rowY + 14, { width: 186 });
+    doc.font("Helvetica-Bold").fontSize(8).fillColor(REPORT.colors.brand);
+    doc.text(currencyLabel(property), cursor, rowY + 29, { width: 186 });
     cursor += columns[0].width;
 
     statusBadge(doc, property.status, cursor, rowY + 2);
@@ -720,7 +958,7 @@ function drawPropertyTable(doc: any, properties: PropertyRow[], x: number, y: nu
         .font("Helvetica-Bold")
         .fontSize(9)
         .fillColor(REPORT.colors.ink)
-        .text(value, cursor, rowY + 6, {
+        .text(value, cursor, rowY + 10, {
           width: columnWidth - 10,
           align: valueIndex < 3 ? "right" : "left",
         });
@@ -747,7 +985,7 @@ function drawBreakdownSection(
     .text(title, x, y);
 
   rows.slice(0, 4).forEach((row, index) => {
-    const rowY = y + 18 + index * 18;
+    const rowY = y + 22 + index * 22;
     doc.font("Helvetica").fontSize(8).fillColor(REPORT.colors.muted);
     doc.text(row.label, x, rowY, { width: 96 });
     doc
@@ -758,13 +996,13 @@ function drawBreakdownSection(
 
     doc
       .save()
-      .roundedRect(x + 76, rowY + 2, width - 112, 6, 3)
+      .roundedRect(x + 76, rowY + 3, width - 112, 7, 3)
       .fill("#E2E8F0")
       .restore();
     if (row.count > 0) {
       doc
         .save()
-        .roundedRect(x + 76, rowY + 2, Math.max(8, ((width - 112) * row.count) / max), 6, 3)
+        .roundedRect(x + 76, rowY + 3, Math.max(8, ((width - 112) * row.count) / max), 7, 3)
         .fill(accent)
         .restore();
     }
@@ -772,18 +1010,20 @@ function drawBreakdownSection(
 }
 
 function drawInventoryCard(doc: any, analytics: AnalyticsPayload, x: number, y: number, width: number, height: number) {
-  card(doc, x, y, width, height);
+  card(doc, x, y, width, height, REPORT.colors.panelSoft);
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(13)
+    .fontSize(15)
     .fillColor(REPORT.colors.ink)
-    .text("Inventory mix", x + 16, y + 16);
+    .text("Inventory summary", x + 16, y + 16);
   doc
     .font("Helvetica")
     .fontSize(9)
     .fillColor(REPORT.colors.muted)
-    .text(`${analytics.summary.activeListings} active of ${analytics.summary.totalListings} total listings`, x + 16, y + 34);
+    .text(`${analytics.summary.activeListings} active of ${analytics.summary.totalListings} total listings`, x + 16, y + 34, {
+      width: width - 32,
+    });
 
   drawBreakdownSection(
     doc,
@@ -797,20 +1037,27 @@ function drawInventoryCard(doc: any, analytics: AnalyticsPayload, x: number, y: 
 }
 
 function drawPipelineCard(doc: any, analytics: AnalyticsPayload, x: number, y: number, width: number, height: number) {
-  card(doc, x, y, width, height);
+  card(doc, x, y, width, height, REPORT.colors.panelSoft);
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(13)
+    .fontSize(15)
     .fillColor(REPORT.colors.ink)
     .text("Pipeline status", x + 16, y + 16);
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .fillColor(REPORT.colors.muted)
+    .text("Lead and visit statuses across the current reporting window.", x + 16, y + 34, {
+      width: width - 32,
+    });
 
   drawBreakdownSection(
     doc,
     "Lead states",
     analytics.breakdowns.leads,
     x + 16,
-    y + 40,
+    y + 58,
     width - 32,
     REPORT.colors.blue
   );
@@ -819,18 +1066,18 @@ function drawPipelineCard(doc: any, analytics: AnalyticsPayload, x: number, y: n
     "Visit states",
     analytics.breakdowns.visits,
     x + 16,
-    y + 112,
+    y + 140,
     width - 32,
     REPORT.colors.amber
   );
 }
 
 function drawActivityCard(doc: any, analytics: AnalyticsPayload, x: number, y: number, width: number, height: number) {
-  card(doc, x, y, width, height);
+  card(doc, x, y, width, height, REPORT.colors.panelSoft);
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(13)
+    .fontSize(15)
     .fillColor(REPORT.colors.ink)
     .text("Recent activity", x + 16, y + 16);
   doc
@@ -852,7 +1099,12 @@ function drawActivityCard(doc: any, analytics: AnalyticsPayload, x: number, y: n
   }
 
   items.forEach((item, index) => {
-    const rowY = y + 68 + index * 28;
+    const rowY = y + 74 + index * 36;
+    doc
+      .save()
+      .roundedRect(x + 14, rowY - 8, width - 28, 28, 10)
+      .fill(index % 2 === 0 ? REPORT.colors.white : REPORT.colors.panelTint)
+      .restore();
     doc
       .save()
       .circle(x + 20, rowY + 8, 4)
@@ -876,7 +1128,7 @@ function drawActivityCard(doc: any, analytics: AnalyticsPayload, x: number, y: n
     doc.text(
       truncate(doc, `${item.propertyTitle} | ${formatDateTime(item.occurredAt)}`, width - 48),
       x + 32,
-      rowY + 12,
+      rowY + 14,
       { width: width - 48 }
     );
   });
@@ -885,17 +1137,21 @@ function drawActivityCard(doc: any, analytics: AnalyticsPayload, x: number, y: n
 function renderSellerAnalyticsReport(doc: any, analytics: AnalyticsPayload) {
   const page1 = startPage(doc, 1, "Overview");
 
-  drawHero(doc, analytics, page1.left, page1.top, page1.width, 132);
-  drawMetricCards(doc, analytics, page1.left, page1.top + 146, page1.width);
-  drawTrendCard(doc, analytics, page1.left, page1.top + 256, 500, 248);
-  drawFunnelCard(doc, analytics, page1.left + 514, page1.top + 256, 255, 118);
-  drawHighlightsCard(doc, analytics, page1.left + 514, page1.top + 386, 255, 118);
+  drawHero(doc, analytics, page1.left, page1.top, page1.width, 150);
+  drawMetricCards(doc, analytics, page1.left, page1.top + 164, page1.width);
+  drawTrendCard(doc, analytics, page1.left, page1.top + 286, 540, 220);
+  drawFunnelCard(doc, analytics, page1.left + 554, page1.top + 286, 210, 220);
 
   const page2 = startPage(doc, 2, "Operational Detail");
-  drawPropertyTable(doc, analytics.propertyPerformance, page2.left, page2.top, 520, 500);
-  drawInventoryCard(doc, analytics, page2.left + 534, page2.top, 235, 116);
-  drawPipelineCard(doc, analytics, page2.left + 534, page2.top + 128, 235, 160);
-  drawActivityCard(doc, analytics, page2.left + 534, page2.top + 300, 235, 200);
+  drawPropertyTable(doc, analytics.propertyPerformance, page2.left, page2.top, 540, 440);
+  drawInventoryCard(doc, analytics, page2.left + 554, page2.top, 210, 166);
+  drawPipelineCard(doc, analytics, page2.left + 554, page2.top + 180, 210, 188);
+
+  if (analytics.recentActivity.length > 0) {
+    const page3 = startPage(doc, 3, "Activity & Insights");
+    drawActivityCard(doc, analytics, page3.left, page3.top, 390, 250);
+    drawHighlightsCard(doc, analytics, page3.left + 404, page3.top, 360, 250);
+  }
 }
 
 export async function getSellerAnalytics(req: Request, res: Response, next: NextFunction) {
@@ -947,6 +1203,7 @@ export async function getSellerAnalyticsPdf(req: Request, res: Response, next: N
       size: "A4",
       layout: "landscape",
       margin: REPORT.margin,
+      autoFirstPage: false,
       info: {
         Title: "Property Sewa Seller Analytics",
         Author: "Property Sewa",

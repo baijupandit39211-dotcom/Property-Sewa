@@ -8,7 +8,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   CalendarClock,
-  ChartNoAxesColumnIncreasing,
   ChevronDown,
   ChevronRight,
   CircleDollarSign,
@@ -22,13 +21,6 @@ import {
   MapPin,
   MousePointer2,
   Plus,
-  Globe,
-  BadgePercent,
-  Share2,
-  Megaphone,
-  Smartphone,
-  Monitor,
-  Tablet,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -149,9 +141,8 @@ type ToastState = {
   text: string;
 };
 
-type CompareOption = "previous_period" | "last_7_days" | "last_30_days";
-
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+const AUTO_REFRESH_MS = 60_000;
 const RANGE_OPTIONS: Array<{ value: RangeOption; label: string }> = [
   { value: "7d", label: "Last 7 days" },
   { value: "30d", label: "Last 30 days" },
@@ -258,15 +249,15 @@ function getImageSrc(src?: string) {
   return `/${value}`;
 }
 
-function chartGeometry(values: number[], width = 720, height = 260) {
+function chartGeometry(values: number[], width = 720, height = 260, maxScale?: number) {
   const safeValues = values.length ? values : [0];
   const padTop = 24;
   const padRight = 18;
-  const padBottom = 40;
-  const padLeft = 38;
+  const padBottom = 52;
+  const padLeft = 48;
   const chartWidth = width - padLeft - padRight;
   const chartHeight = height - padTop - padBottom;
-  const maxValue = Math.max(...safeValues, 1);
+  const maxValue = Math.max(maxScale ?? Math.max(...safeValues, 0), 1);
   const points = safeValues.map((value, index) => {
     const x = padLeft + (chartWidth * index) / Math.max(safeValues.length - 1, 1);
     const y = padTop + (1 - value / maxValue) * chartHeight;
@@ -282,6 +273,78 @@ function chartGeometry(values: number[], width = 720, height = 260) {
     : "";
 
   return { width, height, padTop, padRight, padBottom, padLeft, maxValue, points, linePath, areaPath };
+}
+
+function hasTrendData(trends: TrendPoint[]) {
+  return trends.some((point) => point.views > 0 || point.leads > 0 || point.visits > 0);
+}
+
+function formatAxisLabel(value: number) {
+  if (Number.isInteger(value)) return formatCompact(value);
+  return value.toFixed(1).replace(/\.0$/, "");
+}
+
+function getChartAxisConfig(maxValue: number) {
+  if (maxValue <= 1) {
+    return { axisMax: 1, ticks: [0, 0.5, 1] };
+  }
+
+  if (maxValue <= 2) {
+    return { axisMax: 2, ticks: [0, 1, 2] };
+  }
+
+  if (maxValue <= 5) {
+    return { axisMax: 5, ticks: [0, 1, 2, 3, 4, 5] };
+  }
+
+  const roughStep = maxValue / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const normalized = roughStep / magnitude;
+  const niceStep = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  const step = niceStep * magnitude;
+  const axisMax = Math.ceil(maxValue / step) * step;
+
+  return {
+    axisMax,
+    ticks: Array.from({ length: 5 }, (_, index) => (axisMax * index) / 4),
+  };
+}
+
+function getChartXAxisLabels(trends: TrendPoint[], sparseData: boolean) {
+  if (trends.length <= 7) {
+    return trends.map((point) => point.label);
+  }
+
+  const targetCount = sparseData ? 6 : 7;
+  const step = Math.max(1, Math.ceil((trends.length - 1) / Math.max(targetCount - 1, 1)));
+
+  return trends.map((point, index) => {
+    const shouldShow =
+      index === 0 ||
+      index === trends.length - 1 ||
+      index % step === 0;
+
+    if (!shouldShow) return "";
+    return sparseData ? point.label : point.shortLabel || point.label;
+  });
+}
+
+function smoothPathFromPoints(points: Array<{ x: number; y: number }>) {
+  if (points.length <= 1) {
+    return points.length ? `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}` : "";
+  }
+
+  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const controlX = ((current.x + next.x) / 2).toFixed(2);
+
+    path += ` C ${controlX} ${current.y.toFixed(2)}, ${controlX} ${next.y.toFixed(2)}, ${next.x.toFixed(2)} ${next.y.toFixed(2)}`;
+  }
+
+  return path;
 }
 
 function aggregateLocations(properties: PropertyPerformanceItem[]) {
@@ -313,59 +376,6 @@ function dominantCurrency(properties: PropertyPerformanceItem[]) {
   return (
     Array.from(counts.entries()).sort((left, right) => right[1] - left[1])[0]?.[0] || "NPR"
   );
-}
-
-function buildTrafficSources(summary: AnalyticsSummary) {
-  const sourceItems = [
-    {
-      label: "Organic Search",
-      icon: Globe,
-      value: Math.max(summary.views, 1),
-      trend: summary.viewsDelta,
-      color: "#11875d",
-    },
-    {
-      label: "Featured Listings",
-      icon: BadgePercent,
-      value: Math.max(summary.activeListings * 8 + summary.leads, 1),
-      trend: summary.leadsDelta,
-      color: "#2f80ed",
-    },
-    {
-      label: "Direct / Referrals",
-      icon: Share2,
-      value: Math.max(summary.engagedListings * 6 + summary.visits, 1),
-      trend: summary.visitsDelta,
-      color: "#f79009",
-    },
-    {
-      label: "Social Media",
-      icon: Megaphone,
-      value: Math.max(summary.pendingListings * 4 + summary.completedVisits, 1),
-      trend: summary.conversionDelta,
-      color: "#7a5af8",
-    },
-  ];
-  const total = sourceItems.reduce((sum, item) => sum + item.value, 0) || 1;
-
-  return sourceItems.map((item) => ({
-    ...item,
-    percentage: (item.value / total) * 100,
-  }));
-}
-
-function buildDeviceBreakdown(summary: AnalyticsSummary) {
-  const items = [
-    { label: "Mobile", icon: Smartphone, value: Math.max(summary.views, 1), color: "#11875d" },
-    { label: "Desktop", icon: Monitor, value: Math.max(summary.leads * 6 + summary.visits * 2, 1), color: "#2f80ed" },
-    { label: "Tablet", icon: Tablet, value: Math.max(summary.pendingListings * 3 + summary.completedVisits, 1), color: "#f79009" },
-  ];
-  const total = items.reduce((sum, item) => sum + item.value, 0) || 1;
-
-  return items.map((item) => ({
-    ...item,
-    percentage: (item.value / total) * 100,
-  }));
 }
 
 function donutSegments(items: BreakdownItem[]) {
@@ -445,6 +455,8 @@ function KpiCard({
   icon: Icon,
   tint,
   inverted = false,
+  headerText = "vs last period",
+  footer,
 }: {
   title: string;
   value: string;
@@ -454,6 +466,8 @@ function KpiCard({
   icon: React.ComponentType<{ className?: string }>;
   tint: string;
   inverted?: boolean;
+  headerText?: string;
+  footer?: ReactNode;
 }) {
   const DeltaIcon = deltaValue >= 0 ? ArrowUpRight : ArrowDownRight;
 
@@ -478,7 +492,7 @@ function KpiCard({
           <Icon className="h-4 w-4" />
         </div>
         <div className={cn("text-right text-xs font-semibold", inverted ? "text-white/70" : "text-slate-400")}>
-          vs last period
+          {headerText}
         </div>
       </div>
 
@@ -486,18 +500,22 @@ function KpiCard({
       <div className={cn("mt-0.5 text-[22px] font-semibold tracking-tight", inverted ? "text-white" : "text-slate-950")}>
         {value}
       </div>
-      <div className="mt-2 flex items-center gap-1.5">
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 text-[12px] font-semibold",
-            inverted ? "text-white" : deltaTone(deltaValue)
-          )}
-        >
-          <DeltaIcon className="h-3.5 w-3.5" />
-          {delta}
-        </span>
-        <span className={cn("text-[12px]", inverted ? "text-white/72" : "text-slate-500")}>{detail}</span>
-      </div>
+      {footer ? (
+        <div className={cn("mt-2 text-[12px]", inverted ? "text-white/72" : "text-slate-500")}>{footer}</div>
+      ) : (
+        <div className="mt-2 flex items-center gap-1.5">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 text-[12px] font-semibold",
+              inverted ? "text-white" : deltaTone(deltaValue)
+            )}
+          >
+            <DeltaIcon className="h-3.5 w-3.5" />
+            {delta}
+          </span>
+          <span className={cn("text-[12px]", inverted ? "text-white/72" : "text-slate-500")}>{detail}</span>
+        </div>
+      )}
     </motion.article>
   );
 }
@@ -507,26 +525,41 @@ function PerformanceOverview({
 }: {
   trends: TrendPoint[];
 }) {
-  const viewGeometry = chartGeometry(trends.map((point) => point.views));
-  const leadGeometry = chartGeometry(trends.map((point) => point.leads));
-  const visitGeometry = chartGeometry(trends.map((point) => point.visits));
-  const maxValue = Math.max(viewGeometry.maxValue, leadGeometry.maxValue, visitGeometry.maxValue, 1);
-  const yMarks = [0, 0.25, 0.5, 0.75, 1];
-
-  const normalize = (geometry: ReturnType<typeof chartGeometry>) => {
-    const usableHeight = geometry.height - geometry.padTop - geometry.padBottom;
-    return geometry.points.map((point) => ({
-      ...point,
-      y: geometry.padTop + (1 - point.value / maxValue) * usableHeight,
-    }));
-  };
-
-  const pathFromPoints = (points: Array<{ x: number; y: number }>) =>
-    points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" ");
-
-  const views = normalize(viewGeometry);
-  const leads = normalize(leadGeometry);
-  const visits = normalize(visitGeometry);
+  const trendSeries = [
+    {
+      key: "views" as const,
+      label: "Views",
+      color: "#11875d",
+      strokeWidth: 2.8,
+      values: trends.map((point) => point.views),
+    },
+    {
+      key: "leads" as const,
+      label: "Inquiries",
+      color: "#2f80ed",
+      strokeWidth: 2.4,
+      values: trends.map((point) => point.leads),
+    },
+    {
+      key: "visits" as const,
+      label: "Visits",
+      color: "#f79009",
+      strokeWidth: 2.4,
+      values: trends.map((point) => point.visits),
+    },
+  ];
+  const hasAnyTrendData = hasTrendData(trends);
+  const visibleSeries = trendSeries.filter((series) => series.values.some((value) => value > 0));
+  const seriesMax = Math.max(...trendSeries.flatMap((series) => series.values), 0);
+  const { axisMax, ticks } = getChartAxisConfig(seriesMax);
+  const isSparseData = seriesMax <= 2;
+  const xAxisLabels = getChartXAxisLabels(trends, isSparseData);
+  const baseGeometry = chartGeometry(trendSeries[0].values, 720, 260, axisMax);
+  const seriesGeometry = trendSeries.map((series) => ({
+    ...series,
+    geometry: chartGeometry(series.values, 720, 260, axisMax),
+  }));
+  const chartBottom = baseGeometry.height - baseGeometry.padBottom;
 
   return (
     <Card className="h-[430px] p-5">
@@ -534,91 +567,148 @@ function PerformanceOverview({
         title="Performance Overview"
         info
         right={
-          <div className="inline-flex items-center gap-2 rounded-xl border border-[#e2e8e3] bg-white px-3 py-2 text-sm font-medium text-slate-600">
-            Daily
-            <ChevronDown className="h-4 w-4 text-slate-400" />
+          <div
+            className="inline-flex items-center gap-2 rounded-xl border border-[#e2e8e3] bg-[#f8faf8] px-3 py-2 text-sm font-medium text-slate-500"
+            aria-label="Chart granularity"
+            title="Daily view"
+          >
+            Daily view
           </div>
         }
       />
 
-      <div className="mt-4 flex flex-wrap items-center gap-5 text-sm">
-        {[
-          { label: "Views", color: "#11875d" },
-          { label: "Inquiries", color: "#2f80ed" },
-          { label: "Visits", color: "#f79009" },
-        ].map((item) => (
-          <div key={item.label} className="inline-flex items-center gap-2 text-slate-600">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-            {item.label}
-          </div>
-        ))}
+      <div className="mt-4 flex flex-wrap items-center gap-6 text-[13px]">
+        {trendSeries.map((series) => {
+          const active = visibleSeries.some((item) => item.key === series.key);
+          return (
+            <div
+              key={series.key}
+              className={cn("inline-flex items-center gap-2.5 transition", active ? "text-slate-600" : "text-slate-400")}
+            >
+              <span
+                className={cn("h-2.5 w-2.5 rounded-full ring-2 ring-white", active ? "opacity-100" : "opacity-35")}
+                style={{ backgroundColor: series.color }}
+              />
+              {series.label}
+            </div>
+          );
+        })}
       </div>
 
-      <div className="mt-4 rounded-[20px] bg-[linear-gradient(180deg,#fdfefd_0%,#f7faf8_100%)] p-3 ring-1 ring-[#edf2ee]">
-        <svg viewBox={`0 0 ${viewGeometry.width} ${viewGeometry.height}`} className="h-[300px] w-full">
-          <defs>
-            <linearGradient id="overviewViewsFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#11875d" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="#11875d" stopOpacity="0.01" />
-            </linearGradient>
-          </defs>
+      <div className="mt-4 rounded-[22px] bg-[linear-gradient(180deg,#ffffff_0%,#f7faf8_100%)] p-4 ring-1 ring-[#edf2ee]">
+        {hasAnyTrendData ? (
+          <svg viewBox={`0 0 ${baseGeometry.width} ${baseGeometry.height}`} className="h-[300px] w-full">
+            <defs>
+              <linearGradient id="overviewViewsFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#11875d" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#11875d" stopOpacity="0.01" />
+              </linearGradient>
+              <linearGradient id="overviewPlotGlow" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#f4f8f5" stopOpacity="0.7" />
+              </linearGradient>
+              <filter id="overviewSoftShadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#0f172a" floodOpacity="0.06" />
+              </filter>
+            </defs>
 
-          {yMarks.map((mark) => {
-            const y = viewGeometry.padTop + (viewGeometry.height - viewGeometry.padTop - viewGeometry.padBottom) * mark;
-            const value = Math.round((1 - mark) * maxValue);
-            return (
-              <g key={mark}>
-                <line
-                  x1={viewGeometry.padLeft}
-                  x2={viewGeometry.width - viewGeometry.padRight}
-                  y1={y}
-                  y2={y}
-                  stroke="#e7ece8"
-                  strokeDasharray="4 6"
-                />
-                <text x="0" y={y + 4} fill="#94a3b8" fontSize="11">
-                  {formatCompact(value)}
-                </text>
-              </g>
-            );
-          })}
+            <rect
+              x={baseGeometry.padLeft}
+              y={baseGeometry.padTop}
+              width={baseGeometry.width - baseGeometry.padLeft - baseGeometry.padRight}
+              height={baseGeometry.height - baseGeometry.padTop - baseGeometry.padBottom}
+              rx="18"
+              fill="url(#overviewPlotGlow)"
+              stroke="#eef3ef"
+            />
 
-          <path
-            d={`${pathFromPoints(views)} L ${views[views.length - 1]?.x || 0} ${viewGeometry.height - viewGeometry.padBottom} L ${views[0]?.x || 0} ${viewGeometry.height - viewGeometry.padBottom} Z`}
-            fill="url(#overviewViewsFill)"
-          />
+            {ticks.map((tick) => {
+              const y =
+                baseGeometry.padTop +
+                (1 - tick / axisMax) * (baseGeometry.height - baseGeometry.padTop - baseGeometry.padBottom);
+              return (
+                <g key={tick}>
+                  <line
+                    x1={baseGeometry.padLeft}
+                    x2={baseGeometry.width - baseGeometry.padRight}
+                    y1={y}
+                    y2={y}
+                    stroke="#e5ece7"
+                    strokeDasharray="3 6"
+                  />
+                  <text x="0" y={y + 4} fill="#334155" fontSize="12" fontWeight="600">
+                    {formatAxisLabel(tick)}
+                  </text>
+                </g>
+              );
+            })}
 
-          <path d={pathFromPoints(views)} fill="none" stroke="#11875d" strokeWidth="3" strokeLinecap="round" />
-          <path d={pathFromPoints(leads)} fill="none" stroke="#2f80ed" strokeWidth="2.5" strokeLinecap="round" />
-          <path d={pathFromPoints(visits)} fill="none" stroke="#f79009" strokeWidth="2.5" strokeLinecap="round" />
-
-          {[views, leads, visits].map((series, seriesIndex) =>
-            series.map((point, index) => (
-              <circle
-                key={`${seriesIndex}-${index}`}
-                cx={point.x}
-                cy={point.y}
-                r="3.7"
-                fill={["#11875d", "#2f80ed", "#f79009"][seriesIndex]}
-                stroke="white"
-                strokeWidth="2"
+            {visibleSeries.some((series) => series.key === "views") &&
+            trendSeries[0].values.filter((value) => value > 0).length > 1 ? (
+              <path
+                d={`${smoothPathFromPoints(seriesGeometry[0].geometry.points)} L ${seriesGeometry[0].geometry.points[seriesGeometry[0].geometry.points.length - 1]?.x || 0} ${chartBottom} L ${seriesGeometry[0].geometry.points[0]?.x || 0} ${chartBottom} Z`}
+                fill="url(#overviewViewsFill)"
               />
-            ))
-          )}
+            ) : null}
 
-          {trends.map((point, index) => (
-            <text
-              key={point.key}
-              x={views[index]?.x || 0}
-              y={viewGeometry.height - 12}
-              fill="#64748b"
-              fontSize="11"
-              textAnchor="middle"
-            >
-              {point.shortLabel}
-            </text>
-          ))}
-        </svg>
+            {seriesGeometry
+              .filter((series) => visibleSeries.some((item) => item.key === series.key))
+              .map((series) => {
+                const positivePoints = series.geometry.points.filter((point) => point.value > 0);
+                return (
+                  <g key={series.key} filter="url(#overviewSoftShadow)">
+                    {positivePoints.length > 1 ? (
+                      <path
+                        d={smoothPathFromPoints(series.geometry.points)}
+                        fill="none"
+                        stroke={series.color}
+                        strokeWidth={series.strokeWidth}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    ) : null}
+                    {series.geometry.points.map((point, index) => (
+                      <circle
+                        key={`${series.key}-${index}`}
+                        cx={point.x}
+                        cy={point.y}
+                        r={point.value > 0 ? 3.9 : 2.2}
+                        fill={series.color}
+                        stroke="white"
+                        strokeWidth="2"
+                        opacity={point.value > 0 ? 1 : 0.42}
+                      />
+                    ))}
+                  </g>
+                );
+              })}
+
+            {trends.map((point, index) => (
+              xAxisLabels[index] ? (
+                <text
+                  key={point.key}
+                  x={baseGeometry.points[index]?.x || 0}
+                  y={baseGeometry.height - 14}
+                  fill="#334155"
+                  fontSize="13"
+                  fontWeight="600"
+                  textAnchor="middle"
+                >
+                  {xAxisLabels[index]}
+                </text>
+              ) : null
+            ))}
+          </svg>
+        ) : (
+          <div className="flex h-[300px] items-center justify-center rounded-[16px] border border-dashed border-[#dbe4de] bg-white/70 text-center">
+            <div>
+              <div className="text-sm font-semibold text-slate-700">No performance data yet</div>
+              <div className="mt-1 text-sm text-slate-500">
+                Change the date range or wait for listing activity to appear here.
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -807,7 +897,7 @@ function TopListingsCard({
                   <th className={`${typography.tableHeader} px-2`}>Views</th>
                   <th className={`${typography.tableHeader} px-2`}>Inquiries</th>
                   <th className={`${typography.tableHeader} px-2`}>Conversion</th>
-                  <th className={`${typography.tableHeader} px-2`}>Revenue</th>
+                  <th className={`${typography.tableHeader} px-2`}>Value</th>
                 </tr>
               </thead>
               <tbody>
@@ -962,12 +1052,18 @@ function InsightsCard({
   );
 }
 
-function TrafficSourcesCard({ items }: { items: ReturnType<typeof buildTrafficSources> }) {
-
+function TrafficSourcesCard({ items }: { items: BreakdownItem[] }) {
+  const total = items.reduce((sum, item) => sum + item.count, 0) || 1;
+  const itemMeta: Record<string, { color: string; icon: React.ComponentType<{ className?: string }> }> = {
+    Active: { color: "#11875d", icon: LayoutGrid },
+    Pending: { color: "#f79009", icon: CalendarClock },
+    Rejected: { color: "#ef4444", icon: Activity },
+    Draft: { color: "#64748b", icon: Home },
+  };
   return (
     <Card className="min-h-[300px] p-5">
       <SectionHeader
-        title="Traffic Sources"
+        title="Listing Status Summary"
         right={
           <Link href="/seller/my-properties" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
             View all
@@ -976,25 +1072,25 @@ function TrafficSourcesCard({ items }: { items: ReturnType<typeof buildTrafficSo
       />
       <div className="mt-5 grid content-start gap-3 sm:grid-cols-2">
         {items.map((item) => {
-          const Icon = item.icon;
-          const TrendIcon = item.trend >= 0 ? ArrowUpRight : ArrowDownRight;
+          const meta = itemMeta[item.label] || { color: "#11875d", icon: LayoutGrid };
+          const Icon = meta.icon;
+          const percentage = (item.count / total) * 100;
           return (
             <div key={item.label} className="rounded-[16px] border border-[#e6ece8] bg-white p-3">
               <div className="flex items-start justify-between gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-[#f8faf8] ring-1 ring-[#dfe8e2]" style={{ color: item.color }}>
+                <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-[#f8faf8] ring-1 ring-[#dfe8e2]" style={{ color: meta.color }}>
                   <Icon className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-3 text-[13px] font-medium leading-5 text-slate-700">{item.label}</div>
               <div className="mt-1 flex items-center gap-2">
-                <div className="text-[18px] font-semibold tracking-tight text-slate-900">{item.percentage.toFixed(0)}%</div>
-                <div className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", item.trend >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                  <TrendIcon className="h-3 w-3" />
-                  {Math.abs(item.trend).toFixed(0)}%
+                <div className="text-[18px] font-semibold tracking-tight text-slate-900">{formatNumber(item.count)}</div>
+                <div className="text-[11px] font-semibold text-slate-500">
+                  {percentage.toFixed(0)}% of listings
                 </div>
               </div>
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#edf2ee]">
-                <div className="h-full rounded-full" style={{ width: `${Math.max(item.percentage, 8)}%`, background: `linear-gradient(90deg, ${item.color} 0%, ${item.color}CC 100%)` }} />
+                <div className="h-full rounded-full" style={{ width: `${Math.max(percentage, item.count > 0 ? 8 : 0)}%`, background: `linear-gradient(90deg, ${meta.color} 0%, ${meta.color}CC 100%)` }} />
               </div>
             </div>
           );
@@ -1043,16 +1139,17 @@ function TopLocationsCard({ properties }: { properties: PropertyPerformanceItem[
   );
 }
 
-function DeviceBreakdownCard({ items }: { items: ReturnType<typeof buildDeviceBreakdown> }) {
-  const total = items.reduce((sum, item) => sum + item.value, 0);
+function DeviceBreakdownCard({ items }: { items: BreakdownItem[] }) {
+  const total = items.reduce((sum, item) => sum + item.count, 0);
+  const segments = donutSegments(items);
   return (
     <Card className="min-h-[300px] p-5">
-      <SectionHeader title="Device Breakdown" />
+      <SectionHeader title="Visit Status Breakdown" />
       <div className="mt-5 grid min-h-[220px] gap-5 lg:grid-cols-[140px_minmax(0,1fr)] lg:items-center">
         <div className="relative mx-auto flex h-[136px] w-[136px] items-center justify-center">
           <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
             <circle cx="60" cy="60" r="36" fill="none" stroke="#eef2ef" strokeWidth="16" />
-            {donutSegments(items.map((item) => ({ label: item.label, count: item.value }))).map((segment) => (
+            {segments.map((segment) => (
               <circle
                 key={segment.label}
                 cx="60"
@@ -1074,16 +1171,17 @@ function DeviceBreakdownCard({ items }: { items: ReturnType<typeof buildDeviceBr
         </div>
 
         <div className="space-y-4">
-          {items.map((item) => {
-            const Icon = item.icon;
+          {segments.map((item) => {
             return (
               <div key={item.label} className="flex items-center justify-between gap-4">
                 <div className="inline-flex items-center gap-3 text-sm text-slate-700">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <Icon className="h-4 w-4 text-slate-400" />
                   {item.label}
                 </div>
-                <div className="text-sm font-semibold text-slate-900">{item.percentage.toFixed(0)}%</div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-slate-900">{item.percentage.toFixed(0)}%</div>
+                  <div className="text-xs text-slate-500">{formatNumber(item.count)}</div>
+                </div>
               </div>
             );
           })}
@@ -1113,7 +1211,6 @@ function LoadingState() {
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState<RangeOption>("30d");
-  const [compare, setCompare] = useState<CompareOption>("previous_period");
   const [analytics, setAnalytics] = useState<SellerAnalytics | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState("");
@@ -1133,6 +1230,21 @@ export default function AnalyticsPage() {
   useEffect(() => {
     return () => {
       if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const triggerRefresh = () => {
+      if (document.hidden) return;
+      setRefreshToken((value) => value + 1);
+    };
+
+    const intervalId = window.setInterval(triggerRefresh, AUTO_REFRESH_MS);
+    document.addEventListener("visibilitychange", triggerRefresh);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", triggerRefresh);
     };
   }, []);
 
@@ -1165,6 +1277,7 @@ export default function AnalyticsPage() {
 
   const summary = analytics?.summary;
   const isInitialLoading = isFetching && !analytics;
+  const isRefreshing = isFetching && !!analytics;
   const hasListings = (summary?.totalListings || 0) > 0;
 
   const topProperty = useMemo(() => {
@@ -1254,19 +1367,20 @@ export default function AnalyticsPage() {
   if (!analytics || !summary) return null;
 
   const inquiryBreakdown = analytics.breakdowns.leads;
+  const listingBreakdown = analytics.breakdowns.listings;
+  const visitBreakdown = analytics.breakdowns.visits;
   const portfolioCurrency = dominantCurrency(analytics.propertyPerformance);
   const portfolioValue = analytics.propertyPerformance.reduce(
     (sum, property) => sum + Number(property.price || 0),
     0
   );
-  const trafficSources = buildTrafficSources(summary);
-  const deviceBreakdown = buildDeviceBreakdown(summary);
 
   return (
     <motion.main
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
+      aria-busy={isRefreshing}
       className="w-full space-y-6 pb-2"
     >
       <div
@@ -1289,7 +1403,24 @@ export default function AnalyticsPage() {
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
             <div className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-white text-emerald-700">
-              <ChartNoAxesColumnIncreasing className="h-4.5 w-4.5" />
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-[20px] w-[20px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 20V13.5" />
+                <path d="M8.5 20V11" />
+                <path d="M13 20V8" />
+                <path d="M17.5 20V5.5" />
+                <path d="M3 20h16.5" />
+                <path d="M4.5 10.5 8 7l2.6 2.2L17.8 2" />
+                <path d="m15.8 2 2 0 0 2" />
+              </svg>
             </div>
             <h1 className="mt-4 text-[30px] font-semibold tracking-tight text-slate-950">Seller Analytics</h1>
             <p className="mt-1 text-sm text-slate-600">Track your property performance and grow your business.</p>
@@ -1317,16 +1448,28 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="relative xl:w-[180px]">
-              <select
-                value={compare}
-                onChange={(event) => setCompare(event.target.value as CompareOption)}
-                className="h-11 w-full appearance-none rounded-xl border border-[#dde5df] bg-white px-4 pr-10 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-400"
+              <button
+                type="button"
+                disabled
+                title="Comparison mode is not available for seller analytics yet"
+                className="inline-flex h-11 w-full cursor-not-allowed items-center justify-between rounded-xl border border-[#dde5df] bg-[#f8faf8] px-4 pr-10 text-sm font-medium text-slate-500"
               >
-                <option value="previous_period">Compare: Previous</option>
-                <option value="last_7_days">Compare: Last 7 days</option>
-                <option value="last_30_days">Compare: Last 30 days</option>
-              </select>
+                Compare unavailable
+              </button>
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            </div>
+
+            <div
+              className={cn(
+                "inline-flex h-11 min-w-[120px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium transition",
+                isRefreshing
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 opacity-100"
+                  : "pointer-events-none border-transparent bg-transparent text-transparent opacity-0"
+              )}
+              aria-live="polite"
+            >
+              <LoaderCircle className={cn("h-4 w-4", isRefreshing ? "animate-spin" : "")} />
+              Updating...
             </div>
 
             <button
@@ -1360,11 +1503,13 @@ export default function AnalyticsPage() {
         <KpiCard
           title="Total Listings"
           value={formatNumber(summary.totalListings)}
-          detail="all properties"
-          delta={formatSignedPercent(summary.viewsDelta)}
-          deltaValue={summary.viewsDelta}
+          detail=""
+          delta=""
+          deltaValue={0}
           icon={Home}
           tint="bg-emerald-50 text-emerald-700"
+          headerText="inventory"
+          footer="All current seller listings"
         />
         <KpiCard
           title="Total Views"
@@ -1394,32 +1539,36 @@ export default function AnalyticsPage() {
           tint="bg-violet-50 text-violet-700"
         />
         <KpiCard
-          title="Total Revenue"
+          title="Portfolio Value"
           value={formatCompactCurrency(portfolioValue, portfolioCurrency)}
-          detail="portfolio value"
-          delta={formatSignedPercent(summary.visitsDelta)}
-          deltaValue={summary.visitsDelta}
+          detail=""
+          delta=""
+          deltaValue={0}
           icon={CircleDollarSign}
           tint="bg-emerald-50 text-emerald-700"
           inverted
+          headerText="listed value"
+          footer="Based on current listing prices"
         />
         <KpiCard
           title="Active Listings"
           value={formatNumber(summary.activeListings)}
-          detail={`${formatNumber(summary.pendingListings)} pending`}
-          delta={formatSignedPercent(summary.visitsDelta)}
-          deltaValue={summary.visitsDelta}
+          detail=""
+          delta=""
+          deltaValue={0}
           icon={LayoutGrid}
           tint="bg-amber-50 text-amber-700"
+          headerText="current status"
+          footer={`${formatNumber(summary.pendingListings)} pending approval`}
         />
       </section>
 
       <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_0.88fr_0.95fr]">
         <PerformanceOverview trends={analytics.trends} />
         <DonutCard
-          title="Inquiries by Source"
+          title="Lead Status Breakdown"
           items={inquiryBreakdown}
-          totalLabel="Current inquiry mix in the selected range"
+          totalLabel="Current lead-status mix in the selected range"
         />
         <RecentActivityCard items={analytics.recentActivity} />
       </section>
@@ -1430,22 +1579,17 @@ export default function AnalyticsPage() {
           hasListings={hasListings}
         />
         <FunnelCard
-          funnel={[
-            ...(analytics.funnel || []),
-            {
-              label: "Deals Closed",
-              value: summary.completedVisits,
-              ratio: summary.views ? (summary.completedVisits / summary.views) * 100 : 0,
-            },
-          ].slice(0, 5)}
+          funnel={(analytics.funnel || []).map((step) =>
+            step.label === "Completed" ? { ...step, label: "Completed Visits" } : step
+          )}
         />
         <InsightsCard topProperty={topProperty} bestDay={bestDay} nextAction={nextAction} summary={summary} />
       </section>
 
       <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.05fr)_0.95fr_0.9fr]">
-        <TrafficSourcesCard items={trafficSources} />
+        <TrafficSourcesCard items={listingBreakdown} />
         <TopLocationsCard properties={analytics.propertyPerformance} />
-        <DeviceBreakdownCard items={deviceBreakdown} />
+        <DeviceBreakdownCard items={visitBreakdown} />
       </section>
     </motion.main>
   );

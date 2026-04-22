@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -252,6 +253,12 @@ function getVisitImage(visit?: Visit | null) {
   return visit.propertyId.images[0];
 }
 
+function parseDeepLinkDate(value: string | null) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function MonthCalendar({
   month,
   selectedDateKey,
@@ -346,24 +353,46 @@ function MonthCalendar({
 }
 
 export default function SellerVisitSchedulingPage() {
+  const searchParams = useSearchParams();
+  const deepLinkedVisitId = searchParams.get("visitId") || "";
+  const deepLinkedDate = parseDeepLinkDate(searchParams.get("focusDate"));
+  const initialCalendarDate = deepLinkedDate || new Date();
+
   const [visibleMonth, setVisibleMonth] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
+    return new Date(
+      initialCalendarDate.getFullYear(),
+      initialCalendarDate.getMonth(),
+      1
+    );
   });
 
   const [queryRange, setQueryRange] = useState(() => {
-    const now = new Date();
     return {
-      start: new Date(now.getFullYear(), now.getMonth(), 1),
-      end: new Date(now.getFullYear(), now.getMonth() + 1, 0),
+      start: new Date(
+        initialCalendarDate.getFullYear(),
+        initialCalendarDate.getMonth(),
+        1
+      ),
+      end: new Date(
+        initialCalendarDate.getFullYear(),
+        initialCalendarDate.getMonth() + 1,
+        0
+      ),
     };
   });
 
   const [draftRange, setDraftRange] = useState(() => {
-    const now = new Date();
     return {
-      start: new Date(now.getFullYear(), now.getMonth(), 1),
-      end: new Date(now.getFullYear(), now.getMonth() + 1, 0),
+      start: new Date(
+        initialCalendarDate.getFullYear(),
+        initialCalendarDate.getMonth(),
+        1
+      ),
+      end: new Date(
+        initialCalendarDate.getFullYear(),
+        initialCalendarDate.getMonth() + 1,
+        0
+      ),
     };
   });
 
@@ -371,7 +400,9 @@ export default function SellerVisitSchedulingPage() {
     null
   );
   const [visits, setVisits] = useState<Visit[]>([]);
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(
+    () => new Date(initialCalendarDate)
+  );
   const [selectedVisitId, setSelectedVisitId] = useState("");
   const [statusFilter, setStatusFilter] = useState<VisitStatus | "all">("all");
   const [loading, setLoading] = useState(true);
@@ -582,6 +613,23 @@ export default function SellerVisitSchedulingPage() {
       setSelectedVisitId(dayVisits[0]?._id || "");
     }
   }, [dayVisits, selectedVisitId]);
+
+  useEffect(() => {
+    if (!deepLinkedVisitId || visits.length === 0) return;
+
+    const linkedVisit = visits.find((visit) => visit._id === deepLinkedVisitId);
+    if (!linkedVisit) return;
+
+    const focusDate = new Date(linkedVisit.actualDate || linkedVisit.requestedDate);
+    setStatusFilter("all");
+    setSelectedDate(focusDate);
+    setSelectedVisitId(linkedVisit._id);
+    setVisibleMonth(new Date(focusDate.getFullYear(), focusDate.getMonth(), 1));
+    setDraftRange({
+      start: new Date(focusDate.getFullYear(), focusDate.getMonth(), 1),
+      end: new Date(focusDate.getFullYear(), focusDate.getMonth() + 1, 0),
+    });
+  }, [deepLinkedVisitId, visits]);
 
   useEffect(() => {
     if (selectedVisit) {

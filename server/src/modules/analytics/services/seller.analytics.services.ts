@@ -510,7 +510,11 @@ class SellerAnalyticsService {
       propertyLocation: String(visit.propertyId?.location || ""),
       actorName: String(visit.buyerId?.name || "Buyer"),
       actorEmail: String(visit.buyerId?.email || ""),
-      href: "/seller/visit-scheduling",
+      href: `/seller/visit-scheduling?visitId=${String(visit._id)}${
+        visit.requestedDate
+          ? `&focusDate=${encodeURIComponent(new Date(visit.requestedDate).toISOString())}`
+          : ""
+      }`,
       requestedDate: visit.requestedDate ? new Date(visit.requestedDate).toISOString() : null,
       preferredTime: visit.preferredTime ? String(visit.preferredTime) : null,
       message: String(visit.message || ""),
