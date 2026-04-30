@@ -42,8 +42,20 @@ export default function LoginPage() {
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [showPw, setShowPw] = React.useState(false);
+  const [googleBtnWidth, setGoogleBtnWidth] = React.useState<number | null>(null);
 
   const googleBtnRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const computeWidth = () => {
+      const safe = Math.min(380, Math.max(240, window.innerWidth - 48));
+      setGoogleBtnWidth(safe);
+    };
+
+    computeWidth();
+    window.addEventListener("resize", computeWidth);
+    return () => window.removeEventListener("resize", computeWidth);
+  }, []);
 
   React.useEffect(() => {
     (async () => {
@@ -51,6 +63,7 @@ export default function LoginPage() {
 
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       if (!clientId || !googleBtnRef.current) return;
+      if (!googleBtnWidth) return;
 
       // ✅ Force English text (prevents Nepali label)
       // Must be set BEFORE initialize/renderButton.
@@ -86,12 +99,12 @@ export default function LoginPage() {
         type: "standard",
         theme: "outline",
         size: "large",
-        width: 380,
+        width: googleBtnWidth,
         text: "signin_with",
         locale: "en", // if supported
       });
     })();
-  }, [router]);
+  }, [router, googleBtnWidth]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +147,7 @@ export default function LoginPage() {
             "linear-gradient(90deg, #012B21 0%, #1E4739 50%, #5B786A 100%)",
         }}
       >
-        <div className="mx-auto flex h-[84px] max-w-7xl items-center justify-between px-6">
+        <div className="mx-auto flex h-[84px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Left: menu icon block + text */}
           <div className="flex items-center gap-4">
             <div className="grid h-[46px] w-[46px] place-items-center rounded-[14px] bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]">
@@ -174,21 +187,21 @@ export default function LoginPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="rounded-full bg-white/10 px-6 py-2 text-[14px] font-semibold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg"
+              className="hidden rounded-full bg-white/10 px-6 py-2 text-[14px] font-semibold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
             >
               Back to Home
             </Link>
 
             <Link
               href="/login"
-              className="rounded-full bg-white px-6 py-2 text-[14px] font-semibold text-black shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+              className="hidden rounded-full bg-white px-6 py-2 text-[14px] font-semibold text-black shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg lg:inline-flex"
             >
               Log In
             </Link>
 
             <Link
               href="/register"
-              className="rounded-full bg-[#1DFF91] px-6 py-2 text-[14px] font-extrabold text-[#062016] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_30px_rgba(29,255,145,0.28)]"
+              className="hidden rounded-full bg-[#1DFF91] px-6 py-2 text-[14px] font-extrabold text-[#062016] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_30px_rgba(29,255,145,0.28)] lg:inline-flex"
             >
               Sign Up
             </Link>
@@ -206,7 +219,7 @@ export default function LoginPage() {
       </header>
 
       {/* Body (fit in one screen) */}
-      <main className="relative z-10 mx-auto max-w-7xl px-6">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           className="
             grid items-center gap-10
@@ -227,7 +240,7 @@ export default function LoginPage() {
             custom={0}
           >
             <motion.h1
-              className="text-[54px] font-extrabold leading-[1.05] tracking-tight text-[#0D1F18]"
+              className="text-[36px] font-extrabold leading-[1.12] tracking-tight text-[#0D1F18] sm:text-[44px] sm:leading-[1.08] lg:text-[54px] lg:leading-[1.05]"
               initial="hidden"
               animate="show"
               variants={fadeUp}

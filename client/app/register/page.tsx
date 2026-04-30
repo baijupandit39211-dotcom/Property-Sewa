@@ -89,9 +89,21 @@ export default function RegisterPage() {
   const [password, setPassword] = React.useState("");
   const [agree, setAgree] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [googleBtnWidth, setGoogleBtnWidth] = React.useState<number | null>(null);
 
   const score = passwordScore(password);
   const googleBtnRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const computeWidth = () => {
+      const safe = Math.min(380, Math.max(240, window.innerWidth - 48));
+      setGoogleBtnWidth(safe);
+    };
+
+    computeWidth();
+    window.addEventListener("resize", computeWidth);
+    return () => window.removeEventListener("resize", computeWidth);
+  }, []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -103,6 +115,7 @@ export default function RegisterPage() {
 
         const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
         if (!clientId || !googleBtnRef.current) return;
+        if (!googleBtnWidth) return;
 
         // ✅ Clear container to avoid duplicate Google button
         googleBtnRef.current.innerHTML = "";
@@ -129,7 +142,7 @@ export default function RegisterPage() {
         window.google.accounts.id.renderButton(googleBtnRef.current, {
           theme: "outline",
           size: "large",
-          width: 380,
+          width: googleBtnWidth,
           text: "signup_with",
         });
       } catch (e) {
@@ -140,7 +153,7 @@ export default function RegisterPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, role]); // ✅ IMPORTANT: include role
+  }, [router, role, googleBtnWidth]); // ✅ IMPORTANT: include role
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,7 +197,7 @@ export default function RegisterPage() {
       </div>
 
       <header className="bg-[#2f5d46]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/" className="text-lg font-extrabold text-white">
             PROPERTY SEWA
           </Link>
@@ -192,14 +205,14 @@ export default function RegisterPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg"
+              className="hidden rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
             >
               Back to Home
             </Link>
 
             <Link
               href="/login"
-              className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg"
+              className="hidden rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
             >
               Log In
             </Link>
@@ -210,7 +223,7 @@ export default function RegisterPage() {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-6 py-14">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid items-center gap-12 md:grid-cols-2">
           <motion.div
             className="mx-auto w-full max-w-xl"
