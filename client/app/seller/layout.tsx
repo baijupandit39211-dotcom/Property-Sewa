@@ -15,6 +15,7 @@ export default function SellerLayout({
   const router = useRouter();
   const [checking, setChecking] = React.useState(true);
   const [user, setUser] = React.useState<SellerUser | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
 
   React.useEffect(() => {
     let mounted = true;
@@ -56,6 +57,29 @@ export default function SellerLayout({
     };
   }, [router]);
 
+  React.useEffect(() => {
+    if (!mobileSidebarOpen) {
+      document.body.style.removeProperty("overflow");
+      return;
+    }
+
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.removeProperty("overflow");
+    };
+  }, [mobileSidebarOpen]);
+
+  React.useEffect(() => {
+    if (!mobileSidebarOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileSidebarOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileSidebarOpen]);
+
   if (checking) {
     return (
       <div className="grid min-h-screen place-items-center bg-[#F1F7F4]">
@@ -68,16 +92,20 @@ export default function SellerLayout({
 
   return (
     <SellerAuthProvider value={{ user }}>
-      <div className="h-screen bg-[#F1F7F4] flex flex-col">
+      <div className="min-h-[100dvh] bg-[#F1F7F4] flex flex-col overflow-hidden">
         <div className="sticky top-0 z-50">
-          <SellerHeader />
+          <SellerHeader
+            mobileSidebarOpen={mobileSidebarOpen}
+            onToggleSidebar={() => setMobileSidebarOpen((open) => !open)}
+          />
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="flex-shrink-0">
-            <SellerSidebar />
-          </div>
-          <main className="flex-1 overflow-y-auto px-8 py-8">
+          <SellerSidebar
+            mobileOpen={mobileSidebarOpen}
+            onCloseMobile={() => setMobileSidebarOpen(false)}
+          />
+          <main className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 lg:ml-64">
             {children}
           </main>
         </div>

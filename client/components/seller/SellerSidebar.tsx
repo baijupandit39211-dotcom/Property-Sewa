@@ -29,11 +29,33 @@ const bottomLinks = [
   { label: "Feedback", href: "/seller/feedback", icon: Megaphone },
 ];
 
-export default function SellerSidebar() {
+export default function SellerSidebar({
+  mobileOpen,
+  onCloseMobile,
+}: {
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-64 flex-col bg-white shadow-sm ring-1 ring-slate-200">
+    <>
+      <button
+        type="button"
+        aria-label="Close navigation overlay"
+        className={[
+          "fixed inset-0 z-40 bg-slate-950/40 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 lg:hidden",
+          mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none",
+        ].join(" ")}
+        onClick={onCloseMobile}
+      />
+
+      <aside
+        className={[
+          "fixed left-0 top-16 z-50 flex h-[calc(100dvh-64px)] w-64 flex-col border-r border-slate-200 bg-white shadow-[0_24px_48px_rgba(15,23,42,0.14)] transition-transform duration-300 ease-out lg:z-30 lg:translate-x-0",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        ].join(" ")}
+      >
       <nav className="flex flex-col gap-1 px-2 py-4">
         {links.map((link, idx) => {
           const Icon = link.icon;
@@ -42,6 +64,7 @@ export default function SellerSidebar() {
             <a
               key={`${link.href}-${idx}`}
               href={link.href}
+              onClick={() => onCloseMobile()}
               className={[
                 "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition",
                 active
@@ -64,6 +87,7 @@ export default function SellerSidebar() {
               <a
                 key={`${link.href}-${idx}`}
                 href={link.href}
+                onClick={() => onCloseMobile()}
                 className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 hover:bg-emerald-50 hover:text-emerald-800"
               >
                 <Icon className="h-5 w-5" />
@@ -73,6 +97,7 @@ export default function SellerSidebar() {
           })}
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

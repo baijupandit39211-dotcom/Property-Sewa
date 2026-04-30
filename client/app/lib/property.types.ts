@@ -5,6 +5,7 @@ export type Property = {
   currency: string;
   location: string;
   address: string;
+  listingType?: string;
   beds: number;
   baths: number;
   sqft: number;

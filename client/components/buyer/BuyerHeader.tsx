@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import { useBuyerAuth } from "@/app/buyer/BuyerAuthContext";
-import { Search } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 
 const NotificationBell = dynamic(() => import("@/components/notifications/NotificationBell"), {
   ssr: false,
@@ -14,7 +14,13 @@ const NotificationBell = dynamic(() => import("@/components/notifications/Notifi
   ),
 });
 
-export default function BuyerHeader() {
+export default function BuyerHeader({
+  mobileSidebarOpen,
+  onToggleSidebar,
+}: {
+  mobileSidebarOpen: boolean;
+  onToggleSidebar: () => void;
+}) {
   const router = useRouter();
   const { user } = useBuyerAuth();
 
@@ -29,8 +35,17 @@ export default function BuyerHeader() {
 
   return (
     <header className="h-16 bg-[#2F6B4A] shadow-md">
-      <div className="mx-auto flex h-full items-center justify-between px-6 text-white">
+      <div className="mx-auto flex h-full items-center justify-between px-4 text-white sm:px-6">
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10 transition hover:bg-white/15 lg:hidden"
+            aria-label={mobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            title={mobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          >
+            {mobileSidebarOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
+          </button>
           <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10">
             <div className="flex flex-col gap-[5px]">
               <span className="h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />

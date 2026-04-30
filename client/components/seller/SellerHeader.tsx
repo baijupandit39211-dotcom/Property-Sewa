@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, LogOut } from "lucide-react";
+import { LogOut, Menu, Search, X } from "lucide-react";
 import { logoutUser } from "@/app/lib/auth";
 
 const NotificationBell = dynamic(() => import("@/components/notifications/NotificationBell"), {
@@ -14,7 +14,13 @@ const NotificationBell = dynamic(() => import("@/components/notifications/Notifi
   ),
 });
 
-export default function SellerHeader() {
+export default function SellerHeader({
+  mobileSidebarOpen,
+  onToggleSidebar,
+}: {
+  mobileSidebarOpen: boolean;
+  onToggleSidebar: () => void;
+}) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -32,8 +38,17 @@ export default function SellerHeader() {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between bg-[#2F6B4A] px-6 text-white shadow-md">
+    <header className="flex h-16 items-center justify-between bg-[#2F6B4A] px-4 text-white shadow-md sm:px-6">
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10 transition hover:bg-white/15 lg:hidden"
+          aria-label={mobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          title={mobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
+        >
+          {mobileSidebarOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
+        </button>
         <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10">
           <div className="flex flex-col gap-[5px]">
             <span className="h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
@@ -69,7 +84,7 @@ export default function SellerHeader() {
           className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <LogOut className="h-4 w-4" />
-          {loggingOut ? "Logging out..." : "Logout"}
+          <span className="hidden sm:inline">{loggingOut ? "Logging out..." : "Logout"}</span>
         </button>
       </div>
     </header>

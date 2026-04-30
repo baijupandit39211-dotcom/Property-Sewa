@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Menu, X } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
 import { logoutByRole } from "@/app/lib/auth";
 
@@ -33,7 +34,13 @@ function getInitials(name?: string) {
     .join("");
 }
 
-export default function AdminHeader() {
+export default function AdminHeader({
+  mobileSidebarOpen = false,
+  onToggleSidebar,
+}: {
+  mobileSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
+}) {
   const router = useRouter();
   const [user, setUser] = useState<AdminMeResponse["user"] | null>(null);
 
@@ -56,8 +63,21 @@ export default function AdminHeader() {
 
   return (
     <header className="sticky top-0 z-50 bg-[#2f5d46] shadow">
-      <div className="flex h-16 items-center justify-between px-6 text-white shadow-md">
-        <Link href="/admin/overview" className="flex items-center gap-3">
+      <div className="flex h-16 items-center justify-between px-4 text-white shadow-md sm:px-6">
+        <div className="flex items-center gap-3">
+          {onToggleSidebar ? (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 ring-1 ring-white/15 transition hover:bg-white/15 lg:hidden"
+              aria-label={mobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
+              title={mobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              {mobileSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          ) : null}
+
+          <Link href="/admin/overview" className="flex items-center gap-3">
           <div className="relative h-7 w-7 shrink-0 rounded-xl bg-white/10">
             <span className="absolute left-[8px] top-[7px] h-1.5 w-3.5 rounded-full bg-[#32f29a]" />
             <span className="absolute left-[8px] top-[12px] h-1.5 w-3.5 rounded-full bg-[#6df9ba]" />
@@ -66,10 +86,11 @@ export default function AdminHeader() {
           <span className="text-lg font-extrabold tracking-wide text-white">
             PROPERTY SEWA
           </span>
-        </Link>
+          </Link>
+        </div>
 
         {user && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <NotificationBell
               notificationsPageHref="/admin/notifications"
               endpointBase="/api/admin/notifications"
@@ -81,7 +102,7 @@ export default function AdminHeader() {
               {roleLabel}
             </span>
 
-            <div className="text-sm font-semibold text-white">{user.name}</div>
+            <div className="hidden text-sm font-semibold text-white sm:block">{user.name}</div>
 
             <div className="grid h-9 w-9 place-items-center rounded-full bg-emerald-900 text-sm font-bold text-white">
               {getInitials(user.name)}
@@ -89,7 +110,7 @@ export default function AdminHeader() {
 
             <button
               onClick={logout}
-              className="rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20"
+              className="hidden rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20 sm:inline-flex"
             >
               Logout
             </button>

@@ -8,9 +8,11 @@ import {
   Home,
   LayoutDashboard,
   LogOut,
+  Menu,
   Moon,
   PhoneCall,
   Sun,
+  X,
 } from "lucide-react";
 import { apiFetchSafe } from "@/app/lib/api";
 import { getDashboardPath, logoutByRole } from "@/app/lib/auth";
@@ -30,9 +32,11 @@ export default function PublicSiteHeader() {
   const router = useRouter();
   const [user, setUser] = React.useState<SessionUser | null>(null);
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const [loggingOut, setLoggingOut] = React.useState(false);
   const [theme, setTheme] = React.useState<"light" | "dark">("light");
   const menuRef = React.useRef<HTMLDivElement | null>(null);
+  const mobileNavRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     let active = true;
@@ -65,6 +69,27 @@ export default function PublicSiteHeader() {
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [menuOpen]);
+
+  React.useEffect(() => {
+    if (!mobileNavOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (mobileNavRef.current && !mobileNavRef.current.contains(event.target as Node)) {
+        setMobileNavOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileNavOpen(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mobileNavOpen]);
 
   React.useEffect(() => {
     const storedTheme =
@@ -122,6 +147,7 @@ export default function PublicSiteHeader() {
             href="/"
             aria-label="Go to Property Sewa landing page"
             className="flex items-center gap-3 rounded-2xl transition hover:opacity-95"
+            onClick={() => setMobileNavOpen(false)}
           >
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/15">
               <Home className="h-5 w-5 text-white" />
@@ -152,7 +178,21 @@ export default function PublicSiteHeader() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen((open) => !open)}
+              className="grid h-10 w-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/15 transition hover:bg-white/15 md:hidden"
+              aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+              title={mobileNavOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileNavOpen ? (
+                <X className="h-5 w-5 text-white" />
+              ) : (
+                <Menu className="h-5 w-5 text-white" />
+              )}
+            </button>
+
             {user ? (
               <div className="relative" ref={menuRef}>
                 <button
@@ -254,6 +294,102 @@ export default function PublicSiteHeader() {
           </div>
         </div>
       </div>
+
+      {mobileNavOpen ? (
+        <div className="md:hidden" ref={mobileNavRef}>
+          <div className="border-b border-emerald-950/10 bg-white shadow-sm">
+            <div className="mx-auto grid max-w-7xl gap-2 px-4 py-4 sm:px-6">
+              <Link
+                href="/properties?type=sale"
+                onClick={() => setMobileNavOpen(false)}
+                className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100"
+              >
+                For Sale
+              </Link>
+              <Link
+                href="/properties?type=rent"
+                onClick={() => setMobileNavOpen(false)}
+                className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100"
+              >
+                For Rent
+              </Link>
+              <Link
+                href="/properties"
+                onClick={() => setMobileNavOpen(false)}
+                className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100"
+              >
+                Browse All
+              </Link>
+
+              <div className="mt-2 grid gap-2 rounded-3xl border border-slate-200 bg-white p-3">
+                {user ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileNavOpen(false);
+                        handleDashboardClick();
+                      }}
+                      className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
+                    >
+                      <span className="flex items-center gap-2">
+                        <LayoutDashboard className="h-4 w-4 text-emerald-700" />
+                        Dashboard
+                      </span>
+                      <span className="text-xs text-slate-500">{user.role || "Account"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleLogout()}
+                      disabled={loggingOut}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {loggingOut ? "Logging out..." : "Logout"}
+                    </button>
+                  </>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="inline-flex items-center justify-center rounded-2xl bg-[#1DFF91] px-4 py-3 text-sm font-extrabold text-black transition hover:brightness-95"
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
+
+                <Link
+                  href="/contact"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50"
+                >
+                  <PhoneCall className="h-4 w-4" />
+                  Contact
+                </Link>
+
+                <button
+                  onClick={handleThemeToggle}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
+                  type="button"
+                >
+                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  Theme
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

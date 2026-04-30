@@ -174,7 +174,7 @@ export function DashboardSidebarShell({
 
       <aside
         className={cn(
-          "fixed left-0 top-16 z-50 flex h-[calc(100vh-64px)] flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-300 ease-out lg:static lg:top-0 lg:z-0 lg:h-full lg:translate-x-0 lg:shadow-sm",
+          "fixed left-0 top-16 z-50 flex h-[calc(100dvh-64px)] flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-300 ease-out lg:static lg:top-0 lg:z-0 lg:h-full lg:translate-x-0 lg:shadow-sm",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           desktopCollapsed ? "lg:w-[88px]" : "lg:w-[272px]",
           "w-[248px] sm:w-[264px] shadow-[0_24px_48px_rgba(15,23,42,0.14)]",

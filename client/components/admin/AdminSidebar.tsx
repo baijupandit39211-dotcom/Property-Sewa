@@ -95,30 +95,53 @@ function SidebarAction({ label, icon: Icon }: ActionItem) {
   );
 }
 
-export default function AdminSidebar() {
+export default function AdminSidebar({
+  mobileOpen,
+  onCloseMobile,
+}: {
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-slate-200 bg-white shadow-sm ring-1 ring-slate-200">
-      <nav className="flex flex-1 flex-col px-2 py-4">
-        <div className="space-y-1">
-          {navigationItems.map((item) => (
-            <SidebarLink
-              key={item.href}
-              {...item}
-              active={isActivePath(pathname, item.href)}
-            />
-          ))}
-        </div>
+    <>
+      <button
+        type="button"
+        aria-label="Close navigation overlay"
+        className={[
+          "fixed inset-0 z-40 bg-slate-950/40 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 lg:hidden",
+          mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none",
+        ].join(" ")}
+        onClick={onCloseMobile}
+      />
 
-        <div className="mt-auto border-t border-slate-200 px-0 pt-6">
+      <aside
+        className={[
+          "fixed left-0 top-16 z-50 flex h-[calc(100dvh-64px)] w-64 shrink-0 flex-col border-r border-slate-200 bg-white shadow-[0_24px_48px_rgba(15,23,42,0.14)] ring-1 ring-slate-200 transition-transform duration-300 ease-out lg:z-30 lg:translate-x-0",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        ].join(" ")}
+      >
+        <nav className="flex flex-1 flex-col px-2 py-4">
           <div className="space-y-1">
-            {supportItems.map((item) => (
-              <SidebarAction key={item.label} {...item} />
+            {navigationItems.map((item) => (
+              <div key={item.href} onClick={() => onCloseMobile()}>
+                <SidebarLink {...item} active={isActivePath(pathname, item.href)} />
+              </div>
             ))}
           </div>
-        </div>
-      </nav>
-    </aside>
+
+          <div className="mt-auto border-t border-slate-200 px-0 pt-6">
+            <div className="space-y-1">
+              {supportItems.map((item) => (
+                <div key={item.label} onClick={() => onCloseMobile()}>
+                  <SidebarAction {...item} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </nav>
+      </aside>
+    </>
   );
 }

@@ -261,7 +261,7 @@ export default function NotificationBell({
 
       {open && (
         <div
-          className={`absolute top-[calc(100%+12px)] z-[70] w-[360px] overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] ${panelAlignClassName}`}
+          className={`absolute top-[calc(100%+12px)] z-[70] w-[calc(100vw-1.5rem)] max-w-[360px] overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] sm:w-[360px] ${panelAlignClassName} max-sm:right-3 max-sm:left-auto`}
         >
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <div>

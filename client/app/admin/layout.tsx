@@ -11,6 +11,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [checking, setChecking] = React.useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
 
   React.useEffect(() => {
     let mounted = true;
@@ -47,6 +48,33 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     };
   }, [router, pathname]);
 
+  React.useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [pathname]);
+
+  React.useEffect(() => {
+    if (!mobileSidebarOpen) {
+      document.body.style.removeProperty("overflow");
+      return;
+    }
+
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.removeProperty("overflow");
+    };
+  }, [mobileSidebarOpen]);
+
+  React.useEffect(() => {
+    if (!mobileSidebarOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileSidebarOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileSidebarOpen]);
+
   if (checking) {
     return (
       <div className="grid min-h-screen place-items-center bg-[#f4fbf7]">
@@ -58,12 +86,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="h-screen bg-[#f4fbf7] overflow-hidden">
-      <AdminHeader />
+    <div className="min-h-[100dvh] bg-[#f4fbf7] overflow-hidden">
+      <AdminHeader
+        mobileSidebarOpen={mobileSidebarOpen}
+        onToggleSidebar={() => setMobileSidebarOpen((open) => !open)}
+      />
 
-      <div className="flex h-[calc(100vh-64px)]">
-        <AdminSidebar />
-        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+      <div className="flex h-[calc(100dvh-64px)]">
+        <AdminSidebar
+          mobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
+        />
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:ml-64 lg:px-8 lg:py-8">
           {children}
         </main>
       </div>
