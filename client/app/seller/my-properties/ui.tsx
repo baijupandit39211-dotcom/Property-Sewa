@@ -167,8 +167,8 @@ export function MyPropertiesHero({
       <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div className="max-w-3xl space-y-5">
           <div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">My Properties</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#edf6f0]/90 sm:text-base">
+            <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">My Properties</h1>
+            <p className="mt-2 max-w-2xl text-[15px] leading-6 text-white/85">
               Manage your property listings, track performance, and grow your business.
             </p>
           </div>
@@ -196,7 +196,7 @@ export function MyPropertiesHero({
           <button
             type="button"
             onClick={onRefresh}
-            className="relative z-10 inline-flex items-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/25 hover:bg-white/15"
+            className="relative z-10 inline-flex h-11 items-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/25 hover:bg-white/15"
           >
             <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
             Refresh
@@ -204,9 +204,11 @@ export function MyPropertiesHero({
 
           <Link
             href="/seller/add-property"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#13EC80] px-5 py-3 text-sm font-extrabold text-[#062016] shadow-[0_16px_36px_rgba(19,236,128,0.20)] transition hover:-translate-y-0.5 hover:brightness-95"
+            className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#316249_0%,#3E7A5C_100%)] px-5 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(49,98,73,0.22)] transition hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#28513D_0%,#316249_100%)]"
           >
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-black/10">+</span>
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-white/15 ring-1 ring-white/20">
+              +
+            </span>
             Add Property
           </Link>
         </div>
@@ -239,10 +241,10 @@ function KpiCard({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
             {title}
           </div>
-          <div className="mt-3 text-2xl font-black tracking-tight text-slate-950">
+          <div className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
             <CountUp end={Number(value || 0)} duration={0.9} separator="," preserveValue />
           </div>
         </div>
@@ -342,14 +344,14 @@ export function FiltersBar({
             value={search}
             onChange={(e) => onChangeSearch(e.target.value)}
             placeholder="Search by title, location..."
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
+            className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e) => onChangeStatus(e.target.value as any)}
-          className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
+          className="h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
         >
           <option value="all">All Status</option>
           <option value="active">Active</option>
@@ -361,7 +363,7 @@ export function FiltersBar({
         <select
           value={listingTypeFilter}
           onChange={(e) => onChangeType(e.target.value as any)}
-          className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
+          className="h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
         >
           <option value="all">All Types</option>
           <option value="buy">Buy</option>
@@ -371,7 +373,7 @@ export function FiltersBar({
         <select
           value={sort}
           onChange={(e) => onChangeSort(e.target.value as SortOption)}
-          className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
+          className="h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
         >
           {sortOptions.map((o) => (
             <option key={o.value} value={o.value}>
@@ -391,8 +393,8 @@ function MetricMini({ label, value, icon }: { label: string; value: string; icon
         {icon}
       </span>
       <div>
-        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</div>
-        <div className="mt-1 text-sm font-black tracking-tight text-slate-950">{value}</div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</div>
+        <div className="mt-1 text-lg font-bold tracking-tight text-slate-950">{value}</div>
       </div>
     </div>
   );
@@ -403,7 +405,7 @@ function LatestActivity({ row }: { row: PropertyRow }) {
   const label = row.lastLeadAt ? "New lead received" : row.lastVisitAt ? "Visit requested" : "No recent activity";
   return (
     <div className="rounded-[18px] border border-slate-200 bg-white px-4 py-3">
-      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Latest Activity</div>
+      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Latest Activity</div>
       <div className="mt-2 text-sm font-semibold text-slate-900">{label}</div>
       <div className="mt-1 text-xs text-slate-500">{formatDateTime(latest, "No activity yet")}</div>
     </div>
@@ -452,17 +454,15 @@ function PropertyRowCard({
             >
               {titleCase(row.status)}
             </span>
-            <div className="mt-2 text-[15px] font-black tracking-tight text-slate-950">
-              {row.title}
-            </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+            <div className="mt-2 text-base font-semibold text-slate-950">{row.title}</div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
               <MapPin className="h-4 w-4 text-slate-400" />
               <span className="truncate">{row.location}</span>
             </div>
-            <div className="mt-3 text-sm font-extrabold text-slate-900">
+            <div className="mt-3 text-sm font-bold text-[#316249]">
               {formatCurrency(row.price, row.currency)}
             </div>
-            <div className="mt-1 text-xs text-slate-500">
+            <div className="mt-1 text-sm text-slate-500">
               Listed on {formatDate(row.createdAt, "Unknown")}
             </div>
           </div>
@@ -538,7 +538,7 @@ export function TopListingCard({ top }: { top: PropertyRow | null }) {
           ) : null}
         </div>
         <div className="p-4">
-          <div className="text-sm font-black tracking-tight text-slate-950">{top.title}</div>
+          <div className="text-base font-bold tracking-tight text-slate-950">{top.title}</div>
           <div className="mt-1 text-xs text-slate-500">{top.location}</div>
           <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
             <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-center">
@@ -556,7 +556,7 @@ export function TopListingCard({ top }: { top: PropertyRow | null }) {
           </div>
           <Link
             href={`/seller/property/${top.id}`}
-            className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-2xl bg-[#316249] text-sm font-extrabold text-white transition hover:bg-[#28513D]"
+            className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-2xl bg-[#316249] text-sm font-semibold text-white transition hover:bg-[#28513D]"
           >
             View Details
           </Link>
@@ -701,10 +701,10 @@ export function RecentActivityCard({ items }: { items: ActivityItem[] }) {
                       {item.type}
                     </span>
                   </div>
-                  <div className="mt-2 text-sm font-bold text-slate-950">
+                  <div className="mt-2 text-sm font-semibold text-slate-900">
                     {item.actorName} on {item.propertyTitle}
                   </div>
-                  <div className="mt-1 text-sm text-slate-600">{formatDateTime(item.occurredAt)}</div>
+                  <div className="mt-1 text-xs text-slate-500">{formatDateTime(item.occurredAt)}</div>
                 </div>
                 <ChevronRight className="h-4 w-4 flex-none text-slate-300" />
               </div>
