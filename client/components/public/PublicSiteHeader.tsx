@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ChevronDown,
-  Home,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { apiFetchSafe } from "@/app/lib/api";
 import { getDashboardPath, logoutByRole } from "@/app/lib/auth";
+import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 
 type SessionUser = {
   name?: string;
@@ -142,22 +142,21 @@ export default function PublicSiteHeader() {
             "linear-gradient(90deg, #12392B 0%, #37604E 50%, #5B786A 100%)",
         }}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+        <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
+          <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-4">
           <Link
             href="/"
             aria-label="Go to Property Sewa landing page"
-            className="flex items-center gap-3 rounded-2xl transition hover:opacity-95"
+            className="flex items-center gap-4 rounded-2xl transition hover:opacity-95"
             onClick={() => setMobileNavOpen(false)}
           >
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/15">
-              <Home className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-sm font-semibold tracking-wide text-white">
+            <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
+            <span className="text-[18px] font-extrabold tracking-wide text-white">
               PROPERTY SEWA
             </span>
           </Link>
 
-          <div className="hidden items-center gap-10 text-sm md:flex">
+          <div className="hidden items-center justify-center gap-10 text-sm md:flex">
             <Link
               className="text-white transition hover:text-white"
               href="/properties?type=sale"
@@ -291,6 +290,7 @@ export default function PublicSiteHeader() {
                 <Moon className="h-4 w-4 text-white/90" />
               )}
             </button>
+          </div>
           </div>
         </div>
       </div>

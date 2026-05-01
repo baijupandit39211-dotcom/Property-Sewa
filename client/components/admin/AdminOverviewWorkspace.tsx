@@ -5,6 +5,8 @@ import Link from "next/link";
 import { apiFetchAdmin } from "@/app/lib/api";
 import { typography } from "@/app/lib/typography";
 import AdminToast from "@/components/admin/AdminToast";
+import { motion } from "framer-motion";
+import CountUp from "react-countup";
 import {
   ResponsiveContainer,
   XAxis,
@@ -196,25 +198,39 @@ function StatCard({
   value,
   detail,
   icon,
+  prefix,
+  countTo,
 }: {
   title: string;
-  value: string;
+  value: React.ReactNode;
   detail: string;
   icon: React.ReactNode;
+  prefix?: string;
+  countTo?: number;
 }) {
   return (
-    <div className="rounded-[14px] border border-[#dfe8e2] bg-white px-5 py-5 shadow-[0_6px_24px_rgba(16,24,40,0.04)]">
+    <motion.div
+      className="rounded-[14px] border border-[#dfe8e2] bg-white px-5 py-5 shadow-[0_6px_24px_rgba(16,24,40,0.04)]"
+      whileHover={{ y: -4, scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 320, damping: 24 }}
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className={typography.cardTitle}>{title}</p>
-          <p className={`mt-2 ${typography.statValue}`}>{value}</p>
+          <p className={`mt-2 ${typography.statValue}`}>
+            {typeof countTo === "number" ? (
+              <CountUp end={toSafeNumber(countTo)} duration={0.9} prefix={prefix} separator="," />
+            ) : (
+              value
+            )}
+          </p>
           <p className={`mt-2 ${typography.helperText}`}>{detail}</p>
         </div>
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#61b24a] text-white shadow-sm">
           {icon}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -274,6 +290,8 @@ function EmptyChartState({ message }: { message: string }) {
 const PAGE_BG =
   "min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.18),transparent_26%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.10),transparent_22%),linear-gradient(180deg,#f6fffa_0%,#edf8f1_100%)] p-4 sm:p-6";
 
+const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
 const PIE_COLORS = ["#2f8f4e", "#62b33d", "#f2b233", "#74719a", "#cfd8d3"];
 
 function renderPieLabel(props: any) {
@@ -322,6 +340,27 @@ function CustomRevenueTooltip({
       <p className="mt-2 text-[14px] font-medium text-[#2d6a4f]">
         revenue : {fmtNumber(Number(revenue))}
       </p>
+    </div>
+  );
+}
+
+function CustomPieTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: number; payload?: { name?: string; value?: number } }>;
+}) {
+  if (!active || !payload?.length) return null;
+
+  const datum = payload[0]?.payload ?? payload[0];
+  const name = String(datum?.name ?? "");
+  const value = toSafeNumber(datum?.value);
+
+  return (
+    <div className="rounded-md border border-[#d9e3dc] bg-white px-4 py-3 shadow-md">
+      <p className="mb-2 text-[15px] font-medium text-[#243b53]">{formatLabel(name)}</p>
+      <p className="text-[14px] font-medium text-[#2d6a4f]">{fmtNumber(value)}</p>
     </div>
   );
 }
@@ -404,6 +443,67 @@ export default function AdminOverviewWorkspace() {
   const recentProperties = overview.lists.pendingListings.slice(0, 4);
   const topAgents = overview.lists.recentUsers.slice(0, 4);
   const latestLeads = overview.lists.recentReports.slice(0, 5);
+
+  const statCards = React.useMemo(
+    () => [
+      {
+        key: "properties",
+        title: "Total Properties",
+        value: overview.stats.properties.total,
+        detail: `${fmtNumber(overview.stats.properties.active)} active`,
+        icon: <CheckCircle2 className="h-5 w-5" />,
+      },
+      {
+        key: "owners",
+        title: "Total Owners",
+        value: overview.stats.users.sellers + overview.stats.users.agents,
+        detail: `${fmtNumber(overview.stats.users.agents)} agents`,
+        icon: <ShieldAlert className="h-5 w-5" />,
+      },
+      {
+        key: "users",
+        title: "Total Users",
+        value: overview.stats.users.total,
+        detail: `${fmtNumber(overview.stats.users.active)} active accounts`,
+        icon: <Users className="h-5 w-5" />,
+      },
+      {
+        key: "earnings",
+        title: "Total Earnings",
+        value: overview.stats.commerce.paidRevenue,
+        prefix: "₹",
+        detail: `${fmtNumber(overview.stats.commerce.paidPayments)} paid payments`,
+        icon: <CreditCard className="h-5 w-5" />,
+      },
+    ],
+    [overview]
+  );
+
+  const statGridVariants = React.useMemo(
+    () => ({
+      hidden: {},
+      show: {
+        transition: {
+          staggerChildren: 0.12,
+          delayChildren: 0.05,
+        },
+      },
+    }),
+    []
+  );
+
+  const statCardVariants = React.useMemo(
+    () => ({
+      hidden: { opacity: 0, y: 18, scale: 0.98 },
+      show: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        transition: { duration: 0.42, ease: EASE_OUT },
+      },
+    }),
+    []
+  );
 
   if (loading) {
     return (
@@ -499,35 +599,57 @@ export default function AdminOverviewWorkspace() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            title="Total Properties"
-            value={fmtNumber(overview.stats.properties.total)}
-            detail={`${fmtNumber(overview.stats.properties.active)} active`}
-            icon={<CheckCircle2 className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Total Owners"
-            value={fmtNumber(overview.stats.users.sellers + overview.stats.users.agents)}
-            detail={`${fmtNumber(overview.stats.users.agents)} agents`}
-            icon={<ShieldAlert className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Total Users"
-            value={fmtNumber(overview.stats.users.total)}
-            detail={`${fmtNumber(overview.stats.users.active)} active accounts`}
-            icon={<Users className="h-5 w-5" />}
-          />
-          <StatCard
+        <motion.section
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+          variants={statGridVariants}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.div variants={statCardVariants}>
+            <StatCard
+              title="Total Properties"
+              countTo={overview.stats.properties.total}
+              value={overview.stats.properties.total}
+              detail={`${fmtNumber(overview.stats.properties.active)} active`}
+              icon={<CheckCircle2 className="h-5 w-5" />}
+            />
+          </motion.div>
+          <motion.div variants={statCardVariants}>
+            <StatCard
+              title="Total Owners"
+              countTo={overview.stats.users.sellers + overview.stats.users.agents}
+              value={overview.stats.users.sellers + overview.stats.users.agents}
+              detail={`${fmtNumber(overview.stats.users.agents)} agents`}
+              icon={<ShieldAlert className="h-5 w-5" />}
+            />
+          </motion.div>
+          <motion.div variants={statCardVariants}>
+            <StatCard
+              title="Total Users"
+              countTo={overview.stats.users.total}
+              value={overview.stats.users.total}
+              detail={`${fmtNumber(overview.stats.users.active)} active accounts`}
+              icon={<Users className="h-5 w-5" />}
+            />
+          </motion.div>
+          <motion.div variants={statCardVariants}>
+            <StatCard
             title="Total Earnings"
+            countTo={overview.stats.commerce.paidRevenue}
             value={`₹${fmtMoney(overview.stats.commerce.paidRevenue)}`}
             detail={`${fmtNumber(overview.stats.commerce.paidPayments)} paid payments`}
             icon={<CreditCard className="h-5 w-5" />}
-          />
-        </section>
+            />
+          </motion.div>
+        </motion.section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <CardShell>
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.46, ease: EASE_OUT }}
+          >
+            <CardShell>
             <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
               <h2 className={typography.sectionTitle}>Revenue Stats</h2>
             </div>
@@ -579,14 +701,18 @@ export default function AdminOverviewWorkspace() {
                         dataKey="revenue"
                         fill="url(#earningsFill)"
                         stroke="none"
-                        isAnimationActive={false}
+                        isAnimationActive={true}
+                        animationDuration={1200}
+                        animationEasing="ease-out"
                       />
                       <Area
                         type="monotone"
                         dataKey="payments"
                         fill="url(#commissionFill)"
                         stroke="none"
-                        isAnimationActive={false}
+                        isAnimationActive={true}
+                        animationDuration={1200}
+                        animationEasing="ease-out"
                       />
 
                       <Line
@@ -596,7 +722,9 @@ export default function AdminOverviewWorkspace() {
                         strokeWidth={3}
                         dot={{ r: 3, fill: "#ffffff", stroke: "#2d6a4f", strokeWidth: 2 }}
                         activeDot={{ r: 5, fill: "#ffffff", stroke: "#2d6a4f", strokeWidth: 2 }}
-                        isAnimationActive={false}
+                        isAnimationActive={true}
+                        animationDuration={1200}
+                        animationEasing="ease-out"
                       />
                       <Line
                         type="monotone"
@@ -605,7 +733,9 @@ export default function AdminOverviewWorkspace() {
                         strokeWidth={3}
                         dot={{ r: 3, fill: "#ffffff", stroke: "#62b33d", strokeWidth: 2 }}
                         activeDot={{ r: 5, fill: "#ffffff", stroke: "#62b33d", strokeWidth: 2 }}
-                        isAnimationActive={false}
+                        isAnimationActive={true}
+                        animationDuration={1200}
+                        animationEasing="ease-out"
                       />
                     </ComposedChart>
                   </ResponsiveContainer>
@@ -614,9 +744,15 @@ export default function AdminOverviewWorkspace() {
                 )}
               </div>
             </div>
-          </CardShell>
+            </CardShell>
+          </motion.div>
 
-          <CardShell>
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.46, ease: EASE_OUT, delay: 0.05 }}
+          >
+            <CardShell>
             <div className="flex items-center justify-between border-b border-[#e8efeb] px-5 py-4">
               <h2 className={typography.sectionTitle}>Property Listings</h2>
               <LinkLike href="/admin/listings-approval" label="View All" />
@@ -638,7 +774,8 @@ export default function AdminOverviewWorkspace() {
                         paddingAngle={1.5}
                         labelLine={false}
                         label={renderPieLabel}
-                        isAnimationActive={false}
+                        isAnimationActive={true}
+                        animationDuration={900}
                       >
                         {propertyStatusData.map((entry, index) => (
                           <Cell
@@ -647,7 +784,7 @@ export default function AdminOverviewWorkspace() {
                           />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip content={<CustomPieTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -685,7 +822,8 @@ export default function AdminOverviewWorkspace() {
                 )}
               </div>
             </div>
-          </CardShell>
+            </CardShell>
+          </motion.div>
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">

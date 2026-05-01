@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import CountUp from "react-countup";
 import {
   Activity,
   ArrowRight,
@@ -116,6 +118,7 @@ const titleCase = (s: string) =>
 
 export default function SellerDashboardPage() {
   const { user } = useSellerAuth();
+  const reduceMotion = useReducedMotion();
   const [range, setRange] = useState<RangeOption>("30d");
   const [search, setSearch] = useState("");
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -211,7 +214,7 @@ export default function SellerDashboardPage() {
                 <p className={`mt-1.5 ${typography.pageSubtitle}`}>
                   Get a clear view of your real estate portfolio.
                 </p>
-                <Link href="/" className={`mt-2.5 inline-flex items-center gap-1 text-emerald-700 transition duration-300 hover:translate-x-1 hover:text-emerald-800 ${typography.buttonTextMuted}`}>
+                <Link href="/" className={`mt-2.5 inline-flex items-center gap-1 text-[#316249] transition duration-300 hover:translate-x-1 hover:text-[#28513D] ${typography.buttonTextMuted}`}>
                   Back to Home
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -220,12 +223,12 @@ export default function SellerDashboardPage() {
               <div className="flex flex-col gap-3 xl:min-w-[780px] xl:flex-row xl:items-center xl:justify-end">
                 <HeaderSearch value={search} onChange={setSearch} />
 
-                <Link href="/seller/add-property" className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 text-white shadow-[0_10px_24px_rgba(16,185,129,0.20)] transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-[0_16px_28px_rgba(16,185,129,0.28)] ${typography.buttonTextMuted}`}>
+                <Link href="/seller/add-property" className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#316249] px-6 text-white shadow-[0_10px_24px_rgba(49,98,73,0.20)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#28513D] hover:shadow-[0_16px_28px_rgba(49,98,73,0.28)] ${typography.buttonTextMuted}`}>
                   <Plus className="h-4 w-4" />
                   Add Property
                 </Link>
 
-                <button type="button" onClick={refresh} disabled={refreshing} className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-emerald-200 bg-[#fcfffd] text-emerald-700 shadow-[0_8px_20px_rgba(16,185,129,0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-white hover:shadow-[0_14px_24px_rgba(16,185,129,0.15)] disabled:opacity-60" aria-label="Refresh dashboard">
+                <button type="button" onClick={refresh} disabled={refreshing} className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-emerald-200 bg-[#fcfffd] text-[#316249] shadow-[0_8px_20px_rgba(16,185,129,0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-[#316249] hover:bg-white hover:shadow-[0_14px_24px_rgba(16,185,129,0.15)] disabled:opacity-60" aria-label="Refresh dashboard">
                   <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
                 </button>
 
@@ -282,7 +285,7 @@ export default function SellerDashboardPage() {
                     </p>
                   </div>
                   {filteredRecentActivity.length > 0 ? (
-                    <Link href="/seller/leads" className={`text-emerald-700 transition hover:text-emerald-800 ${typography.buttonTextMuted}`}>
+                    <Link href="/seller/leads" className={`text-[#316249] transition hover:text-[#28513D] ${typography.buttonTextMuted}`}>
                       Open Inbox
                     </Link>
                   ) : null}
@@ -326,35 +329,78 @@ export default function SellerDashboardPage() {
           {!isSearching ? (
           <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_360px]" style={DEFER}>
             <div className="space-y-5">
-              <section className="grid gap-4 md:grid-cols-3">
-                <MetricCard
-                  title="Total Properties"
-                  value={fmtNum(summary?.totalListings || 0)}
-                  helper={`${fmtNum(summary?.pendingListings || 0)} pending approvals`}
-                  icon={Home}
-                  positive={(summary?.pendingListings || 0) === 0}
-                />
-                <MetricCard
-                  title="Avg. Commission"
-                  value={fmtPct(summary?.conversionRate || 0)}
-                  helper={`${getSignedDelta(summary?.conversionDelta || 0)} from last month`}
-                  icon={Percent}
-                  positive={(summary?.conversionDelta || 0) >= 0}
-                />
-                <MetricCard
-                  title="Property Views"
-                  value={fmtNum(summary?.views || 0)}
-                  helper={`${getSignedDelta(summary?.viewsDelta || 0)} from last month`}
-                  icon={Eye}
-                  positive={(summary?.viewsDelta || 0) >= 0}
-                />
-              </section>
+              <motion.section
+                className="grid gap-4 md:grid-cols-3"
+                initial={reduceMotion ? false : "hidden"}
+                animate={reduceMotion ? undefined : "show"}
+                variants={{
+                  hidden: {},
+                  show: { transition: { staggerChildren: 0.12, delayChildren: 0.04 } },
+                }}
+              >
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0, y: 18, scale: 0.98 },
+                      show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.42, ease: EASE_OUT } },
+                    }}
+                  >
+                  <MetricCard
+                    title="Total Properties"
+                    value={<CountUp end={Number(summary?.totalListings || 0)} duration={0.9} separator="," preserveValue />}
+                    helper={`${fmtNum(summary?.pendingListings || 0)} pending approvals`}
+                    icon={Home}
+                    positive={(summary?.pendingListings || 0) === 0}
+                  />
+                </motion.div>
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0, y: 18, scale: 0.98 },
+                      show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.42, ease: EASE_OUT } },
+                    }}
+                  >
+                  <MetricCard
+                    title="Avg. Commission"
+                    value={
+                      <CountUp
+                        end={Number(summary?.conversionRate || 0)}
+                        duration={0.95}
+                        decimals={1}
+                        suffix="%"
+                        preserveValue
+                      />
+                    }
+                    helper={`${getSignedDelta(summary?.conversionDelta || 0)} from last month`}
+                    icon={Percent}
+                    positive={(summary?.conversionDelta || 0) >= 0}
+                  />
+                </motion.div>
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0, y: 18, scale: 0.98 },
+                      show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.42, ease: EASE_OUT } },
+                    }}
+                  >
+                  <MetricCard
+                    title="Property Views"
+                    value={<CountUp end={Number(summary?.views || 0)} duration={0.9} separator="," preserveValue />}
+                    helper={`${getSignedDelta(summary?.viewsDelta || 0)} from last month`}
+                    icon={Eye}
+                    positive={(summary?.viewsDelta || 0) >= 0}
+                  />
+                </motion.div>
+              </motion.section>
 
               <TrendChartCard trends={analytics?.trends || []} range={range} setRange={setRange} />
             </div>
 
             <div className="space-y-5">
-              <section className={cn(CARD, "seller-reveal seller-delay-2 seller-hover-card p-5 sm:p-6")}>
+              <motion.section
+                className={cn(CARD, "seller-hover-card p-5 sm:p-6")}
+                initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ duration: 0.48, ease: EASE_OUT }}
+              >
                 <div className="flex items-center justify-between">
                   <h2 className="text-[20px] font-semibold tracking-tight text-slate-900">
                     Live Snapshot
@@ -364,38 +410,114 @@ export default function SellerDashboardPage() {
                   </span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className={cn(SOFT_CARD, "p-4")}>
+                <motion.div
+                  className="mt-4 grid grid-cols-2 gap-3"
+                  initial={reduceMotion ? false : "hidden"}
+                  whileInView={reduceMotion ? undefined : "show"}
+                  viewport={{ once: true, amount: 0.25 }}
+                  variants={{
+                    hidden: {},
+                    show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+                  }}
+                >
+                  <motion.div
+                    className={cn(SOFT_CARD, "p-4")}
+                    variants={{
+                      hidden: { opacity: 0, y: 12, scale: 0.99 },
+                      show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.38, ease: EASE_OUT } },
+                    }}
+                  >
                     <div className="text-sm text-slate-500">Active Listings</div>
-                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">{fmtNum(summary?.activeListings || 0)}</div>
-                  </div>
-                  <div className={cn(SOFT_CARD, "p-4")}>
+                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">
+                      <CountUp end={Number(summary?.activeListings || 0)} duration={0.9} separator="," preserveValue />
+                    </div>
+                  </motion.div>
+                  <motion.div
+                    className={cn(SOFT_CARD, "p-4")}
+                    variants={{
+                      hidden: { opacity: 0, y: 12, scale: 0.99 },
+                      show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.38, ease: EASE_OUT } },
+                    }}
+                  >
                     <div className="text-sm text-slate-500">Fresh Leads</div>
-                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">{fmtNum(summary?.leads || 0)}</div>
-                  </div>
-                  <div className={cn(SOFT_CARD, "p-4")}>
+                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">
+                      <CountUp end={Number(summary?.leads || 0)} duration={0.9} separator="," preserveValue />
+                    </div>
+                  </motion.div>
+                  <motion.div
+                    className={cn(SOFT_CARD, "p-4")}
+                    variants={{
+                      hidden: { opacity: 0, y: 12, scale: 0.99 },
+                      show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.38, ease: EASE_OUT } },
+                    }}
+                  >
                     <div className="text-sm text-slate-500">Visit Requests</div>
-                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">{fmtNum(summary?.visits || 0)}</div>
-                  </div>
-                  <div className={cn(SOFT_CARD, "p-4")}>
+                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">
+                      <CountUp end={Number(summary?.visits || 0)} duration={0.9} separator="," preserveValue />
+                    </div>
+                  </motion.div>
+                  <motion.div
+                    className={cn(SOFT_CARD, "p-4")}
+                    variants={{
+                      hidden: { opacity: 0, y: 12, scale: 0.99 },
+                      show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.38, ease: EASE_OUT } },
+                    }}
+                  >
                     <div className="text-sm text-slate-500">Completion Rate</div>
-                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">{fmtPct(summary?.visitCompletionRate || 0)}</div>
-                  </div>
-                </div>
+                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">
+                      <CountUp
+                        end={Number(summary?.visitCompletionRate || 0)}
+                        duration={0.95}
+                        decimals={1}
+                        suffix="%"
+                        preserveValue
+                      />
+                    </div>
+                  </motion.div>
+                </motion.div>
 
                 {topListing ? (
-                  <div className="mt-4 rounded-[18px] bg-[linear-gradient(135deg,#0d8d63_0%,#0f7a65_100%)] p-4 text-white shadow-[0_12px_28px_rgba(15,122,101,0.24)]">
+                  <motion.div
+                    className="mt-4 rounded-[18px] bg-[linear-gradient(135deg,#316249_0%,#28513D_100%)] p-4 text-white shadow-[0_12px_28px_rgba(49,98,73,0.24)]"
+                    initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+                    whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.35 }}
+                    transition={{ duration: 0.45, ease: EASE_OUT, delay: 0.04 }}
+                    whileHover={reduceMotion ? undefined : { y: -4, scale: 1.01 }}
+                  >
                     <div className="text-xs uppercase tracking-[0.18em] text-white/75">Top Listing</div>
                     <div className="mt-2 text-lg font-semibold">{topListing.title}</div>
                     <div className="mt-1 text-sm text-white/80">{topListing.location}</div>
-                    <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full bg-white/15 px-3 py-1">{fmtNum(topListing.views)} views</span>
-                      <span className="rounded-full bg-white/15 px-3 py-1">{fmtNum(topListing.leads)} leads</span>
-                      <span className="rounded-full bg-white/15 px-3 py-1">{fmtNum(topListing.visits)} visits</span>
-                    </div>
-                  </div>
+                    <motion.div
+                      className="mt-4 flex flex-wrap gap-2 text-xs"
+                      initial={reduceMotion ? false : "hidden"}
+                      whileInView={reduceMotion ? undefined : "show"}
+                      viewport={{ once: true, amount: 0.35 }}
+                      variants={{
+                        hidden: {},
+                        show: { transition: { staggerChildren: 0.08, delayChildren: 0.06 } },
+                      }}
+                    >
+                      {[
+                        { label: `${fmtNum(topListing.views)} views`, key: "views" },
+                        { label: `${fmtNum(topListing.leads)} leads`, key: "leads" },
+                        { label: `${fmtNum(topListing.visits)} visits`, key: "visits" },
+                      ].map((chip) => (
+                        <motion.span
+                          key={chip.key}
+                          className="rounded-full bg-white/15 px-3 py-1"
+                          variants={{
+                            hidden: { opacity: 0, y: 10, scale: 0.98 },
+                            show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: EASE_OUT } },
+                          }}
+                        >
+                          {chip.label}
+                        </motion.span>
+                      ))}
+                    </motion.div>
+                  </motion.div>
                 ) : null}
-              </section>
+              </motion.section>
 
               <DistributionCard items={analytics?.breakdowns.listings || []} />
             </div>
@@ -414,7 +536,7 @@ export default function SellerDashboardPage() {
                 </p>
               </div>
 
-              <Link href="/seller/my-properties" className={`text-emerald-700 transition hover:text-emerald-800 ${typography.buttonTextMuted}`}>
+              <Link href="/seller/my-properties" className={`text-[#316249] transition hover:text-[#28513D] ${typography.buttonTextMuted}`}>
                 View All
               </Link>
             </div>
@@ -426,7 +548,7 @@ export default function SellerDashboardPage() {
             ) : (
               <div className={cn(CARD, "px-6 py-16 text-center")}>
                 <div className="mx-auto max-w-md">
-                  <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+                  <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-[#316249]">
                     <Home className="h-6 w-6" />
                   </div>
                   <h3 className={typography.sectionTitle}>
@@ -438,7 +560,7 @@ export default function SellerDashboardPage() {
                       : "Add your first property to start seeing portfolio insights."}
                   </p>
                   {!normalizedSearch ? (
-                    <Link href="/seller/add-property" className={`mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 text-white transition hover:bg-emerald-700 ${typography.buttonTextMuted}`}>
+                    <Link href="/seller/add-property" className={`mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#316249] px-5 text-white transition hover:bg-[#28513D] ${typography.buttonTextMuted}`}>
                       <Plus className="h-4 w-4" />
                       Add Property
                     </Link>
@@ -461,7 +583,7 @@ export default function SellerDashboardPage() {
                       Latest lead and visit activity across your properties.
                     </p>
                   </div>
-                  <Link href="/seller/leads" className={`text-emerald-700 transition hover:text-emerald-800 ${typography.buttonTextMuted}`}>
+                  <Link href="/seller/leads" className={`text-[#316249] transition hover:text-[#28513D] ${typography.buttonTextMuted}`}>
                     Open Inbox
                   </Link>
                 </div>
@@ -499,7 +621,7 @@ export default function SellerDashboardPage() {
                     <h2 className={typography.sectionTitle}>
                       Quick Actions
                     </h2>
-                    <Sparkles className="h-4 w-4 text-emerald-600" />
+                    <Sparkles className="h-4 w-4 text-[#316249]" />
                   </div>
 
                   <div className="mt-4 grid gap-3">
@@ -513,7 +635,7 @@ export default function SellerDashboardPage() {
                       return (
                         <Link key={item.href} href={item.href} className={cn(SOFT_CARD, "seller-soft-hover flex items-center justify-between gap-3 p-4 hover:border-emerald-200 hover:bg-white")}>
                           <div className="flex items-center gap-3">
-                            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-[#316249] ring-1 ring-emerald-100">
                               <Icon className="h-5 w-5" />
                             </div>
                             <div>
@@ -584,3 +706,4 @@ export default function SellerDashboardPage() {
     </main>
   );
 }
+  const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];

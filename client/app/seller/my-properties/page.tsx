@@ -12,12 +12,14 @@ import {
 import {
   AlertCircle,
   BarChart3,
+  Building2,
   CalendarClock,
   ChevronRight,
   Clock3,
   Eye,
   Home,
   LoaderCircle,
+  ListChecks,
   MapPin,
   PencilLine,
   Plus,
@@ -30,6 +32,16 @@ import {
 } from "lucide-react";
 
 import { apiFetch } from "@/app/lib/api";
+import {
+  FiltersBar,
+  KpiStrip,
+  MyPropertiesHero,
+  PaginationBar,
+  PropertyList,
+  RecentActivityCard,
+  StatusSummaryDonut,
+  TopListingCard,
+} from "./ui";
 
 type RangeOption = "7d" | "30d" | "90d";
 type SortOption =
@@ -549,61 +561,17 @@ export default function SellerMyPropertiesPage() {
         </div>
       </div>
 
-      <section
-        style={SECTION_RENDER_STYLE}
-        className="relative overflow-hidden rounded-[34px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_20px_60px_rgba(19,74,54,0.16)] md:px-8 md:py-7"
-      >
-        <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
-        <div className="absolute -right-10 top-10 h-40 w-40 rounded-full border border-white/12" />
-        <div className="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
-
-        <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-          <div className="max-w-3xl space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
-              <Sparkles className="h-3.5 w-3.5" />
-              Seller inventory workspace
-            </div>
-            <div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">My Properties</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#edf6f0]/90 sm:text-base">
-                Manage your listing inventory, monitor real performance, track approval status,
-                and move into edit or detail views from one production-ready seller workspace.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {RANGE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() =>
-                    startTransition(() => {
-                      setRange(option.value);
-                    })
-                  }
-                  className={cn(
-                    "rounded-full border px-4 py-2 text-sm font-semibold transition",
-                    range === option.value
-                      ? "border-white bg-white text-slate-950"
-                      : "border-white/15 bg-white/10 text-white hover:border-white/25 hover:bg-white/15"
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setRefreshToken((value) => value + 1)}
-            className="relative z-10 inline-flex items-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/25 hover:bg-white/15"
-          >
-            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-            Refresh
-          </button>
-        </div>
-      </section>
+      <MyPropertiesHero
+        range={range}
+        rangeOptions={RANGE_OPTIONS}
+        isRefreshing={isRefreshing}
+        onChangeRange={(next) => {
+          startTransition(() => {
+            setRange(next);
+          });
+        }}
+        onRefresh={() => setRefreshToken((value) => value + 1)}
+      />
 
       {error && analytics && (
         <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
@@ -611,118 +579,79 @@ export default function SellerMyPropertiesPage() {
         </div>
       )}
 
-      <section
-        style={SECTION_RENDER_STYLE}
-        className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Link
-            href="/seller/add-property"
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)] transition-transform duration-150 ease-out motion-safe:hover:-translate-y-0.5"
-          >
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
-              <Plus className="h-5 w-5" />
-            </div>
-            <div className="mt-4 text-lg font-black tracking-tight text-slate-950">Add property</div>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Create a new listing and send it into the seller approval workflow.
-            </p>
-          </Link>
+      <KpiStrip summary={summary} />
 
-          <Link
-            href="/seller/analytics"
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)] transition-transform duration-150 ease-out motion-safe:hover:-translate-y-0.5"
-          >
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
-              <BarChart3 className="h-5 w-5" />
+      <FiltersBar
+        search={search}
+        onChangeSearch={(v) => {
+          setPage(1);
+          setSearch(v);
+        }}
+        statusFilter={statusFilter}
+        onChangeStatus={(v) => {
+          setPage(1);
+          setStatusFilter(v);
+        }}
+        listingTypeFilter={listingTypeFilter}
+        onChangeType={(v) => {
+          setPage(1);
+          setListingTypeFilter(v);
+        }}
+        sort={sort}
+        onChangeSort={(v) => {
+          setPage(1);
+          setSort(v);
+        }}
+        sortOptions={SORT_OPTIONS}
+      />
+
+      <section style={SECTION_RENDER_STYLE} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-5">
+          {rows.length === 0 ? (
+            <div className="rounded-[26px] border border-dashed border-slate-200 bg-white px-6 py-12 text-center shadow-[0_14px_40px_rgba(15,23,42,0.04)]">
+              <div className="mt-4 text-lg font-black tracking-tight text-slate-950">No properties yet</div>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Add your first listing to start tracking performance and leads.
+              </p>
+              <Link
+                href="/seller/add-property"
+                className="mt-6 inline-flex items-center justify-center rounded-full bg-[#316249] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(49,98,73,0.25)] transition hover:bg-[#28513D]"
+              >
+                Add property
+              </Link>
             </div>
-            <div className="mt-4 text-lg font-black tracking-tight text-slate-950">Open analytics</div>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Jump into the seller reporting workspace for deeper inventory performance analysis.
-            </p>
-          </Link>
+          ) : filteredRows.length === 0 ? (
+            <div className="rounded-[26px] border border-dashed border-slate-200 bg-white px-6 py-12 text-center shadow-[0_14px_40px_rgba(15,23,42,0.04)]">
+              <div className="mt-4 text-lg font-black tracking-tight text-slate-950">No properties found</div>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Try adjusting your search, status, type, or sort options.
+              </p>
+            </div>
+          ) : (
+            <PropertyList
+              rows={paginatedRows}
+              onRequestDelete={(row) => {
+                if (deletingId) return;
+                setDeleteTarget(row);
+              }}
+            />
+          )}
+
+          <PaginationBar page={currentPage} totalPages={totalPages} onChangePage={setPage} />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-[repeat(3,minmax(0,1fr))]">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Approval queue
-            </div>
-            <div className="mt-3 text-3xl font-black tracking-tight text-slate-950">
-              {formatNumber(summary.pendingListings)}
-            </div>
-            <p className="mt-2 text-sm text-slate-600">Listings still waiting for moderation approval.</p>
-          </div>
-
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Engaged listings
-            </div>
-            <div className="mt-3 text-3xl font-black tracking-tight text-slate-950">
-              {formatNumber(summary.engagedListings)}
-            </div>
-            <p className="mt-2 text-sm text-slate-600">Listings with views, leads, or visits in the selected range.</p>
-          </div>
-
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Last refresh
-            </div>
-            <div className="mt-3 text-lg font-black tracking-tight text-slate-950">
-              {formatDateTime(lastUpdatedAt, "Just now")}
-            </div>
-            <p className="mt-2 text-sm text-slate-600">Latest successful inventory snapshot.</p>
-          </div>
-
-          <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)] md:col-span-3">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Workflow note
-            </div>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Editing a listing sends it back through the approval flow. Active, pending,
-              rejected, and draft properties are all managed here.
-            </p>
-          </div>
+        <div className="space-y-5">
+          <TopListingCard top={topProperty} />
+          <StatusSummaryDonut summary={summary} />
+          <RecentActivityCard items={recentActivity} />
         </div>
       </section>
 
-      <section
-        style={SECTION_RENDER_STYLE}
-        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
-      >
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <article
-              key={card.title}
-              className={cn(
-                "rounded-[28px] border p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)] transition-transform duration-150 ease-out motion-safe:hover:-translate-y-0.5",
-                card.tone
-              )}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {card.title}
-                  </div>
-                  <div className="mt-3 text-4xl font-black tracking-tight text-slate-950">
-                    {card.value}
-                  </div>
-                </div>
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
-                  <Icon className="h-5 w-5" />
-                </div>
-              </div>
-              <div className={cn("mt-4 text-sm", card.detailTone || "text-slate-600")}>{card.detail}</div>
-            </article>
-          );
-        })}
-      </section>
-
-      <section
-        style={SECTION_RENDER_STYLE}
-        className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px]"
-      >
+      {false && (
+        <section
+          style={SECTION_RENDER_STYLE}
+          className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px]"
+        >
         <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -1018,10 +947,10 @@ export default function SellerMyPropertiesPage() {
             </div>
             <div className="mt-5 space-y-3">
               {[
-                { label: "Active", value: summary.activeListings, tone: "bg-emerald-50 text-emerald-800" },
-                { label: "Pending", value: summary.pendingListings, tone: "bg-amber-50 text-amber-800" },
-                { label: "Rejected", value: summary.rejectedListings, tone: "bg-rose-50 text-rose-800" },
-                { label: "Draft", value: summary.draftListings, tone: "bg-slate-100 text-slate-700" },
+                { label: "Active", value: summary!.activeListings, tone: "bg-emerald-50 text-emerald-800" },
+                { label: "Pending", value: summary!.pendingListings, tone: "bg-amber-50 text-amber-800" },
+                { label: "Rejected", value: summary!.rejectedListings, tone: "bg-rose-50 text-rose-800" },
+                { label: "Draft", value: summary!.draftListings, tone: "bg-slate-100 text-slate-700" },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -1092,7 +1021,8 @@ export default function SellerMyPropertiesPage() {
             </div>
           </div>
         </div>
-      </section>
+        </section>
+      )}
 
       <DeleteModal
         open={!!deleteTarget}

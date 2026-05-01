@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
 import { apiFetch } from "../lib/api";
 import { Mail, Lock, Eye, EyeOff, Phone, Menu } from "lucide-react";
+import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 
 declare global {
   interface Window {
@@ -147,31 +148,19 @@ export default function LoginPage() {
             "linear-gradient(90deg, #012B21 0%, #1E4739 50%, #5B786A 100%)",
         }}
       >
-        <div className="mx-auto flex h-[84px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Left: menu icon block + text */}
+        <div className="flex h-[84px] w-full items-center justify-between px-4 sm:px-6 lg:px-[80px]">
+          {/* Left: brand */}
           <div className="flex items-center gap-4">
-            <div className="grid h-[46px] w-[46px] place-items-center rounded-[14px] bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]">
-              <Menu className="h-5 w-5 text-[#1DFF91]" />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col gap-[5px]">
-                <span className="block h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
-                <span className="block h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
-                <span className="block h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
-              </div>
-
-              <Link
-                href="/"
-                className="text-[18px] font-extrabold tracking-wide text-white"
-              >
+            <Link href="/" className="flex items-center gap-4">
+              <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
+              <span className="text-[18px] font-extrabold tracking-wide text-white">
                 PROPERTY SEWA
-              </Link>
-            </div>
+              </span>
+            </Link>
           </div>
 
           {/* Center links */}
-          <nav className="hidden items-center gap-10 text-[14px] font-medium text-white/90 md:flex">
+          <nav className="hidden flex-1 items-center justify-center gap-10 text-[14px] font-medium text-white/90 md:flex">
             <Link href="/properties?type=sale" className="hover:text-white transition">
               For Sale
             </Link>

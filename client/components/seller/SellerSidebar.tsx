@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
 import { usePathname } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
 import {
   BarChart3,
   Bell,
@@ -13,6 +13,7 @@ import {
   MessageSquare,
   PhoneIncoming,
 } from "lucide-react";
+import { subscribeToChatSocket } from "@/app/lib/chatSocket";
 
 const links = [
   { label: "Dashboard", href: "/seller/seller-dashboard", icon: Home },
@@ -37,6 +38,33 @@ export default function SellerSidebar({
   onCloseMobile: () => void;
 }) {
   const pathname = usePathname();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const seenMessageIdsRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    // TODO: Connect to a backend unread count endpoint when available (e.g. GET /messages/unread-count).
+    // For now we start at 0 and update in real-time using existing chat socket events.
+    const unsubscribe = subscribeToChatSocket({
+      onNewMessage: ({ message }) => {
+        const messageId = String(message?._id || "").trim();
+        if (!messageId || seenMessageIdsRef.current.has(messageId)) return;
+        seenMessageIdsRef.current.add(messageId);
+
+        // Only count incoming buyer messages as unread for the seller.
+        if (message.senderRole !== "buyer") return;
+
+        // If the seller is currently on the messages page, don’t increment the sidebar badge.
+        // (We intentionally do not reset counts here; read state is handled elsewhere.)
+        if (pathname.startsWith("/seller/messages")) return;
+
+        setUnreadMessages((prev) => Math.min(999, prev + 1));
+      },
+    });
+
+    return () => unsubscribe();
+  }, [pathname]);
+
+  const unreadLabel = unreadMessages > 99 ? "99+" : String(unreadMessages);
 
   return (
     <>
@@ -60,6 +88,7 @@ export default function SellerSidebar({
         {links.map((link, idx) => {
           const Icon = link.icon;
           const active = pathname === link.href;
+          const isMessages = link.href === "/seller/messages";
           return (
             <a
               key={`${link.href}-${idx}`}
@@ -68,12 +97,17 @@ export default function SellerSidebar({
               className={[
                 "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition",
                 active
-                  ? "bg-[#2C6B45] text-white shadow-sm"
-                  : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800",
+                  ? "bg-[#316249] text-white shadow-sm"
+                  : "text-slate-700 hover:bg-emerald-50 hover:text-[#316249]",
               ].join(" ")}
             >
               <Icon className="h-5 w-5" />
               <span className="leading-none">{link.label}</span>
+              {isMessages && unreadMessages > 0 ? (
+                <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#b9f323] px-1.5 text-[11px] font-bold text-[#06351f]">
+                  {unreadLabel}
+                </span>
+              ) : null}
             </a>
           );
         })}
@@ -88,7 +122,7 @@ export default function SellerSidebar({
                 key={`${link.href}-${idx}`}
                 href={link.href}
                 onClick={() => onCloseMobile()}
-                className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 hover:bg-emerald-50 hover:text-emerald-800"
+                className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 hover:bg-emerald-50 hover:text-[#316249]"
               >
                 <Icon className="h-5 w-5" />
                 {link.label}

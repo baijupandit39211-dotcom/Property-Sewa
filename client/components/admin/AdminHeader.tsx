@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
 import { logoutByRole } from "@/app/lib/auth";
+import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 
 const NotificationBell = dynamic(() => import("@/components/notifications/NotificationBell"), {
   ssr: false,
@@ -62,7 +63,7 @@ export default function AdminHeader({
   const roleLabel = (user?.role || "admin").toUpperCase();
 
   return (
-    <header className="sticky top-0 z-50 bg-[#2f5d46] shadow">
+    <header className="sticky top-0 z-50 bg-[#316249] shadow">
       <div className="flex h-16 items-center justify-between px-4 text-white shadow-md sm:px-6">
         <div className="flex items-center gap-3">
           {onToggleSidebar ? (
@@ -78,14 +79,10 @@ export default function AdminHeader({
           ) : null}
 
           <Link href="/admin/overview" className="flex items-center gap-3">
-          <div className="relative h-7 w-7 shrink-0 rounded-xl bg-white/10">
-            <span className="absolute left-[8px] top-[7px] h-1.5 w-3.5 rounded-full bg-[#32f29a]" />
-            <span className="absolute left-[8px] top-[12px] h-1.5 w-3.5 rounded-full bg-[#6df9ba]" />
-            <span className="absolute left-[8px] top-[17px] h-1.5 w-3.5 rounded-full bg-[#32f29a]" />
-          </div>
-          <span className="text-lg font-extrabold tracking-wide text-white">
-            PROPERTY SEWA
-          </span>
+            <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
+            <span className="text-lg font-extrabold tracking-wide text-white">
+              PROPERTY SEWA
+            </span>
           </Link>
         </div>
 

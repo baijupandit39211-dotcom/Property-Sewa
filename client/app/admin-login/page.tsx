@@ -3,6 +3,7 @@
 import Link from "next/link";
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 import { apiFetch, apiFetchSafe } from "../lib/api"; // ✅ add apiFetchSafe
 
 export default function AdminLoginPage() {
@@ -53,8 +54,9 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-[#f4fbf7]">
       <header className="border-b border-white/10 bg-[#2f5d46]">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-lg font-extrabold text-white">
-            PROPERTY SEWA
+          <Link href="/" className="flex items-center gap-4 text-lg font-extrabold text-white">
+            <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
+            <span>PROPERTY SEWA</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link

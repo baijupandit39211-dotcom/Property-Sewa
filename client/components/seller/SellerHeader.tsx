@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut, Menu, Search, X } from "lucide-react";
 import { logoutUser } from "@/app/lib/auth";
+import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 
 const NotificationBell = dynamic(() => import("@/components/notifications/NotificationBell"), {
   ssr: false,
@@ -38,7 +39,7 @@ export default function SellerHeader({
   };
 
   return (
-    <header className="flex h-16 items-center justify-between bg-[#2F6B4A] px-4 text-white shadow-md sm:px-6">
+    <header className="flex h-16 items-center justify-between bg-[#316249] px-4 text-white shadow-md sm:px-6">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -49,13 +50,7 @@ export default function SellerHeader({
         >
           {mobileSidebarOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
         </button>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10">
-          <div className="flex flex-col gap-[5px]">
-            <span className="h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
-            <span className="h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
-            <span className="h-[5px] w-[18px] rounded-full bg-[#1DFF91]" />
-          </div>
-        </div>
+        <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
         <span className="text-base font-extrabold tracking-[0.12em]">PROPERTY SEWA</span>
       </div>
 

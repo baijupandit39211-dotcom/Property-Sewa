@@ -22,7 +22,7 @@ import { typography } from "../../lib/typography";
 import type { Property } from "../../lib/property.types";
 import AdActionsMenu from "@/app/property/[id]/_components/AdActionsMenu";
 
-const BRAND = "#1f6b58";
+const BRAND = "#316249";
 
 export function Toast({ show, text }: { show: boolean; text: string }) {
   return (
@@ -151,7 +151,7 @@ export function DiscoveryCard({ property }: { property: Property | null }) {
         </div>
 
         <div className="relative mx-auto h-[150px] w-[200px] max-w-full rounded-[26px] bg-white/70 p-3 shadow-[0_20px_40px_rgba(15,23,42,0.08)] backdrop-blur">
-          <div className="absolute -left-3 top-8 h-4 w-4 rounded-full bg-[#1f6b58] shadow-sm" />
+          <div className="absolute -left-3 top-8 h-4 w-4 rounded-full bg-[#316249] shadow-sm" />
           <div className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white text-rose-500 shadow-sm">
             <Heart className="h-4 w-4 fill-rose-500" />
           </div>
@@ -187,7 +187,7 @@ export function SectionHeading({
       <h2 className={typography.sectionTitle}>{title}</h2>
       <Link
         href={actionHref}
-        className={`inline-flex items-center gap-2 text-[#1f6b58] transition hover:opacity-80 ${typography.buttonText}`}
+        className={`inline-flex items-center gap-2 text-[#316249] transition hover:opacity-80 ${typography.buttonText}`}
       >
         {actionText}
         <ChevronRight className="h-4 w-4" />
@@ -400,7 +400,7 @@ export function BudgetOverviewCard({
         <div>
           <h3 className={typography.sectionTitle}>Budget Overview</h3>
           <p className={`mt-1 ${typography.helperText}`}>Set your preferred range</p>
-          <div className="mt-6 text-2xl font-semibold tracking-tight text-[#1f6b58] md:text-3xl">
+          <div className="mt-6 text-2xl font-semibold tracking-tight text-[#316249] md:text-3xl">
             {formatCompactCurrency(budget.current)}
           </div>
           <p className={`mt-2 ${typography.helperText}`}>of {formatCompactCurrency(budget.target)}</p>
@@ -420,8 +420,7 @@ export function BudgetOverviewCard({
 
       <Link
         href="/buyer/profile"
-        className={`mt-6 inline-flex h-11 w-full items-center justify-center rounded-2xl text-white transition hover:-translate-y-0.5 ${typography.buttonText}`}
-        style={{ backgroundColor: BRAND }}
+        className={`mt-6 inline-flex h-11 w-full items-center justify-center rounded-2xl bg-[#316249] text-white transition hover:-translate-y-0.5 hover:bg-[#28513D] ${typography.buttonText}`}
       >
         Edit Budget
       </Link>
@@ -434,7 +433,7 @@ export function UpcomingVisitsCard({ items }: { items: Property[] }) {
     <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
       <div className="flex items-center justify-between gap-4">
         <h3 className={typography.sectionTitle}>Upcoming Visits</h3>
-        <Link href="/buyer/search-properties" className={`text-[#1f6b58] ${typography.buttonText}`}>
+        <Link href="/buyer/search-properties" className={`text-[#316249] ${typography.buttonText}`}>
           View all
         </Link>
       </div>
@@ -483,7 +482,7 @@ export function MessagesCard({
     <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
       <div className="flex items-center justify-between gap-4">
         <h3 className={typography.sectionTitle}>Messages</h3>
-        <Link href="/buyer/messages" className={`text-[#1f6b58] ${typography.buttonText}`}>
+        <Link href="/buyer/messages" className={`text-[#316249] ${typography.buttonText}`}>
           View all
         </Link>
       </div>
@@ -502,7 +501,7 @@ export function MessagesCard({
               {index === 2 ? (
                 <BookmarkCheck className="h-5 w-5" />
               ) : (
-                <UserRound className="h-5 w-5 text-[#1f6b58]" />
+                <UserRound className="h-5 w-5 text-[#316249]" />
               )}
             </div>
             <div className="min-w-0 flex-1">
@@ -562,7 +561,7 @@ export function LiveActivityCard({
             {index !== items.length - 1 ? (
               <span className="absolute left-[14px] top-8 h-[calc(100%-8px)] w-px bg-[#d9e3dc]" />
             ) : null}
-            <span className="absolute left-0 top-0 grid h-7 w-7 place-items-center rounded-full bg-[#edf5f0] text-[#1f6b58]">
+            <span className="absolute left-0 top-0 grid h-7 w-7 place-items-center rounded-full bg-[#edf5f0] text-[#316249]">
               <Sparkles className="h-3.5 w-3.5" />
             </span>
             <p className={typography.pageEyebrow}>{item.label}</p>
@@ -637,7 +636,7 @@ function fallbackImage(property: Property) {
       </defs>
       <rect width="1200" height="800" fill="url(#g)"/>
       <text x="50%" y="48%" text-anchor="middle" fill="#0f172a" font-family="Arial, sans-serif" font-size="56" font-weight="700">${title}</text>
-      <text x="50%" y="57%" text-anchor="middle" fill="#1f6b58" font-family="Arial, sans-serif" font-size="24" letter-spacing="6">PROPERTY SEWA</text>
+      <text x="50%" y="57%" text-anchor="middle" fill="#316249" font-family="Arial, sans-serif" font-size="24" letter-spacing="6">PROPERTY SEWA</text>
     </svg>`
   )}`;
 }

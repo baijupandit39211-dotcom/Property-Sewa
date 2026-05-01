@@ -71,7 +71,7 @@ export default function BuyerSidebar({
                 className={[
                   "flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition",
                   isActive
-                    ? "bg-[#2C6B45] text-white"
+                    ? "bg-[#316249] text-white"
                     : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800",
                 ].join(" ")}
               >

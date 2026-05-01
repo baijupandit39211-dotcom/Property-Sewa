@@ -6,6 +6,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
 import { apiFetch } from "../lib/api";
+import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 
 declare global {
   interface Window {
@@ -197,9 +198,10 @@ export default function RegisterPage() {
       </div>
 
       <header className="bg-[#2f5d46]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/" className="text-lg font-extrabold text-white">
-            PROPERTY SEWA
+        <div className="flex w-full items-center justify-between px-4 py-4 sm:px-6 lg:px-[80px]">
+          <Link href="/" className="flex items-center gap-4 text-lg font-extrabold text-white">
+            <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
+            <span>PROPERTY SEWA</span>
           </Link>
 
           <div className="flex items-center gap-3">

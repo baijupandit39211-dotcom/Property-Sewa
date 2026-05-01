@@ -38,7 +38,7 @@ type ListResponse = {
 
 type ToastState = { show: boolean; text: string };
 
-const BRAND = "#1f6b58";
+const BRAND = "#316249";
 const PAGE_BG = "#f3f4f6";
 const COMPARE_KEY = "property-sewa:compare:v1";
 const MAX_COMPARE = 2;
@@ -353,8 +353,7 @@ export default function BuyerDashboardPage() {
 
                 <Link
                   href={searchText.trim() ? `/buyer/search-properties?q=${encodeURIComponent(searchText.trim())}` : "/buyer/search-properties"}
-                  className={`inline-flex h-12 items-center gap-3 rounded-2xl px-6 text-white shadow-[0_12px_30px_rgba(31,107,88,0.22)] transition hover:-translate-y-0.5 ${typography.buttonText}`}
-                  style={{ backgroundColor: BRAND }}
+                  className={`inline-flex h-12 items-center gap-3 rounded-2xl bg-[#316249] px-6 text-white shadow-[0_12px_30px_rgba(49,98,73,0.22)] transition hover:-translate-y-0.5 hover:bg-[#28513D] ${typography.buttonText}`}
                 >
                   <Search className="h-4 w-4" />
                   Find Properties
@@ -363,7 +362,7 @@ export default function BuyerDashboardPage() {
 
               <div className="mt-7 grid gap-4 xl:grid-cols-[repeat(4,minmax(0,1fr))_minmax(280px,1fr)]">
                 <OverviewCard
-                  icon={<Heart className="h-5 w-5 text-[#1f6b58]" />}
+                  icon={<Heart className="h-5 w-5 text-[#316249]" />}
                   label="Saved Homes"
                   value={wishlistIds.length}
                   meta="View all"
