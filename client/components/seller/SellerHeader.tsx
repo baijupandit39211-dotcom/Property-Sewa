@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Menu, Search, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { logoutUser } from "@/app/lib/auth";
 import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 
@@ -55,13 +55,6 @@ export default function SellerHeader({
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 md:flex">
-          <Search className="h-4 w-4 text-slate-500" />
-          <input
-            placeholder="Search"
-            className="w-[220px] bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-          />
-        </div>
         <NotificationBell
           notificationsPageHref="/seller/notifications"
           buttonClassName="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"

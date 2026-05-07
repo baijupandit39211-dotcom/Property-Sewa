@@ -37,6 +37,7 @@ type ListResponse = {
 };
 
 type ToastState = { show: boolean; text: string };
+type DashboardMessageItem = { sender: string; body: string; time: string };
 
 const BRAND = "#316249";
 const PAGE_BG = "#f3f4f6";
@@ -74,6 +75,7 @@ export default function BuyerDashboardPage() {
   const [offerProperties, setOfferProperties] = useState<Property[]>([]);
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [messageItems, setMessageItems] = useState<DashboardMessageItem[]>([]);
   const [searchText, setSearchText] = useState("");
   const [reportModal, setReportModal] = useState<{ open: boolean; adId: string | null }>({
     open: false,
@@ -132,6 +134,74 @@ export default function BuyerDashboardPage() {
         console.error(offersResult.reason);
         setOfferProperties([]);
       }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+
+    function formatMessageTime(value?: string | Date | null) {
+      if (!value) return "";
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      return new Intl.DateTimeFormat("en-NP", {
+        month: "short",
+        day: "2-digit",
+      }).format(date);
+    }
+
+    (async () => {
+      const leads = await apiFetch<{ items?: Array<{ _id?: string }> }>("/leads/my-inquiries", {
+        signal: controller.signal,
+      }).catch(() => null);
+
+      if (cancelled) return;
+
+      const leadIds =
+        leads?.items
+          ?.map((lead) => lead._id)
+          .filter((id): id is string => typeof id === "string" && id.length > 0) || [];
+
+      if (!leadIds.length) {
+        setMessageItems([]);
+        return;
+      }
+
+      const topLeadIds = leadIds.slice(0, 3);
+      const results = await Promise.allSettled(
+        topLeadIds.map((leadId) =>
+          apiFetch<{ items?: Array<any> }>(`/messages/${leadId}`, { signal: controller.signal })
+        )
+      );
+
+      if (cancelled) return;
+
+      const nextItems: DashboardMessageItem[] = results
+        .map((result) => {
+          if (result.status !== "fulfilled") return null;
+          const messages = result.value.items || [];
+          if (!messages.length) return null;
+          const last = messages[messages.length - 1];
+          const senderName =
+            last?.senderId?.name ||
+            (last?.senderRole === "seller" ? "Seller" : last?.senderRole === "buyer" ? "You" : "Message");
+          const body = String(last?.text || "").trim();
+          if (!body) return null;
+          return {
+            sender: senderName,
+            body,
+            time: formatMessageTime(last?.createdAt) || "",
+          };
+        })
+        .filter((item): item is DashboardMessageItem => Boolean(item));
+
+      setMessageItems(nextItems);
     })();
 
     return () => {
@@ -227,14 +297,14 @@ export default function BuyerDashboardPage() {
     [offerProperties, properties]
   );
 
-  const savedCollection = useMemo(() => {
-    const savedMatches = properties.filter((property) => wishlistSet.has(property._id));
-    return (savedMatches.length ? savedMatches : properties).slice(0, 4);
-  }, [properties, wishlistSet]);
+  const savedProperties = useMemo(
+    () => properties.filter((property) => wishlistSet.has(property._id)).slice(0, 4),
+    [properties, wishlistSet]
+  );
 
   const upcomingVisitListings = useMemo(
-    () => (savedCollection.length ? savedCollection : recommendedListings).slice(0, 3),
-    [recommendedListings, savedCollection]
+    () => (savedProperties.length ? savedProperties : recommendedListings).slice(0, 3),
+    [recommendedListings, savedProperties]
   );
 
   const recentSearches = useMemo(() => {
@@ -275,11 +345,11 @@ export default function BuyerDashboardPage() {
   }, [marketListings]);
 
   const summaryValue = useMemo(() => {
-    const portfolio = [...savedCollection, ...recommendedListings];
+    const portfolio = [...savedProperties, ...recommendedListings];
     const total = portfolio.reduce((sum, property) => sum + (Number(property.price) || 0), 0);
     const average = portfolio.length ? total / portfolio.length : 0;
     return { total, average, count: portfolio.length };
-  }, [recommendedListings, savedCollection]);
+  }, [recommendedListings, savedProperties]);
 
   const budgetOverview = useMemo(() => {
     const current = summaryValue.average || summaryValue.total || 0;
@@ -287,27 +357,6 @@ export default function BuyerDashboardPage() {
     const percent = Math.max(8, Math.min(92, Math.round((current / target) * 100)));
     return { current, target, percent };
   }, [summaryValue]);
-
-  const messageItems = useMemo(
-    () => [
-      {
-        sender: "Aarav Shrestha",
-        body: `${savedCollection[0]?.title || "A saved property"} is ready for review.`,
-        time: "10:24 AM",
-      },
-      {
-        sender: "Real Estate Agent",
-        body: `${recommendedListings[0]?.location || "A new listing"} has a fresh update.`,
-        time: "Yesterday",
-      },
-      {
-        sender: "Property Sewa Team",
-        body: `${wishlistIds.length} saved homes are synced to your dashboard.`,
-        time: "2 days ago",
-      },
-    ],
-    [recommendedListings, savedCollection, wishlistIds.length]
-  );
 
   const heroSummary = `Find your next dream property from ${properties.length || 0} active listings and ${offerProperties.length || 0} curated offer matches.`;
 
@@ -336,7 +385,7 @@ export default function BuyerDashboardPage() {
         />
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_292px]">
-          <div className="space-y-8">
+          <div className="space-y-10">
             <section className="rounded-[30px] border border-white/80 bg-white/90 px-6 py-6 shadow-[0_14px_35px_rgba(15,23,42,0.04)] sm:px-8">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
                 <div className="max-w-3xl">
@@ -356,7 +405,7 @@ export default function BuyerDashboardPage() {
                   className={`inline-flex h-12 items-center gap-3 rounded-2xl bg-[#316249] px-6 text-white shadow-[0_12px_30px_rgba(49,98,73,0.22)] transition hover:-translate-y-0.5 hover:bg-[#28513D] ${typography.buttonText}`}
                 >
                   <Search className="h-4 w-4" />
-                  Find Properties
+                  Explore Properties
                 </Link>
               </div>
 
@@ -390,7 +439,7 @@ export default function BuyerDashboardPage() {
                   accent="#fff4dc"
                 />
 
-                <DiscoveryCard property={recommendedListings[0] || savedCollection[0] || properties[0] || null} />
+                <DiscoveryCard property={recommendedListings[0] || savedProperties[0] || properties[0] || null} />
               </div>
             </section>
 
@@ -423,7 +472,7 @@ export default function BuyerDashboardPage() {
               </div>
             </section>
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_316px]">
+            <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_316px]">
               <section className="rounded-[30px] border border-white/80 bg-white/90 p-6 shadow-[0_14px_35px_rgba(15,23,42,0.04)] sm:p-7">
                 <SectionHeading
                   title="Saved Properties"
@@ -431,9 +480,9 @@ export default function BuyerDashboardPage() {
                   actionText="See all"
                 />
 
-                <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-                  {savedCollection.length ? (
-                    savedCollection.map((property) => (
+                <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {savedProperties.length ? (
+                    savedProperties.map((property) => (
                       <SavedPropertyCard
                         key={property._id}
                         property={property}
@@ -447,7 +496,7 @@ export default function BuyerDashboardPage() {
                       />
                     ))
                   ) : (
-                    <EmptyState message="Saved homes will show here once wishlist data is available." />
+                    <EmptyState message="No saved homes yet. Save properties to keep them here for quick access." />
                   )}
                 </div>
               </section>

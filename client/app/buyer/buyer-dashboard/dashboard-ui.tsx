@@ -57,39 +57,48 @@ export function PageSearchBar({
   return (
     <div className="rounded-[28px] border border-white/80 bg-white/90 px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.035)]">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <label className="flex h-14 flex-1 items-center gap-3 rounded-full border border-[#ece8e0] bg-[#fbfaf7] px-5">
-          <Search className="h-5 w-5 text-slate-400" />
-          <input
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Search location, city, or property type..."
-            className={`w-full bg-transparent outline-none ${typography.inputText}`}
-          />
-        </label>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <TopRoundIcon href="/buyer/notifications" icon={<Bell className="h-4 w-4" />} />
-          <TopRoundIcon href="/buyer/wishlist" icon={<Heart className="h-4 w-4" />} />
-          <Link
-            href={searchHref}
-            className={`inline-flex h-11 items-center rounded-full border border-[#d7ddd4] bg-white px-4 text-slate-700 transition hover:-translate-y-0.5 hover:shadow-sm ${typography.buttonText}`}
-          >
-            Search
-          </Link>
-          <div className="flex items-center gap-3 rounded-full border border-[#e1e4df] bg-white px-3 py-1.5 shadow-sm">
-            <span
-              className="grid h-10 w-10 place-items-center rounded-full text-sm font-semibold text-white"
-              style={{ backgroundColor: BRAND }}
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex h-12 w-full items-center rounded-full border border-[#ece8e0] bg-[#fbfaf7] px-4 shadow-[0_10px_22px_rgba(15,23,42,0.03)]">
+            <Search className="h-5 w-5 shrink-0 text-slate-400" />
+            <input
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder="Search location, city, or property type..."
+              className={`ml-3 w-full bg-transparent outline-none ${typography.inputText}`}
+            />
+            <Link
+              href={searchHref}
+              className={`ml-3 inline-flex h-9 shrink-0 items-center rounded-full bg-[#316249] px-4 text-white shadow-[0_10px_22px_rgba(49,98,73,0.18)] transition hover:-translate-y-0.5 hover:bg-[#28513D] ${typography.buttonText}`}
             >
-              {firstName(userName).slice(0, 1).toUpperCase()}
-            </span>
-            <div className="pr-2">
-              <p className={typography.profileName}>{userName}</p>
-              <p className={typography.profileMeta}>Buyer</p>
-            </div>
+              Search
+            </Link>
           </div>
-          <div className={`rounded-full bg-[#eff4f1] px-4 py-2 text-[#0d5c45] ${typography.buttonText}`}>
-            {wishlistCount} saved
+
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
+            <div className="flex items-center gap-3">
+              <TopRoundIcon href="/buyer/notifications" icon={<Bell className="h-4 w-4" />} />
+              <TopRoundIcon href="/buyer/wishlist" icon={<Heart className="h-4 w-4" />} />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 rounded-full border border-[#e1e4df] bg-white px-3 py-1.5 shadow-sm">
+                <span
+                  className="grid h-10 w-10 place-items-center rounded-full text-sm font-semibold text-white"
+                  style={{ backgroundColor: BRAND }}
+                >
+                  {firstName(userName).slice(0, 1).toUpperCase()}
+                </span>
+                <div className="pr-2">
+                  <p className={typography.profileName}>{userName}</p>
+                  <p className={typography.profileMeta}>Buyer</p>
+                </div>
+              </div>
+              <div
+                className={`rounded-full bg-[#eff4f1] px-4 py-2 text-[#0d5c45] ${typography.buttonText}`}
+              >
+                {wishlistCount} saved
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -217,84 +226,96 @@ export function RecommendationCard({
   onToggleCompare: () => void;
   onReport: (input: { adId?: string | null; title?: string; location?: string }) => void;
 }) {
+  const detailsHref = `/buyer/property/${property._id}`;
   return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.18 }}
-      className="overflow-hidden rounded-[24px] border border-[#ece8e0] bg-white shadow-[0_14px_28px_rgba(15,23,42,0.04)]"
-    >
-      <div className="relative h-[190px] overflow-hidden bg-slate-100">
-        <img
-          src={property.images?.[0]?.url || fallbackImage(property)}
-          alt={property.title}
-          className="h-full w-full object-cover transition duration-300 hover:scale-[1.03]"
-          loading="lazy"
-          decoding="async"
-        />
-        <div className="absolute left-4 top-4 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-900 shadow-sm">
-          {label}
-        </div>
-        <div className="absolute right-4 top-4 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onToggleWish();
-            }}
-            className={[
-              "grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition",
-              wishPop ? "scale-110" : "",
-            ].join(" ")}
-          >
-            <Heart className={["h-4 w-4", wishSaved ? "fill-rose-500 text-rose-500" : ""].join(" ")} />
-          </button>
-        </div>
-      </div>
-
-      <div className="p-4">
-        <div className={typography.statValue}>{formatPrice(property)}</div>
-        <Link href={`/buyer/property/${property._id}`} className="mt-2 block text-sm font-medium text-slate-900">
-          {property.title}
-        </Link>
-        <div className={`mt-2 flex items-center gap-1 ${typography.helperText}`}>
-          <MapPin className="h-3.5 w-3.5 text-rose-400" />
-          {property.location || property.address}
-        </div>
-        <div className={`mt-4 flex flex-wrap gap-3 ${typography.helperText}`}>
-          <InlineSpec icon={<Compass className="h-3.5 w-3.5" />} text={`${property.beds || 0} Beds`} />
-          <InlineSpec icon={<Bath className="h-3.5 w-3.5" />} text={`${property.baths || 0} Baths`} />
-          <InlineSpec icon={<Ruler className="h-3.5 w-3.5" />} text={`${numberCompact(property.sqft)} sqft`} />
-        </div>
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={onToggleCompare}
-            className={[
-              `inline-flex h-9 items-center rounded-full px-3 transition ${typography.buttonText}`,
-              compareOn ? "bg-slate-900 text-white" : "border border-[#dfe5df] bg-white text-slate-700",
-              comparePop ? "scale-105" : "",
-            ].join(" ")}
-          >
-            Compare
-          </button>
-          <div
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-            }}
-          >
-            <AdActionsMenu
-              adId={property._id}
-              title={property.title}
-              location={property.location || property.address}
-              variant="icon"
-              onReport={onReport}
-            />
+    <Link href={detailsHref} className="group block focus:outline-none">
+      <motion.div
+        whileHover={{ y: -4 }}
+        transition={{ duration: 0.18 }}
+        className="overflow-hidden rounded-[24px] border border-[#ece8e0] bg-white shadow-[0_14px_28px_rgba(15,23,42,0.04)] transition group-hover:border-[#316249] group-hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+      >
+        <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+          <img
+            src={property.images?.[0]?.url || fallbackImage(property)}
+            alt={property.title}
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="absolute left-4 top-4 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-900 shadow-sm">
+            {label}
+          </div>
+          <div className="absolute right-4 top-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onToggleWish();
+              }}
+              className={[
+                "grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition",
+                wishPop ? "scale-110" : "",
+              ].join(" ")}
+            >
+              <Heart
+                className={["h-4 w-4", wishSaved ? "fill-rose-500 text-rose-500" : ""].join(" ")}
+              />
+            </button>
           </div>
         </div>
-      </div>
-    </motion.div>
+
+        <div className="p-5">
+          <div className="text-xl font-semibold tracking-tight text-slate-900">
+            {formatPrice(property)}
+          </div>
+          <p className="mt-2 line-clamp-2 text-sm font-semibold text-slate-900">{property.title}</p>
+          <div className={`mt-2 flex items-center gap-1 ${typography.helperText}`}>
+            <MapPin className="h-3.5 w-3.5 text-rose-400" />
+            <span className="line-clamp-1">{property.location || property.address}</span>
+          </div>
+          <div className={`mt-4 flex flex-wrap gap-3 ${typography.helperText}`}>
+            <InlineSpec icon={<Compass className="h-3.5 w-3.5" />} text={`${property.beds || 0} Beds`} />
+            <InlineSpec icon={<Bath className="h-3.5 w-3.5" />} text={`${property.baths || 0} Baths`} />
+            <InlineSpec icon={<Ruler className="h-3.5 w-3.5" />} text={`${numberCompact(property.sqft)} sqft`} />
+          </div>
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onToggleCompare();
+              }}
+              className={[
+                `inline-flex h-9 items-center rounded-full px-3 transition ${typography.buttonText}`,
+                compareOn ? "bg-slate-900 text-white" : "border border-[#dfe5df] bg-white text-slate-700 hover:border-[#316249]",
+                comparePop ? "scale-105" : "",
+              ].join(" ")}
+            >
+              Compare
+            </button>
+            <div className="flex items-center gap-3">
+              <span className={`text-[#316249] ${typography.buttonText}`}>View details</span>
+              <div
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+              >
+                <AdActionsMenu
+                  adId={property._id}
+                  title={property.title}
+                  location={property.location || property.address}
+                  variant="icon"
+                  onReport={onReport}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </Link>
   );
 }
 
@@ -317,71 +338,101 @@ export function SavedPropertyCard({
   onToggleCompare: () => void;
   onReport: (input: { adId?: string | null; title?: string; location?: string }) => void;
 }) {
+  const detailsHref = `/buyer/property/${property._id}`;
+  const rawPrice = Number(property.price) || 0;
+  const priceText = rawPrice > 0 ? formatNprCompact(rawPrice) : "NPR -";
   return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.18 }}
-      className="overflow-hidden rounded-[24px] border border-[#ece8e0] bg-white shadow-[0_14px_28px_rgba(15,23,42,0.04)]"
-    >
-      <div className="relative h-[170px] overflow-hidden bg-slate-100">
-        <img
-          src={property.images?.[0]?.url || fallbackImage(property)}
-          alt={property.title}
-          className="h-full w-full object-cover"
-          loading="lazy"
-          decoding="async"
-        />
-        <button
-          type="button"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onToggleWish();
-          }}
-          className={[
-            "absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition",
-            wishPop ? "scale-110" : "",
-          ].join(" ")}
-        >
-          <Heart className={["h-4 w-4", wishSaved ? "fill-rose-500 text-rose-500" : ""].join(" ")} />
-        </button>
-      </div>
-
-      <div className="p-4">
-        <div className={typography.statValue}>{formatPrice(property)}</div>
-        <Link href={`/buyer/property/${property._id}`} className="mt-2 block text-sm font-medium text-slate-900">
-          {property.title}
-        </Link>
-        <div className={`mt-2 ${typography.pageSubtitle}`}>{property.location || property.address}</div>
-        <div className="mt-4 flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={onToggleCompare}
-            className={[
-              `inline-flex h-9 items-center rounded-full px-3 transition ${typography.buttonText}`,
-              compareOn ? "bg-slate-900 text-white" : "border border-[#dfe5df] bg-white text-slate-700",
-              comparePop ? "scale-105" : "",
-            ].join(" ")}
-          >
-            Compare
-          </button>
-          <div
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-            }}
-          >
-            <AdActionsMenu
-              adId={property._id}
-              title={property.title}
-              location={property.location || property.address}
-              variant="icon"
-              onReport={onReport}
-            />
+    <Link href={detailsHref} className="group block min-w-0 focus:outline-none">
+      <motion.div
+        whileHover={{ y: -4 }}
+        transition={{ duration: 0.18 }}
+        className="w-full min-w-0 overflow-hidden rounded-[24px] border border-[#ece8e0] bg-white shadow-[0_14px_28px_rgba(15,23,42,0.04)] transition group-hover:border-[#316249] group-hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+      >
+        <div className="relative aspect-[16/10] w-full max-h-[160px] overflow-hidden rounded-t-[24px] bg-slate-100">
+          <img
+            src={property.images?.[0]?.url || fallbackImage(property)}
+            alt={property.title}
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="absolute right-3 top-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onToggleWish();
+              }}
+              className={[
+                "grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition",
+                wishPop ? "scale-110" : "",
+              ].join(" ")}
+            >
+              <Heart
+                className={["h-4 w-4", wishSaved ? "fill-rose-500 text-rose-500" : ""].join(" ")}
+              />
+            </button>
+            <div
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+            >
+              <AdActionsMenu
+                adId={property._id}
+                title={property.title}
+                location={property.location || property.address}
+                variant="icon"
+                onReport={onReport}
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </motion.div>
+
+        <div className="flex min-w-0 flex-col p-4">
+          <div className="min-w-0 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="whitespace-nowrap text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
+                  {priceText}
+                </div>
+                <p className="mt-2 truncate text-sm font-semibold text-slate-900">{property.title}</p>
+                <p className={`mt-1 truncate ${typography.pageSubtitle}`}>{property.location || property.address}</p>
+              </div>
+              <span className="hidden shrink-0 rounded-full bg-[#eff4f1] px-3 py-1.5 text-[11px] font-semibold text-[#316249] sm:inline">
+                Saved
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-auto grid grid-cols-1 gap-3 pt-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onToggleCompare();
+              }}
+              className={[
+                "inline-flex w-full min-w-0 items-center justify-center rounded-full border border-slate-200 px-3 py-2 transition",
+                compareOn
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "bg-white text-slate-800 hover:border-[#316249]",
+                comparePop ? "scale-105" : "",
+                typography.buttonText,
+              ].join(" ")}
+            >
+              Compare
+            </button>
+
+            <span className="w-full sm:flex-1 inline-flex items-center justify-center rounded-full border border-[#316249] px-4 py-2 text-sm font-semibold text-[#316249] transition group-hover:bg-[#316249]/10">
+              View details
+            </span>
+          </div>
+        </div>
+      </motion.div>
+    </Link>
   );
 }
 
@@ -397,23 +448,24 @@ export function BudgetOverviewCard({
   return (
     <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className={typography.sectionTitle}>Budget Overview</h3>
-          <p className={`mt-1 ${typography.helperText}`}>Set your preferred range</p>
-          <div className="mt-6 text-2xl font-semibold tracking-tight text-[#316249] md:text-3xl">
-            {formatCompactCurrency(budget.current)}
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            <h3 className={typography.sectionTitle}>Budget Overview</h3>
+            <span className="rounded-full bg-[#eff4f1] px-3 py-1 text-xs font-semibold text-[#316249]">
+              {budget.percent}%
+            </span>
           </div>
-          <p className={`mt-2 ${typography.helperText}`}>of {formatCompactCurrency(budget.target)}</p>
-        </div>
+          <p className={`mt-1 ${typography.helperText}`}>Set your preferred range</p>
 
-        <div
-          className="grid h-24 w-24 place-items-center rounded-full"
-          style={{
-            background: `conic-gradient(${BRAND} 0 ${budget.percent}%, #d9e6df ${budget.percent}% 100%)`,
-          }}
-        >
-          <div className="grid h-[76px] w-[76px] place-items-center rounded-full bg-white text-xl font-semibold text-slate-900">
-            {budget.percent}%
+          <div className="mt-6 text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
+            {formatNprCompact(budget.current)}
+          </div>
+          <p className={`mt-2 ${typography.helperText}`}>of {formatNprCompact(budget.target)}</p>
+
+          <div className="mt-4">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#d9e6df]">
+              <div className="h-full rounded-full bg-[#316249]" style={{ width: `${budget.percent}%` }} />
+            </div>
           </div>
         </div>
       </div>
@@ -589,28 +641,29 @@ function numberCompact(value: number) {
   return new Intl.NumberFormat("en-US").format(Number(value) || 0);
 }
 
-function formatCompactCurrency(value: number) {
-  if (!value) return "$0";
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (abs >= 100_000) return `Rs. ${(value / 100_000).toFixed(1)} L`;
-  if (abs >= 1_000) return `$${(value / 1_000).toFixed(1)}K`;
-  return `$${Math.round(value).toLocaleString()}`;
+function formatNpr(value: number) {
+  const amount = Number(value) || 0;
+  return new Intl.NumberFormat("en-NP", {
+    style: "currency",
+    currency: "NPR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function formatNprCompact(value: number) {
+  const amount = Number(value) || 0;
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? "-" : "";
+
+  if (abs >= 1_000_000_000) return `${sign}NPR ${(abs / 1_000_000_000).toFixed(1)}B`;
+  if (abs >= 1_000_000) return `${sign}NPR ${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}NPR ${(abs / 1_000).toFixed(1)}K`;
+  return formatNpr(amount);
 }
 
 function formatPrice(property: Property) {
-  const currency = property.currency || "USD";
   const price = Number(property.price) || 0;
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 0,
-    }).format(price);
-  } catch {
-    return `${currency} ${price.toLocaleString()}`;
-  }
+  return formatNpr(price);
 }
 
 function derivedVisitDate(index: number) {
