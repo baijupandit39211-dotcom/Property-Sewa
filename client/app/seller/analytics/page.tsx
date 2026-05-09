@@ -1399,31 +1399,15 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <section className="rounded-[28px] border border-[#e3e9e4] bg-[linear-gradient(180deg,#f8faf8_0%,#f3f6f4_100%)] px-5 py-5 shadow-[0_10px_34px_rgba(15,23,42,0.04)] sm:px-6">
+      <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-white text-emerald-700">
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                className="h-[20px] w-[20px]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 20V13.5" />
-                <path d="M8.5 20V11" />
-                <path d="M13 20V8" />
-                <path d="M17.5 20V5.5" />
-                <path d="M3 20h16.5" />
-                <path d="M4.5 10.5 8 7l2.6 2.2L17.8 2" />
-                <path d="m15.8 2 2 0 0 2" />
-              </svg>
-            </div>
-            <h1 className="mt-4 text-[30px] font-semibold tracking-tight text-slate-950">Seller Analytics</h1>
-            <p className="mt-1 text-sm text-slate-600">Track your property performance and grow your business.</p>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+              <LineChart className="h-3.5 w-3.5" />
+              Seller analytics
+            </span>
+            <h1 className="mt-4 text-[30px] font-semibold tracking-tight text-white">Seller Analytics</h1>
+            <p className="mt-3 text-sm leading-6 text-emerald-50/90">Track your property performance and grow your business.</p>
           </div>
 
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
@@ -1436,7 +1420,7 @@ export default function AnalyticsPage() {
                     setRange(event.target.value as RangeOption);
                   })
                 }
-                className="h-11 w-full appearance-none rounded-xl border border-[#dde5df] bg-white pl-10 pr-10 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-400"
+                className="h-11 w-full appearance-none rounded-xl border border-white/15 bg-white/10 pl-10 pr-10 text-sm font-medium text-white outline-none transition focus:border-white/30"
               >
                 {RANGE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -1444,7 +1428,7 @@ export default function AnalyticsPage() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
             </div>
 
             <div className="relative xl:w-[180px]">
@@ -1452,18 +1436,18 @@ export default function AnalyticsPage() {
                 type="button"
                 disabled
                 title="Comparison mode is not available for seller analytics yet"
-                className="inline-flex h-11 w-full cursor-not-allowed items-center justify-between rounded-xl border border-[#dde5df] bg-[#f8faf8] px-4 pr-10 text-sm font-medium text-slate-500"
+                className="inline-flex h-11 w-full cursor-not-allowed items-center justify-between rounded-xl border border-white/15 bg-white/10 px-4 pr-10 text-sm font-medium text-white/80"
               >
                 Compare unavailable
               </button>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
             </div>
 
             <div
               className={cn(
                 "inline-flex h-11 min-w-[120px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium transition",
                 isRefreshing
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 opacity-100"
+                  ? "border-white/20 bg-white/10 text-white opacity-100"
                   : "pointer-events-none border-transparent bg-transparent text-transparent opacity-0"
               )}
               aria-live="polite"
@@ -1476,7 +1460,7 @@ export default function AnalyticsPage() {
               type="button"
               onClick={exportPdf}
               disabled={exporting !== null}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#cbe4d4] bg-white px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {exporting === "pdf" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Export Report
@@ -1484,7 +1468,7 @@ export default function AnalyticsPage() {
 
             <Link
               href="/seller/add-property"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
             >
               <Plus className="h-4 w-4" />
               Add Property

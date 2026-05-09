@@ -582,7 +582,7 @@ function SearchPropertiesPageContent() {
       <Toast show={toast.show} text={toast.text} />
 
       <div className="mx-auto max-w-7xl space-y-4">
-        <section className="ps-fade-up overflow-hidden rounded-3xl border border-emerald-200/90 bg-emerald-800 px-6 py-8 text-white shadow-md sm:px-8">
+        <section className="ps-fade-up overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-50">

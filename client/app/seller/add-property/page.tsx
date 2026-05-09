@@ -389,25 +389,18 @@ export default function SellerAddPropertyPage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_22%),linear-gradient(180deg,#eef6f1_0%,#f8fbf9_100%)] px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 overflow-hidden rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,250,248,0.96)_100%)] shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-          <div className="border-b border-slate-200/80 px-6 py-4 sm:px-8">
+        <div className="mb-6 overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-start gap-4">
-                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#316249] text-white shadow-[0_16px_30px_rgba(49,98,73,0.28)]">
-                  <Home className="h-7 w-7" />
-                </div>
                 <div>
-                  <div className="flex flex-wrap items-center gap-2 text-[15px] text-slate-500">
-                    <span>Home</span>
-                    <ChevronRight className="h-4 w-4" />
-                    <span>Dashboard</span>
-                    <ChevronRight className="h-4 w-4" />
-                    <span className="font-semibold text-slate-800">Add Property</span>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+                    <Home className="h-3.5 w-3.5" />
+                    Seller listing workspace
                   </div>
-                  <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-[44px]">
+                  <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-[44px]">
                     Add Property
                   </h1>
-                  <p className="mt-3 max-w-3xl text-[15px] leading-7 text-slate-600 sm:text-base">
+                  <p className="mt-3 max-w-3xl text-[15px] leading-7 text-emerald-50/90 sm:text-base">
                     Create a new listing and keep every existing workflow intact: details, pricing,
                     rent settings, coordinates, offers, amenities, media uploads, and post-create actions.
                   </p>
@@ -415,19 +408,18 @@ export default function SellerAddPropertyPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur-sm">
                   Listing Flow
                 </div>
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15"
                 >
                   Back
                 </button>
               </div>
             </div>
-          </div>
         </div>
 
         {error && (

@@ -313,7 +313,7 @@ function StatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</div>
-          <div className="mt-2 text-3xl font-black tracking-tight text-slate-950">{value}</div>
+          <div className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{value}</div>
           <div className="mt-1 text-sm text-slate-500">{hint}</div>
         </div>
         <div className={cn("grid h-11 w-11 place-items-center rounded-2xl", accent)}>
@@ -1293,20 +1293,20 @@ function SellerLeadsPageContent() {
   }
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-[1600px] min-w-0 flex-col gap-4 bg-slate-50 pb-4">
-      <section className="rounded-[32px] border border-[#d7e4db] bg-[linear-gradient(135deg,#f8fbf8_0%,#edf6f0_52%,#f9fcfa_100%)] p-5 shadow-[0_20px_70px_rgba(15,23,42,0.05)] sm:p-6">
+    <main className="mx-auto w-full max-w-7xl space-y-6">
+      <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] p-5 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:p-6">
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#316249]/20 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#316249]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
                 Seller CRM Workspace
               </div>
               <div className="mt-3">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-[2.1rem]">
+                <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">
                   Seller Leads / Inquiry Management
                 </h1>
-                <p className="mt-2 max-w-3xl text-sm text-slate-500">
+                <p className="mt-2 max-w-3xl text-[15px] leading-6 text-white/85">
                   Manage inquiries, chat with buyers, and convert more leads.
                 </p>
               </div>
@@ -1317,14 +1317,14 @@ function SellerLeadsPageContent() {
                 type="button"
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-60"
               >
                 <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
                 {refreshing ? "Refreshing..." : "Refresh"}
               </button>
               <Link
                 href="/seller/messages"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
               >
                 <MessageCircle className="h-4 w-4" />
                 Open Messages
@@ -1333,7 +1333,7 @@ function SellerLeadsPageContent() {
                 type="button"
                 onClick={openScheduleVisit}
                 disabled={!selectedLead}
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#316249] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(49,98,73,0.20)] transition hover:-translate-y-0.5 hover:bg-[#28513D] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Plus className="h-4 w-4" />
                 Schedule Visit
@@ -1453,7 +1453,7 @@ function SellerLeadsPageContent() {
 
       <section
         ref={crmGridRef}
-        className="scroll-mt-24 grid grid-cols-1 gap-6 xl:grid-cols-[380px_minmax(0,1fr)_390px]"
+        className="scroll-mt-24 grid grid-cols-1 gap-6 xl:grid-cols-[340px_minmax(0,1fr)_340px]"
       >
         <div className="min-w-0">
           <section className="flex min-h-[560px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] border border-slate-100 min-w-0 xl:min-h-0 xl:h-[calc(100vh-240px)]">
@@ -2296,7 +2296,7 @@ function SellerLeadsPageContent() {
           </div>
         </aside>
       </section>
-    </div>
+    </main>
   );
 }
 

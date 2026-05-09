@@ -264,32 +264,18 @@ export default function BuyerWishlistPage() {
             borderColor: "#d9e4de",
           }}
         >
-          <section
-            className="border-b px-6 py-6 sm:px-8"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(240,244,248,0.92) 0%, rgba(255,255,255,0.98) 100%)",
-              borderColor: "#e4eaef",
-            }}
-          >
+          <section className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
-                <div
-                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em]"
-                  style={{
-                    backgroundColor: THEME.primarySoft,
-                    borderColor: THEME.primaryBorder,
-                    color: THEME.primaryDark,
-                  }}
-                >
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
                   <Heart className="h-3.5 w-3.5" />
                   Saved Homes
                 </div>
 
-                <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-[42px]" style={{ color: THEME.text }}>
+                <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-[42px]">
                   Saved Homes
                 </h1>
-                <p className="mt-3 max-w-2xl text-base leading-7 sm:text-[17px]" style={{ color: THEME.textSoft }}>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
                   View and manage your saved properties, keep compare selections in sync, and jump
                   back into the buyer flow from one polished shortlist workspace.
                 </p>
@@ -298,12 +284,7 @@ export default function BuyerWishlistPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/buyer/compare"
-                  className="inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderColor: THEME.border,
-                    color: THEME.text,
-                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition backdrop-blur-sm hover:bg-white/15"
                 >
                   <Scale className="h-4 w-4" />
                   Compare ({compareIds.length})
@@ -312,12 +293,7 @@ export default function BuyerWishlistPage() {
                 <button
                   type="button"
                   onClick={() => refresh()}
-                  className="inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderColor: THEME.border,
-                    color: THEME.text,
-                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition backdrop-blur-sm hover:bg-white/15"
                 >
                   <RefreshCcw className="h-4 w-4" />
                   Refresh
@@ -326,12 +302,7 @@ export default function BuyerWishlistPage() {
                 <button
                   type="button"
                   onClick={clearAll}
-                  className="inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderColor: THEME.border,
-                    color: THEME.text,
-                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition backdrop-blur-sm hover:bg-white/15"
                 >
                   <Trash2 className="h-4 w-4" />
                   Clear All

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  CalendarClock,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -831,12 +832,16 @@ export default function SellerVisitSchedulingPage() {
           </div>
         )}
 
-        <section className="rounded-[28px] bg-[#f3f8f4] px-5 py-6 sm:px-8">
+        <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
           <div className="max-w-3xl">
-            <h1 className="text-[22px] font-extrabold tracking-tight text-[#1f2d24] sm:text-[28px]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+              <CalendarClock className="h-3.5 w-3.5" />
+              Seller visits
+            </span>
+            <h1 className="mt-4 text-[22px] font-extrabold tracking-tight text-white sm:text-[28px]">
               Visits Calendar
             </h1>
-            <p className="mt-2 text-sm text-[#50645a]">
+            <p className="mt-3 text-sm text-emerald-50/90">
               Click on a visit to see details or update status
             </p>
           </div>
@@ -851,7 +856,7 @@ export default function SellerVisitSchedulingPage() {
                   "border-b-2 pb-1 capitalize transition",
                   viewMode === mode
                     ? "border-[#316249] text-[#1f2d24]"
-                    : "border-transparent text-[#5d7c69]"
+                    : "border-transparent text-white/75"
                 )}
               >
                 {mode}
@@ -869,7 +874,7 @@ export default function SellerVisitSchedulingPage() {
                   "rounded-full px-4 py-2 text-sm font-semibold transition",
                   statusFilter === filter.key
                     ? "bg-[#316249] text-white"
-                    : "bg-white text-[#54675d] ring-1 ring-[#dfe7e1]"
+                    : "bg-white/10 text-white ring-1 ring-white/20"
                 )}
               >
                 {filter.label}
@@ -880,7 +885,7 @@ export default function SellerVisitSchedulingPage() {
               type="button"
               onClick={() => loadVisits(queryRange, "refresh")}
               disabled={refreshing}
-              className="ml-auto inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#1f2d24] ring-1 ring-[#dfe7e1]"
+              className="ml-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white"
             >
               <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
               {refreshing ? "Refreshing..." : "Refresh"}

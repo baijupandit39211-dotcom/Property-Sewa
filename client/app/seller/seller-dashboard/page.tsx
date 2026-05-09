@@ -203,18 +203,22 @@ export default function SellerDashboardPage() {
 
   return (
     <main className={PAGE_BG}>
-      <div className="mx-auto max-w-[1420px] px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
         <div className="space-y-5">
-          <header className={cn(CARD, "seller-reveal px-5 py-4 sm:px-6")}>
+          <header className="seller-reveal overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="min-w-0">
-                <h1 className={typography.pageTitle}>
-                  {`Welcome back, ${userName || userEmail || "Seller"}`} <span aria-hidden="true">👋</span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Seller Dashboard
+                </span>
+                <h1 className={`${typography.pageTitle} mt-4 text-white`}>
+                  {`Welcome back, ${userName || userEmail || "Seller"}`}
                 </h1>
-                <p className={`mt-1.5 ${typography.pageSubtitle}`}>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90">
                   Get a clear view of your real estate portfolio.
                 </p>
-                <Link href="/" className={`mt-2.5 inline-flex items-center gap-1 text-[#316249] transition duration-300 hover:translate-x-1 hover:text-[#28513D] ${typography.buttonTextMuted}`}>
+                <Link href="/" className={`mt-4 inline-flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-white backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}>
                   Back to Home
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -223,12 +227,12 @@ export default function SellerDashboardPage() {
               <div className="flex flex-col gap-3 xl:min-w-[780px] xl:flex-row xl:items-center xl:justify-end">
                 <HeaderSearch value={search} onChange={setSearch} />
 
-                <Link href="/seller/add-property" className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#316249] px-6 text-white shadow-[0_10px_24px_rgba(49,98,73,0.20)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#28513D] hover:shadow-[0_16px_28px_rgba(49,98,73,0.28)] ${typography.buttonTextMuted}`}>
+                <Link href="/seller/add-property" className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 text-white backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}>
                   <Plus className="h-4 w-4" />
                   Add Property
                 </Link>
 
-                <button type="button" onClick={refresh} disabled={refreshing} className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-emerald-200 bg-[#fcfffd] text-[#316249] shadow-[0_8px_20px_rgba(16,185,129,0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-[#316249] hover:bg-white hover:shadow-[0_14px_24px_rgba(16,185,129,0.15)] disabled:opacity-60" aria-label="Refresh dashboard">
+                <button type="button" onClick={refresh} disabled={refreshing} className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/15 disabled:opacity-60" aria-label="Refresh dashboard">
                   <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
                 </button>
 

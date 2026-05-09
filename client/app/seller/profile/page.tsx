@@ -89,12 +89,17 @@ export default function SellerProfilePage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 px-6 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Seller</p>
-          <h1 className="text-3xl font-extrabold text-slate-900">Profile</h1>
-          <p className="text-sm text-slate-600">Manage your seller information.</p>
+      <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+        <div className="max-w-3xl">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+            Seller profile
+          </span>
+          <h1 className="mt-4 text-3xl font-extrabold text-white">Profile</h1>
+          <p className="mt-3 text-sm text-emerald-50/90">Manage your seller information.</p>
         </div>
+      </section>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">
           <button
             onClick={() => router.push("/seller/seller-dashboard")}

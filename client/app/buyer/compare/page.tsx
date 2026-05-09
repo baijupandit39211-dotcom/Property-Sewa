@@ -451,26 +451,17 @@ export default function BuyerComparePage() {
           className="overflow-hidden rounded-[30px] border shadow-[0_24px_80px_rgba(15,23,42,0.08)]"
           style={{ backgroundColor: "#f8fafc", borderColor: "#dbe3ea" }}
         >
-          <header
-            className="border-b px-4 py-4 sm:px-6 lg:px-8"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(246,248,252,0.96) 100%)",
-              borderColor: "#e5e7eb",
-            }}
-          >
+          <header className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <div className="mb-2 flex items-center gap-2 text-sm" style={{ color: THEME.textSoft }}>
-                  <span>Buyer</span>
-                  <span>&rsaquo;</span>
-                  <span style={{ color: THEME.text }}>Compare Properties</span>
-                </div>
-
-                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: THEME.text }}>
+              <div className="max-w-3xl">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+                  <Scale className="h-3.5 w-3.5" />
+                  Buyer compare
+                </span>
+                <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
                   Compare Properties
                 </h1>
-                <p className="mt-2 text-base leading-7 sm:text-[17px]" style={{ color: THEME.textSoft }}>
+                <p className="mt-3 text-sm leading-6 text-emerald-50/90 sm:text-base">
                   Review your shortlist side by side, save the strongest options, and jump back into
                   inquiry flow when you are ready.
                 </p>
@@ -478,12 +469,7 @@ export default function BuyerComparePage() {
 
               <div className="flex flex-wrap items-center gap-2">
                 <div
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderColor: "#e5e7eb",
-                    color: THEME.text,
-                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm"
                 >
                   <Scale className="h-4 w-4" />
                   {compareItems.length}/{MAX_COMPARE} selected
@@ -491,12 +477,7 @@ export default function BuyerComparePage() {
 
                 <Link
                   href="/buyer/search-properties"
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderColor: "#e5e7eb",
-                    color: THEME.text,
-                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white transition backdrop-blur-sm hover:bg-white/15"
                 >
                   <Search className="h-4 w-4" />
                   Search Properties
@@ -505,12 +486,7 @@ export default function BuyerComparePage() {
                 <button
                   type="button"
                   onClick={() => refresh()}
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderColor: "#e5e7eb",
-                    color: THEME.text,
-                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white transition backdrop-blur-sm hover:bg-white/15"
                 >
                   <RefreshCcw className="h-4 w-4" />
                   Refresh
