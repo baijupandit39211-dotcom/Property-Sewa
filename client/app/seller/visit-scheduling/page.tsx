@@ -215,7 +215,7 @@ function statusText(status: VisitStatus) {
     case "completed":
       return "Completed";
     default:
-      return "Pending";
+      return "Requested";
   }
 }
 
@@ -250,8 +250,18 @@ function badgeClass(status: VisitStatus) {
 }
 
 function getVisitImage(visit?: Visit | null) {
-  if (!visit?.propertyId?.images?.length) return "/placeholder-property.jpg";
+  if (!visit?.propertyId?.images?.length) return "/placeholder.jpg";
   return visit.propertyId.images[0];
+}
+
+function hasVisitImage(visit?: Visit | null) {
+  return Boolean(visit?.propertyId?.images?.length && visit.propertyId.images[0]);
+}
+
+function handleImageFallback(event: React.SyntheticEvent<HTMLImageElement>) {
+  const image = event.currentTarget;
+  image.onerror = null;
+  image.src = "/placeholder.jpg";
 }
 
 function parseDeepLinkDate(value: string | null) {
@@ -816,7 +826,7 @@ export default function SellerVisitSchedulingPage() {
 
   return (
     <main
-      className="min-h-screen px-4 py-6 sm:px-6 lg:px-8"
+      className="min-h-screen px-4 pb-6 pt-28 sm:px-6 lg:px-8 lg:pt-32"
       style={{ backgroundColor: THEME.page }}
     >
       <div className="mx-auto max-w-[1240px]">
@@ -965,18 +975,29 @@ export default function SellerVisitSchedulingPage() {
                       </div>
 
                       {showcaseVisits.map((visit) => (
-                        <button
+                        <div
                           key={visit._id}
-                          type="button"
+                          role="button"
+                          tabIndex={0}
                           onClick={() => {
                             setSelectedDate(
                               new Date(visit.actualDate || visit.requestedDate)
                             );
                             setSelectedVisitId(visit._id);
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelectedDate(
+                                new Date(visit.actualDate || visit.requestedDate)
+                              );
+                              setSelectedVisitId(visit._id);
+                            }
+                          }}
                           className={cn(
-                            "grid w-full gap-5 text-left md:grid-cols-[1fr_220px]",
-                            selectedVisit?._id === visit._id && "opacity-100"
+                            "grid w-full gap-5 rounded-2xl border border-transparent bg-white p-4 text-left shadow-[0_4px_20px_rgba(15,23,42,0.04)] transition hover:border-[#cde0d3] md:grid-cols-[1fr_220px] md:p-5",
+                            selectedVisit?._id === visit._id &&
+                              "border-[#316249] ring-2 ring-[#316249]/15"
                           )}
                         >
                           <div className="self-center">
@@ -992,16 +1013,38 @@ export default function SellerVisitSchedulingPage() {
 
                             <div className="mt-4">
                               {visit.status === "requested" && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openAction("confirm", visit);
-                                  }}
-                                  className="rounded-lg bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
-                                >
-                                  Approve
-                                </button>
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openAction("confirm", visit);
+                                    }}
+                                    className="rounded-lg bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openAction("reschedule", visit);
+                                    }}
+                                    className="rounded-lg border border-[#2d5b3d] bg-white px-4 py-2 text-sm font-semibold text-[#2d5b3d]"
+                                  >
+                                    Reschedule
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openAction("reject", visit);
+                                    }}
+                                    className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
                               )}
 
                             {visit.status === "confirmed" && (
@@ -1045,14 +1088,26 @@ export default function SellerVisitSchedulingPage() {
                           </div>
                         </div>
 
-                          <div className="overflow-hidden rounded-xl">
-                            <img
-                              src={getVisitImage(visit)}
-                              alt={visit.propertyId.title}
-                              className="h-[140px] w-full object-cover"
-                            />
+                          <div className="overflow-hidden rounded-xl ring-1 ring-[#dfe7e1]">
+                            {hasVisitImage(visit) ? (
+                              <img
+                                src={getVisitImage(visit)}
+                                alt={visit.propertyId.title}
+                                onError={handleImageFallback}
+                                className="h-[140px] w-full object-cover"
+                              />
+                            ) : (
+                              <div className="grid h-[140px] w-full place-items-center bg-[linear-gradient(135deg,#f5faf7_0%,#e7f1ea_100%)] text-center">
+                                <div>
+                                  <MapPin className="mx-auto h-5 w-5 text-[#316249]" />
+                                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#587864]">
+                                    No property image
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </button>
+                        </div>
                       ))}
                     </>
                   )}
@@ -1093,8 +1148,16 @@ export default function SellerVisitSchedulingPage() {
                 <h2 className="text-[22px] font-extrabold tracking-tight text-[#1f2d24] sm:text-[28px]">
                   Visit Details
                 </h2>
+                <div className="mt-3 inline-flex items-center rounded-full border border-[#cde0d3] bg-white px-3 py-1 text-xs font-semibold text-[#316249]">
+                  Selected: {selectedVisit.buyerId.name} •{" "}
+                  {formatShortDate(selectedVisit.actualDate || selectedVisit.requestedDate)}
+                </div>
 
-                <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_230px]">
+                <div className="mt-8 rounded-2xl bg-white p-5 ring-1 ring-[#dfe7e1]">
+                  <div className="mb-4 inline-flex items-center rounded-full border border-[#d7e7dd] bg-[#f3fbf6] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-[#316249]">
+                    {statusText(selectedVisit.status)}
+                  </div>
+                <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_230px]">
                   <div>
                     <div className="text-[18px] font-bold text-[#1f2d24]">
                       Visit Info
@@ -1110,12 +1173,24 @@ export default function SellerVisitSchedulingPage() {
                     </div>
                   </div>
 
-                  <div className="overflow-hidden rounded-[8px]">
-                    <img
-                      src={getVisitImage(selectedVisit)}
-                      alt={selectedVisit.propertyId.title}
-                      className="h-[136px] w-full object-cover"
-                    />
+                  <div className="overflow-hidden rounded-[8px] ring-1 ring-[#dfe7e1]">
+                    {hasVisitImage(selectedVisit) ? (
+                      <img
+                        src={getVisitImage(selectedVisit)}
+                        alt={selectedVisit.propertyId.title}
+                        onError={handleImageFallback}
+                        className="h-[136px] w-full object-cover"
+                      />
+                    ) : (
+                      <div className="grid h-[136px] w-full place-items-center bg-[linear-gradient(135deg,#f5faf7_0%,#e7f1ea_100%)] text-center">
+                        <div>
+                          <MapPin className="mx-auto h-5 w-5 text-[#316249]" />
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#587864]">
+                            No property image
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1162,6 +1237,7 @@ export default function SellerVisitSchedulingPage() {
                     </p>
                   </div>
                 )}
+                </div>
 
                 <div className="mt-8">
                   <div className="text-[22px] font-bold tracking-tight text-[#1f2d24]">
@@ -1173,10 +1249,17 @@ export default function SellerVisitSchedulingPage() {
                       <>
                         <button
                           type="button"
-                          onClick={() => openAction("confirm", selectedVisit)}
-                          className="rounded-lg bg-[#19e268] px-5 py-3 text-sm font-semibold text-white"
+                          onClick={() => openAction("reschedule", selectedVisit)}
+                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
-                          Approve
+                          Reschedule
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openAction("complete", selectedVisit)}
+                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                        >
+                          Mark Completed
                         </button>
                         <button
                           type="button"
@@ -1184,13 +1267,6 @@ export default function SellerVisitSchedulingPage() {
                           className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openAction("reschedule", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
-                        >
-                          Reschedule
                         </button>
                       </>
                     )}
@@ -1199,36 +1275,17 @@ export default function SellerVisitSchedulingPage() {
                       <>
                         <button
                           type="button"
-                          onClick={() => openAction("confirm", selectedVisit)}
-                          className="rounded-lg bg-[#19e268] px-5 py-3 text-sm font-semibold text-white"
+                          onClick={() => openAction("reschedule", selectedVisit)}
+                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
-                          Approve
+                          Reschedule
                         </button>
                         <button
                           type="button"
                           onClick={() => openAction("complete", selectedVisit)}
                           className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
-                          Complete
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openAction("reschedule", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
-                        >
-                          Reschedule
-                        </button>
-                      </>
-                    )}
-
-                    {selectedVisit.status === "rescheduled" && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => openAction("confirm", selectedVisit)}
-                          className="rounded-lg bg-[#19e268] px-5 py-3 text-sm font-semibold text-white"
-                        >
-                          Approve
+                          Mark Completed
                         </button>
                         <button
                           type="button"
@@ -1237,12 +1294,31 @@ export default function SellerVisitSchedulingPage() {
                         >
                           Cancel
                         </button>
+                      </>
+                    )}
+
+                    {selectedVisit.status === "rescheduled" && (
+                      <>
                         <button
                           type="button"
                           onClick={() => openAction("reschedule", selectedVisit)}
                           className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Reschedule
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openAction("complete", selectedVisit)}
+                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                        >
+                          Mark Completed
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openAction("reject", selectedVisit)}
+                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                        >
+                          Cancel
                         </button>
                       </>
                     )}
@@ -1253,7 +1329,7 @@ export default function SellerVisitSchedulingPage() {
                         onClick={() => openAction("complete", selectedVisit)}
                         className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                       >
-                        Complete
+                        Mark Completed
                       </button>
                     )}
 
@@ -1415,7 +1491,7 @@ export default function SellerVisitSchedulingPage() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#50645a]">Pending</span>
+                    <span className="text-[#50645a]">Requested</span>
                     <span className="font-bold text-[#1f2d24]">
                       {summary.requested}
                     </span>
@@ -1542,11 +1618,23 @@ export default function SellerVisitSchedulingPage() {
                   </div>
 
                   <div className="overflow-hidden rounded-[8px]">
-                    <img
-                      src={getVisitImage(actionModal.visit)}
-                      alt={actionModal.visit.propertyId.title}
-                      className="h-[136px] w-full object-cover"
-                    />
+                    {hasVisitImage(actionModal.visit) ? (
+                      <img
+                        src={getVisitImage(actionModal.visit)}
+                        alt={actionModal.visit.propertyId.title}
+                        onError={handleImageFallback}
+                        className="h-[136px] w-full object-cover"
+                      />
+                    ) : (
+                      <div className="grid h-[136px] w-full place-items-center bg-[linear-gradient(135deg,#f5faf7_0%,#e7f1ea_100%)] text-center">
+                        <div>
+                          <MapPin className="mx-auto h-5 w-5 text-[#316249]" />
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#587864]">
+                            No property image
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

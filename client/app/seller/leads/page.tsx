@@ -507,6 +507,22 @@ function getBuyerSnapshot(lead: Lead | null) {
   };
 }
 
+function getLeadBuyerKeys(lead: Lead | null | undefined) {
+  if (!lead) return [] as string[];
+  const keys: string[] = [];
+  const buyerId =
+    typeof lead.buyerId === "object" && lead.buyerId
+      ? String(lead.buyerId._id || "")
+      : String(lead.buyerId || "");
+  if (buyerId) keys.push(`id:${buyerId}`);
+  const email = String(lead.email || "").trim().toLowerCase();
+  if (email) keys.push(`email:${email}`);
+  const phone = formatPhoneDigits(lead.phone);
+  if (phone) keys.push(`phone:${phone}`);
+  if (!keys.length) keys.push(`lead:${lead._id}`);
+  return keys;
+}
+
 function getSmartSellerReplies(messages: Message[], lead: Lead | null) {
   const latestBuyerMessage = [...messages].reverse().find((message) => message.senderRole === "buyer");
   if (!latestBuyerMessage) return DEFAULT_SELLER_REPLIES;
@@ -774,7 +790,33 @@ function SellerLeadsPageContent() {
   const loadThread = useEffectEvent(async (leadId: string, silent = false) => {
     if (!silent) setThreadLoading(true);
     try {
-      const thread = await fetchConversationMessages(leadId);
+      const baseLead = leads.find((lead) => lead._id === leadId) || null;
+      const baseKeys = new Set(getLeadBuyerKeys(baseLead));
+      const relatedLeadIds = leads
+        .filter((lead) => getLeadBuyerKeys(lead).some((key) => baseKeys.has(key)))
+        .map((lead) => lead._id);
+      const uniqueLeadIds = Array.from(new Set([leadId, ...relatedLeadIds]));
+
+      const threadResults = await Promise.all(
+        uniqueLeadIds.map(async (id) => {
+          try {
+            return await fetchConversationMessages(id);
+          } catch {
+            return [];
+          }
+        })
+      );
+
+      const thread = threadResults
+        .flat()
+        .reduce<Message[]>((acc, message) => {
+          if (!acc.some((item) => item._id === message._id)) {
+            acc.push(message);
+          }
+          return acc;
+        }, [])
+        .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime());
+
       setMessages(thread);
       acknowledgeDelivered(leadId, thread);
       acknowledgeSeen(leadId, thread);

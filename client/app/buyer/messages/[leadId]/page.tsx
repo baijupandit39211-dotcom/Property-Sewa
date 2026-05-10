@@ -683,6 +683,7 @@ export default function BuyerMessageDetailPage() {
       );
 
       setLead((prev) => (prev ? { ...prev, visit: response.visit as Visit } : prev));
+      showToast("Visit scheduled successfully");
       closeScheduleVisit();
     } catch (err: any) {
       setScheduleError(err?.message || "Failed to schedule visit");

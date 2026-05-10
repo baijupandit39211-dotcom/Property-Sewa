@@ -184,6 +184,15 @@ function isOfferActive(value: any) {
 }
 
 type ToastState = { show: boolean; text: string };
+type PropertyVisitStatus = {
+  _id: string;
+  status: "requested" | "confirmed" | "rescheduled" | "rejected" | "cancelled" | "completed" | "no_show";
+  preferredDate?: string;
+  preferredTimeSlot?: string;
+  actualDate?: string;
+  actualTime?: string;
+  sellerNote?: string;
+};
 
 function Toast({ show, text }: ToastState) {
   return (
@@ -236,10 +245,12 @@ function BuyerPropertyDetailsView({
   const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
 
   const [visitData, setVisitData] = useState({
+    visitType: "in_person",
     requestedDate: "",
     preferredTime: "",
     message: "",
   });
+  const [visitStatus, setVisitStatus] = useState<PropertyVisitStatus | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
   const showToast = (text: string) => {
@@ -361,6 +372,20 @@ function BuyerPropertyDetailsView({
 
   useEffect(() => {
     setAgentImageFailed(false);
+  }, [property?._id]);
+
+  useEffect(() => {
+    if (!property?._id) return;
+    (async () => {
+      try {
+        const res = await apiFetch<{ success: boolean; visit: PropertyVisitStatus | null }>(
+          `/api/visits/property/${property._id}/status`
+        );
+        setVisitStatus(res?.visit || null);
+      } catch {
+        setVisitStatus(null);
+      }
+    })();
   }, [property?._id]);
 
   useEffect(() => {
@@ -487,15 +512,23 @@ function BuyerPropertyDetailsView({
           method: "POST",
           body: JSON.stringify({
             propertyId: property._id,
-            requestedDate: visitData.requestedDate,
-            preferredTime: visitData.preferredTime,
-            message: visitData.message,
+            visitType: visitData.visitType,
+            preferredDate: visitData.requestedDate,
+            preferredTimeSlot: visitData.preferredTime,
+            buyerMessage: visitData.message,
           }),
         }
       );
 
       if (res?.success) {
         setScheduleSuccess(true);
+        showToast("Visit scheduled successfully");
+        try {
+          const statusRes = await apiFetch<{ success: boolean; visit: PropertyVisitStatus | null }>(
+            `/api/visits/property/${property._id}/status`
+          );
+          setVisitStatus(statusRes?.visit || null);
+        } catch {}
         setTimeout(() => setOpenSchedule(false), 900);
       } else {
         setScheduleError(res?.message || "Failed to schedule visit.");
@@ -1277,6 +1310,15 @@ function BuyerPropertyDetailsView({
                 </div>
 
                 <div className="mt-5 space-y-3">
+                  {visitStatus && (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                      <div className="font-extrabold capitalize">Visit {visitStatus.status}</div>
+                      <div className="mt-1">
+                        {new Date(visitStatus.actualDate || visitStatus.preferredDate || Date.now()).toLocaleDateString()}{" "}
+                        at {visitStatus.actualTime || visitStatus.preferredTimeSlot || "time pending"}
+                      </div>
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -1546,6 +1588,25 @@ function BuyerPropertyDetailsView({
               )}
 
               <div className="mt-4 space-y-3">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    Visit Type
+                  </label>
+                  <select
+                    value={visitData.visitType}
+                    onChange={(e) =>
+                      setVisitData((p) => ({
+                        ...p,
+                        visitType: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 px-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value="in_person">In Person</option>
+                    <option value="virtual">Virtual</option>
+                    <option value="site_tour">Site Tour</option>
+                  </select>
+                </div>
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Date

@@ -40,6 +40,8 @@ router.use("/messages", messageRoutes);
 
 // Visits
 router.use("/visits", visitRoutes);
+router.use("/api/visits", visitRoutes);
+router.use("/api/seller/visits", visitRoutes);
 
 // Analytics
 router.use("/analytics", sellerAnalyticsRoutes);

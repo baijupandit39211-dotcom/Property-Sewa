@@ -1,251 +1,314 @@
+import Lead from "../../../models/Lead.model";
+import Message from "../../../models/Message.model";
+import Property from "../../../models/Property.model";
 import Visit from "../../../models/Visit.model";
 import { ApiError } from "../../../utils/apiError";
-import Property from "../../../models/Property.model";
+
+type VisitStatus =
+  | "requested"
+  | "confirmed"
+  | "rescheduled"
+  | "rejected"
+  | "cancelled"
+  | "completed"
+  | "no_show";
 
 export interface CreateVisitInput {
   propertyId: string;
   buyerId: string;
   sellerId: string;
-  requestedDate: Date;
-  preferredTime: string;
-  message?: string;
+  leadId?: string | null;
+  visitType?: "in_person" | "virtual" | "site_tour";
+  preferredDate: Date;
+  preferredTimeSlot: string;
+  buyerMessage?: string;
 }
 
-export interface UpdateVisitInput {
-  status?: "requested" | "confirmed" | "rejected" | "rescheduled" | "completed";
-  sellerResponse?: string;
+export interface SellerVisitActionInput {
+  status: VisitStatus;
+  sellerNote?: string;
   actualDate?: Date;
   actualTime?: string;
 }
 
+const ACTIVE_STATUSES: VisitStatus[] = ["requested", "confirmed", "rescheduled"];
+
+function normalizeDate(dateInput: Date) {
+  const date = new Date(dateInput);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function toLegacyFields(input: CreateVisitInput) {
+  return {
+    requestedDate: input.preferredDate,
+    preferredTime: input.preferredTimeSlot,
+    message: input.buyerMessage || "",
+  };
+}
+
+function statusToLeadStatus(status: VisitStatus) {
+  if (status === "requested" || status === "confirmed" || status === "rescheduled") {
+    return "visit_scheduled";
+  }
+  if (status === "completed") return "closed";
+  if (status === "cancelled" || status === "rejected" || status === "no_show") return "contacted";
+  return "contacted";
+}
+
 async function createVisit(input: CreateVisitInput) {
-  // Verify property exists and belongs to seller
-  const property = await Property.findById(input.propertyId);
+  const property = await Property.findById(input.propertyId).select("createdBy");
   if (!property) throw new ApiError(404, "Property not found");
-  
-  if (property.createdBy.toString() !== input.sellerId) {
+  if (String(property.createdBy) !== String(input.sellerId)) {
     throw new ApiError(403, "Property does not belong to this seller");
   }
 
-  // Check if visit already exists for same date/time
-  const existingVisit = await Visit.findOne({
+  const existingActive = await Visit.findOne({
     propertyId: input.propertyId,
-    requestedDate: input.requestedDate,
-    preferredTime: input.preferredTime,
-    status: { $in: ["requested", "confirmed"] },
-  });
-
-  if (existingVisit) {
-    throw new ApiError(400, "Visit already scheduled for this date and time");
+    buyerId: input.buyerId,
+    status: { $in: ACTIVE_STATUSES },
+  }).lean();
+  if (existingActive) {
+    throw new ApiError(400, "You already have an active visit request for this property");
   }
 
-  const visit = new Visit({
+  const preferredDate = normalizeDate(input.preferredDate);
+  const preferredTimeSlot = String(input.preferredTimeSlot || "").trim();
+  if (!preferredTimeSlot) throw new ApiError(400, "preferredTimeSlot is required");
+
+  const conflictingVisit = await Visit.findOne({
+    propertyId: input.propertyId,
+    preferredDate,
+    preferredTimeSlot,
+    status: { $in: ["requested", "confirmed", "rescheduled"] },
+  }).lean();
+  if (conflictingVisit) {
+    throw new ApiError(400, "Visit already scheduled for this date and time slot");
+  }
+
+  const visit = await Visit.create({
     propertyId: input.propertyId,
     buyerId: input.buyerId,
     sellerId: input.sellerId,
-    requestedDate: input.requestedDate,
-    preferredTime: input.preferredTime,
-    message: input.message,
+    leadId: input.leadId || null,
+    visitType: input.visitType || "in_person",
+    preferredDate,
+    preferredTimeSlot,
+    buyerMessage: input.buyerMessage || "",
+    ...toLegacyFields({
+      ...input,
+      preferredDate,
+      preferredTimeSlot,
+    }),
+    status: "requested",
   });
 
-  await visit.save();
-  
-  // Populate related data for response
+  if (input.leadId) {
+    await Lead.findByIdAndUpdate(input.leadId, { status: "visit_scheduled" }).catch(() => null);
+  }
+
   await visit.populate([
     { path: "propertyId", select: "title location images" },
     { path: "buyerId", select: "name email phone" },
-    { path: "sellerId", select: "name email" },
+    { path: "sellerId", select: "name email phone" },
+    { path: "leadId", select: "_id status" },
   ]);
 
   return visit;
 }
 
-async function getVisitsBySeller(sellerId: string, query: any) {
-  const {
-    page = 1,
-    limit = 10,
-    status,
-    startDate,
-    endDate,
-    sortBy = "requestedDate",
-    sortOrder = "desc",
-  } = query;
+async function getBuyerVisits(buyerId: string, query: any = {}) {
+  const page = Math.max(1, Number(query?.page || 1));
+  const limit = Math.min(50, Math.max(1, Number(query?.limit || 12)));
+  const skip = (page - 1) * limit;
+  const filter: any = { buyerId };
+  if (query?.status) filter.status = query.status;
 
+  const [items, total] = await Promise.all([
+    Visit.find(filter)
+      .populate([
+        { path: "propertyId", select: "title location images" },
+        { path: "sellerId", select: "name email phone" },
+        { path: "leadId", select: "_id status" },
+      ])
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Visit.countDocuments(filter),
+  ]);
+  return { items, total, page, limit, pages: Math.ceil(total / limit) };
+}
+
+async function getSellerVisits(sellerId: string, query: any = {}) {
+  const page = Math.max(1, Number(query?.page || 1));
+  const limit = Math.min(200, Math.max(1, Number(query?.limit || 50)));
+  const skip = (page - 1) * limit;
   const filter: any = { sellerId };
-  
-  if (status) {
-    filter.status = status;
-  }
-  
-  if (startDate || endDate) {
-    filter.requestedDate = {};
-    if (startDate) {
-      // Normalize startDate to midnight local time
-      const normalizedStartDate = new Date(startDate);
-      normalizedStartDate.setHours(0, 0, 0, 0);
-      filter.requestedDate.$gte = normalizedStartDate;
+  if (query?.status) filter.status = query.status;
+  if (query?.startDate || query?.endDate) {
+    filter.$or = [{ preferredDate: {} }, { requestedDate: {} }];
+    if (query?.startDate) {
+      const start = normalizeDate(new Date(query.startDate));
+      filter.$or[0].preferredDate.$gte = start;
+      filter.$or[1].requestedDate.$gte = start;
     }
-    if (endDate) {
-      // Normalize endDate to midnight local time
-      const normalizedEndDate = new Date(endDate);
-      normalizedEndDate.setHours(0, 0, 0, 0);
-      filter.requestedDate.$lte = normalizedEndDate;
+    if (query?.endDate) {
+      const end = normalizeDate(new Date(query.endDate));
+      filter.$or[0].preferredDate.$lte = end;
+      filter.$or[1].requestedDate.$lte = end;
     }
   }
 
-  const skip = (Number(page) - 1) * Number(limit);
-  const sort: any = {};
-  sort[sortBy] = sortOrder === "desc" ? -1 : 1;
-
-  const [visits, total] = await Promise.all([
+  const [items, total] = await Promise.all([
     Visit.find(filter)
       .populate([
         { path: "propertyId", select: "title location images" },
         { path: "buyerId", select: "name email phone" },
+        { path: "leadId", select: "_id status" },
       ])
-      .sort(sort)
+      .sort({ preferredDate: 1, preferredTimeSlot: 1, createdAt: -1 })
       .skip(skip)
-      .limit(Number(limit)),
+      .limit(limit),
     Visit.countDocuments(filter),
   ]);
-
-  return {
-    items: visits,
-    total,
-    page: Number(page),
-    limit: Number(limit),
-    pages: Math.ceil(total / Number(limit)),
-  };
+  return { items, total, page, limit, pages: Math.ceil(total / limit) };
 }
 
-async function getVisitsByBuyer(buyerId: string, query: any) {
-  const {
-    page = 1,
-    limit = 10,
-    status,
-    sortBy = "requestedDate",
-    sortOrder = "desc",
-  } = query;
-
-  const filter: any = { buyerId };
-  
-  if (status) {
-    filter.status = status;
-  }
-
-  const skip = (Number(page) - 1) * Number(limit);
-  const sort: any = {};
-  sort[sortBy] = sortOrder === "desc" ? -1 : 1;
-
-  const [visits, total] = await Promise.all([
-    Visit.find(filter)
-      .populate([
-        { path: "propertyId", select: "title location images" },
-        { path: "sellerId", select: "name email" },
-      ])
-      .sort(sort)
-      .skip(skip)
-      .limit(Number(limit)),
-    Visit.countDocuments(filter),
-  ]);
-
-  return {
-    items: visits,
-    total,
-    page: Number(page),
-    limit: Number(limit),
-    pages: Math.ceil(total / Number(limit)),
-  };
+async function getVisitStatusForProperty(buyerId: string, propertyId: string) {
+  const latest = await Visit.findOne({ buyerId, propertyId })
+    .sort({ createdAt: -1 })
+    .populate([{ path: "leadId", select: "_id status" }]);
+  return latest;
 }
 
-async function getVisitById(visitId: string, userId: string) {
-  const visit = await Visit.findById(visitId)
-    .populate([
-      { path: "propertyId", select: "title location images" },
-      { path: "buyerId", select: "name email phone" },
-      { path: "sellerId", select: "name email" },
-    ]);
-
-  if (!visit) throw new ApiError(404, "Visit not found");
-
-  // Verify user owns this visit (either buyer or seller)
-  if (visit.buyerId.toString() !== userId && visit.sellerId.toString() !== userId) {
-    throw new ApiError(403, "You can only access your own visits");
-  }
-
-  return visit;
-}
-
-async function updateVisit(visitId: string, userId: string, updates: UpdateVisitInput) {
-  const visit = await Visit.findById(visitId);
-  if (!visit) throw new ApiError(404, "Visit not found");
-
-  // Verify user owns this visit (only seller can update)
-  if (visit.sellerId.toString() !== userId) {
-    throw new ApiError(403, "Only seller can update visit details");
-  }
-
-  const nextDate = updates.actualDate || visit.actualDate || visit.requestedDate;
-  const nextTime = updates.actualTime || visit.actualTime || visit.preferredTime;
-  const nextStatus = updates.status || visit.status;
-
-  if ((nextStatus === "confirmed" || nextStatus === "rescheduled") && (!nextDate || !nextTime)) {
-    throw new ApiError(400, "A date and time are required for scheduled visits");
-  }
-
-  if (nextDate && nextTime && (nextStatus === "confirmed" || nextStatus === "rescheduled")) {
-    const conflictingVisit = await Visit.findOne({
-      _id: { $ne: visit._id },
-      propertyId: visit.propertyId,
-      status: { $in: ["confirmed", "rescheduled"] },
-      $or: [
-        { actualDate: nextDate, actualTime: nextTime },
-        { requestedDate: nextDate, preferredTime: nextTime, status: "requested" },
-      ],
-    });
-
-    if (conflictingVisit) {
-      throw new ApiError(400, "This time slot is already booked for the property");
-    }
-  }
-
-  // Update visit
-  Object.assign(visit, updates);
-  await visit.save();
-
-  // Populate related data for response
-  await visit.populate([
+async function getVisitByIdForUser(id: string, userId: string) {
+  const visit = await Visit.findById(id).populate([
     { path: "propertyId", select: "title location images" },
     { path: "buyerId", select: "name email phone" },
-    { path: "sellerId", select: "name email" },
+    { path: "sellerId", select: "name email phone" },
+    { path: "leadId", select: "_id status" },
   ]);
-
+  if (!visit) throw new ApiError(404, "Visit not found");
+  const allowed =
+    String((visit as any).buyerId?._id || visit.buyerId) === String(userId) ||
+    String((visit as any).sellerId?._id || visit.sellerId) === String(userId);
+  if (!allowed) throw new ApiError(403, "You can only access your own visits");
   return visit;
 }
 
-async function deleteVisit(visitId: string, userId: string) {
-  const visit = await Visit.findById(visitId);
+async function buyerCancelVisit(id: string, buyerId: string) {
+  const visit = await Visit.findById(id);
   if (!visit) throw new ApiError(404, "Visit not found");
+  if (String(visit.buyerId) !== String(buyerId)) throw new ApiError(403, "Not allowed");
+  if (!ACTIVE_STATUSES.includes(visit.status as VisitStatus)) {
+    throw new ApiError(400, "Only active requests can be cancelled");
+  }
+  visit.status = "cancelled" as any;
+  visit.cancelledAt = new Date();
+  visit.sellerResponse = "Cancelled by buyer";
+  visit.sellerNote = "Cancelled by buyer";
+  await visit.save();
+  return getVisitByIdForUser(id, buyerId);
+}
 
-  // Only buyer can delete their own requested visits
-  if (visit.buyerId.toString() !== userId) {
-    throw new ApiError(403, "Only buyer can delete their own visit requests");
+async function buyerRequestReschedule(id: string, buyerId: string, note?: string) {
+  const visit = await Visit.findById(id);
+  if (!visit) throw new ApiError(404, "Visit not found");
+  if (String(visit.buyerId) !== String(buyerId)) throw new ApiError(403, "Not allowed");
+  if (!["confirmed", "rescheduled", "requested"].includes(String(visit.status))) {
+    throw new ApiError(400, "This visit cannot be rescheduled");
+  }
+  visit.status = "rescheduled" as any;
+  if (note) {
+    visit.buyerMessage = note;
+    visit.message = note;
+  }
+  await visit.save();
+  return getVisitByIdForUser(id, buyerId);
+}
+
+async function sellerUpdateVisit(id: string, sellerId: string, input: SellerVisitActionInput) {
+  const visit = await Visit.findById(id);
+  if (!visit) throw new ApiError(404, "Visit not found");
+  if (String(visit.sellerId) !== String(sellerId)) throw new ApiError(403, "Not allowed");
+
+  const nextStatus = input.status;
+  if (input.actualDate) {
+    visit.actualDate = normalizeDate(input.actualDate);
+  }
+  if (input.actualTime) {
+    visit.actualTime = String(input.actualTime || "").trim();
+  }
+  if (input.sellerNote !== undefined) {
+    visit.sellerNote = String(input.sellerNote || "");
+    visit.sellerResponse = String(input.sellerNote || "");
   }
 
-  // Only allow deletion of requested visits
-  if (visit.status !== "requested") {
-    throw new ApiError(400, "Cannot delete visit that is already processed");
+  if (nextStatus === "confirmed") {
+    visit.status = "confirmed" as any;
+    visit.confirmedAt = new Date();
+    if (!visit.actualDate) visit.actualDate = visit.preferredDate || visit.requestedDate;
+    if (!visit.actualTime) visit.actualTime = visit.preferredTimeSlot || visit.preferredTime;
+  } else if (nextStatus === "rescheduled") {
+    visit.status = "rescheduled" as any;
+    if (!visit.actualDate) visit.actualDate = visit.preferredDate || visit.requestedDate;
+    if (!visit.actualTime) visit.actualTime = visit.preferredTimeSlot || visit.preferredTime;
+  } else if (nextStatus === "rejected") {
+    visit.status = "rejected" as any;
+  } else if (nextStatus === "cancelled") {
+    visit.status = "cancelled" as any;
+    visit.cancelledAt = new Date();
+  } else if (nextStatus === "completed") {
+    visit.status = "completed" as any;
+    visit.completedAt = new Date();
+  } else if (nextStatus === "no_show") {
+    visit.status = "no_show" as any;
+  } else if (nextStatus === "requested") {
+    visit.status = "requested" as any;
   }
 
-  await Visit.findByIdAndDelete(visitId);
-  return { success: true };
+  visit.preferredDate = visit.preferredDate || visit.requestedDate;
+  visit.preferredTimeSlot = visit.preferredTimeSlot || visit.preferredTime;
+  visit.requestedDate = visit.preferredDate as Date;
+  visit.preferredTime = visit.preferredTimeSlot;
+
+  await visit.save();
+
+  if (visit.leadId) {
+    await Lead.findByIdAndUpdate(visit.leadId, { status: statusToLeadStatus(nextStatus) }).catch(() => null);
+    const chipText =
+      nextStatus === "confirmed"
+        ? `Visit scheduled for ${new Date(visit.actualDate || visit.requestedDate).toLocaleDateString()} at ${visit.actualTime || visit.preferredTime}.`
+        : nextStatus === "rescheduled"
+        ? `Visit rescheduled to ${new Date(visit.actualDate || visit.requestedDate).toLocaleDateString()} at ${visit.actualTime || visit.preferredTime}.`
+        : nextStatus === "rejected"
+        ? "Visit request was rejected."
+        : nextStatus === "cancelled"
+        ? "Visit was cancelled."
+        : nextStatus === "completed"
+        ? "Visit marked as completed."
+        : nextStatus === "no_show"
+        ? "Visit marked as no-show."
+        : "Visit request updated.";
+    await Message.create({
+      leadId: visit.leadId,
+      senderId: visit.sellerId,
+      senderRole: "seller",
+      text: chipText,
+      isAutoReply: true,
+    }).catch(() => null);
+  }
+
+  return getVisitByIdForUser(id, sellerId);
 }
 
 export default {
   createVisit,
-  getVisitsBySeller,
-  getVisitsByBuyer,
-  getVisitById,
-  updateVisit,
-  deleteVisit,
+  getBuyerVisits,
+  getSellerVisits,
+  getVisitStatusForProperty,
+  getVisitByIdForUser,
+  buyerCancelVisit,
+  buyerRequestReschedule,
+  sellerUpdateVisit,
 };

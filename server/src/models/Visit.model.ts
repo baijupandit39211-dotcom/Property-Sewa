@@ -4,13 +4,29 @@ export interface IVisit extends Document {
   propertyId: mongoose.Types.ObjectId;
   buyerId: mongoose.Types.ObjectId;
   sellerId: mongoose.Types.ObjectId;
+  leadId?: mongoose.Types.ObjectId | null;
+  visitType: "in_person" | "virtual" | "site_tour";
+  preferredDate?: Date;
+  preferredTimeSlot?: string;
   requestedDate: Date;
   preferredTime: string;
-  status: "requested" | "confirmed" | "rejected" | "rescheduled" | "completed";
+  status:
+    | "requested"
+    | "confirmed"
+    | "rescheduled"
+    | "rejected"
+    | "cancelled"
+    | "completed"
+    | "no_show";
+  buyerMessage?: string;
+  sellerNote?: string;
   message?: string;
   sellerResponse?: string;
   actualDate?: Date;
   actualTime?: string;
+  confirmedAt?: Date | null;
+  completedAt?: Date | null;
+  cancelledAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +47,25 @@ const VisitSchema: Schema = new Schema({
     ref: "User",
     required: true,
   },
+  leadId: {
+    type: Schema.Types.ObjectId,
+    ref: "Lead",
+    default: null,
+  },
+  visitType: {
+    type: String,
+    enum: ["in_person", "virtual", "site_tour"],
+    default: "in_person",
+  },
+  preferredDate: {
+    type: Date,
+    default: null,
+  },
+  preferredTimeSlot: {
+    type: String,
+    trim: true,
+    default: "",
+  },
   requestedDate: {
     type: Date,
     required: true,
@@ -42,8 +77,18 @@ const VisitSchema: Schema = new Schema({
   },
   status: {
     type: String,
-    enum: ["requested", "confirmed", "rejected", "rescheduled", "completed"],
+    enum: ["requested", "confirmed", "rescheduled", "rejected", "cancelled", "completed", "no_show"],
     default: "requested",
+  },
+  buyerMessage: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+  sellerNote: {
+    type: String,
+    trim: true,
+    default: "",
   },
   message: {
     type: String,
@@ -59,6 +104,18 @@ const VisitSchema: Schema = new Schema({
   actualTime: {
     type: String,
     trim: true,
+  },
+  confirmedAt: {
+    type: Date,
+    default: null,
+  },
+  completedAt: {
+    type: Date,
+    default: null,
+  },
+  cancelledAt: {
+    type: Date,
+    default: null,
   },
 }, {
   timestamps: true,

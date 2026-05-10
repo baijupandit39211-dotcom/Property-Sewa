@@ -4,23 +4,25 @@ import * as visitController from "../controllers/visit.controller";
 
 const router = Router();
 
-// POST /visits (create visit request - buyer)
+// Buyer contract
+router.get("/my", requireUserAuth, visitController.getMyVisits);
+router.get("/property/:propertyId/status", requireUserAuth, visitController.getPropertyVisitStatus);
 router.post("/", requireUserAuth, visitController.createVisit);
-router.post("/lead/:leadId", requireUserAuth, visitController.createVisitFromLead);
+router.patch("/:id/cancel", requireUserAuth, visitController.cancelVisit);
+router.patch("/:id/request-reschedule", requireUserAuth, visitController.requestVisitReschedule);
 
-// GET /visits (seller's visits with filtering)
+// Seller contract (works when mounted as /api/seller/visits and also /visits)
 router.get("/", requireUserAuth, visitController.getSellerVisits);
+router.patch("/:id/approve", requireUserAuth, visitController.approveVisit);
+router.patch("/:id/reject", requireUserAuth, visitController.rejectVisit);
+router.patch("/:id/reschedule", requireUserAuth, visitController.rescheduleVisit);
+router.patch("/:id/complete", requireUserAuth, visitController.completeVisit);
 
-// GET /visits/my-visits (buyer's visits)
+// Backward-compatible existing routes
+router.post("/lead/:leadId", requireUserAuth, visitController.createVisitFromLead);
 router.get("/my-visits", requireUserAuth, visitController.getBuyerVisits);
-
-// GET /visits/:id (get visit by ID)
 router.get("/:id", requireUserAuth, visitController.getVisitById);
-
-// PUT /visits/:id (update visit - seller only)
 router.put("/:id", requireUserAuth, visitController.updateVisit);
-
-// DELETE /visits/:id (delete visit request - buyer only)
 router.delete("/:id", requireUserAuth, visitController.deleteVisit);
 
 export default router;
