@@ -52,6 +52,22 @@ const fadeUp: Variants = {
 
 // ✅ remove "admin" from selectable register roles
 type Role = "buyer" | "seller" | "agent";
+type ToastState = { show: boolean; text: string };
+
+function Toast({ show, text }: ToastState) {
+  return (
+    <div
+      className={[
+        "fixed right-6 top-6 z-[9999] transition-all duration-200",
+        show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
+      ].join(" ")}
+    >
+      <div className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-white/10">
+        {text}
+      </div>
+    </div>
+  );
+}
 
 function passwordScore(pw: string) {
   let s = 0;
@@ -91,9 +107,21 @@ export default function RegisterPage() {
   const [agree, setAgree] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [googleBtnWidth, setGoogleBtnWidth] = React.useState<number | null>(null);
+  const [toast, setToast] = React.useState<ToastState>({ show: false, text: "" });
 
   const score = passwordScore(password);
   const googleBtnRef = React.useRef<HTMLDivElement | null>(null);
+  const toastTimerRef = React.useRef<number | null>(null);
+
+  const showToast = React.useCallback((text: string) => {
+    setToast({ show: true, text });
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 1300);
+  }, []);
 
   React.useEffect(() => {
     const computeWidth = () => {
@@ -104,6 +132,14 @@ export default function RegisterPage() {
     computeWidth();
     window.addEventListener("resize", computeWidth);
     return () => window.removeEventListener("resize", computeWidth);
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
   }, []);
 
   React.useEffect(() => {
@@ -133,7 +169,10 @@ export default function RegisterPage() {
                 }),
               });
 
-              router.push(routeByRole(data?.user?.role));
+              showToast("Account created successfully");
+              window.setTimeout(() => {
+                router.push(routeByRole(data?.user?.role));
+              }, 500);
             } catch (e: any) {
               alert(e?.message || "Google signup failed");
             }
@@ -154,7 +193,7 @@ export default function RegisterPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, role, googleBtnWidth]); // ✅ IMPORTANT: include role
+  }, [router, role, googleBtnWidth, showToast]); // ✅ IMPORTANT: include role
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,7 +213,10 @@ export default function RegisterPage() {
         }),
       });
 
-      router.push(routeByRole(data?.user?.role));
+      showToast("Account created successfully");
+      window.setTimeout(() => {
+        router.push(routeByRole(data?.user?.role));
+      }, 500);
     } catch (err: any) {
       alert(err?.message || "Register failed");
     } finally {
@@ -184,6 +226,7 @@ export default function RegisterPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#f4fbf7]">
+      <Toast show={toast.show} text={toast.text} />
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
           className="absolute left-[-6rem] top-24 h-80 w-80 rounded-full bg-emerald-200/45 blur-3xl"

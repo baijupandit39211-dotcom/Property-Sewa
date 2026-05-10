@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Bell,
+  CheckCheck,
   ChevronLeft,
   ChevronRight,
   Mail,
@@ -194,6 +195,7 @@ export default function NotificationsPageContent({
             disabled={markingAll || loading || data.items.length === 0}
             className={`relative z-10 inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-[#11392f] shadow-sm transition hover:bg-[#f5faf7] disabled:cursor-not-allowed disabled:opacity-60 ${typography.buttonText}`}
           >
+            <CheckCheck className="mr-2 h-4 w-4" />
             {markingAll ? "Updating..." : "Mark all as read"}
           </button>
         </div>

@@ -79,6 +79,23 @@ type VisitResponse = {
   sellerResponse?: string;
   createdAt: string;
 };
+type ToastState = { show: boolean; text: string };
+
+function Toast({ show, text }: ToastState) {
+  return (
+    <div
+      className={[
+        "fixed right-6 top-6 z-[9999] transition-all duration-200",
+        show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
+      ].join(" ")}
+    >
+      <div className="rounded-2xl bg-emerald-600/95 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-emerald-300/50">
+        {text}
+      </div>
+    </div>
+  );
+}
+
 const MAX_CHAT_IMAGE_SIZE = 10 * 1024 * 1024;
 const MAX_CHAT_DOCUMENT_SIZE = 20 * 1024 * 1024;
 
@@ -255,12 +272,22 @@ export default function BuyerMessageDetailPage() {
     preferredTime: "10:00",
     message: "",
   });
+  const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
   const activeLeadIdRef = useRef("");
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
   const visitSystemMessage = getVisitSystemMessage(lead?.visit);
   const { isMuted, isPlaybackBlocked, toggleMute, playIncomingMessageSound } = useMessageSound();
+
+  const showToast = (text: string) => {
+    setToast({ show: true, text });
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast((current) => ({ ...current, show: false }));
+    }, 1300);
+  };
 
   const acknowledgeDelivered = (leadId: string, thread: Message[]) => {
     if (!leadId || !thread.some((message) => message.senderRole === "seller" && !message.deliveredAt)) return;
@@ -416,6 +443,9 @@ export default function BuyerMessageDetailPage() {
       if (receiverTypingTimeoutRef.current) {
         window.clearTimeout(receiverTypingTimeoutRef.current);
       }
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
       if (activeLeadIdRef.current) {
         emitChatTypingStop(activeLeadIdRef.current);
       }
@@ -539,6 +569,7 @@ export default function BuyerMessageDetailPage() {
       if (response.success) {
         setNewMessage("");
         setMessages((prev) => prev.map((item) => (item._id === tempId ? response.message : item)));
+        showToast("Message sent successfully");
       }
     } catch (err: any) {
       setMessages((prev) => prev.filter((item) => item._id !== tempId));
@@ -688,6 +719,7 @@ export default function BuyerMessageDetailPage() {
 
   return (
     <main className="min-h-screen bg-emerald-50 px-6 py-8">
+      <Toast show={toast.show} text={toast.text} />
       <div className="mx-auto max-w-4xl">
         {pdfPreview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">

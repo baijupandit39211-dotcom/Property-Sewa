@@ -183,6 +183,23 @@ function isOfferActive(value: any) {
   return value === true || String(value).toLowerCase() === "true";
 }
 
+type ToastState = { show: boolean; text: string };
+
+function Toast({ show, text }: ToastState) {
+  return (
+    <div
+      className={[
+        "fixed right-6 top-6 z-[9999] transition-all duration-200",
+        show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
+      ].join(" ")}
+    >
+      <div className="rounded-2xl bg-emerald-600/95 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-emerald-300/50">
+        {text}
+      </div>
+    </div>
+  );
+}
+
 function BuyerPropertyDetailsView({
   property,
   paramsId,
@@ -216,12 +233,22 @@ function BuyerPropertyDetailsView({
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
   const [scheduleError, setScheduleError] = useState("");
+  const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
 
   const [visitData, setVisitData] = useState({
     requestedDate: "",
     preferredTime: "",
     message: "",
   });
+  const toastTimerRef = useRef<number | null>(null);
+
+  const showToast = (text: string) => {
+    setToast({ show: true, text });
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast((current) => ({ ...current, show: false }));
+    }, 1300);
+  };
 
   const images: string[] = useMemo(() => {
     const arr = (property?.images || []).map((x: any) => x?.url).filter(Boolean);
@@ -336,6 +363,14 @@ function BuyerPropertyDetailsView({
     setAgentImageFailed(false);
   }, [property?._id]);
 
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
   const listingType = String(property?.listingType || "").toLowerCase();
   const isRent = listingType === "rent";
 
@@ -387,6 +422,7 @@ function BuyerPropertyDetailsView({
       if (response?.success) {
         setSuccess(true);
         setFormData((prev) => ({ ...prev, message: "" }));
+        showToast("Inquiry sent successfully");
       } else {
         setError("Failed to send inquiry");
       }
@@ -659,6 +695,7 @@ function BuyerPropertyDetailsView({
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] px-4 py-5 sm:px-6 lg:px-8">
+      <Toast show={toast.show} text={toast.text} />
       <div className="mx-auto max-w-7xl">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-slate-800">

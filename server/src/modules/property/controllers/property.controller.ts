@@ -373,6 +373,41 @@ export async function updateProperty(req: Request, res: Response, next: NextFunc
       images: uploaded.length > 0 ? uploaded : undefined,
     });
 
+    try {
+      const superadmins = await User.find({
+        role: "superadmin",
+        status: "active",
+      })
+        .select("_id")
+        .lean();
+
+      if (superadmins.length) {
+        await notificationService.createBulkNotifications(
+          superadmins.map((admin) => ({
+            recipientId: String(admin._id),
+            recipientRole: "admin",
+            actorId: userId,
+            type: "alert.general",
+            category: "alert",
+            title: "Property updated for approval",
+            body: `${updated.title || "A property"} was edited and is waiting for re-approval.`,
+            data: {
+              propertyId: String(updated._id),
+              listingType: updated.listingType,
+              location: updated.location || "",
+            },
+            entityType: "property",
+            entityId: String(updated._id),
+            link: `/admin/listings-approval?listingId=${String(updated._id)}`,
+            priority: "high",
+            deliveryChannels: ["in_app"],
+          }))
+        );
+      }
+    } catch (notificationError) {
+      console.error("Failed to notify superadmin for updated property:", notificationError);
+    }
+
     return res.status(200).json({ success: true, property: updated });
   } catch (err) {
     return next(err);

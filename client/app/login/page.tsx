@@ -37,6 +37,23 @@ const fadeUp: Variants = {
   }),
 };
 
+type ToastState = { show: boolean; text: string };
+
+function Toast({ show, text }: ToastState) {
+  return (
+    <div
+      className={[
+        "fixed right-6 top-6 z-[9999] transition-all duration-200",
+        show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
+      ].join(" ")}
+    >
+      <div className="rounded-2xl bg-emerald-600/95 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-emerald-300/50">
+        {text}
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -45,8 +62,20 @@ export default function LoginPage() {
   const [loading, setLoading] = React.useState(false);
   const [showPw, setShowPw] = React.useState(false);
   const [googleBtnWidth, setGoogleBtnWidth] = React.useState<number | null>(null);
+  const [toast, setToast] = React.useState<ToastState>({ show: false, text: "" });
 
   const googleBtnRef = React.useRef<HTMLDivElement | null>(null);
+  const toastTimerRef = React.useRef<number | null>(null);
+
+  const showToast = React.useCallback((text: string) => {
+    setToast({ show: true, text });
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 1300);
+  }, []);
 
   React.useEffect(() => {
     const computeWidth = () => {
@@ -57,6 +86,14 @@ export default function LoginPage() {
     computeWidth();
     window.addEventListener("resize", computeWidth);
     return () => window.removeEventListener("resize", computeWidth);
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
   }, []);
 
   React.useEffect(() => {
@@ -86,7 +123,10 @@ export default function LoginPage() {
               body: JSON.stringify({ credential: resp.credential }),
             });
             const me = await apiFetch<{ user?: { role?: string } }>("/auth/me");
-            router.push(getDashboardPath(me?.user?.role));
+            showToast("Login successful");
+            window.setTimeout(() => {
+              router.push(getDashboardPath(me?.user?.role));
+            }, 500);
           } catch (e: any) {
             alert(e?.message || "Google login failed");
           }
@@ -106,7 +146,7 @@ export default function LoginPage() {
         locale: "en", // if supported
       });
     })();
-  }, [router, googleBtnWidth]);
+  }, [router, googleBtnWidth, showToast]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +158,10 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      router.push(getDashboardPath(data?.user?.role));
+      showToast("Login successful");
+      window.setTimeout(() => {
+        router.push(getDashboardPath(data?.user?.role));
+      }, 500);
     } catch (err: any) {
       alert(err?.message || "Login failed");
     } finally {
@@ -128,6 +171,7 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#F0F4F2]">
+      <Toast show={toast.show} text={toast.text} />
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
           className="absolute -left-20 top-28 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl"

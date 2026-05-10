@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   AlertCircle,
   Bell,
+  CheckCheck,
   ChevronRight,
   Mail,
   MessageSquare,
@@ -243,6 +244,19 @@ export default function NotificationBell({
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    if (unreadCount <= 0) return;
+
+    try {
+      await fetcher(`${endpointBase}/read-all`, { method: "PATCH" });
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+      notifyNotificationStateChanged();
+    } catch {
+      // Keep panel usable if update fails.
+    }
+  };
+
   return (
     <div ref={rootRef} className="relative">
       <button
@@ -270,16 +284,28 @@ export default function NotificationBell({
                 {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                router.push(notificationsPageHref);
-              }}
-              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
-            >
-              View all
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Mark all as read"
+                title="Mark all as read"
+                onClick={handleMarkAllAsRead}
+                disabled={unreadCount <= 0}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <CheckCheck className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  router.push(notificationsPageHref);
+                }}
+                className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+              >
+                View all
+              </button>
+            </div>
           </div>
 
           <div className="max-h-[420px] overflow-y-auto">
