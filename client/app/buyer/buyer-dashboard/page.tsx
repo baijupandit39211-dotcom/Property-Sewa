@@ -99,10 +99,10 @@ export default function BuyerDashboardPage() {
         apiFetch<{ items: Array<{ propertyId?: string | { _id?: string } }> }>("/wishlist", {
           signal: controller.signal,
         }),
-        apiFetch<ListResponse>("/properties?limit=12&sort=latest", {
+        apiFetch<ListResponse>("/properties?limit=12&sort=latest&dashboard=true", {
           signal: controller.signal,
         }),
-        apiFetch<ListResponse>("/properties?limit=6&sort=latest&offersOnly=true", {
+        apiFetch<ListResponse>("/properties?limit=6&sort=latest&offersOnly=true&dashboard=true", {
           signal: controller.signal,
         }),
       ]);

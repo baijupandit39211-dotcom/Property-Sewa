@@ -141,6 +141,20 @@ function buildReservationVisibilityQuery(viewer?: ViewerContext, now = new Date(
   };
 }
 
+function buildUnreservedOnlyQuery(now = new Date()) {
+  return {
+    $or: [
+      { reservationStatus: { $exists: false } },
+      { reservationStatus: null },
+      { reservationStatus: "none" },
+      { reservationStatus: "cancelled" },
+      { reservationStatus: "expired" },
+      { reservationStatus: "active", reservationExpiresAt: { $lte: now } },
+      { reservationStatus: "reserved", reservedUntil: { $lte: now } },
+    ],
+  };
+}
+
 function buildActiveOfferQuery(now = new Date()) {
   return {
     offerActive: true,
@@ -250,6 +264,8 @@ async function listApproved(query: any, viewer?: ViewerContext) {
 
   const q: any = { ...buildApprovedVisibilityQuery() };
   const offersOnly = String(query?.offersOnly || "").trim().toLowerCase();
+  const dashboardOnly = String(query?.dashboard || "").trim().toLowerCase();
+  const excludeReserved = String(query?.excludeReserved || "").trim().toLowerCase();
   const search = String(query?.search || "").trim();
   const andFilters: any[] = [];
   const ids = String(query?.ids || "")
@@ -281,7 +297,18 @@ async function listApproved(query: any, viewer?: ViewerContext) {
   if (offersOnly === "true" || offersOnly === "1" || offersOnly === "yes") {
     andFilters.push(buildActiveOfferQuery());
   }
-  andFilters.push(buildReservationVisibilityQuery(viewer));
+  if (
+    dashboardOnly === "true" ||
+    dashboardOnly === "1" ||
+    dashboardOnly === "yes" ||
+    excludeReserved === "true" ||
+    excludeReserved === "1" ||
+    excludeReserved === "yes"
+  ) {
+    andFilters.push(buildUnreservedOnlyQuery());
+  } else {
+    andFilters.push(buildReservationVisibilityQuery(viewer));
+  }
 
   const effectiveAndFilters = andFilters.filter(
     (value) => value && Object.keys(value).length > 0

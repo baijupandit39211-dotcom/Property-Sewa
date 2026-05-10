@@ -76,9 +76,12 @@ export default function SellerAddPropertyPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successToast, setSuccessToast] = useState("");
+  const [redirecting, setRedirecting] = useState(false);
 
   // ✅ show created property id
   const [createdPropertyId, setCreatedPropertyId] = useState<string>("");
+  const redirectTimerRef = React.useRef<number | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -130,6 +133,14 @@ export default function SellerAddPropertyPage() {
   useEffect(() => {
     return () => previews.forEach((u) => URL.revokeObjectURL(u));
   }, [previews]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        window.clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   const isRent = formData.listingType === "rent";
 
@@ -268,6 +279,8 @@ export default function SellerAddPropertyPage() {
     setLoading(true);
     setError("");
     setCreatedPropertyId("");
+    setSuccessToast("");
+    setRedirecting(false);
 
     try {
       if (images.length === 0) {
@@ -365,7 +378,11 @@ export default function SellerAddPropertyPage() {
           setError("Created but could not read Property ID from response.");
         } else {
           setCreatedPropertyId(String(id));
-          // resetAfterSuccess();
+          setSuccessToast("Property created successfully. Redirecting to details...");
+          setRedirecting(true);
+          redirectTimerRef.current = window.setTimeout(() => {
+            router.push(`/seller/property/${id}`);
+          }, 500);
         }
       } else {
         setError(response?.message || "Failed to create property");
@@ -389,6 +406,12 @@ export default function SellerAddPropertyPage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_22%),linear-gradient(180deg,#eef6f1_0%,#f8fbf9_100%)] px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-7xl">
+        {successToast ? (
+          <div className="fixed right-4 top-4 z-[9999] rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 shadow-lg sm:right-6 sm:top-6">
+            {successToast}
+          </div>
+        ) : null}
+
         <div className="mb-6 overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-start gap-4">
@@ -1254,10 +1277,10 @@ export default function SellerAddPropertyPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || redirecting}
               className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Creating..." : "Create Property"}
+              {loading || redirecting ? "Creating..." : "Create Property"}
             </button>
           </div>
           </div>

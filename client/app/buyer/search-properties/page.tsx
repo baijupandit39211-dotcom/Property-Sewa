@@ -360,6 +360,7 @@ function SearchPropertiesPageContent() {
     if (limit) params.set("limit", String(limit));
     if (sort) params.set("sort", sort);
     if (showOnlyOffers) params.set("offersOnly", "true");
+    params.set("excludeReserved", "true");
 
     setLoading(true);
     setError("");
