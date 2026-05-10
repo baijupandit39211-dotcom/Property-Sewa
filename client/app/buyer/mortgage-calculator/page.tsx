@@ -349,7 +349,7 @@ export default function MortgageCalculatorPage() {
       : 0;
 
   return (
-    <div className="min-h-screen bg-[#eef3f8] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#eef3f8] px-4 py-8 text-sm text-slate-700 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1220px]">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
@@ -364,13 +364,13 @@ export default function MortgageCalculatorPage() {
           <section className="rounded-[22px] border border-[#d7e0ea] bg-white p-5 shadow-sm sm:p-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="border-[#d7e0ea] lg:border-r lg:pr-6">
-                <h2 className="text-[20px] font-bold text-slate-800">
+                <h2 className="text-lg font-bold text-slate-800">
                   Mortgage Details
                 </h2>
 
                 <div className="mt-5 space-y-4">
                   <div className="grid items-center gap-3 border-t border-[#d7e0ea] pt-4 sm:grid-cols-[1fr_220px]">
-                    <label className="text-[17px] font-semibold text-slate-700">
+                    <label className="text-sm font-semibold text-slate-700">
                       Home Price
                     </label>
                     <div className="relative">
@@ -378,13 +378,13 @@ export default function MortgageCalculatorPage() {
                       <input
                         value={form.price}
                         onChange={(e) => update("price", e.target.value)}
-                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-[17px] font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
+                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
                   </div>
 
                   <div className="grid items-center gap-3 border-t border-[#d7e0ea] pt-4 sm:grid-cols-[1fr_220px]">
-                    <label className="text-[17px] font-semibold text-slate-700">
+                    <label className="text-sm font-semibold text-slate-700">
                       Down Payment
                     </label>
                     <div className="grid grid-cols-[1fr_86px] gap-2">
@@ -393,7 +393,7 @@ export default function MortgageCalculatorPage() {
                         <input
                           value={form.downPayment}
                           onChange={(e) => update("downPayment", e.target.value)}
-                          className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-[17px] font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
+                          className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
                         />
                       </div>
                       <div className="flex h-11 items-center justify-center rounded-lg border border-[#cdd7e3] bg-slate-50 text-sm font-bold text-slate-600">
@@ -419,7 +419,7 @@ export default function MortgageCalculatorPage() {
                   </div>
 
                   <div className="grid items-center gap-3 border-t border-[#d7e0ea] pt-4 sm:grid-cols-[1fr_220px]">
-                    <label className="text-[17px] font-semibold text-slate-700">
+                    <label className="text-sm font-semibold text-slate-700">
                       Loan Term
                     </label>
                     <div className="relative">
@@ -427,7 +427,7 @@ export default function MortgageCalculatorPage() {
                       <select
                         value={form.years}
                         onChange={(e) => update("years", e.target.value)}
-                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-[17px] font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
+                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
                       >
                         {[10, 15, 20, 25, 30].map((y) => (
                           <option key={y} value={y}>
@@ -439,7 +439,7 @@ export default function MortgageCalculatorPage() {
                   </div>
 
                   <div className="grid items-center gap-3 border-t border-[#d7e0ea] pt-4 sm:grid-cols-[1fr_220px]">
-                    <label className="text-[17px] font-semibold text-slate-700">
+                    <label className="text-sm font-semibold text-slate-700">
                       Interest Rate
                     </label>
                     <div className="relative">
@@ -447,13 +447,13 @@ export default function MortgageCalculatorPage() {
                       <input
                         value={form.rate}
                         onChange={(e) => update("rate", e.target.value)}
-                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-[17px] font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
+                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
                   </div>
 
                   <div className="grid items-center gap-3 border-t border-[#d7e0ea] pt-4 sm:grid-cols-[1fr_220px]">
-                    <label className="text-[17px] font-semibold text-slate-700">
+                    <label className="text-sm font-semibold text-slate-700">
                       Property Tax
                     </label>
                     <div className="relative">
@@ -461,13 +461,13 @@ export default function MortgageCalculatorPage() {
                       <input
                         value={form.propertyTaxAnnual}
                         onChange={(e) => update("propertyTaxAnnual", e.target.value)}
-                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-[17px] font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
+                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
                   </div>
 
                   <div className="grid items-center gap-3 border-t border-[#d7e0ea] pt-4 sm:grid-cols-[1fr_220px]">
-                    <label className="text-[17px] font-semibold text-slate-700">
+                    <label className="text-sm font-semibold text-slate-700">
                       Home Insurance
                     </label>
                     <div className="relative">
@@ -475,13 +475,13 @@ export default function MortgageCalculatorPage() {
                       <input
                         value={form.insuranceAnnual}
                         onChange={(e) => update("insuranceAnnual", e.target.value)}
-                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-[17px] font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
+                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
                   </div>
 
                   <div className="grid items-center gap-3 border-t border-[#d7e0ea] pt-4 sm:grid-cols-[1fr_220px]">
-                    <label className="text-[17px] font-semibold text-slate-700">
+                    <label className="text-sm font-semibold text-slate-700">
                       HOA Fees (Monthly)
                     </label>
                     <div className="relative">
@@ -489,7 +489,7 @@ export default function MortgageCalculatorPage() {
                       <input
                         value={form.hoaMonthly}
                         onChange={(e) => update("hoaMonthly", e.target.value)}
-                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-[17px] font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
+                        className="h-11 w-full rounded-lg border border-[#cdd7e3] bg-white pl-9 pr-3 text-right text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
                   </div>
@@ -498,14 +498,14 @@ export default function MortgageCalculatorPage() {
                     <button
                       type="button"
                       onClick={handleCalculate}
-                      className="h-12 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-lg font-bold text-white hover:from-blue-700 hover:to-blue-600"
+                      className="h-12 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-sm font-semibold text-white hover:from-blue-700 hover:to-blue-600"
                     >
                       Calculate
                     </button>
                     <button
                       type="button"
                       onClick={handleReset}
-                      className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-[#cdd7e3] bg-slate-50 text-lg font-bold text-slate-700 hover:bg-slate-100"
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-[#cdd7e3] bg-slate-50 text-sm font-semibold text-slate-700 hover:bg-slate-100"
                     >
                       <RefreshCcw className="h-4 w-4" />
                       Reset
@@ -515,14 +515,14 @@ export default function MortgageCalculatorPage() {
               </div>
 
               <div className="lg:pl-2">
-                <h2 className="text-[20px] font-bold text-slate-800">
+                <h2 className="text-lg font-bold text-slate-800">
                   Estimated Monthly Payment
                 </h2>
 
                 <div className="mt-5 border-t border-[#d7e0ea] pt-4">
-                  <div className="text-center text-[54px] font-extrabold leading-none text-slate-900">
+                  <div className="text-center text-4xl font-extrabold leading-none text-slate-900 sm:text-5xl">
                     {money(calc.totalMonthly)}
-                    <span className="text-[22px] font-medium text-slate-700">
+                    <span className="text-base font-medium text-slate-700 sm:text-lg">
                       {" "}
                       / month
                     </span>
@@ -537,7 +537,7 @@ export default function MortgageCalculatorPage() {
                     />
                   </div>
 
-                  <div className="mt-3 space-y-3 text-[18px]">
+                  <div className="mt-3 space-y-3 text-sm">
                     {[
                       {
                         label: "Principal & Interest",
@@ -580,11 +580,11 @@ export default function MortgageCalculatorPage() {
           </section>
 
           <section className="rounded-[22px] border border-[#d7e0ea] bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-[20px] font-bold text-slate-800">
+            <h2 className="text-lg font-bold text-slate-800">
               Payment Breakdown
             </h2>
 
-            <div className="mt-5 max-w-[620px] space-y-0 text-[18px]">
+            <div className="mt-5 max-w-[620px] space-y-0 text-sm">
               {[
                 ["Principal & Interest", calc.principalAndInterest],
                 ["Property Tax", calc.propertyTaxMonthly],
@@ -603,7 +603,7 @@ export default function MortgageCalculatorPage() {
                 </div>
               ))}
 
-              <div className="flex items-center justify-between border-t border-[#d7e0ea] py-3 text-[20px]">
+              <div className="flex items-center justify-between border-t border-[#d7e0ea] py-3 text-base">
                 <span className="font-bold text-slate-800">Total Monthly Payment</span>
                 <span className="font-extrabold text-slate-900">
                   {money(calc.totalMonthly)}
@@ -615,7 +615,7 @@ export default function MortgageCalculatorPage() {
           <section className="rounded-[22px] border border-[#d7e0ea] bg-white p-5 shadow-sm sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <h2 className="text-[20px] font-bold text-slate-800">
+                <h2 className="text-lg font-bold text-slate-800">
                   Amortization Schedule
                 </h2>
                 <div className="inline-flex overflow-hidden rounded-lg border border-[#cdd7e3]">
@@ -646,7 +646,7 @@ export default function MortgageCalculatorPage() {
             </div>
 
             <div className="mt-5 border-t border-[#d7e0ea] pt-5">
-              <div className="mb-4 text-[18px] font-bold text-slate-700">
+              <div className="mb-4 text-base font-bold text-slate-700">
                 Remaining Loan Balance
               </div>
 
@@ -682,7 +682,7 @@ export default function MortgageCalculatorPage() {
                 {tableRows.map((row, idx) => (
                   <div
                     key={`${row.period}-${idx}`}
-                    className="grid grid-cols-4 border-t border-[#d7e0ea] px-4 py-3 text-[17px]"
+                    className="grid grid-cols-4 border-t border-[#d7e0ea] px-4 py-3 text-sm"
                   >
                     <div className="font-semibold text-slate-700">
                       {row.period.replace("Month ", "").replace("Year ", "")}

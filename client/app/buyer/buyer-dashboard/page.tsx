@@ -19,7 +19,6 @@ import {
   MessagesCard,
   OverviewCard,
   PageSearchBar,
-  RecommendationCard,
   RecentSearchesCard,
   SavedPropertyCard,
   SectionHeading,
@@ -464,10 +463,9 @@ export default function BuyerDashboardPage() {
               <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
                 {recommendedListings.length ? (
                   recommendedListings.map((property) => (
-                    <RecommendationCard
+                    <SavedPropertyCard
                       key={property._id}
                       property={property}
-                      label={property.offerActive ? "For Sale" : "Recommended"}
                       wishSaved={wishlistSet.has(property._id)}
                       wishPop={!!wishPopIds[property._id]}
                       onToggleWish={() => toggleWishlist(property._id)}
@@ -475,6 +473,8 @@ export default function BuyerDashboardPage() {
                       comparePop={!!comparePopIds[property._id]}
                       onToggleCompare={() => toggleCompare(property._id)}
                       onReport={handleOpenReport}
+                      viewLabel="View"
+                      showSavedTag={false}
                     />
                   ))
                 ) : (

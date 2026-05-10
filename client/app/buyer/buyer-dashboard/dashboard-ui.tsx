@@ -58,13 +58,13 @@ export function PageSearchBar({
     <div className="rounded-[28px] border border-white/80 bg-white/90 px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.035)]">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex h-12 w-full items-center rounded-full border border-[#ece8e0] bg-[#fbfaf7] px-4 shadow-[0_10px_22px_rgba(15,23,42,0.03)]">
-            <Search className="h-5 w-5 shrink-0 text-slate-400" />
+          <div className="flex h-12 w-full items-center rounded-full border border-[#cfd8d2] bg-white px-4 shadow-[0_8px_20px_rgba(15,23,42,0.06)] ring-1 ring-[#eef3f0] focus-within:border-[#316249] focus-within:ring-2 focus-within:ring-[#316249]/20">
+            <Search className="h-5 w-5 shrink-0 text-slate-500" />
             <input
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="Search location, city, or property type..."
-              className={`ml-3 w-full bg-transparent outline-none ${typography.inputText}`}
+              className="ml-3 w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-500 outline-none"
             />
             <Link
               href={searchHref}
@@ -228,13 +228,13 @@ export function RecommendationCard({
 }) {
   const detailsHref = `/buyer/property/${property._id}`;
   return (
-    <Link href={detailsHref} className="group block focus:outline-none">
+    <Link href={detailsHref} className="group block min-w-0 focus:outline-none">
       <motion.div
         whileHover={{ y: -4 }}
         transition={{ duration: 0.18 }}
-        className="overflow-hidden rounded-[24px] border border-[#ece8e0] bg-white shadow-[0_14px_28px_rgba(15,23,42,0.04)] transition group-hover:border-[#316249] group-hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+        className="overflow-hidden rounded-[6px] border border-[#ece8e0] bg-white shadow-[0_14px_28px_rgba(15,23,42,0.04)] transition group-hover:border-[#316249] group-hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
       >
-        <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-t-[6px] bg-slate-100">
           <img
             src={property.images?.[0]?.url || fallbackImage(property)}
             alt={property.title}
@@ -242,7 +242,7 @@ export function RecommendationCard({
             loading="lazy"
             decoding="async"
           />
-          <div className="absolute left-4 top-4 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-900 shadow-sm">
+          <div className="absolute left-4 top-4 rounded-[4px] bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-900 shadow-sm">
             {label}
           </div>
           <div className="absolute right-4 top-4 flex items-center gap-2">
@@ -254,7 +254,7 @@ export function RecommendationCard({
                 onToggleWish();
               }}
               className={[
-                "grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition",
+                "grid h-10 w-10 place-items-center rounded-[4px] bg-white text-slate-700 shadow-sm transition",
                 wishPop ? "scale-110" : "",
               ].join(" ")}
             >
@@ -265,12 +265,12 @@ export function RecommendationCard({
           </div>
         </div>
 
-        <div className="p-5">
-          <div className="text-xl font-semibold tracking-tight text-slate-900">
+        <div className="flex min-w-0 flex-col p-4">
+          <div className="text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
             {formatPrice(property)}
           </div>
           <p className="mt-2 line-clamp-2 text-sm font-semibold text-slate-900">{property.title}</p>
-          <div className={`mt-2 flex items-center gap-1 ${typography.helperText}`}>
+          <div className={`mt-1 flex items-center gap-1 ${typography.helperText}`}>
             <MapPin className="h-3.5 w-3.5 text-rose-400" />
             <span className="line-clamp-1">{property.location || property.address}</span>
           </div>
@@ -279,7 +279,7 @@ export function RecommendationCard({
             <InlineSpec icon={<Bath className="h-3.5 w-3.5" />} text={`${property.baths || 0} Baths`} />
             <InlineSpec icon={<Ruler className="h-3.5 w-3.5" />} text={`${numberCompact(property.sqft)} sqft`} />
           </div>
-          <div className="mt-5 flex items-center justify-between gap-3">
+          <div className="mt-5 grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={(event) => {
@@ -288,30 +288,19 @@ export function RecommendationCard({
                 onToggleCompare();
               }}
               className={[
-                `inline-flex h-9 items-center rounded-full px-3 transition ${typography.buttonText}`,
-                compareOn ? "bg-slate-900 text-white" : "border border-[#dfe5df] bg-white text-slate-700 hover:border-[#316249]",
+                "inline-flex h-10 w-full min-w-0 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 transition",
+                compareOn
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "bg-white text-slate-800 hover:border-[#316249]",
                 comparePop ? "scale-105" : "",
+                "text-sm font-semibold tracking-tight",
               ].join(" ")}
             >
               Compare
             </button>
-            <div className="flex items-center gap-3">
-              <span className={`text-[#316249] ${typography.buttonText}`}>View details</span>
-              <div
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                }}
-              >
-                <AdActionsMenu
-                  adId={property._id}
-                  title={property.title}
-                  location={property.location || property.address}
-                  variant="icon"
-                  onReport={onReport}
-                />
-              </div>
-            </div>
+            <span className="inline-flex h-10 w-full min-w-0 items-center justify-center rounded-xl bg-[#316249] px-4 whitespace-nowrap text-sm font-semibold tracking-tight text-white transition hover:bg-[#28513D]">
+              View details
+            </span>
           </div>
         </div>
       </motion.div>
@@ -328,6 +317,8 @@ export function SavedPropertyCard({
   comparePop,
   onToggleCompare,
   onReport,
+  viewLabel = "View Details",
+  showSavedTag = true,
 }: {
   property: Property;
   wishSaved: boolean;
@@ -337,6 +328,8 @@ export function SavedPropertyCard({
   comparePop: boolean;
   onToggleCompare: () => void;
   onReport: (input: { adId?: string | null; title?: string; location?: string }) => void;
+  viewLabel?: string;
+  showSavedTag?: boolean;
 }) {
   const detailsHref = `/buyer/property/${property._id}`;
   const rawPrice = Number(property.price) || 0;
@@ -400,9 +393,11 @@ export function SavedPropertyCard({
                 <p className="mt-2 truncate text-sm font-semibold text-slate-900">{property.title}</p>
                 <p className={`mt-1 truncate ${typography.pageSubtitle}`}>{property.location || property.address}</p>
               </div>
-              <span className="hidden shrink-0 rounded-full bg-[#eff4f1] px-3 py-1.5 text-[11px] font-semibold text-[#316249] sm:inline">
-                Saved
-              </span>
+              {showSavedTag ? (
+                <span className="hidden shrink-0 rounded-full bg-[#eff4f1] px-3 py-1.5 text-[11px] font-semibold text-[#316249] sm:inline">
+                  Saved
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -415,19 +410,19 @@ export function SavedPropertyCard({
                 onToggleCompare();
               }}
               className={[
-                "inline-flex w-full min-w-0 items-center justify-center rounded-full border border-slate-200 px-3 py-2 transition",
+                "inline-flex h-10 w-full min-w-0 items-center justify-center rounded-lg border border-slate-200 px-4 transition",
                 compareOn
                   ? "border-slate-900 bg-slate-900 text-white"
                   : "bg-white text-slate-800 hover:border-[#316249]",
                 comparePop ? "scale-105" : "",
-                typography.buttonText,
+                "text-sm font-semibold tracking-tight",
               ].join(" ")}
             >
               Compare
             </button>
 
-            <span className="w-full sm:flex-1 inline-flex items-center justify-center rounded-full border border-[#316249] px-4 py-2 text-sm font-semibold text-[#316249] transition group-hover:bg-[#316249]/10">
-              View details
+            <span className="inline-flex h-10 w-full min-w-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 whitespace-nowrap text-sm font-semibold tracking-tight text-slate-800 transition hover:border-[#316249]">
+              {viewLabel}
             </span>
           </div>
         </div>
