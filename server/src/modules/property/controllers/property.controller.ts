@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from "express";
 import { ApiError } from "../../../utils/apiError";
 import propertyService from "../services/property.services";
 import cloudinary from "../../../config/cloudinary";
+import User from "../../../models/User.model";
+import notificationService from "../../notifications/services/notification.services";
 
 async function uploadToCloudinary(buffer: Buffer) {
   return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
@@ -126,8 +128,41 @@ export async function createProperty(req: Request, res: Response, next: NextFunc
       createdBy: userId,
       images: uploaded,
     });
+    try {
+      const superadmins = await User.find({
+        role: "superadmin",
+        status: "active",
+      })
+        .select("_id")
+        .lean();
 
-    // ✅ return property id reliably (frontend already handles response.property._id)
+      if (superadmins.length) {
+        await notificationService.createBulkNotifications(
+          superadmins.map((admin) => ({
+            recipientId: String(admin._id),
+            recipientRole: "admin",
+            actorId: userId,
+            type: "alert.general",
+            category: "alert",
+            title: "New property submitted",
+            body: `${created.title || "A property"} is waiting for approval.`,
+            data: {
+              propertyId: String(created._id),
+              listingType: created.listingType,
+              location: created.location || "",
+            },
+            entityType: "property",
+            entityId: String(created._id),
+            link: `/admin/listings-approval?listingId=${String(created._id)}`,
+            priority: "high",
+            deliveryChannels: ["in_app"],
+          }))
+        );
+      }
+    } catch (notificationError) {
+      console.error("Failed to notify superadmin for new property:", notificationError);
+    }
+    // return property id reliably (frontend already handles response.property._id)
     return res.status(201).json({ success: true, property: created });
   } catch (err) {
     return next(err);
@@ -343,3 +378,4 @@ export async function updateProperty(req: Request, res: Response, next: NextFunc
     return next(err);
   }
 }
+
