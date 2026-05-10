@@ -73,8 +73,8 @@ function escapeRegex(value: string) {
 
 function buildApprovedSort(sort?: string): Record<string, SortOrder> {
   const value = String(sort || "").trim().toLowerCase();
-  if (value === "price_asc") return { price: 1, createdAt: -1 };
-  if (value === "price_desc") return { price: -1, createdAt: -1 };
+  if (value === "price_asc") return { price: 1, createdAt: -1, _id: -1 };
+  if (value === "price_desc") return { price: -1, createdAt: -1, _id: -1 };
   return { createdAt: -1, _id: -1 };
 }
 

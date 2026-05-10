@@ -92,20 +92,20 @@ export default function SellerLayout({
 
   return (
     <SellerAuthProvider value={{ user }}>
-      <div className="flex min-h-[100dvh] flex-col bg-[#F1F7F4]">
-        <div className="sticky top-0 z-50">
+      <div className="min-h-[100dvh] overflow-hidden bg-[#F1F7F4]">
+        <div className="fixed inset-x-0 top-0 z-50">
           <SellerHeader
             mobileSidebarOpen={mobileSidebarOpen}
             onToggleSidebar={() => setMobileSidebarOpen((open) => !open)}
           />
         </div>
 
-        <div className="flex flex-1">
+        <div className="flex pt-16">
           <SellerSidebar
             mobileOpen={mobileSidebarOpen}
             onCloseMobile={() => setMobileSidebarOpen(false)}
           />
-          <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:ml-64 lg:px-8 lg:py-8">
+          <main className="ml-0 h-[calc(100dvh-64px)] flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:ml-64 lg:px-8 lg:py-8">
             {children}
           </main>
         </div>

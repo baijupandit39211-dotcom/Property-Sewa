@@ -892,13 +892,17 @@ export default function SellerVisitSchedulingPage() {
             </button>
           </div>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_1fr]">
-            <div>
+        </section>
+
+        <section className="mt-8 rounded-[34px] border border-emerald-200/80 bg-white px-6 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:px-8 sm:py-7">
+          <div className="rounded-[26px] bg-[#f8fbf9] p-4 ring-1 ring-[#dfe7e1] sm:p-6">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_1fr]">
+              <div>
               <div className="mb-5 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => navigateMonth("prev")}
-                  className="grid h-10 w-10 place-items-center rounded-full text-[#43584b] hover:bg-white"
+                  className="grid h-10 w-10 place-items-center rounded-full text-[#43584b] hover:bg-[#f3f8f4]"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
@@ -917,7 +921,7 @@ export default function SellerVisitSchedulingPage() {
                 <button
                   type="button"
                   onClick={() => navigateMonth("next")}
-                  className="grid h-10 w-10 place-items-center rounded-full text-[#43584b] hover:bg-white"
+                  className="grid h-10 w-10 place-items-center rounded-full text-[#43584b] hover:bg-[#f3f8f4]"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
@@ -939,66 +943,66 @@ export default function SellerVisitSchedulingPage() {
               </div>
             </div>
 
-            <div className="rounded-[24px] bg-transparent">
-              <div className="space-y-7">
-                {loading ? (
-                  <div className="grid min-h-[320px] place-items-center rounded-[24px] bg-white ring-1 ring-[#dfe7e1]">
+              <div className="rounded-[24px] bg-transparent">
+                <div className="space-y-7">
+                  {loading ? (
+                    <div className="grid min-h-[320px] place-items-center rounded-[24px] bg-white ring-1 ring-[#dfe7e1]">
                     <LoaderCircle className="h-6 w-6 animate-spin text-[#316249]" />
-                  </div>
-                ) : showcaseVisits.length === 0 ? (
-                  <div className="rounded-[24px] bg-white p-8 text-center ring-1 ring-[#dfe7e1]">
+                    </div>
+                  ) : showcaseVisits.length === 0 ? (
+                    <div className="rounded-[24px] bg-white p-8 text-center ring-1 ring-[#dfe7e1]">
                     <CircleAlert className="mx-auto h-8 w-8 text-slate-300" />
                     <p className="mt-3 text-sm text-[#50645a]">
                       No visits available for the selected range.
                     </p>
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <h2 className="text-[30px] font-extrabold tracking-tight text-[#1f2d24]">
-                        {formatMonthTitle(selectedDate)}
-                      </h2>
                     </div>
+                  ) : (
+                    <>
+                      <div>
+                        <h2 className="text-[30px] font-extrabold tracking-tight text-[#1f2d24]">
+                          {formatMonthTitle(selectedDate)}
+                        </h2>
+                      </div>
 
-                    {showcaseVisits.map((visit) => (
-                      <button
-                        key={visit._id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedDate(
-                            new Date(visit.actualDate || visit.requestedDate)
-                          );
-                          setSelectedVisitId(visit._id);
-                        }}
-                        className={cn(
-                          "grid w-full gap-5 text-left md:grid-cols-[1fr_220px]",
-                          selectedVisit?._id === visit._id && "opacity-100"
-                        )}
-                      >
-                        <div className="self-center">
-                          <div className="text-[22px] font-bold tracking-tight text-[#1f2d24]">
-                            {visit.propertyId.title}
-                          </div>
-                          <div className="mt-2 text-sm text-[#587864]">
-                            Buyer: {visit.buyerId.name} | Status:{" "}
-                            <span className={statusTextClass(visit.status)}>
-                              {statusText(visit.status)}
-                            </span>
-                          </div>
+                      {showcaseVisits.map((visit) => (
+                        <button
+                          key={visit._id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedDate(
+                              new Date(visit.actualDate || visit.requestedDate)
+                            );
+                            setSelectedVisitId(visit._id);
+                          }}
+                          className={cn(
+                            "grid w-full gap-5 text-left md:grid-cols-[1fr_220px]",
+                            selectedVisit?._id === visit._id && "opacity-100"
+                          )}
+                        >
+                          <div className="self-center">
+                            <div className="text-[22px] font-bold tracking-tight text-[#1f2d24]">
+                              {visit.propertyId.title}
+                            </div>
+                            <div className="mt-2 text-sm text-[#587864]">
+                              Buyer: {visit.buyerId.name} | Status:{" "}
+                              <span className={statusTextClass(visit.status)}>
+                                {statusText(visit.status)}
+                              </span>
+                            </div>
 
-                          <div className="mt-4">
-                            {visit.status === "requested" && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openAction("confirm", visit);
-                                }}
-                                className="rounded-lg bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
-                              >
-                                Approve
-                              </button>
-                            )}
+                            <div className="mt-4">
+                              {visit.status === "requested" && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openAction("confirm", visit);
+                                  }}
+                                  className="rounded-lg bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
+                                >
+                                  Approve
+                                </button>
+                              )}
 
                             {visit.status === "confirmed" && (
                               <button
@@ -1041,41 +1045,42 @@ export default function SellerVisitSchedulingPage() {
                           </div>
                         </div>
 
-                        <div className="overflow-hidden rounded-xl">
-                          <img
-                            src={getVisitImage(visit)}
-                            alt={visit.propertyId.title}
-                            className="h-[140px] w-full object-cover"
-                          />
-                        </div>
-                      </button>
-                    ))}
-                  </>
-                )}
+                          <div className="overflow-hidden rounded-xl">
+                            <img
+                              src={getVisitImage(visit)}
+                              alt={visit.propertyId.title}
+                              className="h-[140px] w-full object-cover"
+                            />
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={resetRange}
-              className="rounded-xl border border-[#dfe7e1] bg-white px-4 py-2.5 text-sm font-semibold text-[#55685f]"
-            >
-              Reset Range
-            </button>
-            <button
-              type="button"
-              onClick={applyDraftRange}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
-              style={{ backgroundColor: THEME.primary }}
-            >
-              Apply Range
-            </button>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={resetRange}
+                className="rounded-xl border border-[#dfe7e1] bg-white px-4 py-2.5 text-sm font-semibold text-[#55685f]"
+              >
+                Reset Range
+              </button>
+              <button
+                type="button"
+                onClick={applyDraftRange}
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                style={{ backgroundColor: THEME.primary }}
+              >
+                Apply Range
+              </button>
+            </div>
           </div>
         </section>
 
-        <section className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)]">
+        <section className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)]">
           <div className="rounded-[28px] bg-[#f3f8f4] px-5 py-6 sm:px-8">
             {!selectedVisit ? (
               <div className="rounded-[24px] bg-white p-8 text-center ring-1 ring-[#dfe7e1]">

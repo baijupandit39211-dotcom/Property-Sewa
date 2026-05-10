@@ -132,7 +132,7 @@ function EmptyState({ onResetFilters }: { onResetFilters: () => void }) {
 function LoadingSkeleton() {
   return (
     <section className="grid grid-cols-1 gap-7 sm:grid-cols-2 xl:grid-cols-3">
-      {Array.from({ length: 8 }).map((_, index) => (
+      {Array.from({ length: 6 }).map((_, index) => (
         <div
           key={index}
           className="flex h-full flex-col overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.08)]"
@@ -256,6 +256,7 @@ function parseSmartSearch(input: string) {
 }
 
 function SearchPropertiesPageContent() {
+  const ITEMS_PER_PAGE = 6;
   const searchParams = useSearchParams();
   const [items, setItems] = useState<Property[]>([]);
   const [showOnlyOffers, setShowOnlyOffers] = useState(false);
@@ -265,7 +266,7 @@ function SearchPropertiesPageContent() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(12);
+  const limit = ITEMS_PER_PAGE;
   const [sort, setSort] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -288,7 +289,6 @@ function SearchPropertiesPageContent() {
 
   const [poppingIds, setPoppingIds] = useState<Record<string, boolean>>({});
   const [comparePopIds, setComparePopIds] = useState<Record<string, boolean>>({});
-  const allowUnfilteredFetchRef = useRef(true);
   const offersOnlyFromQuery = searchParams.get("offersOnly");
   const offersOnlyEnabled =
     offersOnlyFromQuery === "true" || offersOnlyFromQuery === "1" || offersOnlyFromQuery === "yes";
@@ -350,19 +350,6 @@ function SearchPropertiesPageContent() {
 
   useEffect(() => {
     const params = new URLSearchParams();
-    const hasActiveFilters = Boolean(
-      debouncedSearch ||
-        debouncedLocation ||
-        listingType ||
-        minPrice ||
-        maxPrice ||
-        sort ||
-        showOnlyOffers
-    );
-
-    if (!hasActiveFilters && !allowUnfilteredFetchRef.current) {
-      return;
-    }
 
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (debouncedLocation) params.set("location", debouncedLocation);
@@ -381,7 +368,6 @@ function SearchPropertiesPageContent() {
       .then((res) => {
         setItems(res.items);
         setTotal(res.total);
-        allowUnfilteredFetchRef.current = false;
       })
       .catch(() => {
         setError("Failed to fetch properties");
@@ -500,7 +486,6 @@ function SearchPropertiesPageContent() {
   }
 
   function clearFilters() {
-    allowUnfilteredFetchRef.current = true;
     setSmartSearchOpen(false);
     setSmartSearch("");
     setSearch("");
