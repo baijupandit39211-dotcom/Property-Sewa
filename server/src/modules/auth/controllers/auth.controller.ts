@@ -52,7 +52,9 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     const result = await authService.register(req.body);
 
     const cookieName = process.env.COOKIE_NAME || "accessToken";
+    const adminCookie = process.env.ADMIN_COOKIE_NAME || "adminToken";
     setCookie(res, cookieName, result.token);
+    res.clearCookie(adminCookie, getClearCookieOptions());
 
     sendWelcomeEmail({
       to: result.user.email,
@@ -74,7 +76,15 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     const result = await authService.login(req.body);
 
     const cookieName = process.env.COOKIE_NAME || "accessToken";
+    const adminCookie = process.env.ADMIN_COOKIE_NAME || "adminToken";
+    const role = String(result.user?.role || "").toLowerCase();
+
     setCookie(res, cookieName, result.token);
+    if (role === "admin" || role === "superadmin") {
+      setCookie(res, adminCookie, result.token);
+    } else {
+      res.clearCookie(adminCookie, getClearCookieOptions());
+    }
 
     return res.status(200).json({ success: true, user: result.user });
   } catch (err) {
@@ -91,7 +101,9 @@ export async function adminLogin(req: Request, res: Response, next: NextFunction
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
+    const cookieName = process.env.COOKIE_NAME || "accessToken";
     const adminCookie = process.env.ADMIN_COOKIE_NAME || "adminToken";
+    setCookie(res, cookieName, result.token);
     setCookie(res, adminCookie, result.token);
 
     return res.status(200).json({ success: true, user: result.user });
@@ -105,7 +117,9 @@ export async function googleLogin(req: Request, res: Response, next: NextFunctio
     const result = await authService.googleLogin(req.body);
 
     const cookieName = process.env.COOKIE_NAME || "accessToken";
+    const adminCookie = process.env.ADMIN_COOKIE_NAME || "adminToken";
     setCookie(res, cookieName, result.token);
+    res.clearCookie(adminCookie, getClearCookieOptions());
 
     return res.status(200).json({ success: true, user: result.user });
   } catch (err) {

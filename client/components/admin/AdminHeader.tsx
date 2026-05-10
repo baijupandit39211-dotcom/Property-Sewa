@@ -55,7 +55,7 @@ export default function AdminHeader({
     try {
       await logoutByRole(user?.role);
     } finally {
-      router.replace("/admin-login");
+      router.replace("/login");
       router.refresh();
     }
   };

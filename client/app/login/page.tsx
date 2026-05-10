@@ -6,6 +6,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
 import { apiFetch } from "../lib/api";
+import { getDashboardPath } from "../lib/auth";
 import { Mail, Lock, Eye, EyeOff, Phone, Menu } from "lucide-react";
 import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 
@@ -84,8 +85,8 @@ export default function LoginPage() {
               method: "POST",
               body: JSON.stringify({ credential: resp.credential }),
             });
-
-            router.push("/");
+            const me = await apiFetch<{ user?: { role?: string } }>("/auth/me");
+            router.push(getDashboardPath(me?.user?.role));
           } catch (e: any) {
             alert(e?.message || "Google login failed");
           }
@@ -112,12 +113,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await apiFetch<{ user: any }>("/auth/login", {
+      const data = await apiFetch<{ user: { role?: string } }>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
-      router.push("/");
+      router.push(getDashboardPath(data?.user?.role));
     } catch (err: any) {
       alert(err?.message || "Login failed");
     } finally {

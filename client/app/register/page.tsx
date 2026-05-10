@@ -287,7 +287,7 @@ export default function RegisterPage() {
                 {/* ✅ Admin → go to admin login page */}
                 <button
                   type="button"
-                  onClick={() => router.push("/admin-login")}
+                  onClick={() => router.push("/login")}
                   className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-700 ring-1 ring-emerald-200 transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-50"
                 >
                   Admin
@@ -435,3 +435,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

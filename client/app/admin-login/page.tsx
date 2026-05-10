@@ -1,126 +1,44 @@
 "use client";
 
-import Link from "next/link";
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
-import { apiFetch, apiFetchSafe } from "../lib/api"; // ✅ add apiFetchSafe
+import { getDashboardPath } from "../lib/auth";
+import { apiFetchSafe } from "../lib/api";
 
 export default function AdminLoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-
-  // ✅ Silent session check (no console error if not logged in)
   useEffect(() => {
-    apiFetchSafe<{ user: { role: string } }>("/auth/admin/me")
-      .then((res) => {
-        const role = (res?.user?.role || "").toLowerCase();
-        if (role === "admin" || role === "superadmin") {
-          router.replace("/admin/overview");
-        }
-      })
-      .catch(() => {});
-  }, [router]);
+    let active = true;
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const data = await apiFetch<{ user: any }>("/auth/admin/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-
-      const role = (data?.user?.role || "").toLowerCase();
-
-      if (role !== "admin" && role !== "superadmin") {
-        alert("Access denied. This account is not an admin.");
+    (async () => {
+      const user = await apiFetchSafe<{ user?: { role?: string } }>("/auth/me");
+      if (active && user?.user) {
+        router.replace(getDashboardPath(user.user.role));
         return;
       }
 
-      router.push("/admin/overview");
-    } catch (err: any) {
-      alert(err?.message || "Admin login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+      const admin = await apiFetchSafe<{ user?: { role?: string } }>("/auth/admin/me");
+      if (active && admin?.user) {
+        router.replace(getDashboardPath(admin.user.role));
+        return;
+      }
+
+      if (active) {
+        router.replace("/login");
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   return (
-    <div className="min-h-screen bg-[#f4fbf7]">
-      <header className="border-b border-white/10 bg-[#2f5d46]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-4 text-lg font-extrabold text-white">
-            <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
-            <span>PROPERTY SEWA</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white hover:bg-white/15"
-            >
-              Back to Home
-            </Link>
-            <div className="text-sm font-semibold text-white/90">Admin Login</div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl px-6 py-20">
-        <div className="rounded-3xl bg-white p-10 shadow-sm ring-1 ring-emerald-200">
-          <h1 className="text-3xl font-extrabold text-slate-900">Admin Access</h1>
-          <p className="mt-2 text-sm text-emerald-700">
-            Login to access admin dashboard
-          </p>
-
-          <form onSubmit={onSubmit} className="mt-10 space-y-6">
-            <div>
-              <label className="text-sm font-semibold text-slate-700">Email</label>
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter admin email"
-                type="email"
-                required
-                className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none placeholder:text-emerald-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold text-slate-700">Password</label>
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                type="password"
-                required
-                className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none placeholder:text-emerald-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
-              />
-            </div>
-
-            <button
-              disabled={loading}
-              type="submit"
-              className="h-14 w-full rounded-xl bg-emerald-900 text-sm font-extrabold text-white hover:bg-emerald-800 disabled:opacity-60"
-            >
-              {loading ? "Logging in..." : "Login to Admin Dashboard"}
-            </button>
-
-            <div className="pt-2 text-center">
-              <Link
-                href="/login"
-                className="text-sm font-semibold text-emerald-700 underline"
-              >
-                Back to User Login
-              </Link>
-            </div>
-          </form>
-        </div>
-      </main>
+    <div className="grid min-h-screen place-items-center bg-[#f4fbf7]">
+      <div className="rounded-2xl bg-white px-6 py-4 shadow-sm ring-1 ring-black/5">
+        <div className="text-sm font-semibold text-slate-700">Redirecting to unified login...</div>
+      </div>
     </div>
   );
 }

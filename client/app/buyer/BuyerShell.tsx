@@ -30,7 +30,7 @@ export default function BuyerShell({ children }: { children: React.ReactNode }) 
           if (role === "admin" || role === "superadmin") {
             router.replace("/admin/overview");
           } else if (role === "seller" || role === "agent") {
-            router.replace("/");
+            router.replace("/seller/seller-dashboard");
           } else {
             router.replace("/login");
           }

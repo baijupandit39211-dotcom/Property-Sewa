@@ -134,7 +134,7 @@ export default function PublicSiteFooter() {
               { label: "Home", href: "/" },
               { label: "Login", href: "/login" },
               { label: "Register", href: "/register" },
-              { label: "Admin Login", href: "/admin-login" },
+              { label: "Dashboard", href: user ? getDashboardPath(user.role) : "/login" },
             ]}
           />
           <FooterCol

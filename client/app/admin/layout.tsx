@@ -29,14 +29,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           if (role === "buyer") {
             router.replace("/buyer/buyer-dashboard");
           } else if (role === "seller" || role === "agent") {
-            router.replace("/");
+            router.replace("/seller/seller-dashboard");
           } else {
-            router.replace("/admin-login");
+            router.replace("/login");
           }
           return;
         }
       } catch {
-        router.replace("/admin-login");
+        router.replace("/login");
         return;
       } finally {
         if (mounted) setChecking(false);
