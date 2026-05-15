@@ -77,9 +77,9 @@ export default function BuyerShell({ children }: { children: React.ReactNode }) 
 
   if (checking) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#F3FBF7]">
-        <div className="rounded-2xl bg-white px-6 py-4 shadow-sm ring-1 ring-black/5">
-          <div className="text-sm font-semibold text-slate-700">Checking buyer access...</div>
+      <div className="grid min-h-screen place-items-center bg-[#F7FCFA]">
+        <div className="rounded-2xl bg-white px-6 py-4 shadow-sm ring-1 ring-[#E5E7EB]">
+          <div className="text-sm font-semibold text-[#0D1C12]">Checking buyer access...</div>
         </div>
       </div>
     );
@@ -87,7 +87,7 @@ export default function BuyerShell({ children }: { children: React.ReactNode }) 
 
   return (
     <BuyerAuthProvider value={{ user }}>
-      <div className="min-h-[100dvh] overflow-hidden bg-[#F3FBF7]">
+      <div className="min-h-[100dvh] overflow-hidden bg-[#F7FCFA]">
         <div className="fixed inset-x-0 top-0 z-50">
           <BuyerHeader
             mobileSidebarOpen={mobileSidebarOpen}

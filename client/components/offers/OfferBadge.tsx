@@ -11,15 +11,15 @@ type Props = {
 
 function getStyles(category: OfferCategory) {
   if (category === "dashain") {
-    return "bg-emerald-950/92 text-emerald-50 ring-emerald-300/20";
+    return "bg-[#0D1C12]/90 text-white ring-[#D1D5DB]/35";
   }
   if (category === "hot") {
-    return "bg-rose-500/92 text-white ring-rose-200/30";
+    return "bg-rose-500/90 text-white ring-rose-200/35";
   }
   if (category === "latest") {
-    return "bg-emerald-500/92 text-white ring-emerald-200/30";
+    return "bg-[#316249]/92 text-white ring-[#D1D5DB]/35";
   }
-  return "bg-amber-400/95 text-slate-900 ring-amber-100/40";
+  return "bg-amber-400/95 text-[#0D1C12] ring-amber-100/40";
 }
 
 function getDefaultLabel(category: OfferCategory) {

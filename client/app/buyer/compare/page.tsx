@@ -43,11 +43,11 @@ const MAX_COMPARE = 2;
 const THEME = {
   primary: "#316249",
   primaryDark: "#274f3a",
-  primarySoft: "#edf5f0",
-  primaryBorder: "#d7e7dd",
-  text: "#1f2937",
-  textSoft: "#4b5563",
-  border: "#e5e7eb",
+  primarySoft: "#EEF8EB",
+  primaryBorder: "#D1D5DB",
+  text: "#0D1C12",
+  textSoft: "#618975",
+  border: "#E5E7EB",
 };
 
 function readIdsFromStorage(raw: string | null): string[] {
@@ -102,9 +102,9 @@ function yesNo(value: boolean) {
     <span
       className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
       style={{
-        backgroundColor: "#ecfdf3",
+        backgroundColor: "#EEF8EB",
         color: THEME.primaryDark,
-        border: "1px solid #cde8d6",
+        border: "1px solid #D1D5DB",
       }}
     >
       <Check className="h-3.5 w-3.5" /> Yes
@@ -113,9 +113,9 @@ function yesNo(value: boolean) {
     <span
       className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
       style={{
-        backgroundColor: "#f8fafc",
-        color: "#475569",
-        border: "1px solid #e2e8f0",
+        backgroundColor: "#E8F2EB",
+        color: "#618975",
+        border: "1px solid #D1D5DB",
       }}
     >
       <X className="h-3.5 w-3.5" /> No
@@ -438,10 +438,10 @@ export default function BuyerComparePage() {
 
   return (
     <main
-      className="min-h-screen p-3 sm:p-5 lg:p-7"
+      className="min-h-screen bg-[#F7FCFA] p-3 sm:p-5 lg:p-7"
       style={{
         background:
-          "radial-gradient(circle at top left, rgba(49,98,73,0.12), transparent 18%), linear-gradient(180deg, #eef3f8 0%, #f7f9fc 100%)",
+          "radial-gradient(circle at top left, rgba(49,98,73,0.12), transparent 18%), linear-gradient(180deg, #F7FCFA 0%, #EEF8EB 100%)",
       }}
     >
       <Toast show={toast.show} text={toast.text} />
@@ -449,19 +449,19 @@ export default function BuyerComparePage() {
       <div className="mx-auto max-w-[1450px]">
         <div
           className="overflow-hidden rounded-[30px] border shadow-[0_24px_80px_rgba(15,23,42,0.08)]"
-          style={{ backgroundColor: "#f8fafc", borderColor: "#dbe3ea" }}
+          style={{ backgroundColor: "#E8F2EB", borderColor: "#E5E7EB" }}
         >
-          <header className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+          <header className="overflow-hidden rounded-[32px] border border-[#D1D5DB]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="max-w-3xl">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
-                  <Scale className="h-3.5 w-3.5" />
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/90">
+                  <Scale className="h-3.5 w-3.5 text-[#13EC80]" />
                   Buyer compare
                 </span>
                 <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
                   Compare Properties
                 </h1>
-                <p className="mt-3 text-sm leading-6 text-emerald-50/90 sm:text-base">
+                <p className="mt-3 text-sm leading-6 text-white/90 sm:text-base">
                   Review your shortlist side by side, save the strongest options, and jump back into
                   inquiry flow when you are ready.
                 </p>
@@ -471,7 +471,7 @@ export default function BuyerComparePage() {
                 <div
                   className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm"
                 >
-                  <Scale className="h-4 w-4" />
+                  <Scale className="h-4 w-4 text-[#13EC80]" />
                   {compareItems.length}/{MAX_COMPARE} selected
                 </div>
 
@@ -511,10 +511,10 @@ export default function BuyerComparePage() {
                   >
                     <RefreshCcw className="h-5 w-5 animate-spin" style={{ color: THEME.primary }} />
                   </div>
-                  <div className="text-lg font-bold" style={{ color: THEME.text }}>
+                  <div className="text-lg font-semibold tracking-tight" style={{ color: THEME.text }}>
                     Loading compare data
                   </div>
-                  <p className="mt-2 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                  <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>
                     Pulling your selected properties, wishlist state, and inquiry links.
                   </p>
                 </div>
@@ -524,8 +524,8 @@ export default function BuyerComparePage() {
                 className="rounded-[28px] border p-10 text-center shadow-sm"
                 style={{ backgroundColor: "#fff", borderColor: "#fecaca" }}
               >
-                <div className="text-lg font-bold text-rose-700">{error}</div>
-                <p className="mt-2 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                <div className="text-lg font-semibold tracking-tight text-rose-700">{error}</div>
+                <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>
                   Try refreshing the page to reload the comparison workspace.
                 </p>
                 <button
@@ -552,10 +552,10 @@ export default function BuyerComparePage() {
                     <div className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: THEME.primaryDark }}>
                       Comparison status
                     </div>
-                    <div className="mt-3 text-3xl font-bold" style={{ color: THEME.text }}>
+                    <div className="mt-3 text-3xl font-semibold tracking-tight" style={{ color: THEME.text }}>
                       {compareItems.length}/{MAX_COMPARE}
                     </div>
-                    <p className="mt-2 text-[15px] leading-7" style={{ color: THEME.textSoft }}>
+                    <p className="mt-2 text-sm leading-7" style={{ color: THEME.textSoft }}>
                       {missingCount === 0
                         ? `Comparison ready with ${differenceCount} highlighted differences.`
                         : `Add ${missingCount} more ${missingCount === 1 ? "property" : "properties"} to complete the side-by-side view.`}
@@ -577,7 +577,7 @@ export default function BuyerComparePage() {
                       <span
                         className="inline-flex rounded-full px-2.5 py-1 text-xs"
                         style={{
-                          backgroundColor: showDifferencesOnly ? THEME.primary : "#f1f5f9",
+                          backgroundColor: showDifferencesOnly ? THEME.primary : "#E8F2EB",
                           color: showDifferencesOnly ? "#ffffff" : THEME.textSoft,
                         }}
                       >
@@ -616,8 +616,8 @@ export default function BuyerComparePage() {
                   </div>
 
                   <div
-                    className="mt-4 rounded-2xl border p-4 text-[15px] leading-7"
-                    style={{ backgroundColor: "#fafafa", borderColor: "#e5e7eb", color: THEME.textSoft }}
+                    className="mt-4 rounded-2xl border p-4 text-sm leading-7"
+                    style={{ backgroundColor: "#F7FCFA", borderColor: "#E5E7EB", color: THEME.textSoft }}
                   >
                     Compare flow is synced with buyer search, dashboard cards, and listing details.
                     Removing or adding a property here updates the shared compare state.
@@ -641,7 +641,7 @@ export default function BuyerComparePage() {
                           <h2 className="mt-3 text-2xl font-bold tracking-tight" style={{ color: THEME.text }}>
                             Add one more property to unlock the full comparison table
                           </h2>
-                          <p className="mt-2 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                          <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>
                             The page is already synced. Pick one more listing and it will appear here
                             automatically.
                           </p>
@@ -699,7 +699,7 @@ export default function BuyerComparePage() {
                               type="button"
                               onClick={() => removeFromCompare(property._id)}
                               className="absolute left-3 top-3 grid h-10 w-10 place-items-center rounded-xl border bg-white/95"
-                              style={{ borderColor: "#e5e7eb", color: THEME.text }}
+                              style={{ borderColor: "#E5E7EB", color: THEME.text }}
                               title="Remove from compare"
                               aria-label="Remove from compare"
                             >
@@ -709,13 +709,13 @@ export default function BuyerComparePage() {
 
                           <div className="space-y-4 p-5">
                             <div>
-                              <div className="text-[32px] font-bold leading-none" style={{ color: THEME.text }}>
+                              <div className="text-3xl font-semibold leading-none" style={{ color: THEME.text }}>
                                 {formatPrice(property)}
                               </div>
-                              <p className="mt-2 text-xl font-semibold leading-8" style={{ color: THEME.text }}>
+                              <p className="mt-2 text-lg font-semibold leading-7" style={{ color: THEME.text }}>
                                 {property.title}
                               </p>
-                              <div className="mt-2 flex items-center gap-1 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                              <div className="mt-2 flex items-center gap-1 text-sm leading-6" style={{ color: THEME.textSoft }}>
                                 <MapPin className="h-4 w-4" />
                                 <span>{formatLocation(property)}</span>
                               </div>
@@ -769,13 +769,13 @@ export default function BuyerComparePage() {
                           key={`empty-slot-${index}`}
                           href="/buyer/search-properties"
                           className="flex min-h-[540px] flex-col items-center justify-center rounded-[28px] border border-dashed bg-white p-8 text-center shadow-sm transition"
-                          style={{ borderColor: "#cbd5e1", color: THEME.textSoft }}
+                          style={{ borderColor: "#D1D5DB", color: THEME.textSoft }}
                         >
                           <div className="text-6xl leading-none">+</div>
                           <div className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: THEME.text }}>
                             Add another property
                           </div>
-                          <p className="mt-3 max-w-xs text-[15px] leading-7" style={{ color: THEME.textSoft }}>
+                          <p className="mt-3 max-w-xs text-sm leading-7" style={{ color: THEME.textSoft }}>
                             Select another listing from search results to complete your comparison.
                           </p>
                         </Link>
@@ -787,13 +787,13 @@ export default function BuyerComparePage() {
                     className="mt-6 overflow-hidden rounded-[28px] border bg-white shadow-sm"
                     style={{ borderColor: THEME.primaryBorder }}
                   >
-                    <div className="border-b px-5 py-4" style={{ borderColor: "#edf2f7" }}>
+                    <div className="border-b px-5 py-4" style={{ borderColor: "#E5E7EB" }}>
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <h2 className="text-lg font-bold" style={{ color: THEME.text }}>
                             Comparison details
                           </h2>
-                          <p className="mt-1 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                          <p className="mt-1 text-sm leading-6" style={{ color: THEME.textSoft }}>
                             {showDifferencesOnly
                               ? "Showing only rows where the selected properties differ."
                               : "Showing the full side-by-side breakdown."}
@@ -814,28 +814,28 @@ export default function BuyerComparePage() {
                     </div>
 
                     <div className="overflow-x-auto">
-                      <table className="min-w-full border-separate border-spacing-0 text-[15px]">
+                      <table className="min-w-full border-separate border-spacing-0 text-sm">
                         <tbody>
                           {rows.map((row, index) => (
                             <tr
                               key={row.label}
-                              style={{ backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9fbfa" }}
+                              style={{ backgroundColor: index % 2 === 0 ? "#ffffff" : "#F7FCFA" }}
                             >
                               <td
-                                className="w-[220px] border-b px-5 py-4 text-[15px] font-semibold"
-                                style={{ borderColor: "#edf2f7", color: THEME.textSoft }}
+                                className="w-[220px] border-b px-5 py-4 text-sm font-medium"
+                                style={{ borderColor: "#E5E7EB", color: THEME.textSoft }}
                               >
                                 {row.label}
                               </td>
                               <td
-                                className="w-1/2 border-b px-5 py-4 text-[15px] font-semibold"
-                                style={{ borderColor: "#edf2f7", color: THEME.text }}
+                                className="w-1/2 border-b px-5 py-4 text-sm font-semibold"
+                                style={{ borderColor: "#E5E7EB", color: THEME.text }}
                               >
                                 {row.left}
                               </td>
                               <td
-                                className="w-1/2 border-b px-5 py-4 text-[15px] font-semibold"
-                                style={{ borderColor: "#edf2f7", color: THEME.text }}
+                                className="w-1/2 border-b px-5 py-4 text-sm font-semibold"
+                                style={{ borderColor: "#E5E7EB", color: THEME.text }}
                               >
                                 {row.right}
                               </td>
@@ -848,12 +848,12 @@ export default function BuyerComparePage() {
                     <div
                       className="flex flex-col gap-3 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
                       style={{
-                        borderColor: "#edf2f7",
+                        borderColor: "#E5E7EB",
                         background:
                           "linear-gradient(180deg, rgba(250,251,252,1) 0%, rgba(255,255,255,1) 100%)",
                       }}
                     >
-                      <div className="text-[15px] leading-7" style={{ color: THEME.textSoft }}>
+                      <div className="text-sm leading-7" style={{ color: THEME.textSoft }}>
                         Use compare to shortlist options, then move into wishlist or the inquiry
                         thread for the property you want to pursue.
                       </div>

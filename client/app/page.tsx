@@ -197,41 +197,39 @@ export default function DashboardLandingLike() {
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F7FCFA]">
       <PublicSiteHeader />
 
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden border-b border-[#E5E7EB]">
         <div
           className="absolute inset-0"
           style={{
-            background: "linear-gradient(180deg, #012C21 0%, #1DBF85 45%, #A5EFD1 100%)",
+            background:
+              "linear-gradient(110deg, #0F6F4A 0%, #2FAF75 40%, #8DE5BF 72%, #D6F6E8 100%)",
           }}
         />
 
         <div
           className="absolute inset-0 opacity-[0.14]"
           style={{
-            backgroundImage: "radial-gradient(rgba(255,255,255,0.45) 1px, transparent 1px)",
-            backgroundSize: "18px 18px",
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.24) 0.9px, transparent 0.9px)",
+            backgroundSize: "15px 15px",
           }}
         />
 
-        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-black/6 to-transparent" />
 
-        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-20">
+        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-10 sm:px-6 sm:py-12 lg:grid-cols-2 lg:gap-12 lg:py-14">
           <div>
             <motion.h1
               variants={fadeUp}
               initial="hidden"
               animate="show"
               custom={0}
-              className="text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl"
+              className="text-[64px] font-semibold leading-[1.04] tracking-tight text-white"
             >
-              The Modern Way to
-              <br />
-              Find
-              <br />
-              Home
+              <span className="block whitespace-nowrap">The Modern Way to Find</span>
+              <span className="mt-1 block text-center">Home</span>
             </motion.h1>
 
             <motion.p
@@ -239,7 +237,7 @@ export default function DashboardLandingLike() {
               initial="hidden"
               animate="show"
               custom={1}
-              className="mt-6 max-w-xl text-sm text-white/85 sm:text-base"
+              className="mt-3 max-w-[56ch] text-[15px] text-white/85"
             >
               Discover your next chapter with us. Effortless, elegant, and exclusively yours.
             </motion.p>
@@ -249,9 +247,9 @@ export default function DashboardLandingLike() {
               initial="hidden"
               animate="show"
               custom={2}
-              className="mt-10 max-w-xl rounded-2xl bg-white/90 p-4 shadow-xl ring-1 ring-white/30 backdrop-blur"
+              className="mt-8 max-w-[640px] rounded-3xl bg-white/92 p-3.5 shadow-[0_20px_36px_rgba(13,28,18,0.22)] ring-1 ring-white/65"
             >
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#D6DBD9] p-1.5">
                 <TabButton active={mode === "buy"} onClick={() => setMode("buy")}>
                   Buy
                 </TabButton>
@@ -263,22 +261,22 @@ export default function DashboardLandingLike() {
                 </TabButton>
               </div>
 
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                <div className="flex flex-1 items-center gap-2 rounded-xl bg-white px-4 py-3 ring-1 ring-emerald-100">
-                  <Search className="h-4 w-4 text-emerald-600" />
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-1 items-center gap-2 rounded-xl bg-[#D6DBD9] px-3.5 py-2.5">
+                  <Search className="h-4 w-4 text-[#316249]" />
                   <input
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
-                    className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                    className="w-full bg-transparent text-sm text-[#4F7768] outline-none placeholder:text-[#4F7768]"
                     placeholder="Enter an address, neighborhood, city, or ZIP code"
                   />
                 </div>
 
                 <button
                   className={cn(
-                    "rounded-xl px-6 py-3 text-sm font-semibold text-white",
-                    "bg-emerald-500 hover:bg-emerald-600",
-                    "shadow-md shadow-emerald-500/25",
+                    "rounded-xl px-6 py-2.5 text-sm font-semibold text-[#0D1C12]",
+                    "bg-[#13EC80] hover:bg-[#10DD78]",
+                    "shadow-sm shadow-[#13EC80]/12",
                     "transition active:scale-[0.98]"
                   )}
                   onClick={handleSearch}
@@ -294,10 +292,10 @@ export default function DashboardLandingLike() {
                 <Pill>Existing Buyer Flow</Pill>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href={browseHref}
-                  className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-[0.98]"
+                  className="rounded-full bg-[#13EC80] px-8 py-3 text-base font-semibold text-[#0D1C12] shadow-sm shadow-[#13EC80]/20 transition hover:bg-[#10DD78] active:scale-[0.98]"
                 >
                   {mode === "rent"
                     ? "Browse Rentals"
@@ -307,23 +305,25 @@ export default function DashboardLandingLike() {
                 </Link>
                 <Link
                   href={addPropertyHref}
-                  className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-50 active:scale-[0.98]"
+                  className="rounded-full bg-white/35 px-8 py-3 text-base font-semibold text-white ring-1 ring-white/70 transition hover:bg-white/45 active:scale-[0.98]"
                 >
                   List Your Property
                 </Link>
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+              <div className="mt-8 text-center text-base text-white/70">Explore Neighborhoods →</div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-white/80">
                 <span className="inline-flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <span className="h-2 w-2 rounded-full bg-[#13EC80]" />
                   Verified Listings
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <span className="h-2 w-2 rounded-full bg-[#13EC80]" />
                   Secure Transactions
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <span className="h-2 w-2 rounded-full bg-[#13EC80]" />
                   Top Agents
                 </span>
               </div>
@@ -334,18 +334,12 @@ export default function DashboardLandingLike() {
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
-            className="relative"
+            className="relative hidden lg:block"
           >
-            <div className="relative mx-auto aspect-[1.1/1] w-full max-w-[520px]">
-              <div className="absolute inset-0 rounded-3xl bg-white/10 ring-1 ring-white/15 shadow-2xl" />
-              <div className="absolute -inset-6 rounded-[2.2rem] bg-emerald-200/20 blur-2xl" />
-
+            <div className="relative mx-auto aspect-[1.08/1] w-full max-w-[520px]">
               <motion.div
-                whileHover={{ scale: [1, 1.05, 1], y: [0, -6, 0] }}
-                transition={{
-                  duration: 1.4,
-                  ease: "easeInOut",
-                }}
+                whileHover={{ scale: [1, 1.02, 1], y: [0, -3, 0] }}
+                transition={{ duration: 1.4, ease: "easeInOut" }}
                 className="relative h-full w-full"
               >
                 <Image
@@ -353,7 +347,7 @@ export default function DashboardLandingLike() {
                   alt="3D House"
                   fill
                   priority
-                  className="object-contain drop-shadow-[0_28px_28px_rgba(0,0,0,0.25)]"
+                  className="object-contain brightness-[1.02] saturate-[0.92] drop-shadow-[0_16px_18px_rgba(13,28,18,0.16)]"
                 />
               </motion.div>
             </div>
@@ -361,20 +355,20 @@ export default function DashboardLandingLike() {
         </div>
       </section>
 
-      <section className="bg-white py-20">
+      <section className="bg-[#F7FCFA] py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <motion.h2
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.3 }}
-            className="text-center text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl"
+            className="text-center text-3xl font-extrabold tracking-tight text-[#111814] sm:text-4xl"
           >
             Everything should be this easy.
           </motion.h2>
-          <p className="mt-3 text-center text-sm text-slate-500">Three steps. Three minutes.</p>
+          <p className="mt-3 text-center text-sm text-[#618975]">Three steps. Three minutes.</p>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-5">
+          <div className="mt-8 grid gap-4 md:grid-cols-5">
             <MiniCard icon={<Home className="h-5 w-5" />} title="Buy a Home" href="/properties?type=sale" />
             <MiniCard
               icon={<Building2 className="h-5 w-5" />}
@@ -389,28 +383,28 @@ export default function DashboardLandingLike() {
       </section>
 
       {featuredProperties.length > 0 ? (
-        <section className="bg-white pb-20">
+        <section className="bg-[#F7FCFA] pb-14 sm:pb-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <h3 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                <h3 className="text-2xl font-bold tracking-tight text-[#111814]">
                   Featured Properties
                 </h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-[#618975]">
                   Handpicked listings from the best locations, just for you.
                 </p>
               </div>
 
               <Link
                 href="/properties"
-                className="group inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+                className="group inline-flex items-center gap-2 text-sm font-semibold text-[#316249] transition hover:text-[#0D1C12]"
               >
                 View All{" "}
                 <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
               </Link>
             </div>
 
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {featuredProperties.map((p, i) => (
                 <motion.div
                   key={p._id || p.id}
@@ -457,16 +451,16 @@ export default function DashboardLandingLike() {
         tinted
       />
 
-      <section className="bg-emerald-50/40 py-20">
+      <section className="bg-[#EEF8EB] py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <h3 className="text-center text-3xl font-extrabold tracking-tight text-slate-900">
+          <h3 className="text-center text-3xl font-bold tracking-tight text-[#111814]">
             Your Partner in Finding a Home
           </h3>
-          <p className="mt-2 text-center text-sm text-slate-500">
+          <p className="mt-2 text-center text-sm text-[#618975]">
             We provide a complete service for the sale, purchase, or rental of real estate.
           </p>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
             <FeatureItem
               icon={<BadgeCheck className="h-5 w-5" />}
               title="Verified Agents"
@@ -502,7 +496,7 @@ export default function DashboardLandingLike() {
           <div className="mt-10 flex justify-center">
             <Link
               href="/properties"
-              className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-[0.98]"
+              className="rounded-full bg-[#316249] px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-[#316249]/30 transition hover:bg-[#24472E] active:scale-[0.98]"
             >
               Browse Listings
             </Link>
@@ -510,39 +504,39 @@ export default function DashboardLandingLike() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-gradient-to-r from-[#CFF9E8] via-[#8CF0C9] to-[#17D97B] py-16">
+      <section className="relative overflow-hidden bg-gradient-to-r from-[#F7FCFA] via-[#EEF8EB] to-[#DCEFD9] py-12 sm:py-14">
         <div
-          className="absolute inset-0 opacity-[0.15]"
+          className="absolute inset-0 opacity-[0.1]"
           style={{
-            backgroundImage: "radial-gradient(rgba(0,0,0,0.22) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(rgba(49,98,73,0.14) 0.8px, transparent 0.8px)",
             backgroundSize: "18px 18px",
           }}
         />
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
           <div>
-            <h3 className="text-3xl font-extrabold tracking-tight text-emerald-950">
+            <h3 className="text-3xl font-bold tracking-tight text-[#102219]">
               Get Property Alerts
             </h3>
-            <p className="mt-2 text-sm text-emerald-950/70">
+            <p className="mt-2 text-sm text-[#102219]/70">
               Be the first to know about new listings that match your criteria.
             </p>
 
             <div className="mt-6 flex max-w-xl flex-col gap-3 sm:flex-row">
               <input
-                className="h-12 flex-1 rounded-2xl bg-white/90 px-4 text-sm outline-none ring-1 ring-white/50 placeholder:text-slate-400"
+                className="h-12 flex-1 rounded-2xl bg-white px-4 text-sm text-[#0D1C12] outline-none ring-1 ring-[#D1D5DB] placeholder:text-[#618975]"
                 placeholder="Enter your email address"
               />
               <button
                 type="button"
                 onClick={handleAlertsClick}
-                className="h-12 rounded-2xl bg-emerald-950 px-5 text-sm font-semibold text-white transition hover:bg-emerald-900 active:scale-[0.98]"
+                className="h-12 rounded-2xl bg-[#316249] px-5 text-sm font-semibold text-white transition hover:bg-[#24472E] active:scale-[0.98]"
               >
                 Get Alerts
               </button>
             </div>
 
-            <p className="mt-2 text-xs text-emerald-950/60">No spam. Unsubscribe anytime.</p>
+            <p className="mt-2 text-xs text-[#102219]/60">No spam. Unsubscribe anytime.</p>
           </div>
 
           <div className="relative mx-auto aspect-[1.3/1] w-full max-w-[380px]">
@@ -555,25 +549,25 @@ export default function DashboardLandingLike() {
                 src="/house-3d.png"
                 alt="House"
                 fill
-                className="object-contain drop-shadow-[0_22px_22px_rgba(0,0,0,0.22)]"
+                className="object-contain drop-shadow-[0_18px_18px_rgba(13,28,18,0.18)]"
               />
             </motion.div>
           </div>
         </div>
 
         <div className="relative mx-auto mt-12 max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-8 border-t border-emerald-950/15 pt-10 md:grid-cols-5">
+          <div className="grid gap-8 border-t border-[#102219]/15 pt-10 md:grid-cols-5">
             <div className="md:col-span-2">
               <div className="flex items-center gap-2">
-                <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-950/10 ring-1 ring-emerald-950/15">
-                  <Home className="h-5 w-5 text-emerald-950" />
+                <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#102219]/10 ring-1 ring-[#102219]/15">
+                  <Home className="h-5 w-5 text-[#102219]" />
                 </div>
-                <span className="text-sm font-bold text-emerald-950">Property Sewa</span>
+                <span className="text-sm font-bold text-[#102219]">Property Sewa</span>
               </div>
-              <p className="mt-3 text-sm text-emerald-950/70">
+              <p className="mt-3 text-sm text-[#102219]/70">
                 The modern way to find, buy, and sell your home.
               </p>
-              <p className="mt-8 text-xs text-emerald-950/60">
+              <p className="mt-8 text-xs text-[#102219]/60">
                 © {new Date().getFullYear()} Property Sewa. All rights reserved.
               </p>
             </div>
@@ -627,8 +621,8 @@ function TabButton({
       className={cn(
         "rounded-full px-4 py-2 text-sm font-semibold transition",
         active
-          ? "bg-emerald-600 text-white shadow shadow-emerald-600/25"
-          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          ? "bg-[#316249] text-white shadow shadow-[#316249]/25"
+          : "bg-[#E8F2EB] text-[#1A3321] ring-1 ring-[#CFE8D6] hover:bg-[#DDEAE3]"
       )}
     >
       {children}
@@ -640,7 +634,7 @@ function Pill({ children }: { children: React.ReactNode }) {
   return (
     <button
       type="button"
-      className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
+      className="rounded-full bg-[#F0F4F2] px-4 py-2 text-xs font-semibold text-[#2C3F35] transition hover:bg-[#E5E7EB]"
     >
       {children}
     </button>
@@ -661,13 +655,13 @@ function MiniCard({
       <motion.div
         whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 240, damping: 16 }}
-        className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 hover:shadow-md"
+        className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-[#E5E7EB] hover:shadow-md"
       >
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#E8F2EB] text-[#316249] ring-1 ring-[#D1D5DB]">
           {icon}
         </div>
-        <p className="mt-3 text-sm font-bold text-slate-900">{title}</p>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-3 text-sm font-bold text-[#111814]">{title}</p>
+        <p className="mt-1 text-xs text-[#618975]">
           Find your dream home from thousands of listings.
         </p>
       </motion.div>
@@ -683,7 +677,7 @@ function PropertyCard({ p }: { p: Property }) {
       <motion.div
         whileHover={{ y: -8 }}
         transition={{ type: "spring", stiffness: 240, damping: 18 }}
-        className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 hover:shadow-md"
+        className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#E5E7EB] hover:shadow-md"
       >
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
@@ -700,7 +694,7 @@ function PropertyCard({ p }: { p: Property }) {
           </div>
           <button
             type="button"
-            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-slate-700 shadow-sm ring-1 ring-white/60 opacity-0 transition group-hover:opacity-100"
+            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-[#2C3F35] shadow-sm ring-1 ring-[#E5E7EB] opacity-0 transition group-hover:opacity-100"
             aria-label="Save"
             onClick={(e) => e.preventDefault()}
           >
@@ -709,11 +703,11 @@ function PropertyCard({ p }: { p: Property }) {
         </div>
 
         <div className="p-4">
-          <p className="text-lg font-extrabold text-slate-900">{p.price}</p>
-          <p className="mt-1 text-sm font-semibold text-slate-800">{p.title}</p>
-          <p className="mt-1 text-xs text-slate-500">{p.location}</p>
+          <p className="text-lg font-extrabold text-[#111814]">{p.price}</p>
+          <p className="mt-1 text-sm font-semibold text-[#1B2A24]">{p.title}</p>
+          <p className="mt-1 text-xs text-[#618975]">{p.location}</p>
 
-          <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-500">
+          <div className="mt-3 flex items-center gap-3 text-[11px] text-[#618975]">
             <span>{p.beds} bd</span>
             <span>•</span>
             <span>{p.baths} ba</span>
@@ -742,17 +736,17 @@ function OfferSection({
   if (items.length === 0) return null;
 
   return (
-    <section className={tinted ? "bg-emerald-50/35 py-20" : "bg-white py-20"}>
+    <section className={tinted ? "bg-[#EEF8EB]/55 py-14 sm:py-16" : "bg-[#F7FCFA] py-14 sm:py-16"}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-extrabold tracking-tight text-slate-900">{title}</h3>
-            <p className="mt-1 text-sm text-slate-500">{description}</p>
+            <h3 className="text-2xl font-bold tracking-tight text-[#111814]">{title}</h3>
+            <p className="mt-1 text-sm text-[#618975]">{description}</p>
           </div>
 
           <Link
             href={href}
-            className="group inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+            className="group inline-flex items-center gap-2 text-sm font-semibold text-[#316249] transition hover:text-[#0D1C12]"
           >
             View All
             <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
@@ -790,13 +784,13 @@ function FeatureItem({
     <motion.div
       whileHover={{ y: -6 }}
       transition={{ type: "spring", stiffness: 240, damping: 16 }}
-      className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-emerald-100/50 hover:shadow-md"
+      className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[#E5E7EB] hover:shadow-md"
     >
-      <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+      <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#E8F2EB] text-[#316249] ring-1 ring-[#D1D5DB]">
         {icon}
       </div>
-      <p className="mt-3 text-sm font-extrabold text-slate-900">{title}</p>
-      <p className="mt-1 text-sm text-slate-500">{desc}</p>
+      <p className="mt-3 text-sm font-extrabold text-[#111814]">{title}</p>
+      <p className="mt-1 text-sm text-[#618975]">{desc}</p>
     </motion.div>
   );
 }
@@ -810,11 +804,11 @@ function FooterCol({
 }) {
   return (
     <div>
-      <p className="text-sm font-extrabold text-emerald-950">{title}</p>
-      <ul className="mt-3 space-y-2 text-sm text-emerald-950/70">
+      <p className="text-sm font-extrabold text-[#102219]">{title}</p>
+      <ul className="mt-3 space-y-2 text-sm text-[#102219]/70">
         {links.map((l) => (
           <li key={l.label}>
-            <Link className="transition hover:text-emerald-950" href={l.href}>
+            <Link className="transition hover:text-[#102219]" href={l.href}>
               {l.label}
             </Link>
           </li>
@@ -823,3 +817,4 @@ function FooterCol({
     </div>
   );
 }
+

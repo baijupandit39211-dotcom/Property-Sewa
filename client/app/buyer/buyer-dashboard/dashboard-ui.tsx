@@ -32,7 +32,7 @@ export function Toast({ show, text }: { show: boolean; text: string }) {
         show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
       ].join(" ")}
     >
-      <div className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-white/10">
+      <div className="rounded-2xl bg-[#316249]/95 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-[#D1D5DB]/50">
         {text}
       </div>
     </div>
@@ -55,16 +55,16 @@ export function PageSearchBar({
     : "/buyer/search-properties";
 
   return (
-    <div className="rounded-[28px] border border-white/80 bg-white/90 px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.035)]">
+    <div className="rounded-[24px] border border-[#E5E7EB] bg-white/95 px-4 py-4 shadow-[0_10px_24px_rgba(13,28,18,0.05)]">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex h-12 w-full items-center rounded-full border border-[#cfd8d2] bg-white px-4 shadow-[0_8px_20px_rgba(15,23,42,0.06)] ring-1 ring-[#eef3f0] focus-within:border-[#316249] focus-within:ring-2 focus-within:ring-[#316249]/20">
-            <Search className="h-5 w-5 shrink-0 text-slate-500" />
+          <div className="flex h-12 w-full items-center rounded-full border border-[#D1D5DB] bg-white px-4 shadow-[0_8px_18px_rgba(13,28,18,0.05)] ring-1 ring-[#EEF8EB] focus-within:border-[#316249] focus-within:ring-2 focus-within:ring-[#316249]/20">
+            <Search className="h-5 w-5 shrink-0 text-[#618975]" />
             <input
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="Search location, city, or property type..."
-              className="ml-3 w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-500 outline-none"
+              className="ml-3 w-full bg-transparent text-sm text-[#0D1C12] placeholder:text-[#618975] outline-none"
             />
             <Link
               href={searchHref}
@@ -110,7 +110,7 @@ function TopRoundIcon({ href, icon }: { href: string; icon: React.ReactNode }) {
   return (
     <Link
       href={href}
-      className="grid h-11 w-11 place-items-center rounded-full border border-[#d9dfd8] bg-white text-slate-600 transition hover:-translate-y-0.5 hover:shadow-sm"
+      className="grid h-11 w-11 place-items-center rounded-full border border-[#D1D5DB] bg-white text-[#0D1C12] transition hover:-translate-y-0.5 hover:shadow-sm"
     >
       {icon}
     </Link>
@@ -134,7 +134,7 @@ export function OverviewCard({
     <motion.div
       whileHover={{ y: -4 }}
       transition={{ duration: 0.18 }}
-      className="rounded-[24px] border border-[#ece8e0] bg-white p-5 shadow-[0_12px_24px_rgba(15,23,42,0.03)]"
+      className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-[0_10px_22px_rgba(13,28,18,0.05)]"
     >
       <div className="grid h-12 w-12 place-items-center rounded-2xl" style={{ backgroundColor: accent }}>
         {icon}
@@ -148,7 +148,7 @@ export function OverviewCard({
 
 export function DiscoveryCard({ property }: { property: Property | null }) {
   return (
-    <div className="relative overflow-hidden rounded-[28px] border border-[#ece8e0] bg-[linear-gradient(135deg,#eef3f1_0%,#f8f7f4_45%,#eef3f1_100%)] p-5 shadow-[0_12px_24px_rgba(15,23,42,0.03)]">
+    <div className="relative overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-[linear-gradient(135deg,#EEF8EB_0%,#F7FCFA_45%,#EEF8EB_100%)] p-5 shadow-[0_10px_22px_rgba(13,28,18,0.05)]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(31,107,88,0.08),transparent_28%),radial-gradient(circle_at_70%_30%,rgba(31,107,88,0.06),transparent_24%)]" />
       <div className="relative flex h-full items-center justify-between gap-4">
         <div className="max-w-[180px]">
@@ -232,9 +232,9 @@ export function RecommendationCard({
       <motion.div
         whileHover={{ y: -4 }}
         transition={{ duration: 0.18 }}
-        className="overflow-hidden rounded-[6px] border border-[#ece8e0] bg-white shadow-[0_14px_28px_rgba(15,23,42,0.04)] transition group-hover:border-[#316249] group-hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+        className="overflow-hidden rounded-[20px] border border-[#E5E7EB] bg-white shadow-[0_12px_24px_rgba(13,28,18,0.05)] transition group-hover:border-[#316249] group-hover:shadow-[0_16px_30px_rgba(13,28,18,0.08)]"
       >
-        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-t-[6px] bg-slate-100">
+        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-t-[6px] bg-[#E8F2EB]">
           <img
             src={property.images?.[0]?.url || fallbackImage(property)}
             alt={property.title}
@@ -242,7 +242,7 @@ export function RecommendationCard({
             loading="lazy"
             decoding="async"
           />
-          <div className="absolute left-4 top-4 rounded-[4px] bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-900 shadow-sm">
+          <div className="absolute left-4 top-4 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#0D1C12] shadow-sm">
             {label}
           </div>
           <div className="absolute right-4 top-4 flex items-center gap-2">
@@ -254,7 +254,7 @@ export function RecommendationCard({
                 onToggleWish();
               }}
               className={[
-                "grid h-10 w-10 place-items-center rounded-[4px] bg-white text-slate-700 shadow-sm transition",
+                "grid h-10 w-10 place-items-center rounded-full bg-white text-[#0D1C12] shadow-sm transition",
                 wishPop ? "scale-110" : "",
               ].join(" ")}
             >
@@ -266,10 +266,10 @@ export function RecommendationCard({
         </div>
 
         <div className="flex min-w-0 flex-col p-4">
-          <div className="text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
+          <div className="text-xl font-semibold tracking-tight text-[#0D1C12] sm:text-2xl">
             {formatPrice(property)}
           </div>
-          <p className="mt-2 line-clamp-2 text-sm font-semibold text-slate-900">{property.title}</p>
+          <p className="mt-2 line-clamp-2 text-sm font-semibold text-[#0D1C12]">{property.title}</p>
           <div className={`mt-1 flex items-center gap-1 ${typography.helperText}`}>
             <MapPin className="h-3.5 w-3.5 text-rose-400" />
             <span className="line-clamp-1">{property.location || property.address}</span>
@@ -288,10 +288,10 @@ export function RecommendationCard({
                 onToggleCompare();
               }}
               className={[
-                "inline-flex h-10 w-full min-w-0 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 transition",
+                "inline-flex h-10 w-full min-w-0 items-center justify-center rounded-xl border border-[#D1D5DB] bg-white px-4 transition",
                 compareOn
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "bg-white text-slate-800 hover:border-[#316249]",
+                  ? "border-[#316249] bg-[#316249] text-white"
+                  : "bg-white text-[#0D1C12] hover:border-[#316249]",
                 comparePop ? "scale-105" : "",
                 "text-sm font-semibold tracking-tight",
               ].join(" ")}
@@ -339,9 +339,9 @@ export function SavedPropertyCard({
       <motion.div
         whileHover={{ y: -4 }}
         transition={{ duration: 0.18 }}
-        className="w-full min-w-0 overflow-hidden rounded-[24px] border border-[#ece8e0] bg-white shadow-[0_14px_28px_rgba(15,23,42,0.04)] transition group-hover:border-[#316249] group-hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+        className="w-full min-w-0 overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-white shadow-[0_12px_24px_rgba(13,28,18,0.05)] transition group-hover:border-[#316249] group-hover:shadow-[0_16px_30px_rgba(13,28,18,0.08)]"
       >
-        <div className="relative aspect-[16/10] w-full max-h-[160px] overflow-hidden rounded-t-[24px] bg-slate-100">
+        <div className="relative aspect-[16/10] w-full max-h-[160px] overflow-hidden rounded-t-[24px] bg-[#E8F2EB]">
           <img
             src={property.images?.[0]?.url || fallbackImage(property)}
             alt={property.title}
@@ -358,7 +358,7 @@ export function SavedPropertyCard({
                 onToggleWish();
               }}
               className={[
-                "grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition",
+                "grid h-10 w-10 place-items-center rounded-full bg-white text-[#0D1C12] shadow-sm transition",
                 wishPop ? "scale-110" : "",
               ].join(" ")}
             >
@@ -387,14 +387,14 @@ export function SavedPropertyCard({
           <div className="min-w-0 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="whitespace-nowrap text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
+                <div className="whitespace-nowrap text-xl font-semibold tracking-tight text-[#0D1C12] sm:text-2xl">
                   {priceText}
                 </div>
-                <p className="mt-2 truncate text-sm font-semibold text-slate-900">{property.title}</p>
+                <p className="mt-2 truncate text-sm font-semibold text-[#0D1C12]">{property.title}</p>
                 <p className={`mt-1 truncate ${typography.pageSubtitle}`}>{property.location || property.address}</p>
               </div>
               {showSavedTag ? (
-                <span className="hidden shrink-0 rounded-full bg-[#eff4f1] px-3 py-1.5 text-[11px] font-semibold text-[#316249] sm:inline">
+                <span className="hidden shrink-0 rounded-full bg-[#eff4f1] px-3 py-1.5 text-xs font-semibold text-[#316249] sm:inline">
                   Saved
                 </span>
               ) : null}
@@ -410,10 +410,10 @@ export function SavedPropertyCard({
                 onToggleCompare();
               }}
               className={[
-                "inline-flex h-10 w-full min-w-0 items-center justify-center rounded-lg border border-slate-200 px-4 transition",
+                "inline-flex h-10 w-full min-w-0 items-center justify-center rounded-lg border border-[#D1D5DB] px-4 transition",
                 compareOn
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "bg-white text-slate-800 hover:border-[#316249]",
+                  ? "border-[#316249] bg-[#316249] text-white"
+                  : "bg-white text-[#0D1C12] hover:border-[#316249]",
                 comparePop ? "scale-105" : "",
                 "text-sm font-semibold tracking-tight",
               ].join(" ")}
@@ -421,7 +421,7 @@ export function SavedPropertyCard({
               Compare
             </button>
 
-            <span className="inline-flex h-10 w-full min-w-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 whitespace-nowrap text-sm font-semibold tracking-tight text-slate-800 transition hover:border-[#316249]">
+            <span className="inline-flex h-10 w-full min-w-0 items-center justify-center rounded-lg border border-[#D1D5DB] bg-white px-4 whitespace-nowrap text-sm font-semibold tracking-tight text-[#0D1C12] transition hover:border-[#316249]">
               {viewLabel}
             </span>
           </div>
@@ -441,7 +441,7 @@ export function BudgetOverviewCard({
   budget: { current: number; target: number; percent: number };
 }) {
   return (
-    <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[24px] border border-[#E5E7EB] bg-white/95 p-5 shadow-[0_10px_24px_rgba(13,28,18,0.05)]">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
@@ -452,7 +452,7 @@ export function BudgetOverviewCard({
           </div>
           <p className={`mt-1 ${typography.helperText}`}>Set your preferred range</p>
 
-          <div className="mt-6 text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
+          <div className="mt-6 text-2xl font-semibold tracking-tight text-[#0D1C12] md:text-3xl">
             {formatNprCompact(budget.current)}
           </div>
           <p className={`mt-2 ${typography.helperText}`}>of {formatNprCompact(budget.target)}</p>
@@ -477,7 +477,7 @@ export function BudgetOverviewCard({
 
 export function UpcomingVisitsCard({ items }: { items: Property[] }) {
   return (
-    <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[24px] border border-[#E5E7EB] bg-white/95 p-5 shadow-[0_10px_24px_rgba(13,28,18,0.05)]">
       <div className="flex items-center justify-between gap-4">
         <h3 className={typography.sectionTitle}>Upcoming Visits</h3>
         <Link href="/buyer/search-properties" className={`text-[#316249] ${typography.buttonText}`}>
@@ -491,9 +491,9 @@ export function UpcomingVisitsCard({ items }: { items: Property[] }) {
             <Link
               key={property._id}
               href={`/buyer/property/${property._id}`}
-              className="flex items-center gap-4 rounded-[22px] border border-[#ece8e0] bg-[#fbfaf7] p-3 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
+              className="flex items-center gap-4 rounded-[22px] border border-[#E5E7EB] bg-[#F7FCFA] p-3 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
             >
-              <div className="h-16 w-16 overflow-hidden rounded-2xl bg-slate-100">
+              <div className="h-16 w-16 overflow-hidden rounded-2xl bg-[#E8F2EB]">
                 <img
                   src={property.images?.[0]?.url || fallbackImage(property)}
                   alt={property.title}
@@ -503,10 +503,10 @@ export function UpcomingVisitsCard({ items }: { items: Property[] }) {
                 />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-slate-900">{property.title}</p>
+                <p className="truncate text-sm font-semibold text-[#0D1C12]">{property.title}</p>
                 <p className={`mt-1 ${typography.pageSubtitle}`}>{property.location || property.address}</p>
                 <div className={`mt-2 flex items-center gap-2 ${typography.helperText}`}>
-                  <CalendarDays className="h-3.5 w-3.5 text-rose-400" />
+                    <CalendarDays className="h-3.5 w-3.5 text-[#13EC80]" />
                   {derivedVisitDate(index)}
                 </div>
               </div>
@@ -526,7 +526,7 @@ export function MessagesCard({
   items: Array<{ sender: string; body: string; time: string }>;
 }) {
   return (
-    <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[24px] border border-[#E5E7EB] bg-white/95 p-5 shadow-[0_10px_24px_rgba(13,28,18,0.05)]">
       <div className="flex items-center justify-between gap-4">
         <h3 className={typography.sectionTitle}>Messages</h3>
         <Link href="/buyer/messages" className={`text-[#316249] ${typography.buttonText}`}>
@@ -539,7 +539,7 @@ export function MessagesCard({
           <Link
             key={`${item.sender}-${index}`}
             href="/buyer/messages"
-            className="flex items-start gap-4 rounded-[22px] border border-[#ece8e0] bg-[#fbfaf7] p-3 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
+            className="flex items-start gap-4 rounded-[22px] border border-[#E5E7EB] bg-[#F7FCFA] p-3 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
           >
             <div
               className="grid h-12 w-12 place-items-center rounded-full text-white"
@@ -553,7 +553,7 @@ export function MessagesCard({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium text-slate-900">{item.sender}</p>
+                <p className="text-sm font-semibold text-[#0D1C12]">{item.sender}</p>
                 <span className={`shrink-0 ${typography.helperText}`}>{item.time}</span>
               </div>
               <p className={`mt-2 line-clamp-2 ${typography.pageSubtitle}`}>{item.body}</p>
@@ -567,7 +567,7 @@ export function MessagesCard({
 
 export function RecentSearchesCard({ searches }: { searches: string[] }) {
   return (
-    <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[24px] border border-[#E5E7EB] bg-white/95 p-5 shadow-[0_10px_24px_rgba(13,28,18,0.05)]">
       <div className="flex items-center justify-between gap-4">
         <h3 className={typography.sectionTitle}>Recent Searches</h3>
         <button className={typography.buttonTextMuted}>Clear all</button>
@@ -579,9 +579,9 @@ export function RecentSearchesCard({ searches }: { searches: string[] }) {
             <Link
               key={search}
               href={`/buyer/search-properties?q=${encodeURIComponent(search)}`}
-              className={`flex items-center gap-3 rounded-full border border-[#ece8e0] bg-[#fbfaf7] px-4 py-3 text-slate-700 transition hover:bg-white hover:shadow-sm ${typography.buttonTextMuted}`}
-            >
-              <Clock3 className="h-4 w-4 text-[#7f8a84]" />
+            className={`flex items-center gap-3 rounded-full border border-[#E5E7EB] bg-[#F7FCFA] px-4 py-3 text-[#0D1C12] transition hover:bg-white hover:shadow-sm ${typography.buttonTextMuted}`}
+          >
+              <Clock3 className="h-4 w-4 text-[#618975]" />
               {search}
             </Link>
           ))
@@ -599,16 +599,16 @@ export function LiveActivityCard({
   items: Array<{ label: string; text: string }>;
 }) {
   return (
-    <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[24px] border border-[#E5E7EB] bg-white/95 p-5 shadow-[0_10px_24px_rgba(13,28,18,0.05)]">
       <h3 className={typography.sectionTitle}>Live Activity</h3>
 
       <div className="mt-5 space-y-5">
         {items.map((item, index) => (
           <div key={item.label} className="relative pl-11">
             {index !== items.length - 1 ? (
-              <span className="absolute left-[14px] top-8 h-[calc(100%-8px)] w-px bg-[#d9e3dc]" />
+              <span className="absolute left-[14px] top-8 h-[calc(100%-8px)] w-px bg-[#D1D5DB]" />
             ) : null}
-            <span className="absolute left-0 top-0 grid h-7 w-7 place-items-center rounded-full bg-[#edf5f0] text-[#316249]">
+            <span className="absolute left-0 top-0 grid h-7 w-7 place-items-center rounded-full bg-[#EEF8EB] text-[#316249]">
               <Sparkles className="h-3.5 w-3.5" />
             </span>
             <p className={typography.pageEyebrow}>{item.label}</p>
@@ -622,7 +622,7 @@ export function LiveActivityCard({
 
 export function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-[24px] border border-dashed border-[#d9dfd8] bg-[#faf8f4] px-5 py-10 text-center text-sm text-slate-500">
+    <div className="rounded-[24px] border border-dashed border-[#D1D5DB] bg-[#F7FCFA] px-5 py-10 text-center text-sm text-[#618975]">
       {message}
     </div>
   );

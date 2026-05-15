@@ -136,44 +136,43 @@ export default function PublicSiteHeader() {
   return (
     <div className="sticky top-0 z-30">
       <div
-        className="border-b border-white/10"
+        className="border-b border-[#2E5A46]"
         style={{
-          background:
-            "linear-gradient(90deg, #12392B 0%, #37604E 50%, #5B786A 100%)",
+          background: "linear-gradient(90deg, #1F5B41 0%, #2D6A4E 55%, #5E7F70 100%)",
         }}
       >
-        <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
-          <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-4">
+        <div className="w-full px-4 py-2 sm:px-6 sm:py-2.5 lg:px-8">
+          <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-2.5">
           <Link
             href="/"
             aria-label="Go to Property Sewa landing page"
-            className="flex items-center gap-4 rounded-2xl transition hover:opacity-95"
+            className="flex items-center gap-2.5 rounded-2xl transition hover:opacity-95"
             onClick={() => setMobileNavOpen(false)}
           >
-            <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
-            <span className="text-[18px] font-extrabold tracking-wide text-white">
+            <PropertySewaLogoMark className="h-[26px] w-[26px] shrink-0" />
+            <span className="text-[16px] font-bold tracking-wide text-[#F7FCFA]">
               PROPERTY SEWA
             </span>
           </Link>
 
-          <div className="hidden items-center justify-center gap-10 text-sm md:flex">
+          <div className="hidden items-center justify-center gap-8 text-sm md:flex">
             <Link
-              className="text-white transition hover:text-white"
+              className="text-[#F7FCFA] transition hover:text-white"
               href="/properties?type=sale"
             >
               For Sale
             </Link>
             <Link
-              className="text-white/80 transition hover:text-white"
+              className="text-[#E8F2EB] transition hover:text-white"
               href="/properties?type=rent"
             >
               For Rent
             </Link>
             <Link
-              className="text-white/80 transition hover:text-white"
+              className="text-[#E8F2EB] transition hover:text-white"
               href="/properties"
             >
-              Browse All
+              Agents
             </Link>
           </div>
 
@@ -181,7 +180,7 @@ export default function PublicSiteHeader() {
             <button
               type="button"
               onClick={() => setMobileNavOpen((open) => !open)}
-              className="grid h-10 w-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/15 transition hover:bg-white/15 md:hidden"
+              className="grid h-9 w-9 place-items-center rounded-full bg-white/10 ring-1 ring-white/20 transition hover:bg-white/15 md:hidden"
               aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
               title={mobileNavOpen ? "Close menu" : "Open menu"}
             >
@@ -197,7 +196,7 @@ export default function PublicSiteHeader() {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((open) => !open)}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-2 py-2 pr-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:scale-[1.02] active:scale-[0.99]"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-2 py-1.5 pr-3 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-[#E5E7EB] transition hover:scale-[1.02] active:scale-[0.99]"
                 >
                   {user.avatar ? (
                     <img
@@ -254,14 +253,14 @@ export default function PublicSiteHeader() {
               <>
                 <Link
                   href="/login"
-                  className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black shadow-sm transition hover:scale-[1.02] active:scale-[0.99]"
+                  className="rounded-full bg-white px-3.5 py-1.5 text-sm font-semibold text-[#0D1C12] shadow-sm ring-1 ring-[#D1D5DB] transition hover:scale-[1.02] active:scale-[0.99]"
                 >
                   Log In
                 </Link>
 
                 <Link
                   href="/register"
-                  className="rounded-full bg-[#1DFF91] px-5 py-2 text-sm font-extrabold text-black shadow-sm transition hover:scale-[1.02] hover:brightness-95 active:scale-[0.99]"
+                  className="rounded-full bg-[#13EC80] px-3.5 py-1.5 text-sm font-semibold text-[#0D1C12] shadow-sm transition hover:scale-[1.02] hover:bg-[#10DD78] active:scale-[0.99]"
                 >
                   Sign Up
                 </Link>
@@ -272,14 +271,14 @@ export default function PublicSiteHeader() {
               href="/contact"
               aria-label="Contact support"
               title="Contact support"
-              className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm transition hover:scale-[1.02] active:scale-[0.99]"
+              className="grid h-9 w-9 place-items-center rounded-full bg-white shadow-sm ring-1 ring-white/30 transition hover:scale-[1.02] active:scale-[0.99]"
             >
-              <PhoneCall className="h-4 w-4 text-[#12392B]" />
+              <PhoneCall className="h-4 w-4 text-[#316249]" />
             </Link>
 
             <button
               onClick={handleThemeToggle}
-              className="ml-1 grid h-10 w-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/15 transition hover:bg-white/15"
+              className="ml-1 grid h-9 w-9 place-items-center rounded-full bg-white/10 ring-1 ring-white/20 transition hover:bg-white/15"
               aria-label="Theme"
               title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
               type="button"
@@ -361,7 +360,7 @@ export default function PublicSiteHeader() {
                     <Link
                       href="/register"
                       onClick={() => setMobileNavOpen(false)}
-                      className="inline-flex items-center justify-center rounded-2xl bg-[#1DFF91] px-4 py-3 text-sm font-extrabold text-black transition hover:brightness-95"
+                      className="inline-flex items-center justify-center rounded-2xl bg-[#316249] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#24472E]"
                     >
                       Sign Up
                     </Link>

@@ -27,11 +27,11 @@ const MAX_COMPARE = 2;
 const THEME = {
   primary: "#316249",
   primaryDark: "#274f3a",
-  primarySoft: "#edf5f0",
-  primaryBorder: "#d7e7dd",
-  text: "#1f2937",
-  textSoft: "#4b5563",
-  border: "#e5e7eb",
+  primarySoft: "#EEF8EB",
+  primaryBorder: "#D1D5DB",
+  text: "#0D1C12",
+  textSoft: "#618975",
+  border: "#E5E7EB",
 };
 
 function readCompareIds(): string[] {
@@ -103,7 +103,7 @@ function EmptyState() {
         <Heart className="h-6 w-6" style={{ color: THEME.primary }} />
       </div>
 
-      <h2 className="text-2xl font-extrabold tracking-tight" style={{ color: THEME.text }}>
+      <h2 className="text-2xl font-bold tracking-tight" style={{ color: THEME.text }}>
         Your wishlist is empty
       </h2>
       <p className="mx-auto mt-3 max-w-xl text-base leading-7" style={{ color: THEME.textSoft }}>
@@ -248,34 +248,34 @@ export default function BuyerWishlistPage() {
 
   return (
     <main
-      className="min-h-screen w-full min-w-0 p-4 sm:p-6"
+      className="min-h-screen w-full min-w-0 bg-[#F7FCFA] p-4 sm:p-6"
       style={{
         background:
-          "radial-gradient(circle at top left, rgba(49,98,73,0.16), transparent 24%), radial-gradient(circle at top right, rgba(49,98,73,0.08), transparent 22%), linear-gradient(180deg, #edf4f0 0%, #f7faf8 100%)",
+          "radial-gradient(circle at top left, rgba(49,98,73,0.12), transparent 24%), radial-gradient(circle at top right, rgba(49,98,73,0.06), transparent 22%), linear-gradient(180deg, #F7FCFA 0%, #EEF8EB 100%)",
       }}
     >
       <Toast show={toast.show} text={toast.text} />
 
       <div className="mx-auto max-w-7xl">
         <div
-          className="overflow-hidden rounded-[34px] border shadow-[0_28px_90px_rgba(15,23,42,0.10)]"
+          className="overflow-hidden rounded-[34px] border shadow-[0_20px_48px_rgba(13,28,18,0.08)]"
           style={{
             background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,249,0.98) 100%)",
-            borderColor: "#d9e4de",
+            borderColor: "#E5E7EB",
           }}
         >
-          <section className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+          <section className="overflow-hidden rounded-[32px] border border-[#D1D5DB]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_22px_56px_rgba(13,28,18,0.10)] sm:px-8 sm:py-7">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/90">
                   <Heart className="h-3.5 w-3.5" />
                   Saved Homes
                 </div>
 
-                <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-[42px]">
+                <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
                   Saved Homes
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/85 sm:text-base">
                   View and manage your saved properties, keep compare selections in sync, and jump
                   back into the buyer flow from one polished shortlist workspace.
                 </p>
@@ -315,7 +315,7 @@ export default function BuyerWishlistPage() {
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
               <div
                 className="flex items-center gap-3 rounded-[24px] border px-5 py-4"
-                style={{ backgroundColor: "#ffffff", borderColor: "#e7ece9" }}
+                style={{ backgroundColor: "#ffffff", borderColor: "#E5E7EB" }}
               >
                 <Search className="h-5 w-5" style={{ color: THEME.textSoft }} />
                 <input
@@ -323,7 +323,7 @@ export default function BuyerWishlistPage() {
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search saved properties by title, location, price or features..."
-                  className="w-full bg-transparent text-base leading-7 outline-none placeholder:text-slate-500"
+                  className="w-full bg-transparent text-base leading-7 outline-none placeholder:text-[#618975]"
                   style={{ color: THEME.text }}
                   aria-label="Search saved properties"
                 />
@@ -338,7 +338,7 @@ export default function BuyerWishlistPage() {
                 </div>
                 <div
                   className="rounded-full border px-4 py-2 font-semibold"
-                  style={{ backgroundColor: "#ffffff", borderColor: "#e7ece9", color: THEME.text }}
+                  style={{ backgroundColor: "#ffffff", borderColor: "#E5E7EB", color: THEME.text }}
                 >
                   Compare {compareIds.length}/{MAX_COMPARE}
                 </div>
@@ -349,13 +349,13 @@ export default function BuyerWishlistPage() {
               <div className="rounded-[28px] border p-5 shadow-sm" style={{ backgroundColor: "#fff", borderColor: THEME.primaryBorder }}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[15px] font-semibold" style={{ color: THEME.textSoft }}>Saved properties</p>
+                    <p className="text-sm font-semibold" style={{ color: THEME.textSoft }}>Saved properties</p>
                     <p className="mt-2 text-3xl font-bold tracking-tight" style={{ color: THEME.text }}>{wishlistIds.length}</p>
-                    <p className="mt-2 text-[15px] leading-6" style={{ color: THEME.textSoft }}>Total items in your shortlist.</p>
+                    <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>Total items in your shortlist.</p>
                   </div>
                   <div
                     className="rounded-2xl p-3 text-white shadow-sm"
-                    style={{ background: "linear-gradient(135deg, #316249 0%, #6b9b83 100%)" }}
+                    style={{ background: "linear-gradient(135deg, #316249 0%, #4D9966 100%)" }}
                   >
                     <Heart className="h-5 w-5" />
                   </div>
@@ -365,13 +365,13 @@ export default function BuyerWishlistPage() {
               <div className="rounded-[28px] border p-5 shadow-sm" style={{ backgroundColor: "#fff", borderColor: THEME.primaryBorder }}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[15px] font-semibold" style={{ color: THEME.textSoft }}>Visible cards</p>
+                    <p className="text-sm font-semibold" style={{ color: THEME.textSoft }}>Visible cards</p>
                     <p className="mt-2 text-3xl font-bold tracking-tight" style={{ color: THEME.text }}>{filteredItems.length}</p>
-                    <p className="mt-2 text-[15px] leading-6" style={{ color: THEME.textSoft }}>Properties currently rendered below.</p>
+                    <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>Properties currently rendered below.</p>
                   </div>
                   <div
                     className="rounded-2xl p-3 text-white shadow-sm"
-                    style={{ background: "linear-gradient(135deg, #316249 0%, #6b9b83 100%)" }}
+                    style={{ background: "linear-gradient(135deg, #316249 0%, #4D9966 100%)" }}
                   >
                     <RefreshCcw className="h-5 w-5" />
                   </div>
@@ -381,15 +381,15 @@ export default function BuyerWishlistPage() {
               <div className="rounded-[28px] border p-5 shadow-sm" style={{ backgroundColor: "#fff", borderColor: THEME.primaryBorder }}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[15px] font-semibold" style={{ color: THEME.textSoft }}>Wishlist status</p>
+                    <p className="text-sm font-semibold" style={{ color: THEME.textSoft }}>Wishlist status</p>
                     <p className="mt-2 text-3xl font-bold tracking-tight" style={{ color: THEME.text }}>
                       {loading ? "..." : wishlistIds.length > 0 ? "Active" : "Empty"}
                     </p>
-                    <p className="mt-2 text-[15px] leading-6" style={{ color: THEME.textSoft }}>Use refresh anytime to sync this view.</p>
+                    <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>Use refresh anytime to sync this view.</p>
                   </div>
                   <div
                     className="rounded-2xl p-3 text-white shadow-sm"
-                    style={{ background: "linear-gradient(135deg, #316249 0%, #6b9b83 100%)" }}
+                    style={{ background: "linear-gradient(135deg, #316249 0%, #4D9966 100%)" }}
                   >
                     <ArrowRight className="h-5 w-5" />
                   </div>
@@ -410,7 +410,7 @@ export default function BuyerWishlistPage() {
                     <RefreshCcw className="h-5 w-5 animate-spin" style={{ color: THEME.primary }} />
                   </div>
                   <div className="text-lg font-bold" style={{ color: THEME.text }}>Loading wishlist...</div>
-                  <p className="mt-2 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                  <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>
                     Preparing your saved properties and shortlist view.
                   </p>
                 </div>
@@ -426,14 +426,14 @@ export default function BuyerWishlistPage() {
               >
                 <div
                   className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl border"
-                  style={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }}
+                  style={{ backgroundColor: "#E8F2EB", borderColor: "#D1D5DB" }}
                 >
-                  <RefreshCcw className="h-5 w-5 text-slate-700" />
+                  <RefreshCcw className="h-5 w-5 text-[#0D1C12]" />
                 </div>
-                <div className="text-lg font-extrabold tracking-tight" style={{ color: THEME.text }}>
+                <div className="text-lg font-bold tracking-tight" style={{ color: THEME.text }}>
                   Saved properties could not be rendered
                 </div>
-                <p className="mt-2 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>
                   Click refresh to try loading the latest wishlist items again.
                 </p>
                 <button
@@ -456,10 +456,10 @@ export default function BuyerWishlistPage() {
                 >
                   <Search className="h-5 w-5" style={{ color: THEME.primary }} />
                 </div>
-                <div className="text-lg font-extrabold tracking-tight" style={{ color: THEME.text }}>
+                <div className="text-lg font-bold tracking-tight" style={{ color: THEME.text }}>
                   No saved homes match your search
                 </div>
-                <p className="mt-2 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>
                   Try a different title, location, feature, or clear the search input.
                 </p>
                 <button
@@ -514,10 +514,10 @@ export default function BuyerWishlistPage() {
                         <div className="space-y-4 p-5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <div className="line-clamp-2 text-[19px] font-bold leading-7" style={{ color: THEME.text }}>
+                              <div className="line-clamp-2 text-lg font-semibold leading-7" style={{ color: THEME.text }}>
                                 {property.title}
                               </div>
-                              <div className="mt-2 flex items-center gap-1 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                              <div className="mt-2 flex items-center gap-1 text-sm leading-6" style={{ color: THEME.textSoft }}>
                                 <MapPin className="h-4 w-4" />
                                 <span className="line-clamp-1">{formatLocation(property)}</span>
                               </div>
@@ -567,7 +567,7 @@ export default function BuyerWishlistPage() {
                             </button>
                           </div>
 
-                          <div className="flex items-center justify-between border-t pt-4" style={{ borderColor: "#edf2f7" }}>
+                          <div className="flex items-center justify-between border-t pt-4" style={{ borderColor: "#E5E7EB" }}>
                             <div className="text-xl font-bold" style={{ color: THEME.primary }}>
                               {formatPrice(property)}
                             </div>
@@ -601,8 +601,8 @@ export default function BuyerWishlistPage() {
                     <div className="grid h-20 w-20 place-items-center rounded-full" style={{ backgroundColor: THEME.primarySoft }}>
                       <Plus className="h-10 w-10" style={{ color: THEME.primary }} />
                     </div>
-                    <div className="mt-6 text-3xl font-semibold tracking-tight" style={{ color: THEME.text }}>Add Another</div>
-                    <div className="mt-2 max-w-[220px] text-xl font-medium leading-8" style={{ color: THEME.textSoft }}>Property</div>
+                    <div className="mt-6 text-3xl font-medium tracking-tight" style={{ color: THEME.text }}>Add Another</div>
+                    <div className="mt-2 max-w-[220px] text-lg font-medium leading-8" style={{ color: THEME.textSoft }}>Property</div>
                   </Link>
                 </section>
 
@@ -645,10 +645,10 @@ export default function BuyerWishlistPage() {
                           <div className="space-y-4 p-5">
                             <div className="flex items-start justify-between gap-4">
                               <div className="min-w-0">
-                                <div className="line-clamp-2 text-[19px] font-bold leading-7" style={{ color: THEME.text }}>
+                                <div className="line-clamp-2 text-lg font-semibold leading-7" style={{ color: THEME.text }}>
                                   {property.title}
                                 </div>
-                                <div className="mt-2 flex items-center gap-1 text-[15px] leading-6" style={{ color: THEME.textSoft }}>
+                                <div className="mt-2 flex items-center gap-1 text-sm leading-6" style={{ color: THEME.textSoft }}>
                                   <MapPin className="h-4 w-4" />
                                   <span className="line-clamp-1">{formatLocation(property)}</span>
                                 </div>
@@ -724,7 +724,7 @@ export default function BuyerWishlistPage() {
 
                 <section
                   className="mt-6 flex flex-col gap-4 border-t px-1 pt-6 lg:flex-row lg:items-center lg:justify-between"
-                  style={{ borderColor: "#e7ece9" }}
+                  style={{ borderColor: "#E5E7EB" }}
                 >
                   <div className="flex flex-wrap items-center gap-3">
                     <button
@@ -741,7 +741,7 @@ export default function BuyerWishlistPage() {
                       Clear All
                     </button>
 
-                    <div className="max-w-xl text-[15px] leading-7" style={{ color: THEME.textSoft }}>
+                    <div className="max-w-xl text-sm leading-7" style={{ color: THEME.textSoft }}>
                       Compare up to {MAX_COMPARE} properties side-by-side and keep your shortlist
                       synced across saved homes, search, and compare.
                     </div>

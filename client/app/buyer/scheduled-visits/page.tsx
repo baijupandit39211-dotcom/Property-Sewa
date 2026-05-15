@@ -31,10 +31,10 @@ type Visit = {
 };
 
 function tone(status: VisitStatus) {
-  if (status === "confirmed" || status === "rescheduled") return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (status === "requested") return "bg-amber-50 text-amber-700 border-amber-200";
-  if (status === "completed") return "bg-sky-50 text-sky-700 border-sky-200";
-  return "bg-rose-50 text-rose-700 border-rose-200";
+  if (status === "confirmed" || status === "rescheduled") return "bg-[#EEF8EB] text-[#316249] border-[#D1D5DB]";
+  if (status === "requested") return "bg-[#E8F2EB] text-[#316249] border-[#D1D5DB]";
+  if (status === "completed") return "bg-[#EEF8EB] text-[#316249] border-[#D1D5DB]";
+  return "bg-[#F7FCFA] text-[#618975] border-[#E5E7EB]";
 }
 
 function visitTypeLabel(type?: Visit["visitType"]) {
@@ -104,23 +104,23 @@ export default function BuyerScheduledVisitsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f3fff8_0%,#edf8f1_100%)] p-4 sm:p-6">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#F7FCFA_0%,#EEF8EB_100%)] p-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
-        <section className="rounded-[28px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)]">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
+        <section className="rounded-[28px] border border-[#D1D5DB]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_22px_56px_rgba(13,28,18,0.10)]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
             <CalendarClock className="h-3.5 w-3.5" />
             Buyer Visits
           </div>
-          <h1 className="mt-4 text-3xl font-extrabold">Scheduled Visits</h1>
-          <p className="mt-2 text-sm font-medium text-emerald-50/90">{activeCount} active visit request(s)</p>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight">Scheduled Visits</h1>
+          <p className="mt-2 text-sm text-white/85">{activeCount} active visit request(s)</p>
         </section>
 
         {loading ? (
-          <div className="rounded-2xl border border-emerald-100 bg-white p-6">Loading...</div>
+          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-6 text-[#618975]">Loading...</div>
         ) : error ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700">{error}</div>
+          <div className="rounded-2xl border border-[#E5E7EB] bg-[#F7FCFA] p-6 text-[#618975]">{error}</div>
         ) : items.length === 0 ? (
-          <div className="rounded-2xl border border-emerald-100 bg-white p-10 text-center text-slate-600">
+          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-10 text-center text-[#618975]">
             No scheduled visits yet.
           </div>
         ) : (
@@ -134,10 +134,10 @@ export default function BuyerScheduledVisitsPage() {
               return (
                 <article
                   key={visit._id}
-                  className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm"
+                  className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm"
                 >
                   <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-                    <div className="overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50">
+                    <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#EEF8EB]">
                       {imageUrl ? (
                         <img
                           src={imageUrl}
@@ -152,7 +152,7 @@ export default function BuyerScheduledVisitsPage() {
                         <div className="grid h-[150px] place-items-center text-center">
                           <div>
                             <MapPin className="mx-auto h-5 w-5 text-[#316249]" />
-                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#587864]">
+                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#618975]">
                               Property Image
                             </p>
                           </div>
@@ -162,36 +162,36 @@ export default function BuyerScheduledVisitsPage() {
 
                     <div>
                       <div className="flex flex-wrap items-start justify-between gap-3">
-                        <h3 className="text-xl font-bold text-slate-900">{visit.propertyId?.title || "Property"}</h3>
+                        <h3 className="text-lg font-semibold text-[#0D1C12]">{visit.propertyId?.title || "Property"}</h3>
                         <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase ${tone(visit.status)}`}>
                           {visit.status}
                         </span>
                       </div>
 
-                      <div className="mt-3 grid gap-2 text-sm font-medium text-slate-700 sm:grid-cols-2">
+                      <div className="mt-3 grid gap-2 text-sm text-[#618975] sm:grid-cols-2">
                         <div>
-                          <span className="font-semibold text-slate-600">Visit type:</span>{" "}
-                          <span className="font-semibold text-slate-800">{visitTypeLabel(visit.visitType)}</span>
+                          <span className="font-semibold text-[#618975]">Visit type:</span>{" "}
+                          <span className="font-semibold text-[#0D1C12]">{visitTypeLabel(visit.visitType)}</span>
                         </div>
                         <div>
-                          <span className="font-semibold text-slate-600">Seller/Agent:</span>{" "}
-                          <span className="font-semibold text-slate-800">{visit.sellerId?.name || "Seller"}</span>
+                          <span className="font-semibold text-[#618975]">Seller/Agent:</span>{" "}
+                          <span className="font-semibold text-[#0D1C12]">{visit.sellerId?.name || "Seller"}</span>
                         </div>
                         <div className="inline-flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-slate-500" />
-                          <span className="font-semibold text-slate-600">Location:</span>{" "}
-                          <span className="font-semibold text-slate-800">{visit.propertyId?.location || "Location not set"}</span>
+                          <MapPin className="h-4 w-4 text-[#618975]" />
+                          <span className="font-semibold text-[#618975]">Location:</span>{" "}
+                          <span className="font-semibold text-[#0D1C12]">{visit.propertyId?.location || "Location not set"}</span>
                         </div>
                         <div className="inline-flex items-center gap-2">
-                          <Clock3 className="h-4 w-4 text-slate-500" />
-                          <span className="font-semibold text-slate-800">{formatVisitDateTime(date, time)}</span>
+                          <Clock3 className="h-4 w-4 text-[#618975]" />
+                          <span className="font-semibold text-[#0D1C12]">{formatVisitDateTime(date, time)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {(visit.sellerNote || visit.buyerMessage) && (
-                    <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                    <p className="mt-3 rounded-xl bg-[#F7FCFA] px-3 py-2 text-sm text-[#618975]">
                       {visit.sellerNote || visit.buyerMessage}
                     </p>
                   )}
@@ -205,7 +205,7 @@ export default function BuyerScheduledVisitsPage() {
                     </Link>
                     <Link
                       href={propertyHref}
-                      className="rounded-lg border border-[#316249] px-3 py-2 text-sm font-semibold text-[#316249] hover:bg-emerald-50"
+                      className="rounded-lg border border-[#316249] px-3 py-2 text-sm font-semibold text-[#316249] hover:bg-[#EEF8EB]"
                     >
                       View property
                     </Link>
@@ -214,27 +214,27 @@ export default function BuyerScheduledVisitsPage() {
                         <button
                           type="button"
                           onClick={() => handleReschedule(visit._id)}
-                          className="rounded-lg border border-[#316249] px-3 py-2 text-sm font-semibold text-[#316249] hover:bg-emerald-50"
+                          className="rounded-lg border border-[#316249] px-3 py-2 text-sm font-semibold text-[#316249] hover:bg-[#EEF8EB]"
                         >
                           Request Reschedule
                         </button>
                         <button
                           type="button"
                           onClick={() => handleCancel(visit._id)}
-                          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700"
+                          className="rounded-lg border border-[#E5E7EB] bg-[#F7FCFA] px-3 py-2 text-sm font-semibold text-[#618975]"
                         >
                           Cancel
                         </button>
                       </>
                     )}
                     {visit.status === "completed" && (
-                      <span className="inline-flex items-center gap-1 rounded-lg bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-700">
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-[#EEF8EB] px-3 py-2 text-sm font-semibold text-[#316249]">
                         <CheckCircle2 className="h-4 w-4" />
                         Completed
                       </span>
                     )}
                     {["rejected", "cancelled", "no_show"].includes(visit.status) && (
-                      <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-[#F7FCFA] px-3 py-2 text-sm font-semibold text-[#618975]">
                         <XCircle className="h-4 w-4" />
                         Closed
                       </span>

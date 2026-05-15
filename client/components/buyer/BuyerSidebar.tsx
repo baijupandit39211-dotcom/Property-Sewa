@@ -50,7 +50,7 @@ export default function BuyerSidebar({
         type="button"
         aria-label="Close navigation overlay"
         className={[
-          "fixed inset-0 z-40 bg-slate-950/40 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 lg:hidden",
+          "fixed inset-0 z-40 bg-[#0D1C12]/35 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 lg:hidden",
           mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none",
         ].join(" ")}
         onClick={onCloseMobile}
@@ -58,7 +58,7 @@ export default function BuyerSidebar({
 
       <aside
         className={[
-          "fixed left-0 top-16 z-50 flex h-[calc(100dvh-64px)] w-64 flex-col border-r border-slate-200 bg-white shadow-[0_24px_48px_rgba(15,23,42,0.14)] transition-transform duration-300 ease-out lg:z-30 lg:translate-x-0",
+          "fixed left-0 top-16 z-50 flex h-[calc(100dvh-64px)] w-64 flex-col border-r border-[#D1D5DB] bg-white shadow-[0_24px_48px_rgba(13,28,18,0.12)] transition-transform duration-300 ease-out lg:z-30 lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >
@@ -76,7 +76,7 @@ export default function BuyerSidebar({
                   "flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition",
                   isActive
                     ? "bg-[#316249] text-white"
-                    : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800",
+                    : "text-[#0D1C12] hover:bg-[#EEF8EB] hover:text-[#316249]",
                 ].join(" ")}
               >
                 <Icon className="h-5 w-5" />
@@ -87,7 +87,7 @@ export default function BuyerSidebar({
         </nav>
 
         <div className="mt-auto px-3 pb-4">
-          <div className="border-t border-slate-200 pt-4">
+          <div className="border-t border-[#D1D5DB] pt-4">
             <div className="space-y-1">
               {bottomLinks.map((item) => {
                 const Icon = item.icon;
@@ -96,7 +96,7 @@ export default function BuyerSidebar({
                     key={item.href}
                     href={item.href}
                     onClick={() => onCloseMobile()}
-                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800"
+                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold text-[#0D1C12] hover:bg-[#EEF8EB] hover:text-[#316249]"
                   >
                     <Icon className="h-5 w-5" />
                     {item.label}

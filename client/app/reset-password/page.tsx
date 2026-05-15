@@ -84,7 +84,7 @@ function ResetPasswordPageContent() {
       <main className="mx-auto max-w-7xl px-6">
         <div className="grid items-center py-10" style={{ minHeight: "calc(100vh - 84px)" }}>
           <div className="w-full max-w-[640px]">
-            <h1 className="text-[46px] font-extrabold leading-[1.05] tracking-tight text-[#0D1F18]">
+            <h1 className="text-[32px] font-bold leading-[1.12] tracking-tight text-[#0D1F18] sm:text-[38px]">
               Reset password
             </h1>
             <p className="mt-3 text-[16px] text-[#6B8D80]">
@@ -156,9 +156,9 @@ function ResetPasswordPageContent() {
                   disabled={loading}
                   type="submit"
                   className="
-                    h-[64px] w-full rounded-[14px]
+                    h-[52px] w-full rounded-[10px]
                     bg-[#1DFF91]
-                    text-[18px] font-extrabold text-[#062016]
+                    text-[16px] font-semibold text-[#062016]
                     shadow-[0_18px_35px_rgba(0,0,0,0.10)]
                     hover:brightness-95 transition
                     disabled:cursor-not-allowed disabled:opacity-70

@@ -11,7 +11,7 @@ import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 const NotificationBell = dynamic(() => import("@/components/notifications/NotificationBell"), {
   ssr: false,
   loading: () => (
-    <span className="grid h-10 w-10 place-items-center rounded-lg bg-white text-slate-700 ring-1 ring-white/30" />
+    <span className="grid h-10 w-10 place-items-center rounded-lg bg-white text-[#0D1C12] ring-1 ring-white/30" />
   ),
 });
 
@@ -35,7 +35,7 @@ export default function BuyerHeader({
   };
 
   return (
-    <header className="h-16 bg-[#316249] shadow-md">
+    <header className="h-16 shadow-md" style={{ background: "linear-gradient(90deg, #1F5B41 0%, #2D6A4E 55%, #5E7F70 100%)" }}>
       <div className="mx-auto flex h-full items-center justify-between px-4 text-white sm:px-6">
         <div className="flex items-center gap-3">
           <button
@@ -48,19 +48,19 @@ export default function BuyerHeader({
             {mobileSidebarOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
           </button>
           <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
-          <span className="text-base font-extrabold tracking-[0.12em]">
-            PROPERTY SEWA
-          </span>
+            <span className="text-base font-extrabold tracking-[0.12em]">
+              PROPERTY SEWA
+            </span>
         </div>
 
         <div className="flex items-center gap-3">
           <NotificationBell
             notificationsPageHref="/buyer/notifications"
-            buttonClassName="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
+            buttonClassName="grid h-10 w-10 place-items-center rounded-full bg-white text-[#0D1C12] shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
           />
           <Link
             href="/buyer/profile"
-            className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
+            className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#0D1C12] shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
             aria-label="Buyer profile"
           >
             <span className="text-sm font-extrabold">
@@ -69,7 +69,7 @@ export default function BuyerHeader({
           </Link>
           <button
             onClick={logout}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.02]"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold text-[#0D1C12] shadow-sm ring-1 ring-white/30 transition hover:scale-[1.02]"
           >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Logout</span>

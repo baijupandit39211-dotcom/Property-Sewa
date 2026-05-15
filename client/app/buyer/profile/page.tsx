@@ -328,16 +328,16 @@ export default function BuyerProfilePage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-8">
-      <section className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+      <section className="overflow-hidden rounded-[32px] border border-[#D1D5DB]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
         <div className="max-w-3xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/90">
             <User className="h-3.5 w-3.5" />
             Buyer profile
           </span>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Profile Settings
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/85 sm:text-base">
             Manage account details, security, notifications, and preferences from one workspace.
           </p>
         </div>
@@ -346,29 +346,29 @@ export default function BuyerProfilePage() {
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <button
           onClick={() => router.back()}
-          className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 transition hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#0D1C12] ring-1 ring-[#D1D5DB] transition hover:bg-[#F7FCFA]"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
         </button>
 
-        <div className="rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-200">
+        <div className="rounded-full bg-[#EEF8EB] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#316249] ring-1 ring-[#D1D5DB]">
           Profile Settings
         </div>
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <section className="w-full max-w-sm rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
+        <section className="w-full max-w-sm rounded-[28px] border border-[#D1D5DB] bg-white p-6 shadow-[0_10px_24px_rgba(13,28,18,0.06)]">
           <div className="flex flex-col items-center text-center">
             <div className="relative">
               {avatarPreview ? (
                 <img
                   src={avatarPreview}
                   alt="Profile"
-                  className="h-24 w-24 rounded-[26px] object-cover ring-4 ring-emerald-50"
+                  className="h-24 w-24 rounded-[26px] object-cover ring-4 ring-[#EEF8EB]"
                 />
               ) : (
-                <div className="grid h-24 w-24 place-items-center rounded-[26px] bg-emerald-100 text-3xl font-extrabold text-emerald-800 ring-4 ring-emerald-50">
+                <div className="grid h-24 w-24 place-items-center rounded-[26px] bg-[#EEF8EB] text-3xl font-semibold text-[#316249] ring-4 ring-[#EEF8EB]">
                   {initials}
                 </div>
               )}
@@ -376,7 +376,7 @@ export default function BuyerProfilePage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-full bg-emerald-700 text-white shadow-lg transition hover:bg-emerald-800"
+                className="absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-full bg-[#316249] text-white shadow-lg transition hover:bg-[#28513D]"
                 aria-label="Upload profile image"
               >
                 <Camera className="h-4 w-4" />
@@ -391,10 +391,10 @@ export default function BuyerProfilePage() {
               />
             </div>
 
-            <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="mt-5 text-2xl font-semibold tracking-tight text-[#0D1C12]">
               {data?.name || "Buyer"}
             </h1>
-            <p className="mt-1 text-sm text-slate-500">{data?.email || "No email available"}</p>
+            <p className="mt-1 text-sm text-[#618975]">{data?.email || "No email available"}</p>
 
             <div className="mt-5 grid w-full gap-3">
               <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={data?.email || "Not provided"} />
@@ -405,8 +405,8 @@ export default function BuyerProfilePage() {
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
-          <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-4">
+        <section className="rounded-[28px] border border-[#D1D5DB] bg-white p-5 shadow-[0_10px_24px_rgba(13,28,18,0.06)]">
+          <div className="flex flex-wrap gap-2 border-b border-[#D1D5DB] pb-4">
             <TabButton active={tab === "profile"} onClick={() => setTab("profile")} icon={<User className="h-4 w-4" />}>
               Profile
             </TabButton>
@@ -430,14 +430,14 @@ export default function BuyerProfilePage() {
           </div>
 
           {loading && (
-            <div className="mt-6 flex items-center gap-2 text-sm text-slate-600">
+            <div className="mt-6 flex items-center gap-2 text-sm text-[#618975]">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading profile...
             </div>
           )}
 
           {error && !loading && (
-            <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <div className="mt-6 rounded-2xl border border-[#E5E7EB] bg-[#F7FCFA] px-4 py-3 text-sm text-[#618975]">
               {error}
             </div>
           )}
@@ -447,8 +447,8 @@ export default function BuyerProfilePage() {
               {tab === "profile" && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">Profile Information</h2>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <h2 className="text-lg font-semibold text-[#0D1C12]">Profile Information</h2>
+                    <p className="mt-1 text-sm text-[#618975]">
                       Review and update your buyer account details.
                     </p>
                   </div>
@@ -480,13 +480,13 @@ export default function BuyerProfilePage() {
                   </div>
 
                   {profileError ? (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <div className="rounded-2xl border border-[#E5E7EB] bg-[#F7FCFA] px-4 py-3 text-sm text-[#618975]">
                       {profileError}
                     </div>
                   ) : null}
 
                   {profileSuccess ? (
-                    <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    <div className="flex items-start gap-2 rounded-lg border border-[#D1D5DB] bg-[#EEF8EB] px-4 py-3 text-sm text-[#316249]">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                       {profileSuccess}
                     </div>
@@ -496,7 +496,7 @@ export default function BuyerProfilePage() {
                     <button
                       type="button"
                       onClick={handleCancelEdit}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-sm font-semibold text-[#0D1C12] transition hover:bg-[#F7FCFA]"
                     >
                       <X className="h-4 w-4" />
                       Cancel
@@ -505,7 +505,7 @@ export default function BuyerProfilePage() {
                       type="button"
                       onClick={handleSaveProfile}
                       disabled={savingProfile}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#316249] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#28513D] disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       <Save className="h-4 w-4" />
                       {savingProfile ? "Saving..." : "Save Changes"}
@@ -517,8 +517,8 @@ export default function BuyerProfilePage() {
               {tab === "security" && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">Change Password</h2>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <h2 className="text-lg font-semibold text-[#0D1C12]">Change Password</h2>
+                    <p className="mt-1 text-sm text-[#618975]">
                       Update your password to keep your account secure.
                     </p>
                   </div>
@@ -569,18 +569,18 @@ export default function BuyerProfilePage() {
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  <div className="rounded-2xl border border-[#D1D5DB] bg-[#F7FCFA] px-4 py-3 text-sm text-[#618975]">
                     New password must be at least 8 characters, and the confirmation must match exactly.
                   </div>
 
                   {passwordError ? (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <div className="rounded-2xl border border-[#E5E7EB] bg-[#F7FCFA] px-4 py-3 text-sm text-[#618975]">
                       {passwordError}
                     </div>
                   ) : null}
 
                   {passwordSuccess ? (
-                    <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    <div className="flex items-start gap-2 rounded-lg border border-[#D1D5DB] bg-[#EEF8EB] px-4 py-3 text-sm text-[#316249]">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                       {passwordSuccess}
                     </div>
@@ -590,7 +590,7 @@ export default function BuyerProfilePage() {
                     <button
                       type="button"
                       onClick={handleCancelPassword}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-sm font-semibold text-[#0D1C12] transition hover:bg-[#F7FCFA]"
                     >
                       <X className="h-4 w-4" />
                       Cancel
@@ -599,7 +599,7 @@ export default function BuyerProfilePage() {
                       type="button"
                       onClick={handleChangePassword}
                       disabled={changingPassword}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#316249] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#28513D] disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       <Lock className="h-4 w-4" />
                       {changingPassword ? "Updating..." : "Update Password"}
@@ -611,8 +611,8 @@ export default function BuyerProfilePage() {
               {tab === "notifications" && (
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900">Notification Settings</h2>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <h2 className="text-lg font-semibold text-[#0D1C12]">Notification Settings</h2>
+                    <p className="mt-1 text-sm text-[#618975]">
                       Choose how you want Property Sewa to keep you informed.
                     </p>
                   </div>
@@ -641,8 +641,8 @@ export default function BuyerProfilePage() {
               {tab === "preferences" && (
                 <div className="space-y-5">
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900">Buyer Preferences</h2>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <h2 className="text-lg font-semibold text-[#0D1C12]">Buyer Preferences</h2>
+                    <p className="mt-1 text-sm text-[#618975]">
                       Set your preferred search profile for a better browsing experience.
                     </p>
                   </div>
@@ -654,7 +654,7 @@ export default function BuyerProfilePage() {
                       onChange={(value) =>
                         setPreferences((current) => ({ ...current, preferredLocation: value }))
                       }
-                      icon={<MapPin className="h-4 w-4 text-slate-400" />}
+                      icon={<MapPin className="h-4 w-4 text-[#618975]" />}
                     />
                     <SelectField
                       label="Property Type"
@@ -683,7 +683,7 @@ export default function BuyerProfilePage() {
                   </div>
 
                   {preferencesSaved ? (
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    <div className="rounded-2xl border border-[#D1D5DB] bg-[#EEF8EB] px-4 py-3 text-sm text-[#316249]">
                       {preferencesSaved}
                     </div>
                   ) : null}
@@ -692,7 +692,7 @@ export default function BuyerProfilePage() {
                     <button
                       type="button"
                       onClick={savePreferences}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#316249] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#28513D]"
                     >
                       <Save className="h-4 w-4" />
                       Save Preferences
@@ -726,8 +726,8 @@ function TabButton({
       className={cn(
         "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200",
         active
-          ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
-          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          ? "bg-[#EEF8EB] text-[#316249] ring-1 ring-[#D1D5DB]"
+          : "bg-[#E8F2EB] text-[#618975] hover:bg-[#E5E7EB]"
       )}
     >
       {icon}
@@ -746,12 +746,12 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+    <div className="rounded-2xl border border-[#D1D5DB] bg-[#F7FCFA] px-4 py-3 text-left">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#618975]">
         {icon}
         {label}
       </div>
-      <div className="mt-1 text-sm font-semibold text-slate-900">{value}</div>
+      <div className="mt-1 text-sm font-semibold text-[#0D1C12]">{value}</div>
     </div>
   );
 }
@@ -779,15 +779,15 @@ function InputField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>
+      <span className="mb-2 block text-sm font-semibold text-[#618975]">{label}</span>
       <div
         className={cn(
           "flex h-12 items-center gap-3 rounded-2xl border px-4 transition",
           disabled
-            ? "cursor-not-allowed border-slate-200 bg-slate-100"
+            ? "cursor-not-allowed border-[#D1D5DB] bg-[#E8F2EB]"
             : readOnly
-            ? "border-slate-200 bg-slate-50"
-            : "border-slate-200 bg-white focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-100"
+            ? "border-[#D1D5DB] bg-[#F7FCFA]"
+            : "border-[#D1D5DB] bg-white focus-within:border-[#316249] focus-within:ring-4 focus-within:ring-[#316249]/15"
         )}
       >
         {icon}
@@ -800,8 +800,8 @@ function InputField({
           placeholder={placeholder}
           onChange={(event) => onChange?.(event.target.value)}
           className={cn(
-            "w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400",
-            disabled && "cursor-not-allowed text-slate-500"
+            "w-full bg-transparent text-sm text-[#0D1C12] outline-none placeholder:text-[#618975]",
+            disabled && "cursor-not-allowed text-[#618975]"
           )}
         />
       </div>
@@ -822,11 +822,11 @@ function SelectField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>
+      <span className="mb-2 block text-sm font-semibold text-[#618975]">{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+        className="h-12 w-full rounded-2xl border border-[#D1D5DB] bg-white px-4 text-sm text-[#0D1C12] outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/15"
       >
         {options.map((option) => (
           <option key={option.value || option.label} value={option.value}>
@@ -850,10 +850,10 @@ function ToggleRow({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+    <div className="flex items-start justify-between gap-4 rounded-2xl border border-[#D1D5DB] bg-[#F7FCFA] px-4 py-4">
       <div>
-        <div className="text-sm font-semibold text-slate-900">{label}</div>
-        <div className="mt-1 text-sm leading-6 text-slate-500">{description}</div>
+        <div className="text-sm font-semibold text-[#0D1C12]">{label}</div>
+        <div className="mt-1 text-sm leading-6 text-[#618975]">{description}</div>
       </div>
 
       <button
@@ -863,7 +863,7 @@ function ToggleRow({
         onClick={() => onChange(!checked)}
         className={cn(
           "relative mt-1 inline-flex h-7 w-12 shrink-0 items-center rounded-full transition",
-          checked ? "bg-emerald-600" : "bg-slate-300"
+          checked ? "bg-[#316249]" : "bg-[#D1D5DB]"
         )}
       >
         <span
@@ -896,21 +896,21 @@ function PasswordField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>
-      <div className="flex h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-100">
+      <span className="mb-2 block text-sm font-semibold text-[#618975]">{label}</span>
+      <div className="flex h-12 items-center gap-3 rounded-2xl border border-[#D1D5DB] bg-white px-4 transition focus-within:border-[#316249] focus-within:ring-4 focus-within:ring-[#316249]/15">
         <input
           type={show ? "text" : "password"}
           value={value ?? ""}
           required={required}
           placeholder={placeholder}
           onChange={(event) => onChange?.(event.target.value)}
-          className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+          className="w-full bg-transparent text-sm text-[#0D1C12] outline-none placeholder:text-[#618975]"
         />
         <button
           type="button"
           onClick={onToggleShow}
           aria-label={show ? "Hide password" : "Show password"}
-          className="text-slate-400 transition hover:text-slate-600"
+          className="text-[#618975] transition hover:text-[#618975]"
         >
           {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>

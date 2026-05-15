@@ -41,7 +41,7 @@ type DashboardMessageItem = { sender: string; body: string; time: string };
 
 const BRAND = "#316249";
 const PAGE_BG =
-  "min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.18),transparent_26%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.10),transparent_22%),linear-gradient(180deg,#f6fffa_0%,#edf8f1_100%)] p-4 sm:p-6";
+  "min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(49,98,73,0.10),transparent_26%),radial-gradient(circle_at_top_right,rgba(49,98,73,0.06),transparent_22%),linear-gradient(180deg,#F7FCFA_0%,#EEF8EB_100%)] p-4 sm:p-6";
 const COMPARE_KEY = "property-sewa:compare:v1";
 const MAX_COMPARE = 2;
 
@@ -374,7 +374,7 @@ export default function BuyerDashboardPage() {
       />
       <Toast show={toast.show} text={toast.text} />
 
-      <div className="mx-auto max-w-7xl rounded-[34px] border border-[#dfe8e2] bg-white/50 px-4 py-4 shadow-[0_24px_70px_rgba(15,23,42,0.06)] backdrop-blur-[1px] sm:px-6 lg:px-8 lg:py-7">
+      <div className="mx-auto max-w-7xl rounded-[28px] border border-[#E5E7EB] bg-white/70 px-4 py-4 shadow-[0_20px_50px_rgba(13,28,18,0.06)] backdrop-blur-[1px] sm:px-6 lg:px-8 lg:py-7">
         <PageSearchBar
           searchText={searchText}
           setSearchText={setSearchText}
@@ -384,24 +384,24 @@ export default function BuyerDashboardPage() {
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_292px]">
           <div className="space-y-10">
-            <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+            <section className="overflow-hidden rounded-[32px] border border-[#D1D5DB]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
                 <div className="max-w-3xl">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/90">
                     <Sparkles className="h-3.5 w-3.5" />
                     Buyer Dashboard
                   </span>
                   <h1 className={`mt-4 ${typography.pageTitle} text-white`}>
                     Good morning, {firstName(userName)}!
                   </h1>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90">
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/85 sm:text-base">
                     {heroSummary}
                   </p>
                 </div>
 
                 <Link
                   href={searchText.trim() ? `/buyer/search-properties?q=${encodeURIComponent(searchText.trim())}` : "/buyer/search-properties"}
-                  className={`inline-flex h-12 items-center gap-3 self-start rounded-2xl border border-white/15 bg-white/10 px-6 text-white backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}
+                  className={`inline-flex h-12 items-center gap-3 self-start rounded-xl border border-white/15 bg-white/10 px-6 text-sm font-semibold text-white transition hover:bg-white/15`}
                 >
                   <Search className="h-4 w-4" />
                   Explore Properties
@@ -411,7 +411,7 @@ export default function BuyerDashboardPage() {
               <div className="mt-4">
                 <Link
                   href="/"
-                  className={`inline-flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-white backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}
+                  className={`inline-flex items-center gap-1.5 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#0D1C12] shadow-sm transition hover:bg-[#EEF8EB]`}
                 >
                   Back to Home
                   <ArrowRight className="h-4 w-4" />
@@ -429,21 +429,21 @@ export default function BuyerDashboardPage() {
                 accent="#e8f5ef"
               />
               <OverviewCard
-                icon={<Eye className="h-5 w-5 text-[#2e6fe3]" />}
+                icon={<Eye className="h-5 w-5 text-[#316249]" />}
                 label="Recent Views"
                 value={properties.length}
                 meta="This week"
                 accent="#edf3ff"
               />
               <OverviewCard
-                icon={<CalendarDays className="h-5 w-5 text-[#2b7f6c]" />}
+                icon={<CalendarDays className="h-5 w-5 text-[#316249]" />}
                 label="Upcoming Visits"
                 value={upcomingVisitListings.length}
                 meta="Next 7 days"
                 accent="#eaf6f2"
               />
               <OverviewCard
-                icon={<Bell className="h-5 w-5 text-[#d0a044]" />}
+                icon={<Bell className="h-5 w-5 text-[#13EC80]" />}
                 label="Price Alerts"
                 value={offerProperties.length}
                 meta="Active alerts"
@@ -453,7 +453,7 @@ export default function BuyerDashboardPage() {
               <DiscoveryCard property={recommendedListings[0] || savedProperties[0] || properties[0] || null} />
             </section>
 
-            <section className="rounded-[14px] border border-[#dfe8e2] bg-white p-6 shadow-[0_6px_24px_rgba(16,24,40,0.05)] sm:p-7">
+            <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-6 shadow-[0_10px_24px_rgba(13,28,18,0.05)] sm:p-7">
               <SectionHeading
                 title="Recommended for You"
                 actionHref="/buyer/search-properties"
@@ -484,7 +484,7 @@ export default function BuyerDashboardPage() {
             </section>
 
             <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_316px]">
-              <section className="rounded-[14px] border border-[#dfe8e2] bg-white p-6 shadow-[0_6px_24px_rgba(16,24,40,0.05)] sm:p-7">
+              <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-6 shadow-[0_10px_24px_rgba(13,28,18,0.05)] sm:p-7">
                 <SectionHeading
                   title="Saved Properties"
                   actionHref="/buyer/wishlist"

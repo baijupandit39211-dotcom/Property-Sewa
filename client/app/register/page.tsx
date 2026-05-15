@@ -5,6 +5,7 @@ import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 
@@ -18,16 +19,13 @@ function loadGoogleScript(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.google?.accounts?.id) return resolve();
 
-    // Prevent adding the script multiple times
     const existing = document.querySelector(
       'script[src="https://accounts.google.com/gsi/client"]'
     ) as HTMLScriptElement | null;
 
     if (existing) {
       existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () =>
-        reject(new Error("Google script failed to load"))
-      );
+      existing.addEventListener("error", () => reject(new Error("Google script failed to load")));
       return;
     }
 
@@ -50,9 +48,18 @@ const fadeUp: Variants = {
   }),
 };
 
-// ✅ remove "admin" from selectable register roles
 type Role = "buyer" | "seller" | "agent";
 type ToastState = { show: boolean; text: string };
+type FieldProps = {
+  id: string;
+  label: string;
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+  type?: string;
+  autoComplete?: string;
+  rightSlot?: React.ReactNode;
+};
 
 function Toast({ show, text }: ToastState) {
   return (
@@ -62,8 +69,39 @@ function Toast({ show, text }: ToastState) {
         show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
       ].join(" ")}
     >
-      <div className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-white/10">
+      <div className="rounded-2xl bg-[#316249]/95 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-[#D1D5DB]/50">
         {text}
+      </div>
+    </div>
+  );
+}
+
+function FormField({
+  id,
+  label,
+  value,
+  placeholder,
+  onChange,
+  type = "text",
+  autoComplete,
+  rightSlot,
+}: FieldProps) {
+  return (
+    <div>
+      <label htmlFor={id} className="text-[15px] font-semibold text-[#0D1C12]">
+        {label}
+      </label>
+      <div className="relative mt-2">
+        <input
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          type={type}
+          autoComplete={autoComplete}
+          className="h-[52px] w-full rounded-[10px] border border-[#D1D5DB] bg-[#F7FCFA] px-4 pr-12 text-[16px] text-[#0D1C12] outline-none transition duration-300 placeholder:text-[#618975] hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(13,28,18,0.06)] focus:border-[#316249] focus:ring-4 focus:ring-[#CFE8D6]"
+        />
+        {rightSlot ? <div className="absolute right-3 top-1/2 -translate-y-1/2">{rightSlot}</div> : null}
       </div>
     </div>
   );
@@ -81,17 +119,9 @@ function passwordScore(pw: string) {
 
 function routeByRole(role: string | undefined) {
   const r = (role || "").toLowerCase();
-
-  // Admin goes to admin dashboard
   if (r === "admin" || r === "superadmin") return "/admin/overview";
-
-  // Buyer goes to buyer dashboard
   if (r === "buyer") return "/buyer/buyer-dashboard";
-
-  // Seller/Agent goes to seller dashboard
   if (r === "seller" || r === "agent") return "/seller/seller-dashboard";
-
-  // If role is missing or invalid, redirect to login
   return "/login";
 }
 
@@ -104,6 +134,7 @@ export default function RegisterPage() {
   const [phone, setPhone] = React.useState("");
   const [address, setAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
   const [agree, setAgree] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [googleBtnWidth, setGoogleBtnWidth] = React.useState<number | null>(null);
@@ -154,7 +185,6 @@ export default function RegisterPage() {
         if (!clientId || !googleBtnRef.current) return;
         if (!googleBtnWidth) return;
 
-        // ✅ Clear container to avoid duplicate Google button
         googleBtnRef.current.innerHTML = "";
 
         window.google.accounts.id.initialize({
@@ -165,7 +195,7 @@ export default function RegisterPage() {
                 method: "POST",
                 body: JSON.stringify({
                   credential: resp.credential,
-                  role, // ✅ always latest selected role
+                  role,
                 }),
               });
 
@@ -185,15 +215,15 @@ export default function RegisterPage() {
           width: googleBtnWidth,
           text: "signup_with",
         });
-      } catch (e) {
-        // optional: show a message if Google script fails
+      } catch {
+        // ignore google script failures for UI continuity
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [router, role, googleBtnWidth, showToast]); // ✅ IMPORTANT: include role
+  }, [router, role, googleBtnWidth, showToast]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,24 +255,27 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f4fbf7]">
+    <div className="relative min-h-screen overflow-hidden bg-[#F7FCFA]">
       <Toast show={toast.show} text={toast.text} />
+
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
-          className="absolute left-[-6rem] top-24 h-80 w-80 rounded-full bg-emerald-200/45 blur-3xl"
+          className="absolute left-[-6rem] top-24 h-80 w-80 rounded-full bg-[#CFE8D6]/40 blur-3xl"
           animate={{ x: [0, 26, -14, 0], y: [0, 24, -8, 0], scale: [1, 1.06, 0.96, 1] }}
           transition={{ duration: 13, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute bottom-10 right-[-5rem] h-96 w-96 rounded-full bg-[#bde7d0]/35 blur-3xl"
+          className="absolute bottom-10 right-[-5rem] h-96 w-96 rounded-full bg-[#B9E3C5]/40 blur-3xl"
           animate={{ x: [0, -34, 12, 0], y: [0, -18, 16, 0], scale: [1, 0.94, 1.05, 1] }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
-      <header className="bg-[#2f5d46]">
-        <div className="flex w-full items-center justify-between px-4 py-4 sm:px-6 lg:px-[80px]">
-          <Link href="/" className="flex items-center gap-4 text-lg font-extrabold text-white">
+      <header
+        style={{ background: "linear-gradient(90deg, #1F5B41 0%, #2D6A4E 55%, #5E7F70 100%)" }}
+      >
+        <div className="flex h-[72px] w-full items-center justify-between px-4 sm:px-6 lg:px-[80px]">
+          <Link href="/" className="flex items-center gap-3 text-lg font-extrabold text-white">
             <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
             <span>PROPERTY SEWA</span>
           </Link>
@@ -250,35 +283,37 @@ export default function RegisterPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="hidden rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
+              className="hidden rounded-full bg-white/10 px-5 py-1.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
             >
               Back to Home
             </Link>
-
             <Link
               href="/login"
-              className="hidden rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
+              className="hidden rounded-full bg-white/10 px-5 py-1.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
             >
               Log In
             </Link>
-            <span className="rounded-full bg-emerald-400 px-5 py-2 text-sm font-semibold text-emerald-950">
+            <span className="rounded-full bg-[#13EC80] px-5 py-1.5 text-sm font-medium text-[#102219]">
               Sign Up
             </span>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid items-center gap-12 md:grid-cols-2">
-          <motion.div
-            className="mx-auto w-full max-w-xl"
+      <main className="relative z-10 mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div
+          className="grid items-center gap-8 lg:grid-cols-[minmax(0,540px)_minmax(0,1fr)] lg:gap-8"
+          style={{ minHeight: "calc(100vh - 72px)" }}
+        >
+          <motion.section
+            className="mx-auto w-full max-w-[540px]"
             initial="hidden"
             animate="show"
             variants={fadeUp}
             custom={0}
           >
             <motion.h1
-              className="text-4xl font-extrabold text-slate-900"
+              className="text-[32px] font-semibold leading-[1.12] text-[#0D1C12] sm:text-[38px]"
               initial="hidden"
               animate="show"
               variants={fadeUp}
@@ -287,51 +322,44 @@ export default function RegisterPage() {
               Create your account
             </motion.h1>
 
-            <motion.div
-              className="mt-8"
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
-              custom={0.1}
-            >
-              <div className="text-sm font-semibold text-slate-700">
-                Account Type
-              </div>
+            <motion.div className="mt-5" initial="hidden" animate="show" variants={fadeUp} custom={0.1}>
+              <div className="text-[16px] font-medium text-[#0D1C12]">Account Type</div>
 
-              <div className="mt-3 flex flex-wrap gap-3">
-                {/* ✅ Buyer */}
+              <div className="mt-3 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Account type">
                 <button
                   type="button"
+                  role="radio"
+                  aria-checked={role === "buyer"}
                   onClick={() => setRole("buyer")}
                   className={[
-                    "rounded-xl px-5 py-3 text-sm font-semibold transition duration-300 hover:-translate-y-0.5",
+                    "rounded-[10px] border px-5 py-2.5 text-[17px] font-normal transition duration-300 hover:-translate-y-0.5",
                     role === "buyer"
-                      ? "bg-emerald-500 text-emerald-950 shadow-[0_16px_30px_rgba(16,185,129,0.18)]"
-                      : "bg-white text-slate-700 ring-1 ring-emerald-200 hover:bg-emerald-50",
+                      ? "border-[#316249] bg-[#316249] text-white shadow-[0_12px_24px_rgba(49,98,73,0.22)]"
+                      : "border-[#D1D5DB] bg-white text-[#2C3F35] hover:bg-[#EEF8EB]",
                   ].join(" ")}
                 >
                   Buyer/Renter
                 </button>
 
-                {/* ✅ Seller/Agent */}
                 <button
                   type="button"
+                  role="radio"
+                  aria-checked={role === "seller"}
                   onClick={() => setRole("seller")}
                   className={[
-                    "rounded-xl px-5 py-3 text-sm font-semibold transition duration-300 hover:-translate-y-0.5",
+                    "rounded-[10px] border px-5 py-2.5 text-[17px] font-normal transition duration-300 hover:-translate-y-0.5",
                     role === "seller"
-                      ? "bg-emerald-500 text-emerald-950 shadow-[0_16px_30px_rgba(16,185,129,0.18)]"
-                      : "bg-white text-slate-700 ring-1 ring-emerald-200 hover:bg-emerald-50",
+                      ? "border-[#316249] bg-[#316249] text-white shadow-[0_12px_24px_rgba(49,98,73,0.22)]"
+                      : "border-[#D1D5DB] bg-white text-[#2C3F35] hover:bg-[#EEF8EB]",
                   ].join(" ")}
                 >
                   Seller/Agent
                 </button>
 
-                {/* ✅ Admin → go to admin login page */}
                 <button
                   type="button"
                   onClick={() => router.push("/login")}
-                  className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-700 ring-1 ring-emerald-200 transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-50"
+                  className="rounded-[10px] border border-[#D1D5DB] bg-white px-5 py-2.5 text-[17px] font-normal text-[#2C3F35] transition duration-300 hover:-translate-y-0.5 hover:bg-[#EEF8EB]"
                 >
                   Admin
                 </button>
@@ -340,93 +368,93 @@ export default function RegisterPage() {
 
             <motion.form
               onSubmit={onSubmit}
-              className="mt-8 space-y-6"
+              className="mt-5 space-y-4"
               initial="hidden"
               animate="show"
               variants={fadeUp}
               custom={0.16}
             >
-              <div>
-                <label className="text-sm font-semibold text-slate-700">
-                  Name
-                </label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
-                />
-              </div>
+              <FormField
+                id="register-name"
+                label="Name"
+                value={name}
+                onChange={setName}
+                placeholder="Enter your name"
+                autoComplete="name"
+              />
+
+              <FormField
+                id="register-email"
+                label="Email"
+                value={email}
+                onChange={setEmail}
+                placeholder="Enter your email"
+                type="email"
+                autoComplete="email"
+              />
+
+              <FormField
+                id="register-phone"
+                label="Phone"
+                value={phone}
+                onChange={setPhone}
+                placeholder="Enter your phone number"
+                autoComplete="tel"
+              />
+
+              <FormField
+                id="register-address"
+                label="Address"
+                value={address}
+                onChange={setAddress}
+                placeholder="Enter your address"
+                autoComplete="street-address"
+              />
+
+              <FormField
+                id="register-password"
+                label="Password"
+                value={password}
+                onChange={setPassword}
+                placeholder="Enter your password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                rightSlot={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-controls="register-password"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="rounded-md p-1 text-[#102219] transition hover:bg-[#EEF8EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                }
+              />
 
               <div>
-                <label className="text-sm font-semibold text-slate-700">
-                  Email
-                </label>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  type="email"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-slate-700">
-                  Phone
-                </label>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Enter your phone number"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-slate-700">
-                  Address
-                </label>
-                <input
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Enter your address"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-slate-700">
-                  Password
-                </label>
-                <input
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  type="password"
-                  className="mt-2 h-14 w-full rounded-xl border border-emerald-200 bg-white px-4 text-sm outline-none transition duration-300 placeholder:text-emerald-400 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200/50"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between text-sm font-semibold text-slate-700">
+                <div className="flex items-center justify-between text-[15px] font-semibold text-[#0D1C12]">
                   <span>Password Strength</span>
-                  <span className="text-slate-600">{score}</span>
+                  <span className="text-[15px] font-medium text-[#618975]">{score}</span>
                 </div>
-                <div className="mt-2 h-2 w-full rounded-full bg-emerald-100">
+                <div className="mt-3 h-[8px] w-full rounded-full bg-[#E5E7EB]">
                   <div
-                    className="h-2 rounded-full bg-emerald-500 transition-all duration-500"
+                    className="h-[8px] rounded-full bg-[#316249] transition-all duration-500"
                     style={{ width: `${score}%` }}
                   />
                 </div>
               </div>
 
-              <label className="flex items-center gap-3 text-sm text-slate-700">
+              <label
+                htmlFor="register-terms"
+                className="flex cursor-pointer items-start gap-3 rounded-lg py-1 text-[16px] text-[#2C3F35]"
+              >
                 <input
+                  id="register-terms"
                   type="checkbox"
                   checked={agree}
                   onChange={(e) => setAgree(e.target.checked)}
-                  className="h-5 w-5 rounded border-emerald-300"
+                  className="mt-0.5 h-5 w-5 rounded border-[#D1D5DB] bg-white text-[#316249] focus:ring-[#316249]"
                 />
                 I agree to the Terms & Conditions and Privacy Policy
               </label>
@@ -434,48 +462,46 @@ export default function RegisterPage() {
               <button
                 disabled={loading}
                 type="submit"
-                className="h-14 w-full rounded-xl bg-emerald-500 text-sm font-extrabold text-emerald-950 transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-[0_22px_38px_rgba(16,185,129,0.20)] disabled:opacity-60"
+                className="h-[52px] w-full rounded-[10px] bg-[#316249] text-[16px] font-semibold leading-none text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#24472E] hover:shadow-[0_16px_28px_rgba(49,98,73,0.18)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#316249]/35 disabled:opacity-60"
               >
                 {loading ? "Signing up..." : "Sign Up"}
               </button>
 
-              <div className="rounded-xl bg-slate-100 p-3 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(15,23,42,0.06)]">
+              <div className="rounded-[12px] border border-[#D1D5DB] bg-white p-3 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(13,28,18,0.05)]">
                 <div ref={googleBtnRef} className="flex justify-center" />
               </div>
 
-              <p className="text-center text-sm text-emerald-700">
+              <p className="text-left text-[14px] text-[#618975]">
                 Already have an account?{" "}
-                <Link href="/login" className="font-semibold underline">
+                <Link href="/login" className="font-medium text-[#316249] hover:underline">
                   Login
                 </Link>
               </p>
             </motion.form>
-          </motion.div>
+          </motion.section>
 
-          <motion.div
-            className="relative mx-auto hidden w-full max-w-xl md:block"
+          <motion.aside
+            className="relative mx-auto hidden w-full max-w-[560px] md:block lg:ml-2"
             initial={{ opacity: 0, x: 36 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.18 }}
           >
             <motion.div
-              className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl"
-              whileHover={{ y: -8, rotate: 1, scale: 1.02 }}
+              className="relative mx-auto aspect-[1.02/1] w-full max-w-[510px] lg:max-w-[530px]"
+              whileHover={{ y: -8, scale: 1.02 }}
               transition={{ type: "spring", stiffness: 180, damping: 16 }}
             >
               <Image
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80"
-                alt="House"
+                src="/house-3d.png"
+                alt="Premium real estate illustration"
                 fill
-                className="object-cover transition duration-700"
+                className="object-contain object-center drop-shadow-[0_22px_24px_rgba(0,0,0,0.14)] transition duration-700"
                 priority
               />
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.08),transparent_40%,rgba(255,255,255,0.12))]" />
             </motion.div>
-          </motion.div>
+          </motion.aside>
         </div>
       </main>
     </div>
   );
 }
-

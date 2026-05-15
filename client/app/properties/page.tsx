@@ -139,7 +139,7 @@ function PublicPropertiesPageContent() {
   const copy = pageCopy(listingType);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.18),transparent_26%),linear-gradient(180deg,#f8fffb_0%,#eefbf4_100%)] px-4 py-6 sm:px-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(49,98,73,0.08),transparent_26%),linear-gradient(180deg,#F7FCFA_0%,#EEF8EB_100%)] px-4 py-6 sm:px-6">
       <div className="mx-auto max-w-7xl space-y-6">
         <section className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-7 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -147,7 +147,7 @@ function PublicPropertiesPageContent() {
               <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
                 {copy.badge}
               </span>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {copy.title}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
@@ -173,7 +173,7 @@ function PublicPropertiesPageContent() {
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-emerald-100 bg-white p-5 shadow-sm">
+        <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-3">
               <Link
@@ -181,8 +181,8 @@ function PublicPropertiesPageContent() {
                 className={cn(
                   "rounded-full px-4 py-2 text-sm font-semibold transition",
                   listingType === "buy"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200 hover:bg-emerald-100"
+                    ? "bg-[#316249] text-white"
+                    : "bg-[#F7FCFA] text-[#1A3321] ring-1 ring-[#D1D5DB] hover:bg-[#EEF8EB]"
                 )}
               >
                 For Sale
@@ -192,8 +192,8 @@ function PublicPropertiesPageContent() {
                 className={cn(
                   "rounded-full px-4 py-2 text-sm font-semibold transition",
                   listingType === "rent"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200 hover:bg-emerald-100"
+                    ? "bg-[#316249] text-white"
+                    : "bg-[#F7FCFA] text-[#1A3321] ring-1 ring-[#D1D5DB] hover:bg-[#EEF8EB]"
                 )}
               >
                 For Rent
@@ -203,8 +203,8 @@ function PublicPropertiesPageContent() {
                 className={cn(
                   "rounded-full px-4 py-2 text-sm font-semibold transition",
                   listingType === ""
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-50 text-slate-800 ring-1 ring-slate-200 hover:bg-slate-100"
+                    ? "bg-[#316249] text-white"
+                    : "bg-[#F7FCFA] text-[#0D1C12] ring-1 ring-[#D1D5DB] hover:bg-[#EEF8EB]"
                 )}
               >
                 All
@@ -215,8 +215,8 @@ function PublicPropertiesPageContent() {
                 className={cn(
                   "rounded-full px-4 py-2 text-sm font-semibold transition",
                   showOnlyOffers
-                    ? "bg-emerald-600 text-white"
-                    : "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200 hover:bg-emerald-100"
+                    ? "bg-[#316249] text-white"
+                    : "bg-[#F7FCFA] text-[#1A3321] ring-1 ring-[#D1D5DB] hover:bg-[#EEF8EB]"
                 )}
               >
                 Offers Only
@@ -224,7 +224,7 @@ function PublicPropertiesPageContent() {
               {categoryFilter ? (
                 <Link
                   href={showOnlyOffers ? "/properties?offersOnly=true" : "/properties"}
-                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="rounded-full bg-[#0D1C12] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1A3321]"
                 >
                   Clear Category
                 </Link>
@@ -232,12 +232,12 @@ function PublicPropertiesPageContent() {
             </div>
 
             <div className="relative w-full max-w-md">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#618975]" />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search by title, address, or location"
-                className="w-full rounded-2xl border border-emerald-100 bg-[#f9fffb] py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                className="w-full rounded-2xl border border-[#D1D5DB] bg-[#F7FCFA] py-3 pl-11 pr-4 text-sm text-[#0D1C12] outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#CFE8D6]"
               />
             </div>
           </div>
@@ -246,17 +246,17 @@ function PublicPropertiesPageContent() {
         {error ? (
           <section className="rounded-[28px] border border-rose-200 bg-white p-8 shadow-sm">
             <h2 className="text-lg font-bold text-rose-700">{error}</h2>
-            <p className="mt-2 text-sm text-slate-500">Please refresh or try another filter.</p>
+            <p className="mt-2 text-sm text-[#618975]">Please refresh or try another filter.</p>
           </section>
         ) : loading ? (
-          <section className="rounded-[28px] border border-emerald-100 bg-white p-8 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900">Loading listings...</h2>
-            <p className="mt-2 text-sm text-slate-500">Fetching the latest properties.</p>
+          <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-8 shadow-sm">
+            <h2 className="text-lg font-semibold text-[#0D1C12]">Loading listings...</h2>
+            <p className="mt-2 text-sm text-[#618975]">Fetching the latest properties.</p>
           </section>
         ) : visibleItems.length === 0 ? (
-          <section className="rounded-[28px] border border-emerald-100 bg-white p-10 text-center shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900">No properties found</h2>
-            <p className="mt-2 text-sm text-slate-500">
+          <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-10 text-center shadow-sm">
+            <h2 className="text-2xl font-semibold text-[#0D1C12]">No properties found</h2>
+            <p className="mt-2 text-sm text-[#618975]">
               Try a different search or switch between sale and rent listings.
             </p>
           </section>
@@ -266,7 +266,7 @@ function PublicPropertiesPageContent() {
               <Link
                 key={property._id}
                 href={`/buyer/property/${property._id}`}
-                className="group overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-[0_18px_40px_-26px_rgba(16,185,129,0.24)]"
+                className="group overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-20px_rgba(13,28,18,0.16)]"
               >
                 <div className="relative">
                   <img
@@ -281,42 +281,42 @@ function PublicPropertiesPageContent() {
                       label={property.offerBadge || property.offerTitle}
                     />
                   </div>
-                  <div className="absolute bottom-4 right-4 rounded-full bg-white/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-800 shadow-sm">
+                  <div className="absolute bottom-4 right-4 rounded-full bg-white/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#316249] shadow-sm">
                     {String(property.listingType || "").toLowerCase() === "rent" ? "For Rent" : "For Sale"}
                   </div>
                 </div>
 
                 <div className="space-y-4 p-5">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#618975]">
                       Price
                     </p>
-                    <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
+                    <p className="mt-1 text-2xl font-semibold tracking-tight text-[#0D1C12]">
                       {property.currency || "NPR"} {Number(property.price || 0).toLocaleString()}
                     </p>
                   </div>
 
                   <div>
-                    <h2 className="line-clamp-2 text-lg font-bold leading-6 text-slate-900">
+                    <h2 className="line-clamp-2 text-lg font-semibold leading-6 text-[#0D1C12]">
                       {property.title}
                     </h2>
-                    <p className="mt-2 flex items-start gap-2 text-sm text-slate-500">
-                      <MapPin className="mt-0.5 h-4 w-4 flex-none text-emerald-700" />
+                    <p className="mt-2 flex items-start gap-2 text-sm text-[#618975]">
+                      <MapPin className="mt-0.5 h-4 w-4 flex-none text-[#316249]" />
                       <span>{property.address || property.location || "Location unavailable"}</span>
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-700">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1.5 ring-1 ring-emerald-100">
-                      <BedDouble className="h-3.5 w-3.5 text-emerald-700" />
+                  <div className="flex flex-wrap gap-2 text-xs font-semibold text-[#0D1C12]">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF8EB] px-3 py-1.5 ring-1 ring-[#D1D5DB]">
+                      <BedDouble className="h-3.5 w-3.5 text-[#316249]" />
                       {property.beds || 0} Beds
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1.5 ring-1 ring-emerald-100">
-                      <Bath className="h-3.5 w-3.5 text-emerald-700" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF8EB] px-3 py-1.5 ring-1 ring-[#D1D5DB]">
+                      <Bath className="h-3.5 w-3.5 text-[#316249]" />
                       {property.baths || 0} Baths
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1.5 ring-1 ring-emerald-100">
-                      <Square className="h-3.5 w-3.5 text-emerald-700" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF8EB] px-3 py-1.5 ring-1 ring-[#D1D5DB]">
+                      <Square className="h-3.5 w-3.5 text-[#316249]" />
                       {property.sqft || 0} sqft
                     </span>
                   </div>
@@ -334,9 +334,9 @@ export default function PublicPropertiesPage() {
   return (
     <React.Suspense
       fallback={
-        <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6">
+        <main className="min-h-screen bg-[#F7FCFA] px-4 py-6 sm:px-6">
           <div className="mx-auto max-w-7xl">
-            <div className="rounded-3xl border border-emerald-100 bg-white p-8 text-sm text-slate-500 shadow-sm">
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-8 text-sm text-[#618975] shadow-sm">
               Loading properties...
             </div>
           </div>
