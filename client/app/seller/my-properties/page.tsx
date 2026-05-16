@@ -265,11 +265,11 @@ function DeleteModal({
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 backdrop-blur-md">
       <div className="w-full max-w-lg rounded-[32px] border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.16)]">
         <div className="border-b border-slate-100 px-6 py-6">
-          <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-700">
+          <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700">
             <Trash2 className="h-3.5 w-3.5" />
             Delete listing
           </div>
-          <h3 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
+          <h3 className="mt-4 text-2xl font-bold tracking-tight text-slate-950">
             Remove this property?
           </h3>
           <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -513,7 +513,7 @@ export default function SellerMyPropertiesPage() {
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-600">
             <AlertCircle className="h-6 w-6" />
           </div>
-          <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950">
             Listings could not be loaded
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">{error}</p>
@@ -521,14 +521,14 @@ export default function SellerMyPropertiesPage() {
             <button
               type="button"
               onClick={() => setRefreshToken((value) => value + 1)}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               <RefreshCw className="h-4 w-4" />
               Try again
             </button>
             <Link
               href="/seller/add-property"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
             >
               Add property
               <ChevronRight className="h-4 w-4" />
@@ -544,7 +544,7 @@ export default function SellerMyPropertiesPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl space-y-6">
+    <main className="mx-auto w-full max-w-7xl space-y-7">
       <div
         className={cn(
           "pointer-events-none fixed right-6 top-24 z-[70] transition-all duration-300",
@@ -574,7 +574,7 @@ export default function SellerMyPropertiesPage() {
       />
 
       {error && analytics && (
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
           Showing the last successful listings snapshot. Refresh failed with: {error}
         </div>
       )}
@@ -605,24 +605,24 @@ export default function SellerMyPropertiesPage() {
         sortOptions={SORT_OPTIONS}
       />
 
-      <section style={SECTION_RENDER_STYLE} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section style={SECTION_RENDER_STYLE} className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
           {rows.length === 0 ? (
-            <div className="rounded-[26px] border border-dashed border-slate-200 bg-white px-6 py-12 text-center shadow-[0_14px_40px_rgba(15,23,42,0.04)]">
-              <div className="mt-4 text-lg font-black tracking-tight text-slate-950">No properties yet</div>
+            <div className="rounded-[24px] border border-dashed border-slate-200 bg-white px-6 py-12 text-center shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+              <div className="mt-4 text-lg font-semibold tracking-tight text-slate-950">No properties yet</div>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 Add your first listing to start tracking performance and leads.
               </p>
               <Link
                 href="/seller/add-property"
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-[#316249] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(49,98,73,0.25)] transition hover:bg-[#28513D]"
+                className="mt-6 inline-flex items-center justify-center rounded-2xl bg-[#316249] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(49,98,73,0.22)] transition hover:bg-[#28513D]"
               >
                 Add property
               </Link>
             </div>
           ) : filteredRows.length === 0 ? (
-            <div className="rounded-[26px] border border-dashed border-slate-200 bg-white px-6 py-12 text-center shadow-[0_14px_40px_rgba(15,23,42,0.04)]">
-              <div className="mt-4 text-lg font-black tracking-tight text-slate-950">No properties found</div>
+            <div className="rounded-[24px] border border-dashed border-slate-200 bg-white px-6 py-12 text-center shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+              <div className="mt-4 text-lg font-semibold tracking-tight text-slate-950">No properties found</div>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 Try adjusting your search, status, type, or sort options.
               </p>
@@ -640,7 +640,7 @@ export default function SellerMyPropertiesPage() {
           <PaginationBar page={currentPage} totalPages={totalPages} onChangePage={setPage} />
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-6">
           <TopListingCard top={topProperty} />
           <StatusSummaryDonut summary={summary} />
           <RecentActivityCard items={recentActivity} />

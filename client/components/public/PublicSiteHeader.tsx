@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -8,9 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Moon,
   PhoneCall,
-  Sun,
   X,
 } from "lucide-react";
 import { apiFetchSafe } from "@/app/lib/api";
@@ -34,7 +32,6 @@ export default function PublicSiteHeader() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const [loggingOut, setLoggingOut] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark">("light");
   const menuRef = React.useRef<HTMLDivElement | null>(null);
   const mobileNavRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -91,19 +88,6 @@ export default function PublicSiteHeader() {
     };
   }, [mobileNavOpen]);
 
-  React.useEffect(() => {
-    const storedTheme =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem("property-sewa:theme")
-        : null;
-
-    if (storedTheme === "dark" || storedTheme === "light") {
-      setTheme(storedTheme);
-      document.documentElement.dataset.theme = storedTheme;
-      document.documentElement.style.colorScheme = storedTheme;
-    }
-  }, []);
-
   const handleDashboardClick = () => {
     if (!user) return;
     setMenuOpen(false);
@@ -123,14 +107,6 @@ export default function PublicSiteHeader() {
     }
   };
 
-  const handleThemeToggle = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    document.documentElement.dataset.theme = nextTheme;
-    document.documentElement.style.colorScheme = nextTheme;
-    window.localStorage.setItem("property-sewa:theme", nextTheme);
-  };
-
   const avatarLabel = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
 
   return (
@@ -138,10 +114,10 @@ export default function PublicSiteHeader() {
       <div
         className="border-b border-[#2E5A46]"
         style={{
-          background: "linear-gradient(90deg, #1F5B41 0%, #2D6A4E 55%, #5E7F70 100%)",
+          background: "linear-gradient(90deg, #316249 0%, #2F6A4E 56%, #6E9683 100%)",
         }}
       >
-        <div className="w-full px-4 py-2 sm:px-6 sm:py-2.5 lg:px-8">
+        <div className="w-full px-4 py-2.5 sm:px-6 sm:py-2.5 lg:px-8">
           <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-2.5">
           <Link
             href="/"
@@ -149,8 +125,8 @@ export default function PublicSiteHeader() {
             className="flex items-center gap-2.5 rounded-2xl transition hover:opacity-95"
             onClick={() => setMobileNavOpen(false)}
           >
-            <PropertySewaLogoMark className="h-[26px] w-[26px] shrink-0" />
-            <span className="text-[16px] font-bold tracking-wide text-[#F7FCFA]">
+            <PropertySewaLogoMark className="h-[22px] w-[22px] shrink-0" />
+            <span className="text-[17px] font-bold tracking-wide text-[#F7FCFA]">
               PROPERTY SEWA
             </span>
           </Link>
@@ -172,7 +148,13 @@ export default function PublicSiteHeader() {
               className="text-[#E8F2EB] transition hover:text-white"
               href="/properties"
             >
-              Agents
+              Browse All
+            </Link>
+            <Link
+              className="text-[#E8F2EB] transition hover:text-white"
+              href="/faq"
+            >
+              FAQ
             </Link>
           </div>
 
@@ -276,19 +258,6 @@ export default function PublicSiteHeader() {
               <PhoneCall className="h-4 w-4 text-[#316249]" />
             </Link>
 
-            <button
-              onClick={handleThemeToggle}
-              className="ml-1 grid h-9 w-9 place-items-center rounded-full bg-white/10 ring-1 ring-white/20 transition hover:bg-white/15"
-              aria-label="Theme"
-              title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-              type="button"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-4 w-4 text-white/90" />
-              ) : (
-                <Moon className="h-4 w-4 text-white/90" />
-              )}
-            </button>
           </div>
           </div>
         </div>
@@ -376,14 +345,6 @@ export default function PublicSiteHeader() {
                   Contact
                 </Link>
 
-                <button
-                  onClick={handleThemeToggle}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
-                  type="button"
-                >
-                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  Theme
-                </button>
               </div>
             </div>
           </div>

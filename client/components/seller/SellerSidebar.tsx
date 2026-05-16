@@ -104,7 +104,7 @@ export default function SellerSidebar({
               <Icon className="h-5 w-5" />
               <span className="leading-none">{link.label}</span>
               {isMessages && unreadMessages > 0 ? (
-                <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#b9f323] px-1.5 text-[11px] font-bold text-[#06351f]">
+                <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-100 px-1.5 text-[11px] font-bold text-[#316249] ring-1 ring-emerald-200">
                   {unreadLabel}
                 </span>
               ) : null}

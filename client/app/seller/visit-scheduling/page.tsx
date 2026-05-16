@@ -230,7 +230,7 @@ function statusTextClass(status: VisitStatus) {
     case "completed":
       return "text-slate-700";
     default:
-      return "text-[#587864]";
+      return "text-[#55685f]";
   }
 }
 
@@ -289,11 +289,11 @@ function MonthCalendar({
 }) {
   return (
     <div>
-      <div className="text-center text-[24px] font-extrabold tracking-tight text-[#1f2d24]">
+      <div className="text-center text-[22px] font-bold tracking-tight text-[#1f2d24]">
         {formatMonthTitle(month)}
       </div>
 
-      <div className="mt-5 grid grid-cols-7 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[#43584b]">
+      <div className="mt-5 grid grid-cols-7 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[#43584b]">
         {["S", "M", "T", "W", "T", "F", "S"].map((day, idx) => (
           <div key={`${month.toISOString()}-${day}-${idx}`} className="py-2">
             {day}
@@ -842,13 +842,13 @@ export default function SellerVisitSchedulingPage() {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+        <section className="overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_18px_48px_rgba(19,74,54,0.16)] sm:px-8 sm:py-7">
           <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-50">
               <CalendarClock className="h-3.5 w-3.5" />
               Seller visits
             </span>
-            <h1 className="mt-4 text-[22px] font-extrabold tracking-tight text-white sm:text-[28px]">
+            <h1 className="mt-4 text-[22px] font-bold tracking-tight text-white sm:text-[28px]">
               Visits Calendar
             </h1>
             <p className="mt-3 text-sm text-emerald-50/90">
@@ -904,9 +904,9 @@ export default function SellerVisitSchedulingPage() {
 
         </section>
 
-        <section className="mt-8 rounded-[34px] border border-emerald-200/80 bg-white px-6 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:px-8 sm:py-7">
-          <div className="rounded-[26px] bg-[#f8fbf9] p-4 ring-1 ring-[#dfe7e1] sm:p-6">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_1fr]">
+        <section className="mt-6 rounded-[24px] border border-emerald-200/80 bg-white px-6 py-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:px-8 sm:py-7">
+          <div className="rounded-[24px] bg-[#f8fbf9] p-4 ring-1 ring-[#dfe7e1] sm:p-6">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_1fr]">
               <div>
               <div className="mb-5 flex items-center justify-between">
                 <button
@@ -921,7 +921,7 @@ export default function SellerVisitSchedulingPage() {
                   {plannerMonths.map((month) => (
                     <div
                       key={month.toISOString()}
-                      className="text-center text-[22px] font-extrabold tracking-tight text-[#1f2d24]"
+                      className="text-center text-[22px] font-bold tracking-tight text-[#1f2d24]"
                     >
                       {formatMonthTitle(month)}
                     </div>
@@ -954,7 +954,7 @@ export default function SellerVisitSchedulingPage() {
             </div>
 
               <div className="rounded-[24px] bg-transparent">
-                <div className="space-y-7">
+                <div className="space-y-6">
                   {loading ? (
                     <div className="grid min-h-[320px] place-items-center rounded-[24px] bg-white ring-1 ring-[#dfe7e1]">
                     <LoaderCircle className="h-6 w-6 animate-spin text-[#316249]" />
@@ -962,14 +962,14 @@ export default function SellerVisitSchedulingPage() {
                   ) : showcaseVisits.length === 0 ? (
                     <div className="rounded-[24px] bg-white p-8 text-center ring-1 ring-[#dfe7e1]">
                     <CircleAlert className="mx-auto h-8 w-8 text-slate-300" />
-                    <p className="mt-3 text-sm text-[#50645a]">
+                    <p className="mt-3 text-sm text-[#55685f]">
                       No visits available for the selected range.
                     </p>
                     </div>
                   ) : (
                     <>
                       <div>
-                        <h2 className="text-[30px] font-extrabold tracking-tight text-[#1f2d24]">
+                        <h2 className="text-[26px] font-bold tracking-tight text-[#1f2d24]">
                           {formatMonthTitle(selectedDate)}
                         </h2>
                       </div>
@@ -995,7 +995,7 @@ export default function SellerVisitSchedulingPage() {
                             }
                           }}
                           className={cn(
-                            "grid w-full gap-5 rounded-2xl border border-transparent bg-white p-4 text-left shadow-[0_4px_20px_rgba(15,23,42,0.04)] transition hover:border-[#cde0d3] md:grid-cols-[1fr_220px] md:p-5",
+                            "grid w-full gap-5 rounded-2xl border border-transparent bg-white p-4 text-left shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:border-[#cde0d3] md:grid-cols-[1fr_220px] md:p-5",
                             selectedVisit?._id === visit._id &&
                               "border-[#316249] ring-2 ring-[#316249]/15"
                           )}
@@ -1004,7 +1004,7 @@ export default function SellerVisitSchedulingPage() {
                             <div className="text-[22px] font-bold tracking-tight text-[#1f2d24]">
                               {visit.propertyId.title}
                             </div>
-                            <div className="mt-2 text-sm text-[#587864]">
+                            <div className="mt-2 text-sm text-[#55685f]">
                               Buyer: {visit.buyerId.name} | Status:{" "}
                               <span className={statusTextClass(visit.status)}>
                                 {statusText(visit.status)}
@@ -1020,7 +1020,7 @@ export default function SellerVisitSchedulingPage() {
                                       e.stopPropagation();
                                       openAction("confirm", visit);
                                     }}
-                                    className="rounded-lg bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
+                                    className="rounded-2xl bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
                                   >
                                     Approve
                                   </button>
@@ -1030,7 +1030,7 @@ export default function SellerVisitSchedulingPage() {
                                       e.stopPropagation();
                                       openAction("reschedule", visit);
                                     }}
-                                    className="rounded-lg border border-[#2d5b3d] bg-white px-4 py-2 text-sm font-semibold text-[#2d5b3d]"
+                                    className="rounded-2xl border border-[#2d5b3d] bg-white px-4 py-2 text-sm font-semibold text-[#2d5b3d]"
                                   >
                                     Reschedule
                                   </button>
@@ -1040,7 +1040,7 @@ export default function SellerVisitSchedulingPage() {
                                       e.stopPropagation();
                                       openAction("reject", visit);
                                     }}
-                                    className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700"
+                                    className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700"
                                   >
                                     Reject
                                   </button>
@@ -1054,7 +1054,7 @@ export default function SellerVisitSchedulingPage() {
                                   e.stopPropagation();
                                   openAction("reschedule", visit);
                                 }}
-                                className="rounded-lg bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
+                                className="rounded-2xl bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
                               >
                                 Reschedule
                               </button>
@@ -1067,7 +1067,7 @@ export default function SellerVisitSchedulingPage() {
                                   e.stopPropagation();
                                   openAction("reject", visit);
                                 }}
-                                className="rounded-lg bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
+                                className="rounded-2xl bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
                               >
                                 Cancel
                               </button>
@@ -1080,7 +1080,7 @@ export default function SellerVisitSchedulingPage() {
                                   e.stopPropagation();
                                   openAction("confirm", visit);
                                 }}
-                                className="rounded-lg bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
+                                className="rounded-2xl bg-[#2d5b3d] px-4 py-2 text-sm font-semibold text-white"
                               >
                                 Approve
                               </button>
@@ -1088,7 +1088,7 @@ export default function SellerVisitSchedulingPage() {
                           </div>
                         </div>
 
-                          <div className="overflow-hidden rounded-xl ring-1 ring-[#dfe7e1]">
+                          <div className="overflow-hidden rounded-2xl ring-1 ring-[#dfe7e1]">
                             {hasVisitImage(visit) ? (
                               <img
                                 src={getVisitImage(visit)}
@@ -1100,7 +1100,7 @@ export default function SellerVisitSchedulingPage() {
                               <div className="grid h-[140px] w-full place-items-center bg-[linear-gradient(135deg,#f5faf7_0%,#e7f1ea_100%)] text-center">
                                 <div>
                                   <MapPin className="mx-auto h-5 w-5 text-[#316249]" />
-                                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#587864]">
+                                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#55685f]">
                                     No property image
                                   </p>
                                 </div>
@@ -1119,14 +1119,14 @@ export default function SellerVisitSchedulingPage() {
               <button
                 type="button"
                 onClick={resetRange}
-                className="rounded-xl border border-[#dfe7e1] bg-white px-4 py-2.5 text-sm font-semibold text-[#55685f]"
+                className="rounded-2xl border border-[#dfe7e1] bg-white px-4 py-2.5 text-sm font-semibold text-[#55685f]"
               >
                 Reset Range
               </button>
               <button
                 type="button"
                 onClick={applyDraftRange}
-                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                className="rounded-2xl px-4 py-2.5 text-sm font-semibold text-white"
                 style={{ backgroundColor: THEME.primary }}
               >
                 Apply Range
@@ -1135,17 +1135,17 @@ export default function SellerVisitSchedulingPage() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)]">
-          <div className="rounded-[28px] bg-[#f3f8f4] px-5 py-6 sm:px-8">
+        <section className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)]">
+          <div className="rounded-[24px] bg-[#f3f8f4] px-5 py-6 sm:px-8">
             {!selectedVisit ? (
               <div className="rounded-[24px] bg-white p-8 text-center ring-1 ring-[#dfe7e1]">
-                <p className="text-sm text-[#50645a]">
+                <p className="text-sm text-[#55685f]">
                   Select a visit to see full details.
                 </p>
               </div>
             ) : (
               <>
-                <h2 className="text-[22px] font-extrabold tracking-tight text-[#1f2d24] sm:text-[28px]">
+                <h2 className="text-[22px] font-bold tracking-tight text-[#1f2d24] sm:text-[28px]">
                   Visit Details
                 </h2>
                 <div className="mt-3 inline-flex items-center rounded-full border border-[#cde0d3] bg-white px-3 py-1 text-xs font-semibold text-[#316249]">
@@ -1153,7 +1153,7 @@ export default function SellerVisitSchedulingPage() {
                   {formatShortDate(selectedVisit.actualDate || selectedVisit.requestedDate)}
                 </div>
 
-                <div className="mt-8 rounded-2xl bg-white p-5 ring-1 ring-[#dfe7e1]">
+                <div className="mt-6 rounded-2xl bg-white p-5 ring-1 ring-[#dfe7e1]">
                   <div className="mb-4 inline-flex items-center rounded-full border border-[#d7e7dd] bg-[#f3fbf6] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-[#316249]">
                     {statusText(selectedVisit.status)}
                   </div>
@@ -1167,13 +1167,13 @@ export default function SellerVisitSchedulingPage() {
                       <div className="text-[20px] font-semibold text-[#1f2d24]">
                         {selectedVisit.propertyId.title}
                       </div>
-                      <div className="mt-2 text-sm text-[#587864]">
+                      <div className="mt-2 text-sm text-[#55685f]">
                         {selectedVisit.propertyId.location}
                       </div>
                     </div>
                   </div>
 
-                  <div className="overflow-hidden rounded-[8px] ring-1 ring-[#dfe7e1]">
+                  <div className="overflow-hidden rounded-2xl ring-1 ring-[#dfe7e1]">
                     {hasVisitImage(selectedVisit) ? (
                       <img
                         src={getVisitImage(selectedVisit)}
@@ -1185,7 +1185,7 @@ export default function SellerVisitSchedulingPage() {
                       <div className="grid h-[136px] w-full place-items-center bg-[linear-gradient(135deg,#f5faf7_0%,#e7f1ea_100%)] text-center">
                         <div>
                           <MapPin className="mx-auto h-5 w-5 text-[#316249]" />
-                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#587864]">
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#55685f]">
                             No property image
                           </p>
                         </div>
@@ -1194,9 +1194,9 @@ export default function SellerVisitSchedulingPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 grid gap-6 sm:grid-cols-2">
+                <div className="mt-6 grid gap-6 sm:grid-cols-2">
                   <div className="border-t border-[#5d7067] pt-4">
-                    <div className="text-xs font-medium uppercase tracking-[0.14em] text-[#587864]">
+                    <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#55685f]">
                       Buyer
                     </div>
                     <div className="mt-2 text-[18px] text-[#1f2d24]">
@@ -1205,7 +1205,7 @@ export default function SellerVisitSchedulingPage() {
                   </div>
 
                   <div className="border-t border-[#5d7067] pt-4">
-                    <div className="text-xs font-medium uppercase tracking-[0.14em] text-[#587864]">
+                    <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#55685f]">
                       Date & Time
                     </div>
                     <div className="mt-2 text-[18px] text-[#1f2d24]">
@@ -1217,8 +1217,8 @@ export default function SellerVisitSchedulingPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 max-w-md border-t border-[#5d7067] pt-4">
-                  <div className="text-xs font-medium uppercase tracking-[0.14em] text-[#587864]">
+                <div className="mt-6 max-w-md border-t border-[#5d7067] pt-4">
+                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#55685f]">
                     Notes
                   </div>
                   <p className="mt-2 text-[16px] leading-7 text-[#1f2d24]">
@@ -1229,7 +1229,7 @@ export default function SellerVisitSchedulingPage() {
 
                 {selectedVisit.sellerResponse && (
                   <div className="mt-6 max-w-md rounded-2xl bg-white px-4 py-4 ring-1 ring-[#dfe7e1]">
-                    <div className="text-xs font-medium uppercase tracking-[0.14em] text-[#587864]">
+                    <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#55685f]">
                       Seller Response
                     </div>
                     <p className="mt-2 text-sm leading-6 text-[#1f2d24]">
@@ -1239,32 +1239,32 @@ export default function SellerVisitSchedulingPage() {
                 )}
                 </div>
 
-                <div className="mt-8">
+                <div className="mt-6">
                   <div className="text-[22px] font-bold tracking-tight text-[#1f2d24]">
                     Actions
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-3">
+                  <div className="mt-4 flex flex-wrap gap-2 sm:gap-3">
                     {selectedVisit.status === "requested" && (
                       <>
                         <button
                           type="button"
                           onClick={() => openAction("reschedule", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Reschedule
                         </button>
                         <button
                           type="button"
                           onClick={() => openAction("complete", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Mark Completed
                         </button>
                         <button
                           type="button"
                           onClick={() => openAction("reject", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Cancel
                         </button>
@@ -1276,21 +1276,21 @@ export default function SellerVisitSchedulingPage() {
                         <button
                           type="button"
                           onClick={() => openAction("reschedule", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Reschedule
                         </button>
                         <button
                           type="button"
                           onClick={() => openAction("complete", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Mark Completed
                         </button>
                         <button
                           type="button"
                           onClick={() => openAction("reject", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Cancel
                         </button>
@@ -1302,21 +1302,21 @@ export default function SellerVisitSchedulingPage() {
                         <button
                           type="button"
                           onClick={() => openAction("reschedule", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Reschedule
                         </button>
                         <button
                           type="button"
                           onClick={() => openAction("complete", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Mark Completed
                         </button>
                         <button
                           type="button"
                           onClick={() => openAction("reject", selectedVisit)}
-                          className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                         >
                           Cancel
                         </button>
@@ -1327,7 +1327,7 @@ export default function SellerVisitSchedulingPage() {
                       <button
                         type="button"
                         onClick={() => openAction("complete", selectedVisit)}
-                        className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                        className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                       >
                         Mark Completed
                       </button>
@@ -1337,7 +1337,7 @@ export default function SellerVisitSchedulingPage() {
                       <button
                         type="button"
                         onClick={() => openAction("reject", selectedVisit)}
-                        className="rounded-lg bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
+                        className="rounded-2xl bg-[#2d5b3d] px-5 py-3 text-sm font-semibold text-white"
                       >
                         Cancel
                       </button>
@@ -1348,7 +1348,7 @@ export default function SellerVisitSchedulingPage() {
                 {(selectedVisit.status === "requested" ||
                   selectedVisit.status === "confirmed" ||
                   selectedVisit.status === "rescheduled") && (
-                  <div className="mt-10">
+                  <div className="mt-6">
                     <div className="text-[22px] font-bold tracking-tight text-[#1f2d24]">
                       Reschedule Visit
                     </div>
@@ -1367,7 +1367,7 @@ export default function SellerVisitSchedulingPage() {
                           {modalMonths.map((month) => (
                             <div
                               key={month.toISOString()}
-                              className="text-center text-[22px] font-extrabold tracking-tight text-[#1f2d24]"
+                              className="text-center text-[22px] font-bold tracking-tight text-[#1f2d24]"
                             >
                               {formatMonthTitle(month)}
                             </div>
@@ -1386,7 +1386,7 @@ export default function SellerVisitSchedulingPage() {
                       <div className="grid gap-4 lg:grid-cols-2">
                         {modalMonths.map((month) => (
                           <div key={month.toISOString()}>
-                            <div className="mt-5 grid grid-cols-7 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[#43584b]">
+                            <div className="mt-5 grid grid-cols-7 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[#43584b]">
                               {["S", "M", "T", "W", "T", "F", "S"].map(
                                 (day, idx) => (
                                   <div
@@ -1457,7 +1457,7 @@ export default function SellerVisitSchedulingPage() {
                                 }))
                               }
                               className={cn(
-                                "rounded-xl border px-4 py-3 text-sm font-semibold transition",
+                                "rounded-2xl border px-4 py-3 text-sm font-semibold transition",
                                 isSelected
                                   ? "border-[#316249] bg-[#316249] text-white"
                                   : isDisabled
@@ -1477,33 +1477,33 @@ export default function SellerVisitSchedulingPage() {
             )}
           </div>
 
-          <aside className="rounded-[28px] bg-[#f3f8f4] px-5 py-6 sm:px-8">
-            <div className="space-y-5">
+          <aside className="rounded-[24px] bg-[#f3f8f4] px-5 py-6 sm:px-8">
+            <div className="space-y-6">
               <div className="rounded-2xl bg-white p-5 ring-1 ring-[#dfe7e1]">
                 <div className="text-sm font-semibold text-[#1f2d24]">
                   Quick Summary
                 </div>
                 <div className="mt-4 grid gap-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-[#50645a]">Total</span>
+                    <span className="text-[#55685f]">Total</span>
                     <span className="font-bold text-[#1f2d24]">
                       {summary.total}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#50645a]">Requested</span>
+                    <span className="text-[#55685f]">Requested</span>
                     <span className="font-bold text-[#1f2d24]">
                       {summary.requested}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#50645a]">Upcoming</span>
+                    <span className="text-[#55685f]">Upcoming</span>
                     <span className="font-bold text-[#1f2d24]">
                       {summary.upcoming}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#50645a]">Completed</span>
+                    <span className="text-[#55685f]">Completed</span>
                     <span className="font-bold text-[#1f2d24]">
                       {summary.completed}
                     </span>
@@ -1518,7 +1518,7 @@ export default function SellerVisitSchedulingPage() {
 
                 <div className="mt-4 space-y-3">
                   {openQueue.length === 0 ? (
-                    <div className="text-sm text-[#50645a]">
+                    <div className="text-sm text-[#55685f]">
                       No active visits in the current range.
                     </div>
                   ) : (
@@ -1532,15 +1532,15 @@ export default function SellerVisitSchedulingPage() {
                           );
                           setSelectedVisitId(visit._id);
                         }}
-                        className="w-full rounded-xl border border-[#dfe7e1] bg-[#f8fbf9] px-4 py-3 text-left"
+                        className="w-full rounded-2xl border border-[#dfe7e1] bg-[#f8fbf9] px-4 py-3 text-left"
                       >
                         <div className="text-sm font-semibold text-[#1f2d24]">
                           {visit.buyerId.name}
                         </div>
-                        <div className="mt-1 text-xs text-[#50645a]">
+                        <div className="mt-1 text-xs text-[#55685f]">
                           {visit.propertyId.title}
                         </div>
-                        <div className="mt-2 text-xs font-medium text-[#587864]">
+                        <div className="mt-2 text-xs font-medium text-[#55685f]">
                           {formatShortDate(
                             visit.actualDate || visit.requestedDate
                           )}
@@ -1574,7 +1574,7 @@ export default function SellerVisitSchedulingPage() {
 
                   <Link
                     href="/seller/messages"
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                    className="mt-4 inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white"
                     style={{ backgroundColor: THEME.primary }}
                   >
                     Continue in Messages
@@ -1588,9 +1588,9 @@ export default function SellerVisitSchedulingPage() {
 
       {actionModal.type && actionModal.visit && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[28px] bg-white shadow-[0_30px_100px_rgba(15,23,42,0.18)]">
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[24px] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
             <div className="border-b border-slate-200 px-6 py-5">
-              <h3 className="text-2xl font-extrabold tracking-tight text-slate-950">
+              <h3 className="text-2xl font-bold tracking-tight text-slate-950">
                 {actionModal.type === "confirm" && "Visit Details"}
                 {actionModal.type === "reschedule" && "Visit Details"}
                 {actionModal.type === "reject" && "Reject Visit"}
@@ -1611,13 +1611,13 @@ export default function SellerVisitSchedulingPage() {
                       <div className="text-[20px] font-semibold text-[#1f2d24]">
                         {actionModal.visit.propertyId.title}
                       </div>
-                      <div className="mt-2 text-sm text-[#587864]">
+                      <div className="mt-2 text-sm text-[#55685f]">
                         {actionModal.visit.propertyId.location}
                       </div>
                     </div>
                   </div>
 
-                  <div className="overflow-hidden rounded-[8px]">
+                  <div className="overflow-hidden rounded-2xl">
                     {hasVisitImage(actionModal.visit) ? (
                       <img
                         src={getVisitImage(actionModal.visit)}
@@ -1629,7 +1629,7 @@ export default function SellerVisitSchedulingPage() {
                       <div className="grid h-[136px] w-full place-items-center bg-[linear-gradient(135deg,#f5faf7_0%,#e7f1ea_100%)] text-center">
                         <div>
                           <MapPin className="mx-auto h-5 w-5 text-[#316249]" />
-                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#587864]">
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#55685f]">
                             No property image
                           </p>
                         </div>
@@ -1638,9 +1638,9 @@ export default function SellerVisitSchedulingPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 grid gap-6 sm:grid-cols-2">
+                <div className="mt-6 grid gap-6 sm:grid-cols-2">
                   <div className="border-t border-[#5d7067] pt-4">
-                    <div className="text-xs font-medium uppercase tracking-[0.14em] text-[#587864]">
+                    <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#55685f]">
                       Buyer
                     </div>
                     <div className="mt-2 text-[18px] text-[#1f2d24]">
@@ -1649,7 +1649,7 @@ export default function SellerVisitSchedulingPage() {
                   </div>
 
                   <div className="border-t border-[#5d7067] pt-4">
-                    <div className="text-xs font-medium uppercase tracking-[0.14em] text-[#587864]">
+                    <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#55685f]">
                       Date & Time
                     </div>
                     <div className="mt-2 text-[18px] text-[#1f2d24]">
@@ -1661,7 +1661,7 @@ export default function SellerVisitSchedulingPage() {
                   </div>
                 </div>
 
-                <div className="mt-8">
+                <div className="mt-6">
                   <div className="text-[22px] font-bold tracking-tight text-[#1f2d24]">
                     {actionModal.type === "reschedule"
                       ? "Reschedule Visit"
@@ -1682,7 +1682,7 @@ export default function SellerVisitSchedulingPage() {
                         {modalMonths.map((month) => (
                           <div
                             key={month.toISOString()}
-                            className="text-center text-[22px] font-extrabold tracking-tight text-[#1f2d24]"
+                            className="text-center text-[22px] font-bold tracking-tight text-[#1f2d24]"
                           >
                             {formatMonthTitle(month)}
                           </div>
@@ -1701,7 +1701,7 @@ export default function SellerVisitSchedulingPage() {
                     <div className="grid gap-4 lg:grid-cols-2">
                       {modalMonths.map((month) => (
                         <div key={month.toISOString()}>
-                          <div className="mt-5 grid grid-cols-7 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[#43584b]">
+                          <div className="mt-5 grid grid-cols-7 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[#43584b]">
                             {["S", "M", "T", "W", "T", "F", "S"].map(
                               (day, idx) => (
                                 <div
@@ -1772,7 +1772,7 @@ export default function SellerVisitSchedulingPage() {
                               }))
                             }
                             className={cn(
-                              "rounded-xl border px-4 py-3 text-sm font-semibold transition",
+                              "rounded-2xl border px-4 py-3 text-sm font-semibold transition",
                               isSelected
                                 ? "border-[#316249] bg-[#316249] text-white"
                                 : isDisabled
@@ -1869,3 +1869,6 @@ export default function SellerVisitSchedulingPage() {
     </main>
   );
 }
+
+
+

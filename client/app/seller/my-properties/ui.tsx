@@ -158,7 +158,7 @@ export function MyPropertiesHero({
   rangeOptions: Array<{ value: RangeOption; label: string }>;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[34px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_20px_60px_rgba(19,74,54,0.16)] md:px-8 md:py-7">
+    <section className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_18px_48px_rgba(19,74,54,0.16)] md:px-8 md:py-7">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(19,236,128,0.16),transparent_32%),radial-gradient(circle_at_82%_38%,rgba(255,255,255,0.12),transparent_42%)]" />
       <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
       <div className="absolute -right-10 top-10 h-40 w-40 rounded-full border border-white/12" />
@@ -167,7 +167,7 @@ export function MyPropertiesHero({
       <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div className="max-w-3xl space-y-5">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">My Properties</h1>
+            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">My Properties</h1>
             <p className="mt-2 max-w-2xl text-[15px] leading-6 text-white/85">
               Manage your property listings, track performance, and grow your business.
             </p>
@@ -180,7 +180,7 @@ export function MyPropertiesHero({
                 type="button"
                 onClick={() => onChangeRange(option.value)}
                 className={cn(
-                  "rounded-full border px-4 py-2 text-sm font-semibold transition",
+                  "rounded-2xl border px-4 py-2 text-sm font-semibold transition",
                   range === option.value
                     ? "border-white bg-white text-slate-950"
                     : "border-white/15 bg-white/10 text-white hover:border-white/25 hover:bg-white/15"
@@ -234,17 +234,14 @@ function KpiCard({
     <motion.div
       whileHover={reduceMotion ? undefined : { y: -4, scale: 1.01 }}
       transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className={cn(
-        "rounded-[22px] border bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)]",
-        tone
-      )}
+      className={cn("rounded-2xl border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]", tone)}
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             {title}
           </div>
-          <div className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+          <div className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
             <CountUp end={Number(value || 0)} duration={0.9} separator="," preserveValue />
           </div>
         </div>
@@ -273,31 +270,31 @@ export function KpiStrip({ summary }: { summary: Summary }) {
           title: "Total Listings",
           value: summary.totalListings,
           tone: "border-slate-200",
-          icon: <span className="text-sm font-black">T</span>,
+          icon: <span className="text-sm font-bold">T</span>,
         },
         {
           title: "Active",
           value: summary.activeListings,
           tone: "border-emerald-200 bg-[linear-gradient(135deg,#ffffff_0%,#f0fbf6_100%)]",
-          icon: <span className="text-sm font-black text-emerald-700">A</span>,
+          icon: <span className="text-sm font-bold text-emerald-700">A</span>,
         },
         {
           title: "Pending",
           value: summary.pendingListings,
           tone: "border-amber-200 bg-[linear-gradient(135deg,#ffffff_0%,#fff8eb_100%)]",
-          icon: <span className="text-sm font-black text-amber-700">P</span>,
+          icon: <span className="text-sm font-bold text-amber-700">P</span>,
         },
         {
           title: "Rejected",
           value: summary.rejectedListings,
           tone: "border-rose-200 bg-[linear-gradient(135deg,#ffffff_0%,#fff1f4_100%)]",
-          icon: <span className="text-sm font-black text-rose-700">R</span>,
+          icon: <span className="text-sm font-bold text-rose-700">R</span>,
         },
         {
           title: "Draft",
           value: summary.draftListings,
           tone: "border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f5f7fb_100%)]",
-          icon: <span className="text-sm font-black text-slate-700">D</span>,
+          icon: <span className="text-sm font-bold text-slate-700">D</span>,
         },
       ].map((card) => (
         <motion.div
@@ -336,7 +333,7 @@ export function FiltersBar({
   sortOptions: Array<{ value: SortOption; label: string }>;
 }) {
   return (
-    <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
+    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_160px_180px]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -393,7 +390,7 @@ function MetricMini({ label, value, icon }: { label: string; value: string; icon
         {icon}
       </span>
       <div>
-        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</div>
         <div className="mt-1 text-lg font-bold tracking-tight text-slate-950">{value}</div>
       </div>
     </div>
@@ -404,8 +401,8 @@ function LatestActivity({ row }: { row: PropertyRow }) {
   const latest = row.lastLeadAt || row.lastVisitAt;
   const label = row.lastLeadAt ? "New lead received" : row.lastVisitAt ? "Visit requested" : "No recent activity";
   return (
-    <div className="rounded-[18px] border border-slate-200 bg-white px-4 py-3">
-      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Latest Activity</div>
+    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Latest Activity</div>
       <div className="mt-2 text-sm font-semibold text-slate-900">{label}</div>
       <div className="mt-1 text-xs text-slate-500">{formatDateTime(latest, "No activity yet")}</div>
     </div>
@@ -469,11 +466,11 @@ function PropertyRowCard({
         </div>
 
         {/* Middle metrics */}
-        <div className="grid grid-cols-2 gap-4 rounded-[18px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 sm:grid-cols-4 lg:grid-cols-2">
+        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 sm:grid-cols-4 lg:grid-cols-2">
           <MetricMini label="Views" value={formatNumber(row.views)} icon={<Eye className="h-4 w-4" />} />
           <MetricMini label="Leads" value={formatNumber(row.leads)} icon={<Users className="h-4 w-4" />} />
           <MetricMini label="Visits" value={formatNumber(row.visits)} icon={<CalendarClock className="h-4 w-4" />} />
-          <MetricMini label="Conversion" value={formatPercent(row.conversionRate)} icon={<span className="text-xs font-black">%</span>} />
+          <MetricMini label="Conversion" value={formatPercent(row.conversionRate)} icon={<span className="text-xs font-bold">%</span>} />
         </div>
 
         {/* Right */}
@@ -529,8 +526,8 @@ export function PropertyList({
 export function TopListingCard({ top }: { top: PropertyRow | null }) {
   if (!top) return null;
   return (
-    <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
-      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Top Listing</div>
+    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Top Listing</div>
       <div className="mt-4 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50">
         <div className="aspect-[16/10] w-full overflow-hidden bg-slate-100">
           {top.image ? (
@@ -542,15 +539,15 @@ export function TopListingCard({ top }: { top: PropertyRow | null }) {
           <div className="mt-1 text-xs text-slate-500">{top.location}</div>
           <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
             <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-center">
-              <div className="font-black text-slate-900">{formatNumber(top.views)}</div>
+              <div className="font-bold text-slate-900">{formatNumber(top.views)}</div>
               <div className="mt-0.5 text-slate-500">Views</div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-center">
-              <div className="font-black text-slate-900">{formatNumber(top.leads)}</div>
+              <div className="font-bold text-slate-900">{formatNumber(top.leads)}</div>
               <div className="mt-0.5 text-slate-500">Leads</div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-center">
-              <div className="font-black text-slate-900">{formatNumber(top.visits)}</div>
+              <div className="font-bold text-slate-900">{formatNumber(top.visits)}</div>
               <div className="mt-0.5 text-slate-500">Visits</div>
             </div>
           </div>
@@ -578,9 +575,9 @@ function DonutTooltip({
   const name = String(datum?.name ?? "");
   const value = Number(datum?.value ?? 0);
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur">
-      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{name}</div>
-      <div className="mt-2 font-black text-slate-900">{formatNumber(value)}</div>
+    <div className="rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur">
+      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{name}</div>
+      <div className="mt-2 font-bold text-slate-900">{formatNumber(value)}</div>
     </div>
   );
 }
@@ -597,8 +594,8 @@ export function StatusSummaryDonut({ summary }: { summary: Summary }) {
   const total = summary.totalListings || 0;
 
   return (
-    <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
-      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status Summary</div>
+    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Status Summary</div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)] sm:items-center">
         <div className="relative h-[160px] w-[160px] justify-self-center">
@@ -626,10 +623,10 @@ export function StatusSummaryDonut({ summary }: { summary: Summary }) {
           </ResponsiveContainer>
 
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-2xl font-black tracking-tight text-slate-950">
+            <div className="text-2xl font-semibold tracking-tight text-slate-950">
               <CountUp end={total} duration={0.9} separator="," preserveValue />
             </div>
-            <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <div className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               Total
             </div>
           </div>
@@ -646,13 +643,13 @@ export function StatusSummaryDonut({ summary }: { summary: Summary }) {
             return (
               <div
                 key={item.label}
-                className="flex items-center justify-between gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
               >
                 <div className="flex items-center gap-3">
                   <span className="inline-block h-3.5 w-3.5 rounded-[4px]" style={{ backgroundColor: item.color }} />
                   <div className="text-sm font-semibold text-slate-700">{item.label}</div>
                 </div>
-                <div className="text-sm font-black text-slate-900">
+                <div className="text-sm font-bold text-slate-900">
                   {formatNumber(item.value)} <span className="text-xs font-semibold text-slate-500">({pct}%)</span>
                 </div>
               </div>
@@ -666,9 +663,9 @@ export function StatusSummaryDonut({ summary }: { summary: Summary }) {
 
 export function RecentActivityCard({ items }: { items: ActivityItem[] }) {
   return (
-    <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
+    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Recent Activity</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Recent Activity</div>
         <Link href="/seller/analytics" className="text-sm font-semibold text-[#316249] transition hover:text-[#28513D]">
           View All Activity
         </Link>
@@ -691,13 +688,13 @@ export function RecentActivityCard({ items }: { items: ActivityItem[] }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={cn(
-                        "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ring-1",
+                        "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1",
                         activityTone(item.status)
                       )}
                     >
                       {titleCase(item.status)}
                     </span>
-                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
                       {item.type}
                     </span>
                   </div>

@@ -64,12 +64,12 @@ function isLatLng(value: string) {
 }
 
 const FIELD_CLASS =
-  "mt-2 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 disabled:opacity-60";
+  "mt-2 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.06)] outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 disabled:opacity-60";
 const TEXTAREA_CLASS =
-  "mt-2 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 disabled:opacity-60";
+  "mt-2 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.06)] outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 disabled:opacity-60";
 const LABEL_CLASS = "block text-[15px] font-semibold text-slate-800";
 const SECTION_CLASS =
-  "rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)] sm:p-6";
+  "rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:p-6";
 
 export default function SellerAddPropertyPage() {
   const router = useRouter();
@@ -412,15 +412,15 @@ export default function SellerAddPropertyPage() {
           </div>
         ) : null}
 
-        <div className="mb-6 overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+        <div className="mb-5 overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_18px_48px_rgba(19,74,54,0.16)] sm:px-8 sm:py-7">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-start gap-4">
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-50">
                     <Home className="h-3.5 w-3.5" />
                     Seller listing workspace
                   </div>
-                  <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-[44px]">
+                  <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-[44px]">
                     Add Property
                   </h1>
                   <p className="mt-3 max-w-3xl text-[15px] leading-7 text-emerald-50/90 sm:text-base">
@@ -430,7 +430,7 @@ export default function SellerAddPropertyPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur-sm">
                   Listing Flow
                 </div>
@@ -446,17 +446,17 @@ export default function SellerAddPropertyPage() {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-[15px] font-medium leading-6 text-red-800 shadow-sm">
+          <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-[15px] font-medium leading-6 text-red-800 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
             {error}
           </div>
         )}
 
         {/* ✅ Success section showing Property ID */}
         {createdPropertyId && (
-          <div className="mb-6 rounded-[28px] border border-emerald-200 bg-[linear-gradient(180deg,#effcf5_0%,#f7fff9_100%)] px-5 py-5 shadow-sm">
+          <div className="mb-5 rounded-[24px] border border-emerald-200 bg-[linear-gradient(180deg,#effcf5_0%,#f7fff9_100%)] px-5 py-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-[15px] font-extrabold text-emerald-900">
+                <div className="text-[15px] font-bold text-emerald-900">
                   Property Created Successfully ✅
                 </div>
                 <div className="mt-2 text-[15px] leading-6 text-slate-700">
@@ -469,7 +469,7 @@ export default function SellerAddPropertyPage() {
                 <button
                   type="button"
                   onClick={() => copyText(createdPropertyId)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50"
                 >
                   <Copy className="h-4 w-4" />
                   Copy ID
@@ -480,7 +480,7 @@ export default function SellerAddPropertyPage() {
                   onClick={() =>
                     router.push(`/seller/edit-property/${createdPropertyId}`)
                   }
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
                 >
                   <ExternalLink className="h-4 w-4" />
                   Edit Now
@@ -491,7 +491,7 @@ export default function SellerAddPropertyPage() {
                   onClick={() =>
                     router.push(`/buyer/property/${createdPropertyId}?preview=1`)
                   }
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50"
                   title="Open buyer property details page"
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -501,7 +501,7 @@ export default function SellerAddPropertyPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/seller/my-properties")}
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-bold text-white hover:bg-slate-800"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
                   Go to My Properties
                 </button>
@@ -512,9 +512,9 @@ export default function SellerAddPropertyPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbf9_100%)] p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-7"
+          className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbf9_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:p-6"
         >
-          <div className="mb-6 flex flex-wrap items-center gap-3">
+          <div className="mb-5 flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="rounded-full bg-[#316249] px-4 py-2 text-sm font-semibold text-white">
               Seller Workspace
             </div>
@@ -529,7 +529,7 @@ export default function SellerAddPropertyPage() {
           <div className="space-y-6">
           <section className={SECTION_CLASS}>
           <div className="mb-5">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950">
               Property Details
             </h2>
             <p className="mt-2 text-[15px] leading-7 text-slate-600">
@@ -614,7 +614,7 @@ export default function SellerAddPropertyPage() {
 
           <section className={SECTION_CLASS}>
             <div className="mb-5">
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-950">
                 Description
               </h2>
               <p className="mt-2 text-[15px] leading-7 text-slate-600">
@@ -637,7 +637,7 @@ export default function SellerAddPropertyPage() {
 
           <section className={SECTION_CLASS}>
           <div className="mb-5">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950">
               Location
             </h2>
             <p className="mt-2 text-[15px] leading-7 text-slate-600">
@@ -679,7 +679,7 @@ export default function SellerAddPropertyPage() {
 
           <section className={SECTION_CLASS}>
           <div className="mb-5">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950">
               Specifications
             </h2>
             <p className="mt-2 text-[15px] leading-7 text-slate-600">
@@ -752,7 +752,7 @@ export default function SellerAddPropertyPage() {
 
           <section className={SECTION_CLASS}>
           <div className="mb-5">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950">
               Listing Setup
             </h2>
             <p className="mt-2 text-[15px] leading-7 text-slate-600">
@@ -797,7 +797,7 @@ export default function SellerAddPropertyPage() {
 
           {/* Rent-only */}
           {isRent && (
-            <section className="rounded-[28px] border border-emerald-200 bg-[linear-gradient(180deg,#effcf5_0%,#f7fff9_100%)] p-5 shadow-sm">
+            <section className="rounded-[24px] border border-emerald-200 bg-[linear-gradient(180deg,#effcf5_0%,#f7fff9_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
               <div className="mb-3 text-[15px] font-semibold text-emerald-900">
                 Rent Details
               </div>
@@ -849,7 +849,7 @@ export default function SellerAddPropertyPage() {
 
           <section className={SECTION_CLASS}>
           <div className="mb-5">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950">
               Extra Details
             </h2>
             <p className="mt-2 text-[15px] leading-7 text-slate-600">
@@ -958,7 +958,7 @@ export default function SellerAddPropertyPage() {
                   type="button"
                   onClick={openGoogleMapsPicker}
                   disabled={loading}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
+                  className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
                   title="Open Google Maps and pick the exact location"
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -971,7 +971,7 @@ export default function SellerAddPropertyPage() {
                   type="button"
                   onClick={pasteFromClipboard}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:opacity-60"
                   title="Paste copied Google Maps link"
                 >
                   <ClipboardPaste className="h-4 w-4" />
@@ -983,7 +983,7 @@ export default function SellerAddPropertyPage() {
                   type="button"
                   onClick={convertLandmarkToLatLng}
                   disabled={loading || !landmarkValue || landmarkIsCoord}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:opacity-50"
                   title="Convert a Google Maps link to coordinates (lat,lng)"
                 >
                   <Wand2 className="h-4 w-4" />
@@ -996,7 +996,7 @@ export default function SellerAddPropertyPage() {
                     onClick={() =>
                       window.open(formData.landmark, "_blank", "noopener,noreferrer")
                     }
-                    className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-xs font-bold text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50"
                   >
                     <ExternalLink className="h-4 w-4" />
                     Preview link
@@ -1012,7 +1012,7 @@ export default function SellerAddPropertyPage() {
           </div>
           </section>
 
-          <section className="rounded-[28px] border border-emerald-200 bg-[linear-gradient(180deg,#effcf5_0%,#f7fff9_100%)] p-5 shadow-sm">
+          <section className="rounded-[24px] border border-emerald-200 bg-[linear-gradient(180deg,#effcf5_0%,#f7fff9_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
             <div className="mb-3 text-[15px] font-semibold text-emerald-900">
               Property Offer
             </div>
@@ -1155,7 +1155,7 @@ export default function SellerAddPropertyPage() {
 
           <section className={SECTION_CLASS}>
             <div className="flex items-center justify-between">
-              <label className="block text-2xl font-extrabold tracking-tight text-slate-950">
+              <label className="block text-2xl font-bold tracking-tight text-slate-950">
                 Amenities
               </label>
               <span className="text-[13px] text-slate-500">
@@ -1173,7 +1173,7 @@ export default function SellerAddPropertyPage() {
                     onClick={() => toggleAmenity(a)}
                     disabled={loading}
                     className={[
-                      "rounded-xl border px-3 py-2 text-sm font-semibold transition",
+                      "rounded-2xl border px-3 py-2 text-sm font-semibold transition",
                       active
                         ? "border-emerald-300 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-100"
                         : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
@@ -1190,7 +1190,7 @@ export default function SellerAddPropertyPage() {
           <section className={SECTION_CLASS}>
             <div className="flex items-end justify-between gap-4">
               <div>
-                <label className="block text-2xl font-extrabold tracking-tight text-slate-950">
+                <label className="block text-2xl font-bold tracking-tight text-slate-950">
                   Images * (up to {MAX_IMAGES})
                 </label>
                 <p className="mt-2 text-[13px] leading-6 text-slate-500">
@@ -1224,7 +1224,7 @@ export default function SellerAddPropertyPage() {
                   {previews.map((src, idx) => (
                     <div
                       key={`${src}-${idx}`}
-                      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
                     >
                       <img
                         src={src}
@@ -1237,7 +1237,7 @@ export default function SellerAddPropertyPage() {
                         onClick={() => setCoverIndex(idx)}
                         disabled={loading}
                         className={[
-                          "absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold shadow-sm transition",
+                          "absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition",
                           idx === coverIndex
                             ? "bg-emerald-600 text-white"
                             : "bg-white/90 text-slate-800 hover:bg-white",
@@ -1264,8 +1264,8 @@ export default function SellerAddPropertyPage() {
             </div>
           </section>
 
-          <div className="sticky bottom-0 mt-8 rounded-[24px] border border-slate-200 bg-white/95 px-4 py-4 shadow-[0_-8px_30px_rgba(15,23,42,0.06)] backdrop-blur">
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <div className="sticky bottom-0 mt-6 rounded-[24px] border border-slate-200 bg-white/95 px-4 py-4 shadow-[0_-8px_30px_rgba(15,23,42,0.06)] backdrop-blur">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
             <button
               type="button"
               onClick={() => router.back()}
@@ -1278,7 +1278,7 @@ export default function SellerAddPropertyPage() {
             <button
               type="submit"
               disabled={loading || redirecting}
-              className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(49,98,73,0.22)] transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading || redirecting ? "Creating..." : "Create Property"}
             </button>

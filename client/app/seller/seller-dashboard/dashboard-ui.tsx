@@ -6,10 +6,11 @@ import { Search, TrendingUp, MapPin, ArrowRight, ChevronRight, Home } from "luci
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import CountUp from "react-countup";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
   Cell,
   Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -21,9 +22,9 @@ import { typography } from "@/app/lib/typography";
 
 export const PAGE_BG = "bg-[#f4f6f3]";
 export const CARD =
-  "rounded-[20px] border border-[#e7ece8] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition-[transform,box-shadow,border-color] duration-300";
+  "rounded-[20px] border border-[#e5ebe7] bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-[transform,box-shadow,border-color] duration-300";
 export const SOFT_CARD =
-  "rounded-[16px] border border-[#edf1ee] bg-[#fafcfb] transition-[transform,box-shadow,border-color,background-color] duration-300";
+  "rounded-[16px] border border-[#e9efeb] bg-[#fafcfb] shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition-[transform,box-shadow,border-color,background-color] duration-300";
 export const DEFER = { contentVisibility: "auto", containIntrinsicSize: "1000px" } as const;
 
 export const fmtNum = (n: number) => new Intl.NumberFormat().format(Number(n || 0));
@@ -278,29 +279,39 @@ export function TrendChartCard({
         <div className="mt-6 overflow-hidden rounded-[18px] border border-[#eef3ef] bg-[linear-gradient(180deg,#fcfefd_0%,#f6fbf8_100%)]">
           <div className="h-[308px] w-full p-3 sm:p-4">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 14, bottom: 6, left: 0 }}>
-                <CartesianGrid stroke="#e8eeea" strokeDasharray="4 6" vertical={false} />
+              <AreaChart data={chartData} margin={{ top: 10, right: 14, bottom: 6, left: 0 }}>
+                <defs>
+                  <linearGradient id="viewsAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#316249" stopOpacity={0.28} />
+                    <stop offset="65%" stopColor="#316249" stopOpacity={0.1} />
+                    <stop offset="100%" stopColor="#316249" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#e6ece8" strokeDasharray="3 6" vertical={false} opacity={0.8} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fill: "#7b8794", fontSize: 12 }}
+                  tick={{ fill: "#8a96a3", fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                   interval="preserveStartEnd"
+                  tickMargin={10}
                 />
                 <YAxis
-                  tick={{ fill: "#7b8794", fontSize: 12 }}
+                  tick={{ fill: "#8a96a3", fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v) => fmtCompact(Number(v || 0))}
-                  width={42}
+                  tickMargin={8}
+                  width={46}
                 />
                 <Tooltip content={<TrendTooltip />} cursor={{ stroke: "#cfd8d3", strokeDasharray: "4 6" }} />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="views"
                   name="Views"
                   stroke="#316249"
                   strokeWidth={3}
+                  fill="url(#viewsAreaGradient)"
                   dot={false}
                   activeDot={{ r: 5, strokeWidth: 2, stroke: "#ffffff", fill: "#316249" }}
                   isAnimationActive={!reduceMotion}
@@ -311,16 +322,15 @@ export function TrendChartCard({
                   type="monotone"
                   dataKey="leads"
                   name="Leads"
-                  stroke="#ef476f"
-                  strokeWidth={2.25}
+                  stroke="#ec6f8f"
+                  strokeWidth={2.5}
                   dot={false}
-                  activeDot={{ r: 4, strokeWidth: 2, stroke: "#ffffff", fill: "#ef476f" }}
-                  strokeDasharray="6 6"
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: "#ffffff", fill: "#ec6f8f" }}
                   isAnimationActive={!reduceMotion}
                   animationDuration={1200}
                   animationEasing="ease-out"
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -352,7 +362,7 @@ function TrendTooltip({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 6, scale: 0.98 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur"
+        className="rounded-2xl border border-emerald-100/80 bg-white/96 px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.12)] backdrop-blur"
       >
         <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{safeLabel}</div>
         <div className="mt-2 grid gap-1 text-sm">
@@ -480,27 +490,29 @@ export function PropertyCard({ listing }: { listing: Listing }) {
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-        <div className="absolute left-3 top-3 inline-flex rounded-full bg-white/20 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
+        <div className="absolute left-3 top-3 inline-flex rounded-full bg-white/22 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
           {titleCase(listing.listingType || listing.status)}
         </div>
-        <div className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1">
-          <ArrowRight className="h-4 w-4" />
+        <div className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-white/35 text-white ring-1 ring-white/55 backdrop-blur-sm transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1">
+          <ArrowRight className="h-5 w-5" />
         </div>
       </div>
       <div className="p-4">
-        <h3 className={typography.sectionTitle}>{listing.title}</h3>
-        <div className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-500">
-          <MapPin className="h-4 w-4" />
+        <h3 className="text-xl font-semibold tracking-tight text-slate-900">{listing.title}</h3>
+        <div className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-[#e3ebe6] text-[#2f4158] ring-1 ring-[#d3ddd7]">
+            <MapPin className="h-4 w-4" />
+          </span>
           {listing.location}
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <span className={`rounded-full bg-[#f6f7f7] px-3 py-1 ${typography.helperText}`}>{fmtNum(listing.views)} Views</span>
-          <span className={`rounded-full bg-[#f6f7f7] px-3 py-1 ${typography.helperText}`}>{fmtNum(listing.leads)} Leads</span>
-          <span className={`rounded-full bg-[#f6f7f7] px-3 py-1 ${typography.helperText}`}>{fmtNum(listing.visits)} Visits</span>
+          <span className="rounded-full bg-[#f6f7f7] px-3 py-1 text-[13px] font-semibold text-slate-600">{fmtNum(listing.views)} Views</span>
+          <span className="rounded-full bg-[#f6f7f7] px-3 py-1 text-[13px] font-semibold text-slate-600">{fmtNum(listing.leads)} Leads</span>
+          <span className="rounded-full bg-[#f6f7f7] px-3 py-1 text-[13px] font-semibold text-slate-600">{fmtNum(listing.visits)} Visits</span>
         </div>
         <div className="mt-5 flex items-center justify-between gap-3">
-          <div className={typography.statValue}>{fmtCurrency(listing.price, listing.currency)}</div>
-          <span className={cn("inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ring-1", statusTone(listing.status))}>
+          <div className="text-xl font-semibold tracking-tight text-slate-900">{fmtCurrency(listing.price, listing.currency)}</div>
+          <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1", statusTone(listing.status))}>
             {titleCase(listing.status)}
           </span>
         </div>

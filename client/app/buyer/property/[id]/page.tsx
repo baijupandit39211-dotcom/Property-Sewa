@@ -479,6 +479,7 @@ function BuyerPropertyDetailsView({
     const defaultDate = `${yyyy}-${mm}-${dd}`;
 
     setVisitData((prev) => ({
+      visitType: prev.visitType,
       requestedDate: prev.requestedDate || defaultDate,
       preferredTime: prev.preferredTime || "10:00",
       message:

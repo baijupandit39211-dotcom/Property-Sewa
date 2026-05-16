@@ -312,7 +312,7 @@ function StatCard({
     <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</div>
           <div className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{value}</div>
           <div className="mt-1 text-sm text-slate-500">{hint}</div>
         </div>
@@ -338,7 +338,7 @@ function TrendChart({ points }: { points: Array<{ label: string; value: number }
 
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-[22px] border border-emerald-100 bg-[linear-gradient(180deg,#f7fbf8_0%,#ffffff_100%)] p-4">
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-[linear-gradient(180deg,#f7fbf8_0%,#ffffff_100%)] p-4">
         <svg viewBox={`0 0 ${width} ${height}`} className="h-40 w-full">
           <defs>
             <linearGradient id="leadTrendFill" x1="0" x2="0" y1="0" y2="1">
@@ -1336,16 +1336,16 @@ function SellerLeadsPageContent() {
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6">
-      <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] p-5 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:p-6">
+      <section className="overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] p-5 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:p-6">
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-50">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
                 Seller CRM Workspace
               </div>
               <div className="mt-3">
-                <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+                <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
                   Seller Leads / Inquiry Management
                 </h1>
                 <p className="mt-2 max-w-3xl text-[15px] leading-6 text-white/85">
@@ -1384,7 +1384,7 @@ function SellerLeadsPageContent() {
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-            <label className="group flex min-w-0 items-center gap-3 rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-[#316249]/30 focus-within:shadow-[0_14px_30px_rgba(49,98,73,0.12)]">
+            <label className="group flex min-w-0 items-center gap-3 rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition focus-within:border-[#316249]/30 focus-within:shadow-[0_14px_30px_rgba(49,98,73,0.12)]">
               <Search className="h-5 w-5 flex-none text-slate-400 transition group-focus-within:text-[#316249]" />
               <input
                 value={search}
@@ -1392,7 +1392,7 @@ function SellerLeadsPageContent() {
                 placeholder="Search leads, name, email, phone, property..."
                 className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
               />
-              <span className="hidden rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-500 md:inline-flex">
+              <span className="hidden rounded-2xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-500 md:inline-flex">
                 Ctrl + K
               </span>
             </label>
@@ -1434,7 +1434,7 @@ function SellerLeadsPageContent() {
       )}
       {pdfPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
-          <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
+          <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div className="min-w-0 truncate text-sm font-semibold text-slate-900">{pdfPreview.name}</div>
               <button type="button" onClick={() => setPdfPreview(null)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200">
@@ -1502,7 +1502,7 @@ function SellerLeadsPageContent() {
             <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <div className="text-lg font-black tracking-tight text-slate-950">All Leads</div>
+                  <div className="text-lg font-bold tracking-tight text-slate-950">All Leads</div>
                   <div className="mt-1 text-sm text-slate-500">{leads.length} leads</div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1519,7 +1519,7 @@ function SellerLeadsPageContent() {
               </div>
 
               <div className="mt-5 flex flex-col gap-3">
-                <label className="group flex min-w-0 items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2.5 shadow-sm transition focus-within:ring-2 focus-within:ring-[#316249]/20">
+                <label className="group flex min-w-0 items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition focus-within:ring-2 focus-within:ring-[#316249]/20">
                   <Search className="h-4 w-4 flex-none text-slate-400 group-focus-within:text-[#316249]" />
                   <input
                     value={search}
@@ -1543,7 +1543,7 @@ function SellerLeadsPageContent() {
                       type="button"
                       onClick={() => setFilter(option.value)}
                       className={cn(
-                        "rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition",
+                        "rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition",
                         filter === option.value
                           ? "bg-[#316249] text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-[#316249]/10 hover:text-[#316249]"
@@ -1555,7 +1555,7 @@ function SellerLeadsPageContent() {
                   <button
                     type="button"
                     disabled
-                    className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400"
+                    className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400"
                   >
                     Lost
                   </button>
@@ -1569,7 +1569,7 @@ function SellerLeadsPageContent() {
                   <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-600">
                     <MessageCircle className="h-6 w-6" />
                   </div>
-                  <h3 className="mt-4 text-base font-extrabold text-slate-950">
+                  <h3 className="mt-4 text-base font-bold text-slate-950">
                     {search || filter !== "all" ? "No matching leads" : "No leads yet"}
                   </h3>
                   <p className="mt-2 text-sm text-slate-500">
@@ -1594,13 +1594,13 @@ function SellerLeadsPageContent() {
                         )}
                       >
                         <div className="flex min-w-0 items-start gap-3">
-                        <div className="grid h-11 w-11 flex-none place-items-center rounded-2xl bg-[#316249]/10 text-sm font-extrabold text-[#316249]">
+                        <div className="grid h-11 w-11 flex-none place-items-center rounded-2xl bg-[#316249]/10 text-sm font-semibold text-[#316249]">
                           {initials(lead.name || "Buyer")}
                         </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <div className="truncate text-sm font-extrabold text-slate-950">{lead.name}</div>
+                                <div className="truncate text-sm font-semibold text-slate-950">{lead.name}</div>
                                 <div className="mt-1 truncate text-xs text-slate-500">
                                   {lead.propertyId?.title || "Property"}
                                 </div>
@@ -1644,7 +1644,7 @@ function SellerLeadsPageContent() {
                     <div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-[#316249]/10 text-[#316249]">
                       <MessageCircle className="h-6 w-6" />
                     </div>
-                  <h3 className="mt-4 text-xl font-black tracking-tight text-slate-950">Select a lead</h3>
+                  <h3 className="mt-4 text-xl font-bold tracking-tight text-slate-950">Select a lead</h3>
                   <p className="mt-2 text-sm text-slate-500">
                     Choose an inquiry from the queue to review buyer context and reply.
                   </p>
@@ -1655,12 +1655,12 @@ function SellerLeadsPageContent() {
                 <div className="shrink-0 border-b border-slate-100 bg-white p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-4">
-                      <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-[#316249]/10 text-base font-black text-[#316249]">
+                      <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-[#316249]/10 text-base font-bold text-[#316249]">
                         {initials(selectedLead.name || "Buyer")}
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="truncate text-lg font-extrabold text-slate-950">{selectedLead.name}</h2>
+                          <h2 className="truncate text-lg font-bold text-slate-950">{selectedLead.name}</h2>
                           <span
                             className={cn(
                               "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em]",
@@ -1691,14 +1691,14 @@ function SellerLeadsPageContent() {
                       <button
                         type="button"
                         onClick={openScheduleVisit}
-                        className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:inline-flex"
+                        className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:bg-slate-50 sm:inline-flex"
                       >
                         <CalendarClock className="h-4 w-4" />
                         Schedule
                       </button>
                       <button
                         type="button"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:bg-slate-50"
                         aria-label="More actions"
                       >
                         <MoreVertical className="h-4 w-4" />
@@ -1759,7 +1759,7 @@ function SellerLeadsPageContent() {
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <div className="text-sm font-bold text-slate-950">Schedule Visit</div>
+                          <div className="text-sm font-semibold text-slate-950">Schedule Visit</div>
                           <div className="text-xs text-slate-500">
                             Create a visit request for {selectedLead.propertyId.title}.
                           </div>
@@ -1774,7 +1774,7 @@ function SellerLeadsPageContent() {
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="space-y-1">
-                          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Date</span>
+                          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Date</span>
                           <input
                             type="date"
                             value={scheduleForm.requestedDate}
@@ -1786,7 +1786,7 @@ function SellerLeadsPageContent() {
                           />
                         </label>
                         <label className="space-y-1">
-                          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Time</span>
+                          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Time</span>
                           <input
                             type="time"
                             value={scheduleForm.preferredTime}
@@ -1798,7 +1798,7 @@ function SellerLeadsPageContent() {
                         </label>
                       </div>
                       <label className="block space-y-1">
-                        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Note</span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Note</span>
                         <textarea
                           value={scheduleForm.message}
                           onChange={(event) =>
@@ -1838,9 +1838,9 @@ function SellerLeadsPageContent() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+                          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
                             Original inquiry
                           </span>
                           <span className="text-xs text-slate-500">{formatDateTime(selectedLead.createdAt)}</span>
@@ -2064,7 +2064,7 @@ function SellerLeadsPageContent() {
           <div className="space-y-6 rounded-[24px] bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] border border-slate-100 min-w-0">
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
-                <div className="text-lg font-extrabold text-slate-950">Lead Details</div>
+                <div className="text-lg font-bold text-slate-950">Lead Details</div>
                 <div className="mt-1 text-sm text-slate-500">Selected inquiry context and seller actions.</div>
               </div>
               {selectedLead && (
@@ -2076,9 +2076,9 @@ function SellerLeadsPageContent() {
 
             {selectedLead && buyer ? (
               <>
-                <div className="rounded-[26px] bg-[linear-gradient(135deg,#f7faf8_0%,#edf7f1_100%)] p-5 ring-1 ring-[#316249]/15">
+                <div className="rounded-[24px] bg-[linear-gradient(135deg,#f7faf8_0%,#edf7f1_100%)] p-5 ring-1 ring-[#316249]/15">
                   <div className="flex items-start gap-4">
-                    <div className="grid h-16 w-16 flex-none place-items-center rounded-[22px] bg-[#316249]/10 text-lg font-black text-[#316249]">
+                    <div className="grid h-16 w-16 flex-none place-items-center rounded-2xl bg-[#316249]/10 text-lg font-bold text-[#316249]">
                       {initials(buyer.name || selectedLead.name || "Buyer")}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -2091,11 +2091,11 @@ function SellerLeadsPageContent() {
                         >
                           {formatLeadStageLabel(selectedLead.status)}
                         </span>
-                        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
                           {formatRelative(selectedLead.latestActivityAt || selectedLead.createdAt)}
                         </span>
                       </div>
-                      <div className="mt-3 text-lg font-extrabold text-slate-950">{buyer.name}</div>
+                      <div className="mt-3 text-lg font-bold text-slate-950">{buyer.name}</div>
                       <div className="mt-2 space-y-2 text-sm text-slate-500">
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-slate-400" />
@@ -2125,7 +2125,7 @@ function SellerLeadsPageContent() {
                     <a
                       href={buyer.phone ? `tel:${buyer.phone}` : undefined}
                       className={cn(
-                        "inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition hover:-translate-y-0.5",
+                        "inline-flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5",
                         buyer.phone
                           ? "bg-sky-50 text-sky-700 hover:bg-sky-100"
                           : "cursor-not-allowed bg-slate-100 text-slate-400"
@@ -2143,7 +2143,7 @@ function SellerLeadsPageContent() {
                       target={buyer.phone ? "_blank" : undefined}
                       rel={buyer.phone ? "noreferrer" : undefined}
                       className={cn(
-                        "inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition hover:-translate-y-0.5",
+                        "inline-flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5",
                         buyer.phone
                           ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                           : "cursor-not-allowed bg-slate-100 text-slate-400"
@@ -2155,7 +2155,7 @@ function SellerLeadsPageContent() {
                     <a
                       href={buyer.email && buyer.email !== "No email shared" ? `mailto:${buyer.email}` : undefined}
                       className={cn(
-                        "inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition hover:-translate-y-0.5",
+                        "inline-flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5",
                         buyer.email && buyer.email !== "No email shared"
                           ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
                           : "cursor-not-allowed bg-slate-100 text-slate-400"
@@ -2167,7 +2167,7 @@ function SellerLeadsPageContent() {
                     <button
                       type="button"
                       onClick={openScheduleVisit}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-sm font-bold text-amber-700 transition hover:-translate-y-0.5 hover:bg-amber-100"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-700 transition hover:-translate-y-0.5 hover:bg-amber-100"
                     >
                       <CalendarClock className="h-4 w-4" />
                       Follow Up
@@ -2175,20 +2175,20 @@ function SellerLeadsPageContent() {
                   </div>
                 </div>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Inquiry Details</div>
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Inquiry Details</div>
                   <div className="mt-4 grid gap-3 text-sm text-slate-600">
                     <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Original Message</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Original Message</div>
                       <p className="mt-2 leading-6 text-slate-700">{selectedLead.message}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Created</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Created</div>
                         <div className="mt-2 font-semibold text-slate-900">{formatDateTime(selectedLead.createdAt)}</div>
                       </div>
                       <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Last Activity</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Last Activity</div>
                         <div className="mt-2 font-semibold text-slate-900">
                           {formatDateTime(selectedLead.latestActivityAt || selectedLead.createdAt)}
                         </div>
@@ -2197,9 +2197,9 @@ function SellerLeadsPageContent() {
                   </div>
                 </div>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Property Details</div>
-                  <div className="mt-4 overflow-hidden rounded-[22px] border border-slate-200">
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Property Details</div>
+                  <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
                     <div className="relative aspect-[16/10] w-full bg-slate-100">
                       {selectedLead.propertyId.images?.[0]?.url ? (
                         <img
@@ -2214,7 +2214,7 @@ function SellerLeadsPageContent() {
                       )}
                     </div>
                     <div className="space-y-3 p-4">
-                      <div className="text-lg font-black tracking-tight text-slate-950">{selectedLead.propertyId.title}</div>
+                      <div className="text-lg font-bold tracking-tight text-slate-950">{selectedLead.propertyId.title}</div>
                       <div className="flex items-center gap-2 text-sm text-slate-600">
                         <MapPin className="h-4 w-4 text-slate-400" />
                         <span>{selectedLead.propertyId.location}</span>
@@ -2245,10 +2245,10 @@ function SellerLeadsPageContent() {
                   </div>
                 </div>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Analytics Overview</div>
-                    <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-500 shadow-sm">
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Analytics Overview</div>
+                    <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-500 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
                       This Month
                       <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
                     </div>
@@ -2256,33 +2256,33 @@ function SellerLeadsPageContent() {
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div className="rounded-2xl bg-slate-50 p-4">
                       <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Total Leads</div>
-                      <div className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">{stats.total}</div>
+                      <div className="mt-2 text-2xl font-bold tracking-tight text-slate-950">{stats.total}</div>
                       <div className="mt-1 text-xs font-semibold text-slate-500">Loaded on this page</div>
                     </div>
                     <div className="rounded-2xl bg-slate-50 p-4">
                       <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Response Rate</div>
-                      <div className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">
+                      <div className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
                         {formatPercent(analytics.responseRate)}
                       </div>
                       <div className="mt-1 text-xs font-semibold text-slate-500">Seller replied threads</div>
                     </div>
                     <div className="rounded-2xl bg-slate-50 p-4">
                       <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Visits Scheduled</div>
-                      <div className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">
+                      <div className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
                         {stageMetrics.visitScheduled}
                       </div>
                       <div className="mt-1 text-xs font-semibold text-slate-500">Visit stage leads</div>
                     </div>
                     <div className="rounded-2xl bg-slate-50 p-4">
                       <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Closed Leads</div>
-                      <div className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">{stats.closed}</div>
+                      <div className="mt-2 text-2xl font-bold tracking-tight text-slate-950">{stats.closed}</div>
                       <div className="mt-1 text-xs font-semibold text-slate-500">Closed status</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Visit Intent</div>
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Visit Intent</div>
                   {selectedLead.latestVisit ? (
                     <div className="mt-4 space-y-4">
                       <div className="flex flex-wrap items-center gap-2">
@@ -2298,7 +2298,7 @@ function SellerLeadsPageContent() {
                           Requested {formatDateTime(selectedLead.latestVisit.createdAt)}
                         </span>
                       </div>
-                      <div className="rounded-[22px] bg-slate-50 p-4 ring-1 ring-slate-200">
+                      <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                         <div className="text-sm font-semibold text-slate-900">
                           {selectedLead.latestVisit.actualDate
                             ? `Scheduled for ${formatDate(selectedLead.latestVisit.actualDate)}`
@@ -2324,7 +2324,7 @@ function SellerLeadsPageContent() {
                       </Link>
                     </div>
                   ) : (
-                    <div className="mt-4 rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                    <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
                       No visit request linked to this lead yet.
                     </div>
                   )}
@@ -2350,3 +2350,4 @@ export default function SellerLeadsPage() {
   );
 }
   
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Image from "next/image";
@@ -21,6 +21,8 @@ import {
   Search,
   Heart,
   ChevronRight,
+  BriefcaseBusiness,
+  Building,
 } from "lucide-react";
 
 type Property = {
@@ -205,7 +207,7 @@ export default function DashboardLandingLike() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(112deg, #0C5A3E 0%, #1F8D62 42%, #8DDEBC 74%, #DDF7EA 100%)",
+              "linear-gradient(112deg, #0F5F42 0%, #22855F 41%, #91DDBE 73%, #DFF7EB 100%)",
           }}
         />
 
@@ -213,23 +215,23 @@ export default function DashboardLandingLike() {
           className="absolute inset-0 pointer-events-none opacity-[0.13]"
           style={{
             backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Crect width='2' height='2' fill='rgba(255,255,255,0.64)'/%3E%3C/svg%3E\")",
-            filter: "blur(0.35px)",
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Crect width='2' height='2' fill='rgba(255,255,255,0.62)'/%3E%3C/svg%3E\")",
+            filter: "blur(0.45px)",
           }}
         />
 
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_58%_46%,rgba(237,251,245,0.22)_0%,rgba(237,251,245,0.12)_26%,transparent_62%),radial-gradient(circle_at_82%_44%,rgba(255,255,255,0.16)_0%,transparent_54%)]" />
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_56%_46%,rgba(237,251,245,0.24)_0%,rgba(237,251,245,0.14)_24%,transparent_62%),radial-gradient(circle_at_82%_43%,rgba(255,255,255,0.14)_0%,transparent_56%)]" />
 
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-black/6 to-transparent" />
 
-        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-10 sm:px-6 sm:py-12 lg:grid-cols-2 lg:gap-12 lg:py-14">
+        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 py-10 sm:px-6 sm:py-12 lg:grid-cols-2 lg:gap-9 lg:py-14">
           <div>
             <motion.h1
               variants={fadeUp}
               initial="hidden"
               animate="show"
               custom={0}
-              className="text-[64px] font-semibold leading-[1.04] tracking-tight text-white"
+              className="text-[64px] font-bold leading-[1.03] tracking-[-0.02em] text-white"
             >
               <span className="block whitespace-nowrap">The Modern Way to Find</span>
               <span className="mt-1 block text-center">Home</span>
@@ -240,7 +242,7 @@ export default function DashboardLandingLike() {
               initial="hidden"
               animate="show"
               custom={1}
-              className="mt-3 max-w-[56ch] text-[15px] text-white/85"
+              className="mx-auto mt-3.5 max-w-[56ch] text-center text-[16px] leading-6 text-white/84"
             >
               Discover your next chapter with us. Effortless, elegant, and exclusively yours.
             </motion.p>
@@ -250,7 +252,7 @@ export default function DashboardLandingLike() {
               initial="hidden"
               animate="show"
               custom={2}
-              className="mt-8 max-w-[640px] rounded-3xl bg-white/92 p-3.5 shadow-[0_20px_36px_rgba(13,28,18,0.22)] ring-1 ring-white/65"
+              className="mt-7 max-w-[640px] rounded-[30px] bg-white/92 p-3.5 shadow-[0_24px_48px_rgba(13,28,18,0.22)] ring-1 ring-white/65"
             >
               <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#D6DBD9] p-1.5">
                 <TabButton active={mode === "buy"} onClick={() => setMode("buy")}>
@@ -314,7 +316,7 @@ export default function DashboardLandingLike() {
                 </Link>
               </div>
 
-              <div className="mt-8 text-center text-base text-white/70">Explore Neighborhoods →</div>
+              <div className="mt-8 text-center text-base text-white/70">Explore Neighborhoods â†’</div>
 
               <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-white/80">
                 <span className="inline-flex items-center gap-2">
@@ -339,7 +341,7 @@ export default function DashboardLandingLike() {
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
             className="relative hidden lg:block"
           >
-            <div className="relative mx-auto aspect-[1.08/1] w-full max-w-[520px]">
+            <div className="relative ml-auto aspect-[1.08/1] w-full max-w-[560px] lg:translate-x-6">
               <motion.div
                 whileHover={{ scale: [1, 1.02, 1], y: [0, -3, 0] }}
                 transition={{ duration: 1.4, ease: "easeInOut" }}
@@ -350,7 +352,7 @@ export default function DashboardLandingLike() {
                   alt="3D House"
                   fill
                   priority
-                  className="object-contain brightness-[1.02] saturate-[0.92] drop-shadow-[0_16px_18px_rgba(13,28,18,0.16)]"
+                  className="object-contain brightness-[1.02] saturate-[0.92] drop-shadow-[0_18px_24px_rgba(13,28,18,0.18)]"
                 />
               </motion.div>
             </div>
@@ -365,22 +367,43 @@ export default function DashboardLandingLike() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.3 }}
-            className="text-center text-3xl font-extrabold tracking-tight text-[#111814] sm:text-4xl"
+            className="text-center text-[30px] font-bold leading-[1.14] tracking-[-0.02em] text-[#111814] sm:text-[38px]"
           >
             Everything should be this easy.
           </motion.h2>
-          <p className="mt-3 text-center text-sm text-[#618975]">Three steps. Three minutes.</p>
+          <p className="mt-2 text-center text-sm text-[#618975]">Three steps. Three minutes.</p>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-5">
-            <MiniCard icon={<Home className="h-5 w-5" />} title="Buy a Home" href="/properties?type=sale" />
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <MiniCard
-              icon={<Building2 className="h-5 w-5" />}
+              icon={<Home className="h-4 w-4" />}
+              title="Buy a Home"
+              desc="Find your dream home from thousands of listings."
+              href="/properties?type=sale"
+            />
+            <MiniCard
+              icon={<Building2 className="h-4 w-4" />}
               title="Rent a Home"
+              desc="Discover apartments, condos, and houses for rent."
               href="/properties?type=rent"
             />
-            <MiniCard icon={<BarChart3 className="h-5 w-5" />} title="Sell a Home" href={addPropertyHref} />
-            <MiniCard icon={<Heart className="h-5 w-5" />} title="Offers" href="/properties?offersOnly=true" />
-            <MiniCard icon={<Search className="h-5 w-5" />} title="All Listings" href="/properties" />
+            <MiniCard
+              icon={<BarChart3 className="h-4 w-4" />}
+              title="Sell a Home"
+              desc="Get a free valuation and sell with top agents."
+              href={addPropertyHref}
+            />
+            <MiniCard
+              icon={<BriefcaseBusiness className="h-4 w-4" />}
+              title="Commercial"
+              desc="Explore office, retail, and industrial properties."
+              href="/properties?type=commercial"
+            />
+            <MiniCard
+              icon={<Building className="h-4 w-4" />}
+              title="New Projects"
+              desc="Be the first to know about new constructions."
+              href="/properties?type=new-projects"
+            />
           </div>
         </div>
       </section>
@@ -388,23 +411,40 @@ export default function DashboardLandingLike() {
       {featuredProperties.length > 0 ? (
         <section className="bg-[#F7FCFA] pb-14 sm:pb-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="flex items-end justify-between gap-4">
+            <div>
               <div>
-                <h3 className="text-2xl font-bold tracking-tight text-[#111814]">
+                <h3 className="text-center text-[30px] font-bold leading-[1.14] tracking-[-0.02em] text-[#111814] sm:text-[38px]">
                   Featured Properties
                 </h3>
-                <p className="mt-1 text-sm text-[#618975]">
+                <p className="mt-2 text-center text-sm text-[#618975]">
                   Handpicked listings from the best locations, just for you.
                 </p>
               </div>
 
-              <Link
-                href="/properties"
-                className="group inline-flex items-center gap-2 text-sm font-semibold text-[#316249] transition hover:text-[#0D1C12]"
-              >
-                View All{" "}
-                <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-              </Link>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="inline-flex w-fit items-center gap-1 rounded-xl bg-[#E8EEEA] p-1 ring-1 ring-[#E2E8E5]">
+                  <button
+                    type="button"
+                    className="rounded-lg bg-white px-4 py-1.5 text-xs font-medium text-[#111814] shadow-[0_1px_2px_rgba(17,24,20,0.08)]"
+                  >
+                    Popular
+                  </button>
+                  <button type="button" className="rounded-lg px-4 py-1.5 text-xs font-medium text-[#6F8F7F]">
+                    Newest
+                  </button>
+                  <button type="button" className="rounded-lg px-4 py-1.5 text-xs font-medium text-[#6F8F7F]">
+                    Price
+                  </button>
+                </div>
+
+                <Link
+                  href="/properties"
+                  className="group inline-flex items-center gap-2 self-end text-sm font-semibold text-[#13EC80] transition hover:text-[#0D1C12] sm:self-auto"
+                >
+                  View All
+                  <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                </Link>
+              </div>
             </div>
 
             <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -571,7 +611,7 @@ export default function DashboardLandingLike() {
                 The modern way to find, buy, and sell your home.
               </p>
               <p className="mt-8 text-xs text-[#102219]/60">
-                © {new Date().getFullYear()} Property Sewa. All rights reserved.
+                Â© {new Date().getFullYear()} Property Sewa. All rights reserved.
               </p>
             </div>
 
@@ -647,10 +687,12 @@ function Pill({ children }: { children: React.ReactNode }) {
 function MiniCard({
   icon,
   title,
+  desc,
   href,
 }: {
   icon: React.ReactNode;
   title: string;
+  desc: string;
   href: string;
 }) {
   return (
@@ -658,15 +700,13 @@ function MiniCard({
       <motion.div
         whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 240, damping: 16 }}
-        className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-[#E5E7EB] hover:shadow-md"
+        className="min-h-[168px] rounded-[16px] border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_8px_24px_rgba(17,24,20,0.08)] transition hover:shadow-[0_10px_28px_rgba(17,24,20,0.12)]"
       >
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#E8F2EB] text-[#316249] ring-1 ring-[#D1D5DB]">
+        <div className="grid h-11 w-11 place-items-center rounded-full bg-[#D7F1E4] text-[#13EC80]">
           {icon}
         </div>
-        <p className="mt-3 text-sm font-bold text-[#111814]">{title}</p>
-        <p className="mt-1 text-xs text-[#618975]">
-          Find your dream home from thousands of listings.
-        </p>
+        <p className="mt-4 text-lg font-bold leading-5 text-[#111814]">{title}</p>
+        <p className="mt-2 text-xs leading-[1.45] text-[#618975]">{desc}</p>
       </motion.div>
     </Link>
   );
@@ -712,9 +752,9 @@ function PropertyCard({ p }: { p: Property }) {
 
           <div className="mt-3 flex items-center gap-3 text-[11px] text-[#618975]">
             <span>{p.beds} bd</span>
-            <span>•</span>
+            <span>â€¢</span>
             <span>{p.baths} ba</span>
-            <span>•</span>
+            <span>â€¢</span>
             <span>{p.sqft} sqft</span>
           </div>
         </div>

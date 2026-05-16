@@ -204,15 +204,15 @@ export default function SellerDashboardPage() {
   return (
     <main className={PAGE_BG}>
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
-        <div className="space-y-5">
+        <div className="space-y-6">
           <header className="seller-reveal overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
               <div className="min-w-0">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
                   <Sparkles className="h-3.5 w-3.5" />
                   Seller Dashboard
                 </span>
-                <h1 className={`${typography.pageTitle} mt-4 text-white`}>
+                <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight text-white md:text-4xl">
                   {`Welcome back, ${userName || userEmail || "Seller"}`}
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90">
@@ -224,15 +224,15 @@ export default function SellerDashboardPage() {
                 </Link>
               </div>
 
-              <div className="flex flex-col gap-3 xl:min-w-[780px] xl:flex-row xl:items-center xl:justify-end">
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap xl:w-auto xl:flex-nowrap xl:items-center xl:justify-end">
                 <HeaderSearch value={search} onChange={setSearch} />
 
-                <Link href="/seller/add-property" className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 text-white backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}>
+                <Link href="/seller/add-property" className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}>
                   <Plus className="h-4 w-4" />
                   Add Property
                 </Link>
 
-                <button type="button" onClick={refresh} disabled={refreshing} className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/15 disabled:opacity-60" aria-label="Refresh dashboard">
+                <button type="button" onClick={refresh} disabled={refreshing} className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/15 disabled:opacity-60" aria-label="Refresh dashboard">
                   <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
                 </button>
 
@@ -331,8 +331,8 @@ export default function SellerDashboardPage() {
           ) : null}
 
           {!isSearching ? (
-          <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_360px]" style={DEFER}>
-            <div className="space-y-5">
+          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px]" style={DEFER}>
+            <div className="space-y-6">
               <motion.section
                 className="grid gap-4 md:grid-cols-3"
                 initial={reduceMotion ? false : "hidden"}
@@ -397,7 +397,7 @@ export default function SellerDashboardPage() {
               <TrendChartCard trends={analytics?.trends || []} range={range} setRange={setRange} />
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-6">
               <motion.section
                 className={cn(CARD, "seller-hover-card p-5 sm:p-6")}
                 initial={reduceMotion ? false : { opacity: 0, y: 18 }}
@@ -406,7 +406,7 @@ export default function SellerDashboardPage() {
                 transition={{ duration: 0.48, ease: EASE_OUT }}
               >
                 <div className="flex items-center justify-between">
-                  <h2 className="text-[20px] font-semibold tracking-tight text-slate-900">
+                  <h2 className={typography.sectionTitle}>
                     Live Snapshot
                   </h2>
                   <span className={typography.helperText}>
@@ -432,7 +432,7 @@ export default function SellerDashboardPage() {
                     }}
                   >
                     <div className="text-sm text-slate-500">Active Listings</div>
-                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">
+                    <div className={`mt-2 ${typography.statValue}`}>
                       <CountUp end={Number(summary?.activeListings || 0)} duration={0.9} separator="," preserveValue />
                     </div>
                   </motion.div>
@@ -444,7 +444,7 @@ export default function SellerDashboardPage() {
                     }}
                   >
                     <div className="text-sm text-slate-500">Fresh Leads</div>
-                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">
+                    <div className={`mt-2 ${typography.statValue}`}>
                       <CountUp end={Number(summary?.leads || 0)} duration={0.9} separator="," preserveValue />
                     </div>
                   </motion.div>
@@ -456,7 +456,7 @@ export default function SellerDashboardPage() {
                     }}
                   >
                     <div className="text-sm text-slate-500">Visit Requests</div>
-                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">
+                    <div className={`mt-2 ${typography.statValue}`}>
                       <CountUp end={Number(summary?.visits || 0)} duration={0.9} separator="," preserveValue />
                     </div>
                   </motion.div>
@@ -468,7 +468,7 @@ export default function SellerDashboardPage() {
                     }}
                   >
                     <div className="text-sm text-slate-500">Completion Rate</div>
-                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">
+                    <div className={`mt-2 ${typography.statValue}`}>
                       <CountUp
                         end={Number(summary?.visitCompletionRate || 0)}
                         duration={0.95}
@@ -532,10 +532,10 @@ export default function SellerDashboardPage() {
           <section className="seller-reveal seller-delay-2" style={DEFER}>
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <h2 className={typography.sectionTitle}>
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
                   Featured Properties
                 </h2>
-                <p className={`mt-1.5 ${typography.pageSubtitle}`}>
+                <p className="mt-2 text-base text-slate-600">
                   Your best performing and recent listings.
                 </p>
               </div>
@@ -576,8 +576,8 @@ export default function SellerDashboardPage() {
           ) : null}
 
           {!isSearching ? (
-            <section className="grid gap-5 xl:grid-cols-[1.08fr_0.92fr]" style={DEFER}>
-              <section className={cn(CARD, "seller-reveal seller-delay-3 seller-hover-card p-5 sm:p-6")}>
+            <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr] xl:items-stretch" style={DEFER}>
+              <section className={cn(CARD, "seller-reveal seller-delay-3 seller-hover-card border-[#e9efeb] p-5 shadow-[0_10px_26px_rgba(15,23,42,0.06)] xl:flex xl:h-full xl:flex-col xl:overflow-hidden")}>
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <h2 className={typography.sectionTitle}>
@@ -591,23 +591,23 @@ export default function SellerDashboardPage() {
                     Open Inbox
                   </Link>
                 </div>
-                <div className="mt-5 space-y-3">
+                <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto pr-1 xl:min-h-0 xl:flex-1">
                   {recentActivity.length === 0 ? <div className="rounded-[16px] border border-dashed border-[#d9e2dc] bg-[#fafcfb] px-5 py-10 text-center text-sm text-slate-500">{normalizedSearch ? `No buyer activity matched "${search.trim()}".` : "No lead or visit activity has been recorded yet."}</div> : null}
                   {recentActivity.map((item) => (
-                    <Link key={`${item.type}-${item.id}`} href={item.href} className={cn(SOFT_CARD, "seller-soft-hover block p-4 hover:border-emerald-200 hover:bg-white")}>
+                    <Link key={`${item.type}-${item.id}`} href={item.href} className={cn(SOFT_CARD, "group seller-soft-hover block border-[#e9efeb] p-3.5 hover:border-emerald-200 hover:bg-white")}>
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ring-1", statusTone(item.status))}>{titleCase(item.status)}</span>
-                            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{item.type}</span>
+                            <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ring-1", statusTone(item.status))}>{titleCase(item.status)}</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{item.type}</span>
                           </div>
-                          <div className="mt-2 text-sm font-medium tracking-tight text-slate-950">{item.actorName} {item.type === "lead" ? "sent a lead" : `${titleCase(item.status)} a visit`}</div>
-                          <div className={`mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 ${typography.pageSubtitle}`}>
+                          <div className="mt-1.5 text-[16px] font-semibold tracking-tight text-slate-900">{item.actorName} {item.type === "lead" ? "sent a lead" : `${titleCase(item.status)} a visit`}</div>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] leading-5 text-slate-500">
                             <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" />{item.propertyTitle}</span>
                             <span>{fmtDateTime(item.occurredAt)}</span>
                           </div>
                           {item.message ? (
-                            <p className={`mt-2 line-clamp-2 ${typography.pageSubtitle}`}>
+                            <p className="mt-1.5 line-clamp-1 text-[12px] leading-5 text-slate-500">
                               {item.message}
                             </p>
                           ) : null}
@@ -619,8 +619,8 @@ export default function SellerDashboardPage() {
                 </div>
               </section>
 
-              <div className="space-y-5">
-                <section className={cn(CARD, "seller-reveal seller-delay-4 seller-hover-card p-5 sm:p-6")}>
+              <div className="space-y-6 xl:h-full">
+                <section className={cn(CARD, "seller-reveal seller-delay-4 seller-hover-card border-[#e9efeb] p-6 shadow-[0_10px_26px_rgba(15,23,42,0.06)] xl:h-full")}>
                   <div className="flex items-center justify-between">
                     <h2 className={typography.sectionTitle}>
                       Quick Actions
@@ -628,7 +628,7 @@ export default function SellerDashboardPage() {
                     <Sparkles className="h-4 w-4 text-[#316249]" />
                   </div>
 
-                  <div className="mt-4 grid gap-3">
+                  <div className="mt-5 grid gap-3">
                     {[
                       { href: "/seller/my-properties", label: "Manage Listings", desc: "Update your property inventory", icon: Home },
                       { href: "/seller/leads", label: "Respond to Leads", desc: `${fmtNum(summary?.leads || 0)} lead opportunities`, icon: MessageSquare },
@@ -637,14 +637,14 @@ export default function SellerDashboardPage() {
                     ].map((item) => {
                       const Icon = item.icon;
                       return (
-                        <Link key={item.href} href={item.href} className={cn(SOFT_CARD, "seller-soft-hover flex items-center justify-between gap-3 p-4 hover:border-emerald-200 hover:bg-white")}>
+                        <Link key={item.href} href={item.href} className={cn(SOFT_CARD, "group seller-soft-hover flex items-center justify-between gap-3 border-[#e9efeb] p-4 hover:border-emerald-200 hover:bg-white")}>
                           <div className="flex items-center gap-3">
                             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-[#316249] ring-1 ring-emerald-100">
                               <Icon className="h-5 w-5" />
                             </div>
                             <div>
-                              <div className="text-sm font-medium text-slate-900">{item.label}</div>
-                              <div className={typography.pageSubtitle}>{item.desc}</div>
+                              <div className="text-[17px] font-semibold tracking-tight text-slate-900">{item.label}</div>
+                              <div className="text-[14px] leading-5 text-slate-500">{item.desc}</div>
                             </div>
                           </div>
                           <ChevronRight className="h-4 w-4 text-slate-400" />
