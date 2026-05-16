@@ -39,7 +39,7 @@ const INQUIRY_OPTIONS = [
 ] as const;
 
 const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 1, y: 0 },
   show: (index = 0) => ({
     opacity: 1,
     y: 0,
@@ -191,7 +191,7 @@ export default function ContactPage() {
         (
           process.env.NEXT_PUBLIC_API_BASE_URL ||
           process.env.NEXT_PUBLIC_API_URL ||
-          "http://localhost:8080"
+          "http://localhost:5000"
         ).replace(/\/+$/, "");
 
       const res = await fetch(`${API_BASE}/api/contact`, {
@@ -256,7 +256,7 @@ export default function ContactPage() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="mx-auto max-w-4xl text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl"
+              className="mx-auto max-w-4xl text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl"
             >
               {CONTACT_TITLE}
             </motion.h1>
@@ -303,7 +303,7 @@ export default function ContactPage() {
                 Reach the team directly
               </span>
 
-              <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
                 Get in Touch
               </h2>
 
@@ -385,7 +385,7 @@ export default function ContactPage() {
                   Contact Form
                 </p>
 
-                <h3 className="mt-3 text-xl font-extrabold tracking-tight text-slate-950 sm:text-2xl lg:text-3xl">
+                <h3 className="mt-3 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl lg:text-3xl">
                   Send us a message
                 </h3>
 

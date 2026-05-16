@@ -12,13 +12,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [checking, setChecking] = React.useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
-  const hasCheckedAuth = React.useRef(false);
 
   React.useEffect(() => {
-    if (hasCheckedAuth.current) return;
-    hasCheckedAuth.current = true;
-
-    let mounted = true;
+    let cancelled = false;
     const timeoutMs = 8000;
 
     const resolveRedirect = (role: string) => {
@@ -55,12 +51,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         return;
       } finally {
         if (timeoutId) window.clearTimeout(timeoutId);
-        if (mounted) setChecking(false);
+        if (!cancelled) setChecking(false);
       }
     })();
 
     return () => {
-      mounted = false;
+      cancelled = true;
     };
   }, [router]);
 

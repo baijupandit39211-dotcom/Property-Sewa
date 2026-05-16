@@ -26,6 +26,7 @@ type LinkItem = {
 
 type ActionItem = {
   label: string;
+  href: string;
   icon: LucideIcon;
 };
 
@@ -43,8 +44,8 @@ const navigationItems: LinkItem[] = [
 ];
 
 const supportItems: ActionItem[] = [
-  { label: "Help and Docs", icon: HelpCircle },
-  { label: "Feedback", icon: MessageSquare },
+  { label: "Help and Docs", href: "/contact", icon: HelpCircle },
+  { label: "Feedback", href: "/admin/feedback", icon: MessageSquare },
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -83,15 +84,15 @@ function SidebarLink({
   );
 }
 
-function SidebarAction({ label, icon: Icon }: ActionItem) {
+function SidebarAction({ label, href, icon: Icon }: ActionItem) {
   return (
-    <button
-      type="button"
+    <Link
+      href={href}
       className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-[15px] font-semibold text-slate-700 transition-colors hover:bg-[#e9f3ee] hover:text-[#316249]"
     >
       <Icon className="h-5 w-5 shrink-0 text-slate-600 group-hover:text-[#316249]" strokeWidth={2} />
       <span className="truncate leading-none">{label}</span>
-    </button>
+    </Link>
   );
 }
 

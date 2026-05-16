@@ -30,7 +30,7 @@ const links = [
 
 const bottomLinks = [
   { label: "Help", href: "/buyer/help", icon: HelpCircle },
-  { label: "Feedback", href: "/buyer/feedback", icon: Flag },
+  { label: "Feedback", href: "/contact", icon: Flag },
 ];
 
 export default function BuyerSidebar({
