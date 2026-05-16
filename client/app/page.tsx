@@ -205,21 +205,24 @@ export default function DashboardLandingLike() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(110deg, #0F6F4A 0%, #2FAF75 40%, #8DE5BF 72%, #D6F6E8 100%)",
+              "linear-gradient(112deg, #0C5A3E 0%, #1F8D62 42%, #8DDEBC 74%, #DDF7EA 100%)",
           }}
         />
 
         <div
-          className="absolute inset-0 opacity-[0.14]"
+          className="absolute inset-0 pointer-events-none opacity-[0.13]"
           style={{
-            backgroundImage: "radial-gradient(rgba(255,255,255,0.24) 0.9px, transparent 0.9px)",
-            backgroundSize: "15px 15px",
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Crect width='2' height='2' fill='rgba(255,255,255,0.64)'/%3E%3C/svg%3E\")",
+            filter: "blur(0.35px)",
           }}
         />
 
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_58%_46%,rgba(237,251,245,0.22)_0%,rgba(237,251,245,0.12)_26%,transparent_62%),radial-gradient(circle_at_82%_44%,rgba(255,255,255,0.16)_0%,transparent_54%)]" />
+
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-black/6 to-transparent" />
 
-        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-10 sm:px-6 sm:py-12 lg:grid-cols-2 lg:gap-12 lg:py-14">
+        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-10 sm:px-6 sm:py-12 lg:grid-cols-2 lg:gap-12 lg:py-14">
           <div>
             <motion.h1
               variants={fadeUp}
