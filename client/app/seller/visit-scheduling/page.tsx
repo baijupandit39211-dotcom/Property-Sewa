@@ -826,7 +826,7 @@ export default function SellerVisitSchedulingPage() {
 
   return (
     <main
-      className="min-h-screen px-4 pb-6 pt-28 sm:px-6 lg:px-8 lg:pt-32"
+      className="min-h-screen px-4 pb-6 pt-0 sm:px-6 lg:px-8 lg:pt-0"
       style={{ backgroundColor: THEME.page }}
     >
       <div className="mx-auto max-w-[1240px]">
@@ -842,13 +842,13 @@ export default function SellerVisitSchedulingPage() {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_18px_48px_rgba(19,74,54,0.16)] sm:px-8 sm:py-7">
+        <section className="overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-5 py-5 text-white shadow-[0_18px_48px_rgba(19,74,54,0.16)] sm:px-6 sm:py-6">
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-50">
               <CalendarClock className="h-3.5 w-3.5" />
               Seller visits
             </span>
-            <h1 className="mt-4 text-[22px] font-bold tracking-tight text-white sm:text-[28px]">
+            <h1 className="mt-3 text-[20px] font-bold tracking-tight text-white sm:text-[24px]">
               Visits Calendar
             </h1>
             <p className="mt-3 text-sm text-emerald-50/90">
@@ -856,7 +856,7 @@ export default function SellerVisitSchedulingPage() {
             </p>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center gap-6 text-sm font-medium">
+          <div className="mt-4 flex flex-wrap items-center gap-5 text-sm font-medium">
             {(["month", "week", "day"] as const).map((mode) => (
               <button
                 key={mode}
@@ -865,7 +865,7 @@ export default function SellerVisitSchedulingPage() {
                 className={cn(
                   "border-b-2 pb-1 capitalize transition",
                   viewMode === mode
-                    ? "border-[#316249] text-[#1f2d24]"
+                    ? "border-white/80 text-white"
                     : "border-transparent text-white/75"
                 )}
               >
@@ -874,7 +874,7 @@ export default function SellerVisitSchedulingPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             {STATUS_FILTERS.map((filter) => (
               <button
                 key={filter.key}

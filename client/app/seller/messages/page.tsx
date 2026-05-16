@@ -11,7 +11,6 @@ import {
 } from "react";
 import {
   BellOff,
-  BellRing,
   Building2,
   Check,
   CheckCheck,
@@ -230,6 +229,8 @@ export default function SellerMessagesPage() {
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [pdfPreview, setPdfPreview] = useState<{ url: string; name: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messageListRef = useRef<HTMLDivElement | null>(null);
+  const shouldAutoScrollRef = useRef(true);
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const receiverTypingTimeoutRef = useRef<number | null>(null);
@@ -256,8 +257,19 @@ export default function SellerMessagesPage() {
     [conversations]
   );
 
-  const scrollToBottom = useEffectEvent(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const isNearBottom = useEffectEvent((threshold = 120) => {
+    const container = messageListRef.current;
+    if (!container) return true;
+    const remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
+    return remaining <= threshold;
+  });
+  const scrollToBottom = useEffectEvent((behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  });
+  const maybeAutoScroll = useEffectEvent((behavior: ScrollBehavior = "smooth") => {
+    if (shouldAutoScrollRef.current) {
+      scrollToBottom(behavior);
+    }
   });
   const playMessageSound = useEffectEvent((message: Message) => {
     void playIncomingMessageSound(message, "buyer");
@@ -328,7 +340,8 @@ export default function SellerMessagesPage() {
       markConversationRead(leadId, thread);
       acknowledgeDelivered(leadId, thread);
       acknowledgeSeen(leadId, thread);
-      requestAnimationFrame(() => scrollToBottom());
+      shouldAutoScrollRef.current = true;
+      requestAnimationFrame(() => scrollToBottom("auto"));
     } finally {
       if (!silent) setThreadLoading(false);
     }
@@ -415,13 +428,14 @@ export default function SellerMessagesPage() {
         }
 
         if (selectedIdRef.current === message.leadId) {
+          shouldAutoScrollRef.current = isNearBottom();
           setMessages((prev) => {
             if (prev.some((item) => item._id === message._id)) return prev;
             return [...prev, message];
           });
           acknowledgeDelivered(message.leadId, [message]);
           acknowledgeSeen(message.leadId, [message]);
-          requestAnimationFrame(() => scrollToBottom());
+          requestAnimationFrame(() => maybeAutoScroll());
         }
       },
       onMessageDelivered: ({ leadId, messageIds, deliveredAt }) => {
@@ -570,6 +584,7 @@ export default function SellerMessagesPage() {
       window.clearTimeout(typingTimeoutRef.current);
     }
     emitChatTypingStop(selectedConversation._id);
+    shouldAutoScrollRef.current = true;
     requestAnimationFrame(() => scrollToBottom());
 
     try {
@@ -631,6 +646,7 @@ export default function SellerMessagesPage() {
     setIsUploadingAttachment(true);
     setError("");
     setMessages((prev) => [...prev, optimisticMessage]);
+    shouldAutoScrollRef.current = true;
     requestAnimationFrame(() => scrollToBottom());
 
     try {
@@ -701,38 +717,24 @@ export default function SellerMessagesPage() {
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
-      <section className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-8">
+      <section className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-5 py-5 text-white shadow-[0_18px_48px_rgba(19,74,54,0.16)] sm:px-6 sm:py-6">
         <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" />
               Seller Messaging Workspace
             </div>
             <div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Messages / Chat</h1>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Messages / Chat</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#edf6f0]/90 sm:text-base">
                 Manage buyer conversations, reply from a clean thread view, and keep property-specific
                 communication in one seller inbox.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3 text-sm">
-              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Conversations</div>
-                <div className="mt-1 text-2xl font-black">{conversations.length}</div>
-              </div>
-              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Unread</div>
-                <div className="mt-1 text-2xl font-black">{totalUnread}</div>
-              </div>
-              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-sm">
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Active thread</div>
-                <div className="mt-1 text-sm font-semibold">{selectedConversation?.propertyId.title || "Select a conversation"}</div>
-              </div>
-            </div>
           </div>
 
-          <div className="relative z-10 grid gap-3 self-start rounded-[28px] bg-[rgba(218,232,223,0.12)] p-4 backdrop-blur-md ring-1 ring-[rgba(255,255,255,0.14)]">
+          <div className="relative z-10 grid gap-3 self-start rounded-[24px] bg-[rgba(218,232,223,0.12)] p-4 backdrop-blur-md ring-1 ring-[rgba(255,255,255,0.14)]">
             <button type="button" onClick={handleRefresh} disabled={refreshing} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#11392f] transition hover:bg-[#f5faf7] disabled:opacity-60">
               <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
               {refreshing ? "Refreshing..." : "Refresh inbox"}
@@ -741,9 +743,6 @@ export default function SellerMessagesPage() {
               Open leads
               <ChevronRight className="h-4 w-4" />
             </Link>
-            <div className="rounded-2xl bg-[rgba(9,36,27,0.12)] px-4 py-3 text-sm text-white/90">
-              Threads are loaded from seller leads and live message history. Notifications continue to route buyers here.
-            </div>
           </div>
         </div>
       </section>
@@ -756,7 +755,7 @@ export default function SellerMessagesPage() {
       )}
       {pdfPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
-          <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
+          <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div className="min-w-0 truncate text-sm font-semibold text-slate-900">{pdfPreview.name}</div>
               <button type="button" onClick={() => setPdfPreview(null)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200">
@@ -777,14 +776,14 @@ export default function SellerMessagesPage() {
         </div>
       )}
       <section className="grid min-h-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="flex h-[720px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_20px_70px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_24px_80px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
+        <aside className="flex h-[720px] min-h-0 flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
           <div className="border-b border-slate-100 px-5 py-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-black tracking-tight text-slate-950">Conversation inbox</h2>
+                <h2 className="text-lg font-bold tracking-tight text-slate-950">Conversation inbox</h2>
                 <p className="mt-1 text-sm text-slate-600">{filteredConversations.length} visible of {conversations.length}</p>
               </div>
-              {totalUnread > 0 && <span className="inline-flex rounded-full bg-rose-500 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white">{totalUnread} unread</span>}
+              {totalUnread > 0 && <span className="inline-flex rounded-full bg-rose-500 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.12em] text-white">{totalUnread} unread</span>}
             </div>
             <div className="relative mt-4">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -795,7 +794,7 @@ export default function SellerMessagesPage() {
             {filteredConversations.length === 0 ? (
               <div className="px-6 py-16 text-center">
                 <div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-emerald-50 text-emerald-700"><MessageCircle className="h-6 w-6" /></div>
-                <h3 className="mt-4 text-lg font-black tracking-tight text-slate-950">{search ? "No matching conversations" : "No conversations yet"}</h3>
+                  <h3 className="mt-4 text-base font-bold tracking-tight text-slate-950">{search ? "No matching conversations" : "No conversations yet"}</h3>
                 <p className="mt-2 text-sm text-slate-500">{search ? "Try a different search term." : "When buyers send inquiries, their threads will appear here."}</p>
               </div>
             ) : (
@@ -816,7 +815,7 @@ export default function SellerMessagesPage() {
                   >
                     <div className="flex items-start gap-3">
                       <div className="relative">
-                        <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-emerald-600 text-sm font-black text-white shadow-[0_14px_28px_rgba(5,150,105,0.22)] transition-transform duration-200 ease-out group-hover:scale-[1.03]">
+                        <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-emerald-600 text-sm font-bold text-white shadow-[0_12px_30px_rgba(5,150,105,0.20)] transition-transform duration-200 ease-out group-hover:scale-[1.03]">
                           {initials(conversation.name)}
                         </div>
                         {hasUnread && (
@@ -875,12 +874,12 @@ export default function SellerMessagesPage() {
         </aside>
 
         <section className="grid min-h-0 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex h-[720px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_24px_80px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
+          <div className="flex h-[720px] min-h-0 flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
             {!selectedConversation ? (
               <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
                 <div>
                   <div className="mx-auto grid h-16 w-16 place-items-center rounded-[24px] bg-emerald-50 text-emerald-700"><MessageCircle className="h-6 w-6" /></div>
-                  <h3 className="mt-4 text-xl font-black tracking-tight text-slate-950">Select a conversation</h3>
+                  <h3 className="mt-4 text-lg font-bold tracking-tight text-slate-950">Select a conversation</h3>
                   <p className="mt-2 text-sm text-slate-500">Choose a buyer thread from the inbox to view and reply.</p>
                 </div>
               </div>
@@ -889,9 +888,9 @@ export default function SellerMessagesPage() {
                 <div className="border-b border-slate-100 px-6 py-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-emerald-600 text-base font-black text-white">{initials(selectedConversation.name)}</div>
+                      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-emerald-600 text-base font-bold text-white">{initials(selectedConversation.name)}</div>
                       <div>
-                        <h2 className="text-xl font-black tracking-tight text-slate-950">{selectedConversation.name}</h2>
+                        <h2 className="text-lg font-bold tracking-tight text-slate-950">{selectedConversation.name}</h2>
                         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
                           <span className="inline-flex items-center gap-1.5"><Building2 className="h-4 w-4 text-slate-400" />{selectedConversation.propertyId.title}</span>
                           <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" />{selectedConversation.propertyId.location}</span>
@@ -899,18 +898,24 @@ export default function SellerMessagesPage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={cn("inline-flex rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] ring-1", getStatusTone(selectedConversation.status))}>{selectedConversation.status}</span>
+                      <span className={cn("inline-flex rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] ring-1", getStatusTone(selectedConversation.status))}>{selectedConversation.status}</span>
                       <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600"><Clock3 className="h-3.5 w-3.5" />Started {formatDateTime(selectedConversation.createdAt)}</span>
                     </div>
                   </div>
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-[linear-gradient(180deg,#f4f8f5_0%,#ffffff_26%)] px-6 py-6">
+                <div
+                  ref={messageListRef}
+                  onScroll={() => {
+                    shouldAutoScrollRef.current = isNearBottom();
+                  }}
+                  className="min-h-0 flex-1 overflow-y-auto scroll-smooth scroll-pb-8 bg-[linear-gradient(180deg,#f4f8f5_0%,#ffffff_26%)] px-6 py-5 pb-8"
+                >
                   {threadLoading ? (
                     <div className="flex h-full items-center justify-center"><LoaderCircle className="h-6 w-6 animate-spin text-emerald-600" /></div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div className="flex justify-start">
-                        <div className="max-w-[80%] rounded-[22px] rounded-tl-md bg-slate-100 px-4 py-3 text-slate-800 shadow-sm transition-transform duration-200 ease-out hover:-translate-y-0.5">
+                        <div className="max-w-[80%] rounded-xl rounded-tl-md bg-slate-100 px-4 py-3 text-slate-800 shadow-[0_8px_20px_rgba(15,23,42,0.05)] transition-transform duration-200 ease-out hover:-translate-y-0.5">
                           <div className="text-sm leading-6">{selectedConversation.message}</div>
                           <div className="mt-2 text-xs text-slate-500">Original inquiry | {formatDateTime(selectedConversation.createdAt)}</div>
                         </div>
@@ -919,7 +924,7 @@ export default function SellerMessagesPage() {
                           const mine = message.senderRole === "seller";
                           return (
                             <div key={message._id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
-                              <div className={cn("max-w-[80%] rounded-[22px] px-4 py-3 shadow-sm transition-transform duration-200 ease-out hover:-translate-y-0.5", mine ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_16px_30px_rgba(5,150,105,0.18)]" : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200")}>
+                              <div className={cn("max-w-[80%] rounded-xl px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.05)] transition-transform duration-200 ease-out hover:-translate-y-0.5", mine ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_12px_24px_rgba(5,150,105,0.16)]" : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200")}>
                                 {message.isDeleted ? (
                                   <div className={cn("text-sm italic", mine ? "text-white/80" : "text-slate-500")}>
                                     This message was deleted
@@ -930,7 +935,7 @@ export default function SellerMessagesPage() {
                                     {message.text ? <div className={cn("text-sm leading-6", message.fileUrl && "mt-3")}>{message.text}</div> : null}
                                   </>
                                 )}
-                                <div className={cn("mt-2 flex items-center gap-1.5 text-xs", mine ? "text-emerald-100" : "text-slate-500")}>
+                                <div className={cn("mt-2 flex items-center gap-1.5 text-xs", mine ? "text-emerald-200" : "text-slate-500")}>
                                   {mine ? (
                                     <>
                                       <span>{`You | ${formatDateTime(message.createdAt)}`}</span>
@@ -954,12 +959,12 @@ export default function SellerMessagesPage() {
                   )}
                 </div>
                 <div className="border-t border-slate-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(249,252,250,0.98)_100%)] px-6 py-5 backdrop-blur-sm">
-                  <form onSubmit={handleSendMessage} className="space-y-3">
+                  <form onSubmit={handleSendMessage} className="space-y-2.5">
                     <input ref={attachmentInputRef} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx" className="hidden" onChange={handleAttachmentChange} />
-                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3 transition-all duration-200 ease-out focus-within:-translate-y-0.5 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_16px_34px_rgba(15,23,42,0.08)]">
+                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3 transition-all duration-200 ease-out focus-within:-translate-y-0.5 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_12px_28px_rgba(15,23,42,0.07)]">
                       <textarea value={composer} onChange={(event) => handleComposerTyping(event.target.value)} rows={2} placeholder="Type your reply to the buyer..." className="w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400" disabled={sending} />
                     </div>
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-3">
                       <div className="max-w-[440px] text-xs leading-5 text-slate-500">
                         {isTyping && typingUserRole === "buyer" ? (
                           <div className="flex items-center gap-1.5 text-emerald-400">
@@ -988,12 +993,12 @@ export default function SellerMessagesPage() {
                           aria-label={isMuted ? "Unmute message sound" : "Mute message sound"}
                         >
                           <BellOff className="h-4 w-4" />
-                          {isMuted ? "Unmute sound" : "Mute sound"}
+                          <span className="hidden sm:inline">{isMuted ? "Unmute sound" : "Mute sound"}</span>
                         </button>
                         <button type="button" onClick={() => attachmentInputRef.current?.click()} disabled={sending || !selectedConversation} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
                           <Paperclip className="h-4 w-4" />
                         </button>
-                        <button type="submit" disabled={sending || !composer.trim()} className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(5,150,105,0.20)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_38px_rgba(5,150,105,0.26)] disabled:cursor-not-allowed disabled:opacity-60">
+                        <button type="submit" disabled={sending || !composer.trim()} className="inline-flex min-w-[136px] items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#059669_0%,#6ac5ab_100%)] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(5,150,105,0.18)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(5,150,105,0.22)] disabled:cursor-not-allowed disabled:opacity-60">
                           {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                           Send message
                         </button>
@@ -1006,19 +1011,19 @@ export default function SellerMessagesPage() {
           </div>
 
           <aside className="flex min-h-0 flex-col gap-6">
-            <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600"><UserRound className="h-3.5 w-3.5" />Buyer Snapshot</div>
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600"><UserRound className="h-3.5 w-3.5" />Buyer Snapshot</div>
               {selectedConversation ? (
-                <div className="mt-5 space-y-4">
+                <div className="mt-4 space-y-4">
                   <div className="rounded-[24px] bg-[linear-gradient(135deg,#f8fafc_0%,#effdf5_100%)] p-4 ring-1 ring-slate-200 transition-transform duration-200 ease-out hover:-translate-y-0.5">
-                    <div className="text-lg font-black tracking-tight text-slate-950">{selectedConversation.name}</div>
+                    <div className="text-base font-bold tracking-tight text-slate-950">{selectedConversation.name}</div>
                     <div className="mt-2 flex items-center gap-2 text-sm text-slate-600"><Mail className="h-4 w-4 text-slate-400" />{selectedConversation.email}</div>
                     <div className="mt-2 flex items-center gap-2 text-sm text-slate-600"><Phone className="h-4 w-4 text-slate-400" />{selectedConversation.phone || "No phone shared"}</div>
                   </div>
                   <div className="space-y-3 text-sm text-slate-600">
-                    <div><div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Listing</div><div className="mt-1 font-semibold text-slate-900">{selectedConversation.propertyId.title}</div></div>
-                    <div><div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Location</div><div className="mt-1">{selectedConversation.propertyId.location}</div></div>
-                    <div><div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Inquiry status</div><div className="mt-1"><span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] ring-1", getStatusTone(selectedConversation.status))}>{selectedConversation.status}</span></div></div>
+                    <div><div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Listing</div><div className="mt-1 font-semibold text-slate-900">{selectedConversation.propertyId.title}</div></div>
+                    <div><div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Location</div><div className="mt-1">{selectedConversation.propertyId.location}</div></div>
+                    <div><div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Inquiry status</div><div className="mt-1"><span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] ring-1", getStatusTone(selectedConversation.status))}>{selectedConversation.status}</span></div></div>
                   </div>
                 </div>
               ) : (
@@ -1026,17 +1031,11 @@ export default function SellerMessagesPage() {
               )}
             </div>
 
-            <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600"><BellRing className="h-3.5 w-3.5" />Seller Flow</div>
-              <div className="mt-5 grid gap-3">
-                <Link href="/seller/leads" className="group flex items-center justify-between rounded-[20px] border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-[#f7fbf8] hover:text-slate-900">Open leads workspace<ChevronRight className="h-4 w-4 text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5" /></Link>
-                <Link href="/seller/visit-scheduling" className="group flex items-center justify-between rounded-[20px] border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-[#f7fbf8] hover:text-slate-900">Manage visit requests<ChevronRight className="h-4 w-4 text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5" /></Link>
-                <Link href="/seller/notifications" className="group flex items-center justify-between rounded-[20px] border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-[#f7fbf8] hover:text-slate-900">Open notifications<ChevronRight className="h-4 w-4 text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5" /></Link>
-              </div>
-            </div>
           </aside>
         </section>
       </section>
     </div>
   );
 }
+
+
