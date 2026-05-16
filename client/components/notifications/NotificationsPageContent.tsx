@@ -75,10 +75,12 @@ export default function NotificationsPageContent({
   endpointBase = "/notifications",
   authMode = "user",
 }: Props) {
+  type LocalFilter = "all" | "unread" | "read";
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<LocalFilter>("all");
   const [data, setData] = useState<NotificationListResponse>({
     success: true,
     items: [],
@@ -90,6 +92,11 @@ export default function NotificationsPageContent({
     hasPrev: false,
   });
   const unreadCount = data.items.filter((item) => !item.isRead).length;
+  const filteredItems = data.items.filter((item) => {
+    if (activeFilter === "unread") return !item.isRead;
+    if (activeFilter === "read") return item.isRead;
+    return true;
+  });
   const fetcher = authMode === "admin" ? apiFetchAdmin : apiFetch;
 
   const fetchNotifications = async (nextPage: number) => {
@@ -179,7 +186,7 @@ export default function NotificationsPageContent({
         <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="relative z-10 max-w-3xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-white/90 ring-1 ring-white/15 backdrop-blur-sm">
               <Bell className="h-3.5 w-3.5" />
               {roleLabel} Notification Center
             </div>
@@ -254,6 +261,29 @@ export default function NotificationsPageContent({
             Page {data.page} of {data.totalPages}
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#E5E7EB] px-6 py-3">
+          {[
+            { key: "all" as const, label: "All" },
+            { key: "unread" as const, label: "Unread" },
+            { key: "read" as const, label: "Read" },
+          ].map((filter) => {
+            const active = activeFilter === filter.key;
+            return (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => setActiveFilter(filter.key)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  active
+                    ? "bg-[#316249] text-white shadow-sm"
+                    : "bg-[#E8F2EB] text-[#4B6B59] ring-1 ring-[#D1D5DB] hover:bg-[#DDEFE4]"
+                }`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
+        </div>
 
         {loading ? (
           <div className="space-y-4 px-6 py-6">
@@ -268,19 +298,21 @@ export default function NotificationsPageContent({
               </div>
             ))}
           </div>
-        ) : data.items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-[24px] bg-[#EEF8EB] text-[#316249] ring-1 ring-[#D1D5DB]">
               <Bell className="h-6 w-6" />
             </div>
-            <h3 className={typography.sectionTitle}>No notifications yet</h3>
+            <h3 className={typography.sectionTitle}>
+              {activeFilter === "all" ? "No notifications yet" : `No ${activeFilter} notifications`}
+            </h3>
             <p className={`mt-2 ${typography.pageSubtitle}`}>
               When something important happens, it will appear here.
             </p>
           </div>
         ) : (
           <div className="space-y-4 px-6 py-6">
-            {data.items.map((notification) => {
+            {filteredItems.map((notification) => {
               const Icon = getNotificationIcon(notification.category);
 
               return (
@@ -299,25 +331,25 @@ export default function NotificationsPageContent({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-[#0D1C12]">{notification.title}</p>
+                      <p className="text-[15px] font-semibold text-[#0D1C12]">{notification.title}</p>
                       {!notification.isRead && (
                         <span className="rounded-full bg-[#316249] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-white">
                           New
                         </span>
                       )}
-                      <span className="rounded-full bg-[#E8F2EB] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#618975]">
+                      <span className="rounded-full bg-[#ECF5EF] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#618975]">
                         {notification.category}
                       </span>
-                      <span className="rounded-full bg-[#E8F2EB] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#618975]">
+                      <span className="rounded-full bg-[#ECF5EF] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#618975]">
                         {notification.priority}
                       </span>
                     </div>
                     <p className={typography.pageSubtitle}>{notification.body}</p>
-                    <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
                       <p className={typography.helperText}>
                         {formatTimestamp(notification.createdAt)}
                       </p>
-                      <span className={`${typography.badgeText} text-[#316249]`}>Open</span>
+                      <span className={`${typography.badgeText} rounded-full bg-[#EEF8EB] px-2.5 py-1 text-[#316249] ring-1 ring-[#D1D5DB]`}>Open</span>
                     </div>
                   </div>
                 </button>
