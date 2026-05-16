@@ -232,15 +232,15 @@ function activityTone(status: string) {
 function LoadingState() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
-      <div className="h-44 animate-pulse rounded-[32px] bg-[#edf3ef]" />
+      <div className="h-44 animate-pulse rounded-[24px] bg-[#edf3ef]" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-32 animate-pulse rounded-[28px] bg-[#eef2ef]" />
+          <div key={index} className="h-32 animate-pulse rounded-[24px] bg-[#eef2ef]" />
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_360px]">
-        <div className="h-[640px] animate-pulse rounded-[28px] bg-[#eef2ef]" />
-        <div className="h-[640px] animate-pulse rounded-[28px] bg-[#eef2ef]" />
+        <div className="h-[640px] animate-pulse rounded-[24px] bg-[#eef2ef]" />
+        <div className="h-[640px] animate-pulse rounded-[24px] bg-[#eef2ef]" />
       </div>
     </div>
   );
@@ -263,7 +263,7 @@ function DeleteModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 backdrop-blur-md">
-      <div className="w-full max-w-lg rounded-[32px] border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.16)]">
+      <div className="w-full max-w-lg rounded-[24px] border border-slate-200/80 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
         <div className="border-b border-slate-100 px-6 py-6">
           <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700">
             <Trash2 className="h-3.5 w-3.5" />
@@ -509,7 +509,7 @@ export default function SellerMyPropertiesPage() {
   if (!analytics && error) {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-3xl items-center justify-center px-4">
-        <div className="w-full rounded-[32px] border border-rose-200 bg-white p-8 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+        <div className="w-full rounded-[24px] border border-rose-200 bg-white p-8 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-600">
             <AlertCircle className="h-6 w-6" />
           </div>
@@ -652,14 +652,14 @@ export default function SellerMyPropertiesPage() {
           style={SECTION_RENDER_STYLE}
           className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px]"
         >
-        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
                 <TrendingUp className="h-3.5 w-3.5" />
                 Listing manager
               </div>
-              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
                 Search, filter, and act on your inventory
               </h2>
               <p className="mt-1 text-sm text-slate-600">
@@ -728,7 +728,7 @@ export default function SellerMyPropertiesPage() {
                 <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200">
                   <Home className="h-6 w-6" />
                 </div>
-                <h3 className="mt-4 text-xl font-black tracking-tight text-slate-950">
+                <h3 className="mt-4 text-xl font-bold tracking-tight text-slate-950">
                   No seller listings yet
                 </h3>
                 <p className="mt-2 text-sm text-slate-600">
@@ -776,7 +776,7 @@ export default function SellerMyPropertiesPage() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-black tracking-tight text-slate-950">
+                        <h3 className="text-lg font-bold tracking-tight text-slate-950">
                           {property.title}
                         </h3>
                         <span
@@ -814,11 +814,11 @@ export default function SellerMyPropertiesPage() {
                               key={`${property.id}-${item.label}`}
                               className="rounded-2xl border border-slate-200 bg-white px-3 py-3"
                             >
-                              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                                 <Icon className="h-3.5 w-3.5" />
                                 {item.label}
                               </div>
-                              <div className="mt-2 text-xl font-black tracking-tight text-slate-950">
+                              <div className="mt-2 text-xl font-bold tracking-tight text-slate-950">
                                 {typeof item.value === "number" ? formatNumber(item.value) : item.value}
                               </div>
                             </div>
@@ -830,7 +830,7 @@ export default function SellerMyPropertiesPage() {
 
                   <div className="grid gap-3 lg:w-[230px]">
                     <div className="rounded-2xl bg-slate-950 px-4 py-4 text-white">
-                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/55">
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/55">
                         Latest activity
                       </div>
                       <div className="mt-2 text-sm font-semibold text-white">
@@ -900,17 +900,17 @@ export default function SellerMyPropertiesPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
               <Sparkles className="h-3.5 w-3.5" />
               Inventory spotlight
             </div>
             <div className="mt-5">
               <div className="rounded-[24px] bg-[linear-gradient(135deg,#f8fafc_0%,#effdf5_100%)] p-4 ring-1 ring-slate-200">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                   Top listing
                 </div>
-                <div className="mt-2 text-xl font-black tracking-tight text-slate-950">
+                <div className="mt-2 text-xl font-bold tracking-tight text-slate-950">
                   {topProperty?.title || "No listing data yet"}
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
@@ -940,8 +940,8 @@ export default function SellerMyPropertiesPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
               <Clock3 className="h-3.5 w-3.5" />
               Status summary
             </div>
@@ -954,12 +954,12 @@ export default function SellerMyPropertiesPage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3"
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
                 >
                   <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", item.tone)}>
                     {item.label}
                   </span>
-                  <span className="text-lg font-black tracking-tight text-slate-950">
+                  <span className="text-lg font-bold tracking-tight text-slate-950">
                     {formatNumber(item.value)}
                   </span>
                 </div>
@@ -967,9 +967,9 @@ export default function SellerMyPropertiesPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
             <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
                 <CalendarClock className="h-3.5 w-3.5" />
                 Recent activity
               </div>
@@ -982,7 +982,7 @@ export default function SellerMyPropertiesPage() {
             </div>
             <div className="mt-5 space-y-3">
               {recentActivity.length === 0 && (
-                <div className="rounded-[20px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
                   No lead or visit activity has been recorded yet.
                 </div>
               )}
@@ -990,20 +990,20 @@ export default function SellerMyPropertiesPage() {
                 <Link
                   key={`${item.type}-${item.id}`}
                   href={item.href}
-                  className="block rounded-[20px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] px-4 py-4 transition hover:border-slate-300 hover:shadow-sm"
+                  className="block rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] px-4 py-4 transition hover:border-slate-300 hover:shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span
                           className={cn(
-                            "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ring-1",
+                            "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1",
                             activityTone(item.status)
                           )}
                         >
                           {titleCase(item.status)}
                         </span>
-                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
                           {item.type}
                         </span>
                       </div>
@@ -1038,3 +1038,4 @@ export default function SellerMyPropertiesPage() {
     </main>
   );
 }
+

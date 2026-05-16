@@ -22,9 +22,9 @@ import { typography } from "@/app/lib/typography";
 
 export const PAGE_BG = "bg-[#f4f6f3]";
 export const CARD =
-  "rounded-[20px] border border-[#e5ebe7] bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-[transform,box-shadow,border-color] duration-300";
+  "rounded-2xl border border-[#e5ebe7] bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-[transform,box-shadow,border-color] duration-300";
 export const SOFT_CARD =
-  "rounded-[16px] border border-[#e9efeb] bg-[#fafcfb] shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition-[transform,box-shadow,border-color,background-color] duration-300";
+  "rounded-2xl border border-[#e9efeb] bg-[#fafcfb] shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition-[transform,box-shadow,border-color,background-color] duration-300";
 export const DEFER = { contentVisibility: "auto", containIntrinsicSize: "1000px" } as const;
 
 export const fmtNum = (n: number) => new Intl.NumberFormat().format(Number(n || 0));
@@ -94,25 +94,25 @@ export function LoadingSkeleton() {
     <main className={PAGE_BG}>
       <div className="mx-auto max-w-[1420px] px-4 py-5 sm:px-6 lg:px-8">
         <div className="space-y-5">
-          <div className="h-20 animate-pulse rounded-[20px] bg-white" />
+          <div className="h-20 animate-pulse rounded-2xl bg-white" />
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_360px]">
             <div className="space-y-5">
               <div className="grid gap-4 md:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-[150px] animate-pulse rounded-[20px] bg-white" />
+                  <div key={i} className="h-[150px] animate-pulse rounded-2xl bg-white" />
                 ))}
               </div>
-              <div className="h-[370px] animate-pulse rounded-[20px] bg-white" />
+              <div className="h-[370px] animate-pulse rounded-2xl bg-white" />
             </div>
-            <div className="h-[525px] animate-pulse rounded-[20px] bg-white" />
+            <div className="h-[525px] animate-pulse rounded-2xl bg-white" />
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="h-[340px] animate-pulse rounded-[20px] bg-white" />
-            <div className="h-[340px] animate-pulse rounded-[20px] bg-white" />
+            <div className="h-[340px] animate-pulse rounded-2xl bg-white" />
+            <div className="h-[340px] animate-pulse rounded-2xl bg-white" />
           </div>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-[330px] animate-pulse rounded-[20px] bg-white" />
+              <div key={i} className="h-[330px] animate-pulse rounded-2xl bg-white" />
             ))}
           </div>
         </div>
@@ -364,7 +364,7 @@ function TrendTooltip({
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
         className="rounded-2xl border border-emerald-100/80 bg-white/96 px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.12)] backdrop-blur"
       >
-        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{safeLabel}</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{safeLabel}</div>
         <div className="mt-2 grid gap-1 text-sm">
           <div className="flex items-center justify-between gap-6">
             <span className="inline-flex items-center gap-2 text-slate-700">
@@ -430,7 +430,7 @@ export function DistributionCard({ items }: { items: Breakdown[] }) {
                       const p: any = payload[0]?.payload;
                       return (
                         <div className="rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 text-sm shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur">
-                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                             {String(p?.label || "")}
                           </div>
                           <div className="mt-2 font-semibold text-slate-900">{fmtNum(Number(p?.count || 0))}</div>
@@ -469,7 +469,7 @@ export function DistributionCard({ items }: { items: Breakdown[] }) {
               );
             })
           ) : (
-            <div className="rounded-[16px] border border-dashed border-[#d9e2dc] bg-[#fafcfb] px-5 py-10 text-center text-sm text-slate-500">
+            <div className="rounded-2xl border border-dashed border-[#d9e2dc] bg-[#fafcfb] px-5 py-10 text-center text-sm text-slate-500">
               No distribution data yet.
             </div>
           )}
@@ -520,3 +520,4 @@ export function PropertyCard({ listing }: { listing: Listing }) {
     </Link>
   );
 }
+

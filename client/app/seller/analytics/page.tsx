@@ -476,7 +476,7 @@ function KpiCard({
       whileHover={{ y: -3 }}
       transition={{ duration: 0.18 }}
       className={cn(
-        "rounded-[22px] border px-4 py-3",
+        "rounded-[24px] border px-4 py-3",
         inverted
           ? "border-emerald-700 bg-[linear-gradient(135deg,#0f6a4d_0%,#0b4f3a_100%)] text-white shadow-[0_18px_42px_rgba(12,95,67,0.22)]"
           : "border-[#e4ebe6] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]"
@@ -496,8 +496,8 @@ function KpiCard({
         </div>
       </div>
 
-      <div className={cn("mt-2.5 text-[12px] font-medium", inverted ? "text-white/72" : "text-slate-500")}>{title}</div>
-      <div className={cn("mt-0.5 text-[22px] font-semibold tracking-tight", inverted ? "text-white" : "text-slate-950")}>
+      <div className={cn("mt-3 text-[12px] font-medium", inverted ? "text-white/72" : "text-slate-500")}>{title}</div>
+      <div className={cn("mt-1 text-[24px] font-semibold tracking-tight", inverted ? "text-white" : "text-slate-950")}>
         {value}
       </div>
       {footer ? (
@@ -562,13 +562,13 @@ function PerformanceOverview({
   const chartBottom = baseGeometry.height - baseGeometry.padBottom;
 
   return (
-    <Card className="h-[430px] p-5">
+    <Card className="min-h-[390px] p-5 xl:h-[430px]">
       <SectionHeader
         title="Performance Overview"
         info
         right={
           <div
-            className="inline-flex items-center gap-2 rounded-xl border border-[#e2e8e3] bg-[#f8faf8] px-3 py-2 text-sm font-medium text-slate-500"
+            className="inline-flex items-center gap-2 rounded-2xl border border-[#e2e8e3] bg-[#f8faf8] px-3 py-2 text-sm font-medium text-slate-500"
             aria-label="Chart granularity"
             title="Daily view"
           >
@@ -577,7 +577,7 @@ function PerformanceOverview({
         }
       />
 
-      <div className="mt-4 flex flex-wrap items-center gap-6 text-[13px]">
+      <div className="mt-4 flex flex-wrap items-center gap-5 text-[12px]">
         {trendSeries.map((series) => {
           const active = visibleSeries.some((item) => item.key === series.key);
           return (
@@ -595,7 +595,7 @@ function PerformanceOverview({
         })}
       </div>
 
-      <div className="mt-4 rounded-[22px] bg-[linear-gradient(180deg,#ffffff_0%,#f7faf8_100%)] p-4 ring-1 ring-[#edf2ee]">
+      <div className="mt-4 rounded-[24px] bg-[linear-gradient(180deg,#ffffff_0%,#f7faf8_100%)] p-4 ring-1 ring-[#edf2ee]">
         {hasAnyTrendData ? (
           <svg viewBox={`0 0 ${baseGeometry.width} ${baseGeometry.height}`} className="h-[300px] w-full">
             <defs>
@@ -633,10 +633,10 @@ function PerformanceOverview({
                     x2={baseGeometry.width - baseGeometry.padRight}
                     y1={y}
                     y2={y}
-                    stroke="#e5ece7"
+                    stroke="#eaf0ec"
                     strokeDasharray="3 6"
                   />
-                  <text x="0" y={y + 4} fill="#334155" fontSize="12" fontWeight="600">
+                  <text x="0" y={y + 4} fill="#475569" fontSize="11" fontWeight="600">
                     {formatAxisLabel(tick)}
                   </text>
                 </g>
@@ -689,8 +689,8 @@ function PerformanceOverview({
                   key={point.key}
                   x={baseGeometry.points[index]?.x || 0}
                   y={baseGeometry.height - 14}
-                  fill="#334155"
-                  fontSize="13"
+                  fill="#475569"
+                  fontSize="12"
                   fontWeight="600"
                   textAnchor="middle"
                 >
@@ -700,7 +700,7 @@ function PerformanceOverview({
             ))}
           </svg>
         ) : (
-          <div className="flex h-[300px] items-center justify-center rounded-[16px] border border-dashed border-[#dbe4de] bg-white/70 text-center">
+          <div className="flex h-[300px] items-center justify-center rounded-[24px] border border-dashed border-[#dbe4de] bg-white/70 text-center">
             <div>
               <div className="text-sm font-semibold text-slate-700">No performance data yet</div>
               <div className="mt-1 text-sm text-slate-500">
@@ -727,7 +727,7 @@ function DonutCard({
   const total = items.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <Card className="h-[430px] p-5">
+    <Card className="min-h-[390px] p-5 xl:h-[430px]">
       <SectionHeader title={title} />
       <div className="mt-8 grid h-[320px] gap-6 lg:grid-cols-[160px_minmax(0,1fr)] lg:items-center">
         <div className="relative mx-auto flex h-[152px] w-[152px] items-center justify-center">
@@ -776,7 +776,7 @@ function DonutCard({
 
 function RecentActivityCard({ items }: { items: ActivityItem[] }) {
   return (
-    <Card className="self-start max-h-[430px] overflow-hidden p-5">
+    <Card className="self-start max-h-[390px] overflow-hidden p-5 xl:max-h-[430px]">
       <SectionHeader
         title="Recent Activity"
         right={
@@ -797,7 +797,7 @@ function RecentActivityCard({ items }: { items: ActivityItem[] }) {
           <Link
             key={`${item.type}-${item.id}`}
             href={item.href}
-            className="group flex gap-3 rounded-[16px] p-1 transition hover:bg-[#f7faf8]"
+            className="group flex gap-3 rounded-2xl p-1 transition hover:bg-[#f7faf8]"
           >
             <div className="flex flex-col items-center">
               <span
@@ -817,19 +817,19 @@ function RecentActivityCard({ items }: { items: ActivityItem[] }) {
               <div className="mb-1.5">
                 <span
                   className={cn(
-                    "inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ring-1",
+                    "inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ring-1",
                     statusTone(item.status)
                   )}
                 >
                   {titleCase(item.status)}
                 </span>
               </div>
-              <div className="text-sm font-medium text-slate-900">
+              <div className="text-sm font-semibold text-slate-900">
                 {item.type === "lead"
                   ? `New inquiry from ${item.actorName || "buyer"}`
                   : `Visit scheduled for ${item.propertyTitle}`}
               </div>
-              <div className="mt-0.5 text-sm text-slate-600">{item.propertyTitle}</div>
+              <div className="mt-0.5 text-xs text-slate-600">{item.propertyTitle}</div>
               <div className="mt-0.5 text-xs text-slate-500">{timeAgo(item.occurredAt)}</div>
               {item.type === "visit" && item.requestedDate ? (
                 <div className="mt-0.5 text-xs text-slate-500">
@@ -856,7 +856,7 @@ function TopListingsCard({
   hasListings: boolean;
 }) {
   return (
-    <Card className="self-start max-h-[430px] overflow-hidden p-5">
+    <Card className="self-start max-h-[390px] overflow-hidden p-5 xl:max-h-[430px]">
       <SectionHeader
         title="Top Performing Listings"
         right={
@@ -1076,7 +1076,7 @@ function TrafficSourcesCard({ items }: { items: BreakdownItem[] }) {
           const Icon = meta.icon;
           const percentage = (item.count / total) * 100;
           return (
-            <div key={item.label} className="rounded-[16px] border border-[#e6ece8] bg-white p-3">
+            <div key={item.label} className="rounded-2xl border border-[#e6ece8] bg-white p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-[#f8faf8] ring-1 ring-[#dfe8e2]" style={{ color: meta.color }}>
                   <Icon className="h-4 w-4" />
@@ -1194,10 +1194,10 @@ function DeviceBreakdownCard({ items }: { items: BreakdownItem[] }) {
 function LoadingState() {
   return (
     <div className="w-full space-y-6">
-      <div className="h-28 animate-pulse rounded-[28px] bg-white" />
+      <div className="h-28 animate-pulse rounded-[24px] bg-white" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="h-[158px] animate-pulse rounded-[22px] bg-white" />
+          <div key={index} className="h-[158px] animate-pulse rounded-[24px] bg-white" />
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_0.9fr_0.95fr]">
@@ -1336,7 +1336,7 @@ export default function AnalyticsPage() {
   if (!analytics && error) {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-3xl items-center justify-center">
-        <div className="w-full rounded-[28px] border border-rose-200 bg-white p-8 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+        <div className="w-full rounded-[24px] border border-rose-200 bg-white p-8 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-600">
             <Activity className="h-6 w-6" />
           </div>
@@ -1399,10 +1399,10 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+      <section className="overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-50">
               <LineChart className="h-3.5 w-3.5" />
               Seller analytics
             </span>
@@ -1410,8 +1410,8 @@ export default function AnalyticsPage() {
             <p className="mt-3 text-sm leading-6 text-emerald-50/90">Track your property performance and grow your business.</p>
           </div>
 
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-            <div className="relative xl:w-[220px]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-2 xl:flex-row xl:flex-nowrap xl:items-center">
+            <div className="relative w-full sm:w-[220px]">
               <CalendarClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <select
                 value={range}
@@ -1420,7 +1420,7 @@ export default function AnalyticsPage() {
                     setRange(event.target.value as RangeOption);
                   })
                 }
-                className="h-11 w-full appearance-none rounded-xl border border-white/15 bg-white/10 pl-10 pr-10 text-sm font-medium text-white outline-none transition focus:border-white/30"
+                className="h-11 w-full appearance-none rounded-2xl border border-white/15 bg-white/10 pl-10 pr-10 text-sm font-medium text-white outline-none transition focus:border-white/30"
               >
                 {RANGE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -1431,36 +1431,21 @@ export default function AnalyticsPage() {
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
             </div>
 
-            <div className="relative xl:w-[180px]">
-              <button
-                type="button"
-                disabled
-                title="Comparison mode is not available for seller analytics yet"
-                className="inline-flex h-11 w-full cursor-not-allowed items-center justify-between rounded-xl border border-white/15 bg-white/10 px-4 pr-10 text-sm font-medium text-white/80"
+            {isRefreshing ? (
+              <div
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 text-sm font-medium text-white sm:w-auto sm:min-w-[120px]"
+                aria-live="polite"
               >
-                Compare unavailable
-              </button>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/80" />
-            </div>
-
-            <div
-              className={cn(
-                "inline-flex h-11 min-w-[120px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium transition",
-                isRefreshing
-                  ? "border-white/20 bg-white/10 text-white opacity-100"
-                  : "pointer-events-none border-transparent bg-transparent text-transparent opacity-0"
-              )}
-              aria-live="polite"
-            >
-              <LoaderCircle className={cn("h-4 w-4", isRefreshing ? "animate-spin" : "")} />
-              Updating...
-            </div>
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+                Updating...
+              </div>
+            ) : null}
 
             <button
               type="button"
               onClick={exportPdf}
               disabled={exporting !== null}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-semibold text-[#0f5138] transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {exporting === "pdf" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Export Report
@@ -1468,7 +1453,7 @@ export default function AnalyticsPage() {
 
             <Link
               href="/seller/add-property"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-4 text-sm font-semibold text-white transition hover:bg-white/10 sm:w-auto"
             >
               <Plus className="h-4 w-4" />
               Add Property
@@ -1478,7 +1463,7 @@ export default function AnalyticsPage() {
       </section>
 
       {error && analytics ? (
-        <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
           Showing the last successful analytics snapshot. Refresh failed with: {error}
         </div>
       ) : null}

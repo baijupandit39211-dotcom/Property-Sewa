@@ -89,12 +89,12 @@ export default function SellerProfilePage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 px-6 py-8">
-      <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+      <section className="overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
         <div className="max-w-3xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-50">
             Seller profile
           </span>
-          <h1 className="mt-4 text-3xl font-extrabold text-white">Profile</h1>
+          <h1 className="mt-4 text-3xl font-bold text-white">Profile</h1>
           <p className="mt-3 text-sm text-emerald-50/90">Manage your seller information.</p>
         </div>
       </section>
@@ -133,11 +133,11 @@ export default function SellerProfilePage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
-                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-emerald-100 text-xl font-extrabold text-emerald-800 ring-1 ring-emerald-200">
+                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-emerald-100 text-xl font-bold text-emerald-800 ring-1 ring-emerald-200">
                   {initials}
                 </div>
                 <div>
-                  <div className="text-xl font-extrabold text-slate-900">{user.name || "Unnamed"}</div>
+                  <div className="text-xl font-bold text-slate-900">{user.name || "Unnamed"}</div>
                   <div className="text-sm text-slate-600">{user.email}</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Badge tone="emerald">Seller</Badge>
@@ -195,7 +195,7 @@ export default function SellerProfilePage() {
       {editOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-extrabold text-slate-900">Edit Profile</h3>
+            <h3 className="text-lg font-bold text-slate-900">Edit Profile</h3>
             <p className="mt-2 text-sm text-slate-600">Update your contact details.</p>
             <div className="mt-4 grid gap-3">
               <LabeledInput
@@ -375,3 +375,4 @@ function LabeledTextArea({
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
+

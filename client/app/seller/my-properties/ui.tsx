@@ -158,7 +158,7 @@ export function MyPropertiesHero({
   rangeOptions: Array<{ value: RangeOption; label: string }>;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_18px_48px_rgba(19,74,54,0.16)] md:px-8 md:py-7">
+    <section className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_18px_48px_rgba(19,74,54,0.16)] md:px-8 md:py-7">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(19,236,128,0.16),transparent_32%),radial-gradient(circle_at_82%_38%,rgba(255,255,255,0.12),transparent_42%)]" />
       <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
       <div className="absolute -right-10 top-10 h-40 w-40 rounded-full border border-white/12" />
@@ -528,7 +528,7 @@ export function TopListingCard({ top }: { top: PropertyRow | null }) {
   return (
     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
       <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Top Listing</div>
-      <div className="mt-4 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50">
+      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
         <div className="aspect-[16/10] w-full overflow-hidden bg-slate-100">
           {top.image ? (
             <img src={top.image} alt={top.title} className="h-full w-full object-cover" loading="lazy" />
@@ -575,7 +575,7 @@ function DonutTooltip({
   const name = String(datum?.name ?? "");
   const value = Number(datum?.value ?? 0);
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur">
+    <div className="rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur">
       <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{name}</div>
       <div className="mt-2 font-bold text-slate-900">{formatNumber(value)}</div>
     </div>
@@ -673,7 +673,7 @@ export function RecentActivityCard({ items }: { items: ActivityItem[] }) {
 
       <div className="mt-4 space-y-3">
         {items.length === 0 ? (
-          <div className="rounded-[20px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
             No lead or visit activity has been recorded yet.
           </div>
         ) : (
@@ -681,7 +681,7 @@ export function RecentActivityCard({ items }: { items: ActivityItem[] }) {
             <Link
               key={`${item.type}-${item.id}`}
               href={item.href}
-              className="block rounded-[20px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] px-4 py-4 transition hover:border-slate-300 hover:shadow-sm"
+              className="block rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] px-4 py-4 transition hover:border-slate-300 hover:shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

@@ -182,7 +182,7 @@ export default function NotificationsPageContent({
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="relative overflow-hidden rounded-[32px] border border-[#D1D5DB]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-7 py-7 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-8">
+      <div className="relative overflow-hidden rounded-[24px] border border-[#D1D5DB]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-7 py-7 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-8">
         <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="relative z-10 max-w-3xl">
@@ -209,7 +209,7 @@ export default function NotificationsPageContent({
       </div>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+        <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className={typography.cardTitle}>Unread now</p>
@@ -222,7 +222,7 @@ export default function NotificationsPageContent({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+        <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className={typography.cardTitle}>Total activity</p>
@@ -235,7 +235,7 @@ export default function NotificationsPageContent({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+        <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className={typography.cardTitle}>Page status</p>
@@ -251,7 +251,7 @@ export default function NotificationsPageContent({
         </div>
       </section>
 
-      <div className="overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white shadow-sm">
+      <div className="overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] px-6 py-5">
           <div>
             <h2 className={typography.sectionTitle}>Recent activity</h2>
@@ -388,3 +388,4 @@ export default function NotificationsPageContent({
     </div>
   );
 }
+

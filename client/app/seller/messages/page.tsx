@@ -755,7 +755,7 @@ export default function SellerMessagesPage() {
       )}
       {pdfPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
-          <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
+          <div className="flex min-h-[520px] w-full max-w-4xl flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_14px_34px_rgba(15,23,42,0.08)] xl:h-[85vh]">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div className="min-w-0 truncate text-sm font-semibold text-slate-900">{pdfPreview.name}</div>
               <button type="button" onClick={() => setPdfPreview(null)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200">
@@ -776,7 +776,7 @@ export default function SellerMessagesPage() {
         </div>
       )}
       <section className="grid min-h-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="flex h-[720px] min-h-0 flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
+        <aside className="flex min-h-[520px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_12px_30px_rgba(15,23,42,0.07)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
           <div className="border-b border-slate-100 px-5 py-5">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -874,7 +874,7 @@ export default function SellerMessagesPage() {
         </aside>
 
         <section className="grid min-h-0 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex h-[720px] min-h-0 flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
+          <div className="flex min-h-[520px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_12px_30px_rgba(15,23,42,0.07)] xl:h-[calc(100vh-260px)] xl:min-h-[620px]">
             {!selectedConversation ? (
               <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
                 <div>
@@ -1011,7 +1011,7 @@ export default function SellerMessagesPage() {
           </div>
 
           <aside className="flex min-h-0 flex-col gap-6">
-            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition-shadow duration-300 hover:shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
               <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600"><UserRound className="h-3.5 w-3.5" />Buyer Snapshot</div>
               {selectedConversation ? (
                 <div className="mt-4 space-y-4">

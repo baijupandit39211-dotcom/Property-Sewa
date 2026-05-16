@@ -39,7 +39,6 @@ import {
   Trash2,
   UserRound,
   X,
-  MoreVertical,
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
 import {
@@ -310,7 +309,7 @@ function StatCard({
 }) {
   return (
     <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</div>
           <div className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{value}</div>
@@ -1434,7 +1433,7 @@ function SellerLeadsPageContent() {
       )}
       {pdfPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
-          <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
+          <div className="flex min-h-[520px] w-full max-w-4xl flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)] xl:h-[85vh]">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div className="min-w-0 truncate text-sm font-semibold text-slate-900">{pdfPreview.name}</div>
               <button type="button" onClick={() => setPdfPreview(null)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200">
@@ -1498,7 +1497,7 @@ function SellerLeadsPageContent() {
         className="scroll-mt-24 grid grid-cols-1 gap-6 xl:grid-cols-[340px_minmax(0,1fr)_340px]"
       >
         <div className="min-w-0">
-          <section className="flex min-h-[560px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] border border-slate-100 min-w-0 xl:min-h-0 xl:h-[calc(100vh-240px)]">
+          <section className="flex min-h-[560px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_10px_26px_rgba(15,23,42,0.07)] border border-slate-100 min-w-0 xl:min-h-0 xl:h-[calc(100vh-240px)]">
             <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
@@ -1637,7 +1636,7 @@ function SellerLeadsPageContent() {
           </section>
         </div>
 
-        <div className="relative flex min-h-[620px] min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-240px)] xl:min-h-[620px]">
+        <div className="relative flex min-h-[520px] min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.07)] xl:h-[calc(100vh-240px)] xl:min-h-[620px]">
             {!selectedLead ? (
               <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
                 <div>
@@ -1653,7 +1652,7 @@ function SellerLeadsPageContent() {
             ) : (
               <>
                 <div className="shrink-0 border-b border-slate-100 bg-white p-5">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-4">
                       <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-[#316249]/10 text-base font-bold text-[#316249]">
                         {initials(selectedLead.name || "Buyer")}
@@ -1687,7 +1686,7 @@ function SellerLeadsPageContent() {
                       </div>
                     </div>
 
-                    <div className="flex flex-none items-center gap-2">
+                    <div className="flex w-full flex-none items-center gap-2 sm:w-auto">
                       <button
                         type="button"
                         onClick={openScheduleVisit}
@@ -1695,13 +1694,6 @@ function SellerLeadsPageContent() {
                       >
                         <CalendarClock className="h-4 w-4" />
                         Schedule
-                      </button>
-                      <button
-                        type="button"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:bg-slate-50"
-                        aria-label="More actions"
-                      >
-                        <MoreVertical className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
@@ -1923,7 +1915,7 @@ function SellerLeadsPageContent() {
                                   )}
                                 <div
                                   className={cn(
-                                    "mt-1 flex items-center gap-1.5 text-[11px] text-slate-400",
+                                    "mt-1 flex items-center gap-1.5 text-[11px] text-slate-300",
                                     mine ? "justify-end" : ""
                                   )}
                                 >
@@ -1960,7 +1952,7 @@ function SellerLeadsPageContent() {
                       onChange={handleAttachmentChange}
                     />
 
-                    <div className="flex h-[56px] items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition focus-within:border-[#316249]/40 focus-within:ring-4 focus-within:ring-[#316249]/10">
+                    <div className="flex h-[56px] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 shadow-[0_6px_18px_rgba(15,23,42,0.05)] transition focus-within:border-[#316249]/40 focus-within:ring-4 focus-within:ring-[#316249]/10">
                       <button
                         type="button"
                         onClick={() => attachmentInputRef.current?.click()}
@@ -1994,7 +1986,7 @@ function SellerLeadsPageContent() {
                       <button
                         type="submit"
                         disabled={sending || (!composer.trim() && !isUploadingAttachment)}
-                        className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#006B3F] text-white shadow-[0_12px_26px_rgba(0,107,63,0.28)] transition hover:-translate-y-0.5 hover:bg-[#005a35] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50"
+                        className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#006B3F] text-white shadow-[0_8px_20px_rgba(0,107,63,0.24)] transition hover:-translate-y-0.5 hover:bg-[#005a35] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50"
                         aria-label="Send message"
                       >
                         {sending ? (
@@ -2027,13 +2019,6 @@ function SellerLeadsPageContent() {
                         </button>
                       ))}
 
-                      <button
-                        type="button"
-                        className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-[#316249]/30 hover:bg-[#316249]/5 hover:text-[#316249]"
-                        aria-label="More quick replies"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
                     </div>
 
                     {(isTyping && typingUserRole === "buyer") || error || isSocketDisconnected || isUploadingAttachment ? (
@@ -2061,7 +2046,7 @@ function SellerLeadsPageContent() {
           </div>
 
         <aside className="min-w-0 xl:sticky xl:top-24 xl:h-fit">
-          <div className="space-y-6 rounded-[24px] bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] border border-slate-100 min-w-0">
+          <div className="space-y-6 rounded-[24px] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] border border-slate-100 min-w-0">
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <div className="text-lg font-bold text-slate-950">Lead Details</div>
@@ -2175,7 +2160,7 @@ function SellerLeadsPageContent() {
                   </div>
                 </div>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
                   <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Inquiry Details</div>
                   <div className="mt-4 grid gap-3 text-sm text-slate-600">
                     <div className="rounded-2xl bg-slate-50 px-4 py-3">
@@ -2197,7 +2182,7 @@ function SellerLeadsPageContent() {
                   </div>
                 </div>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
                   <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Property Details</div>
                   <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
                     <div className="relative aspect-[16/10] w-full bg-slate-100">
@@ -2245,14 +2230,8 @@ function SellerLeadsPageContent() {
                   </div>
                 </div>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Analytics Overview</div>
-                    <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-500 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-                      This Month
-                      <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-                    </div>
-                  </div>
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
+                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Analytics Overview</div>
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div className="rounded-2xl bg-slate-50 p-4">
                       <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Total Leads</div>
@@ -2281,7 +2260,7 @@ function SellerLeadsPageContent() {
                   </div>
                 </div>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
                   <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Visit Intent</div>
                   {selectedLead.latestVisit ? (
                     <div className="mt-4 space-y-4">
@@ -2350,4 +2329,5 @@ export default function SellerLeadsPage() {
   );
 }
   
+
 

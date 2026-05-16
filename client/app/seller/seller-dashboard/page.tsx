@@ -205,10 +205,10 @@ export default function SellerDashboardPage() {
     <main className={PAGE_BG}>
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
         <div className="space-y-6">
-          <header className="seller-reveal overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+          <header className="seller-reveal overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
               <div className="min-w-0">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-50">
                   <Sparkles className="h-3.5 w-3.5" />
                   Seller Dashboard
                 </span>
@@ -302,10 +302,10 @@ export default function SellerDashboardPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ring-1", statusTone(item.status))}>
+                              <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1", statusTone(item.status))}>
                                 {titleCase(item.status)}
                               </span>
-                              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
                                 {item.type}
                               </span>
                             </div>
@@ -489,7 +489,7 @@ export default function SellerDashboardPage() {
                     transition={{ duration: 0.45, ease: EASE_OUT, delay: 0.04 }}
                     whileHover={reduceMotion ? undefined : { y: -4, scale: 1.01 }}
                   >
-                    <div className="text-xs uppercase tracking-[0.18em] text-white/75">Top Listing</div>
+                    <div className="text-xs uppercase tracking-[0.12em] text-white/75">Top Listing</div>
                     <div className="mt-2 text-lg font-semibold">{topListing.title}</div>
                     <div className="mt-1 text-sm text-white/80">{topListing.location}</div>
                     <motion.div
@@ -592,7 +592,7 @@ export default function SellerDashboardPage() {
                   </Link>
                 </div>
                 <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto pr-1 xl:min-h-0 xl:flex-1">
-                  {recentActivity.length === 0 ? <div className="rounded-[16px] border border-dashed border-[#d9e2dc] bg-[#fafcfb] px-5 py-10 text-center text-sm text-slate-500">{normalizedSearch ? `No buyer activity matched "${search.trim()}".` : "No lead or visit activity has been recorded yet."}</div> : null}
+                  {recentActivity.length === 0 ? <div className="rounded-2xl border border-dashed border-[#d9e2dc] bg-[#fafcfb] px-5 py-10 text-center text-sm text-slate-500">{normalizedSearch ? `No buyer activity matched "${search.trim()}".` : "No lead or visit activity has been recorded yet."}</div> : null}
                   {recentActivity.map((item) => (
                     <Link key={`${item.type}-${item.id}`} href={item.href} className={cn(SOFT_CARD, "group seller-soft-hover block border-[#e9efeb] p-3.5 hover:border-emerald-200 hover:bg-white")}>
                       <div className="flex items-start justify-between gap-4">
