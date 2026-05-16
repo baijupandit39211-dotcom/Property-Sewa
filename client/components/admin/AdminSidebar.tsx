@@ -118,7 +118,7 @@ export default function AdminSidebar({
 
       <aside
         className={[
-          "fixed left-0 top-16 z-50 flex h-[calc(100dvh-64px)] w-64 shrink-0 flex-col border-r border-slate-200 bg-white shadow-[0_24px_48px_rgba(15,23,42,0.14)] ring-1 ring-slate-200 transition-transform duration-300 ease-out lg:z-30 lg:translate-x-0",
+          "fixed left-0 top-16 z-50 flex h-[calc(100dvh-64px)] w-[82vw] max-w-[320px] shrink-0 flex-col border-r border-slate-200 bg-white shadow-[0_24px_48px_rgba(15,23,42,0.14)] ring-1 ring-slate-200 transition-transform duration-300 ease-out lg:w-64 lg:max-w-none lg:z-30 lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >

@@ -77,8 +77,8 @@ export default function AdminHeader({
           ) : null}
 
           <Link href="/admin/overview" className="flex items-center gap-3">
-            <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
-            <span className="text-base font-extrabold tracking-[0.12em] text-white">
+            <PropertySewaLogoMark className="h-7 w-7 shrink-0 sm:h-[31px] sm:w-[31px]" />
+            <span className="text-[15px] font-extrabold tracking-[0.1em] text-white sm:text-base sm:tracking-[0.12em]">
               PROPERTY SEWA
             </span>
           </Link>
