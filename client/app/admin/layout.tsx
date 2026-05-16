@@ -12,33 +12,49 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [checking, setChecking] = React.useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+  const hasCheckedAuth = React.useRef(false);
 
   React.useEffect(() => {
+    if (hasCheckedAuth.current) return;
+    hasCheckedAuth.current = true;
+
     let mounted = true;
+    const timeoutMs = 8000;
+
+    const resolveRedirect = (role: string) => {
+      if (role === "buyer") {
+        router.replace("/buyer/buyer-dashboard");
+      } else if (role === "seller" || role === "agent") {
+        router.replace("/seller/seller-dashboard");
+      } else {
+        router.replace("/login");
+      }
+    };
 
     (async () => {
+      let timeoutId: number | null = null;
       try {
-        const res = await apiFetch<{ success: boolean; user: { role?: string } }>(
+        const authPromise = apiFetch<{ success: boolean; user: { role?: string } }>(
           "/auth/admin/me"
         );
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = window.setTimeout(() => reject(new Error("auth_check_timeout")), timeoutMs);
+        });
+
+        const res = await Promise.race([authPromise, timeoutPromise]);
 
         const role = (res?.user?.role || "").toLowerCase();
         const ok = role === "admin" || role === "superadmin";
 
         if (!ok) {
-          if (role === "buyer") {
-            router.replace("/buyer/buyer-dashboard");
-          } else if (role === "seller" || role === "agent") {
-            router.replace("/seller/seller-dashboard");
-          } else {
-            router.replace("/login");
-          }
+          resolveRedirect(role);
           return;
         }
       } catch {
         router.replace("/login");
         return;
       } finally {
+        if (timeoutId) window.clearTimeout(timeoutId);
         if (mounted) setChecking(false);
       }
     })();
@@ -46,7 +62,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [router, pathname]);
+  }, [router]);
 
   React.useEffect(() => {
     setMobileSidebarOpen(false);

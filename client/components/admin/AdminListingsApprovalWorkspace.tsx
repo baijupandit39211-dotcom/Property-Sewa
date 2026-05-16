@@ -121,10 +121,10 @@ function StatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-slate-600">{title}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
           <p className="mt-2 text-sm text-slate-500">{detail}</p>
         </div>
-        <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white shadow-sm">{icon}</div>
+        <div className="rounded-2xl bg-[linear-gradient(135deg,#316249_0%,#5b8f73_100%)] p-3 text-white shadow-sm">{icon}</div>
       </div>
     </div>
   );
@@ -132,7 +132,7 @@ function StatCard({
 
 function StatusPill({ value }: { value: string }) {
   return (
-    <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+    <span className="inline-flex rounded-full border border-[#c9ddd2] bg-[#f4fbf7] px-3 py-1 text-xs font-semibold text-[#2a523d]">
       {formatLabel(value)}
     </span>
   );
@@ -159,9 +159,9 @@ function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-[0_30px_80px_-30px_rgba(22,101,52,0.28)]">
-        <div className="border-b border-emerald-100 px-6 py-5">
-          <h3 className="text-lg font-bold text-slate-900">
+      <div className="w-full max-w-md rounded-[28px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-[0_30px_80px_-30px_rgba(22,101,52,0.28)]">
+        <div className="border-b border-[#d7e7df] px-6 py-5">
+          <h3 className="text-lg font-semibold text-slate-900">
             {action === "approve" ? "Approve listing?" : "Reject listing?"}
           </h3>
           <p className="mt-2 text-sm text-slate-500">
@@ -173,7 +173,7 @@ function ConfirmModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-2xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50"
+            className="rounded-2xl border border-[#c9ddd2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]"
           >
             Cancel
           </button>
@@ -183,7 +183,7 @@ function ConfirmModal({
             disabled={loading}
             className={cn(
               "rounded-2xl px-4 py-2 text-sm font-semibold text-white",
-              danger ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-700 hover:bg-emerald-800",
+              danger ? "bg-rose-600 hover:bg-rose-700" : "bg-[#316249] hover:bg-[#274e3b]",
               loading && "opacity-60"
             )}
           >
@@ -214,14 +214,14 @@ function ReviewDrawer({
 
   return (
     <div className="fixed inset-0 z-[90] flex justify-end bg-slate-950/45 backdrop-blur-sm">
-      <div className="h-full w-full max-w-2xl overflow-y-auto border-l border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-2xl">
-        <div className="sticky top-0 z-10 border-b border-emerald-100 bg-white/95 px-6 py-5 backdrop-blur">
+      <div className="h-full w-full max-w-2xl overflow-y-auto border-l border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-2xl">
+        <div className="sticky top-0 z-10 border-b border-[#d7e7df] bg-white/95 px-6 py-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#316249]">
                 Listing review
               </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
                 {listing.title}
               </h2>
               <p className="mt-2 text-sm text-slate-500">
@@ -231,7 +231,7 @@ function ReviewDrawer({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50"
+              className="rounded-2xl border border-[#c9ddd2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]"
             >
               Close
             </button>
@@ -239,7 +239,7 @@ function ReviewDrawer({
         </div>
 
         <div className="space-y-6 px-6 py-6">
-          <div className="overflow-hidden rounded-[28px] border border-emerald-100 bg-emerald-50/40">
+          <div className="overflow-hidden rounded-[28px] border border-[#d7e7df] bg-[#f4fbf7]">
             {image ? (
               <img src={image} alt={listing.title} className="h-72 w-full object-cover" />
             ) : (
@@ -250,7 +250,7 @@ function ReviewDrawer({
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
+            <div className="rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                 Listing type
               </p>
@@ -258,7 +258,7 @@ function ReviewDrawer({
                 {formatLabel(listing.listingType)}
               </p>
             </div>
-            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
+            <div className="rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                 Property type
               </p>
@@ -266,7 +266,7 @@ function ReviewDrawer({
                 {formatLabel(listing.propertyType)}
               </p>
             </div>
-            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
+            <div className="rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                 Price
               </p>
@@ -274,7 +274,7 @@ function ReviewDrawer({
                 {formatMoney(listingPrice(listing), listing.currency)}
               </p>
             </div>
-            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
+            <div className="rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                 Location
               </p>
@@ -284,16 +284,16 @@ function ReviewDrawer({
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] px-5 py-5 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900">Property details</h3>
+          <div className="rounded-[28px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] px-5 py-5 shadow-sm">
+            <h3 className="text-base font-semibold text-slate-900">Property details</h3>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">
                 Beds: <span className="font-semibold text-slate-900">{listing.beds || 0}</span>
               </div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">
                 Baths: <span className="font-semibold text-slate-900">{listing.baths || 0}</span>
               </div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">
                 Sqft: <span className="font-semibold text-slate-900">{listing.sqft || 0}</span>
               </div>
             </div>
@@ -305,7 +305,7 @@ function ReviewDrawer({
                 {listing.amenities.map((amenity) => (
                   <span
                     key={amenity}
-                    className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
+                    className="rounded-full border border-[#c9ddd2] bg-[#f4fbf7] px-3 py-1 text-xs font-semibold text-[#316249]"
                   >
                     {amenity}
                   </span>
@@ -314,26 +314,26 @@ function ReviewDrawer({
             ) : null}
           </div>
 
-          <div className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] px-5 py-5 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900">Seller snapshot</h3>
+          <div className="rounded-[28px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] px-5 py-5 shadow-sm">
+            <h3 className="text-base font-semibold text-slate-900">Seller snapshot</h3>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">
                 Name: <span className="font-semibold text-slate-900">{listing.createdBy?.name || "Unknown"}</span>
               </div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">
                 Role: <span className="font-semibold text-slate-900">{formatLabel(listing.createdBy?.role)}</span>
               </div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">
                 Email: <span className="font-semibold text-slate-900">{listing.createdBy?.email || "N/A"}</span>
               </div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">
                 Phone: <span className="font-semibold text-slate-900">{listing.createdBy?.phone || "N/A"}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="sticky bottom-0 border-t border-emerald-100 bg-white px-6 py-4">
+        <div className="sticky bottom-0 border-t border-[#d7e7df] bg-white px-6 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
@@ -347,7 +347,7 @@ function ReviewDrawer({
               type="button"
               onClick={onApprove}
               disabled={busy}
-              className="rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+              className="rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b] disabled:opacity-60"
             >
               Approve listing
             </button>
@@ -508,12 +508,12 @@ export default function AdminListingsApprovalWorkspace() {
               <TriangleAlert className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Queue failed to load</h1>
+              <h1 className="text-2xl font-semibold text-slate-900">Queue failed to load</h1>
               <p className="mt-2 text-sm text-slate-500">{error}</p>
               <button
                 type="button"
                 onClick={() => void loadQueue()}
-                className="mt-5 rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+                className="mt-5 rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b]"
               >
                 Retry
               </button>
@@ -533,14 +533,14 @@ export default function AdminListingsApprovalWorkspace() {
       />
 
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+        <section className="overflow-hidden rounded-[32px] border border-[#c9ddd2]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
                 Moderation queue
               </span>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
                 Listings approval
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
@@ -565,41 +565,41 @@ export default function AdminListingsApprovalWorkspace() {
             title="Pending listings"
             value={String(stats.totalPending)}
             detail={`${total} listings match the current filter scope.`}
-            tone="border-emerald-100 bg-emerald-50/80"
+            tone="border-[#d7e7df] bg-[#f4fbf7]"
             icon={<Clock3 className="h-5 w-5" />}
           />
           <StatCard
             title="Recently submitted"
             value={String(stats.recent)}
             detail="Listings submitted in the last 7 days."
-            tone="border-emerald-100 bg-emerald-50/80"
+            tone="border-[#d7e7df] bg-[#f4fbf7]"
             icon={<Home className="h-5 w-5" />}
           />
           <StatCard
             title="Live inventory"
             value={String(stats.active)}
             detail="Already approved and visible on the public site."
-            tone="border-emerald-100 bg-emerald-50/80"
+            tone="border-[#d7e7df] bg-[#f4fbf7]"
             icon={<CheckCircle2 className="h-5 w-5" />}
           />
           <StatCard
             title="Rejected listings"
             value={String(stats.rejected)}
             detail="Properties currently held out of the public catalog."
-            tone="border-emerald-100 bg-emerald-50/80"
+            tone="border-[#d7e7df] bg-[#f4fbf7]"
             icon={<XCircle className="h-5 w-5" />}
           />
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_360px]">
           <div className="space-y-6">
-            <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
+            <section className="rounded-[28px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
               <div className="flex items-start gap-3">
-                <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
+                <div className="rounded-2xl bg-[#f4fbf7] p-3 text-[#316249]">
                   <Filter className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Review filters</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">Review filters</h2>
                   <p className="mt-1 text-sm text-slate-500">
                     Narrow the approval queue by search term, listing type, property type, and sort order.
                   </p>
@@ -622,7 +622,7 @@ export default function AdminListingsApprovalWorkspace() {
                       value={searchInput}
                       onChange={(event) => setSearchInput(event.target.value)}
                       placeholder="Search title, location, or address"
-                      className="w-full rounded-2xl border border-emerald-100 px-11 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                      className="w-full rounded-2xl border border-[#d7e7df] px-11 py-3 text-sm text-slate-900 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
                     />
                   </div>
                 </label>
@@ -637,7 +637,7 @@ export default function AdminListingsApprovalWorkspace() {
                       setListingType(event.target.value);
                       setPage(1);
                     }}
-                    className="w-full rounded-2xl border border-emerald-100 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                    className="w-full rounded-2xl border border-[#d7e7df] px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
                   >
                     {LISTING_TYPES.map((type) => (
                       <option key={type} value={type}>
@@ -657,7 +657,7 @@ export default function AdminListingsApprovalWorkspace() {
                       setPropertyType(event.target.value);
                       setPage(1);
                     }}
-                    className="w-full rounded-2xl border border-emerald-100 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                    className="w-full rounded-2xl border border-[#d7e7df] px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
                   >
                     {PROPERTY_TYPES.map((type) => (
                       <option key={type} value={type}>
@@ -675,7 +675,7 @@ export default function AdminListingsApprovalWorkspace() {
                       setSort(event.target.value);
                       setPage(1);
                     }}
-                    className="w-full rounded-2xl border border-emerald-100 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                    className="w-full rounded-2xl border border-[#d7e7df] px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
                   >
                     {SORT_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -688,14 +688,14 @@ export default function AdminListingsApprovalWorkspace() {
                 <div className="flex flex-wrap items-center gap-3 md:col-span-2 xl:col-span-4">
                   <button
                     type="submit"
-                    className="rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+                    className="rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b]"
                   >
                     Apply filters
                   </button>
                   <button
                     type="button"
                     onClick={resetFilters}
-                    className="rounded-2xl border border-emerald-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50"
+                    className="rounded-2xl border border-[#c9ddd2] px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]"
                   >
                     Reset
                   </button>
@@ -706,11 +706,11 @@ export default function AdminListingsApprovalWorkspace() {
               </form>
             </section>
 
-            <section className="overflow-hidden rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-sm">
+            <section className="overflow-hidden rounded-[28px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Approval queue</h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <h2 className="text-lg font-semibold text-slate-900">Approval queue</h2>
+                  <p className="mt-2 text-sm text-slate-500">
                     Open a listing to inspect the full submission before approving or rejecting it.
                   </p>
                 </div>
@@ -719,7 +719,7 @@ export default function AdminListingsApprovalWorkspace() {
 
               {!items.length ? (
                 <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f4fbf7] text-[#316249]">
                     <CheckCircle2 className="h-8 w-8" />
                   </div>
                   <h3 className="mt-5 text-lg font-semibold text-slate-900">No pending listings</h3>
@@ -729,14 +729,14 @@ export default function AdminListingsApprovalWorkspace() {
                 </div>
               ) : (
                 <>
-                  <div className="space-y-4 bg-emerald-50/40 p-4 md:hidden">
+                  <div className="space-y-4 bg-[#f4fbf7] p-4 md:hidden">
                     {items.map((listing) => (
                       <div
                         key={listing._id}
-                        className="rounded-[24px] border border-emerald-100 bg-white p-5 shadow-sm"
+                        className="rounded-[24px] border border-[#d7e7df] bg-white p-5 shadow-sm"
                       >
                         <div className="flex items-start gap-3">
-                          <div className="h-16 w-20 overflow-hidden rounded-2xl bg-emerald-100">
+                          <div className="h-16 w-20 overflow-hidden rounded-2xl bg-[#e9f3ee]">
                             {listing.images?.[0]?.url ? (
                               <img
                                 src={listing.images[0].url}
@@ -757,7 +757,7 @@ export default function AdminListingsApprovalWorkspace() {
                         </div>
 
                         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
+                          <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3">
                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                               Seller
                             </p>
@@ -765,7 +765,7 @@ export default function AdminListingsApprovalWorkspace() {
                               {listing.createdBy?.name || "Unknown"}
                             </p>
                           </div>
-                          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
+                          <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3">
                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                               Price
                             </p>
@@ -775,11 +775,11 @@ export default function AdminListingsApprovalWorkspace() {
                           </div>
                         </div>
 
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                           <button
                             type="button"
                             onClick={() => setSelected(listing)}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] sm:w-auto"
                           >
                             <Eye className="h-4 w-4" />
                             Review
@@ -790,7 +790,7 @@ export default function AdminListingsApprovalWorkspace() {
                               setConfirm({ open: true, action: "approve", listing })
                             }
                             disabled={actingId === listing._id}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#316249] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#274e3b] disabled:opacity-60 sm:w-auto"
                           >
                             <CheckCircle2 className="h-4 w-4" />
                             Approve
@@ -801,7 +801,7 @@ export default function AdminListingsApprovalWorkspace() {
                               setConfirm({ open: true, action: "reject", listing })
                             }
                             disabled={actingId === listing._id}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60 sm:w-auto sm:col-span-2"
                           >
                             <XCircle className="h-4 w-4" />
                             Reject
@@ -812,24 +812,24 @@ export default function AdminListingsApprovalWorkspace() {
                   </div>
 
                   <div className="hidden overflow-x-auto md:block">
-                    <table className="min-w-[1120px] w-full text-sm">
-                      <thead className="bg-emerald-50/70 text-slate-600">
+                    <table className="w-full table-fixed text-sm">
+                      <thead className="bg-[#f4fbf7] text-slate-600">
                         <tr>
-                          <th className="px-5 py-4 text-left font-semibold">Property</th>
-                          <th className="px-5 py-4 text-left font-semibold">Seller</th>
-                          <th className="px-5 py-4 text-left font-semibold">Type</th>
-                          <th className="px-5 py-4 text-left font-semibold">Price</th>
-                          <th className="px-5 py-4 text-left font-semibold">Created</th>
-                          <th className="px-5 py-4 text-right font-semibold">Actions</th>
+                          <th className="w-[20%] px-4 py-4 text-left font-semibold">Property</th>
+                          <th className="w-[22%] px-4 py-4 text-left font-semibold">Seller</th>
+                          <th className="w-[14%] px-4 py-4 text-left font-semibold">Type</th>
+                          <th className="w-[10%] px-4 py-4 text-left font-semibold">Price</th>
+                          <th className="w-[12%] px-4 py-4 text-left font-semibold">Created</th>
+                          <th className="w-[22%] px-4 py-4 text-right font-semibold">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {items.map((listing) => (
                           <tr
                             key={listing._id}
-                            className="border-t border-emerald-100 transition hover:bg-emerald-50/40"
+                            className="border-t border-[#d7e7df] transition hover:bg-[#e9f3ee]/40"
                           >
-                            <td className="px-5 py-4">
+                            <td className="px-4 py-4">
                               <div className="flex items-center gap-3">
                                 <div className="h-12 w-16 overflow-hidden rounded-xl bg-slate-200">
                                   {listing.images?.[0]?.url ? (
@@ -844,35 +844,35 @@ export default function AdminListingsApprovalWorkspace() {
                                   <p className="truncate font-semibold text-slate-900">
                                     {listing.title}
                                   </p>
-                                  <p className="truncate text-sm text-slate-500">
+                                  <p className="truncate text-sm text-slate-600">
                                     {listing.location}
                                   </p>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-5 py-4 text-slate-700">
+                            <td className="px-4 py-4 text-slate-700">
                               <p className="font-semibold text-slate-900">
                                 {listing.createdBy?.name || "Unknown"}
                               </p>
-                              <p className="text-sm text-slate-500">
+                              <p className="text-sm text-slate-600">
                                 {listing.createdBy?.email || "N/A"}
                               </p>
                             </td>
-                            <td className="px-5 py-4 text-slate-600">
+                            <td className="px-4 py-4 text-slate-600">
                               {formatLabel(listing.propertyType)} / {formatLabel(listing.listingType)}
                             </td>
-                            <td className="px-5 py-4 text-slate-700">
+                            <td className="px-4 py-4 font-semibold text-slate-800">
                               {formatMoney(listingPrice(listing), listing.currency)}
                             </td>
-                            <td className="px-5 py-4 text-slate-600">
+                            <td className="px-4 py-4 text-slate-600">
                               {formatDate(listing.createdAt)}
                             </td>
-                            <td className="px-5 py-4">
-                              <div className="flex justify-end gap-2">
+                            <td className="px-4 py-4">
+                              <div className="flex flex-wrap justify-end gap-2">
                                 <button
                                   type="button"
                                   onClick={() => setSelected(listing)}
-                                  className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50"
+                                  className="inline-flex items-center gap-1.5 rounded-2xl border border-[#c9ddd2] px-2.5 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]"
                                 >
                                   <Eye className="h-4 w-4" />
                                   Review
@@ -883,7 +883,7 @@ export default function AdminListingsApprovalWorkspace() {
                                     setConfirm({ open: true, action: "approve", listing })
                                   }
                                   disabled={actingId === listing._id}
-                                  className="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                                  className="inline-flex items-center gap-1.5 rounded-2xl bg-[#316249] px-2.5 py-2 text-sm font-semibold text-white hover:bg-[#274e3b] disabled:opacity-60"
                                 >
                                   <CheckCircle2 className="h-4 w-4" />
                                   Approve
@@ -894,7 +894,7 @@ export default function AdminListingsApprovalWorkspace() {
                                     setConfirm({ open: true, action: "reject", listing })
                                   }
                                   disabled={actingId === listing._id}
-                                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+                                  className="inline-flex items-center gap-1.5 rounded-2xl border border-rose-200 bg-rose-50 px-2.5 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
                                 >
                                   <XCircle className="h-4 w-4" />
                                   Reject
@@ -910,7 +910,7 @@ export default function AdminListingsApprovalWorkspace() {
               )}
             </section>
 
-            <section className="flex flex-col gap-4 rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <section className="flex flex-col gap-4 rounded-[28px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-900">
                   Page {page} of {totalPages}
@@ -927,7 +927,7 @@ export default function AdminListingsApprovalWorkspace() {
                     setLimit(Number(event.target.value));
                     setPage(1);
                   }}
-                  className="rounded-2xl border border-emerald-100 px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  className="rounded-2xl border border-[#d7e7df] px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
                 >
                   {[6, 12, 24, 36].map((value) => (
                     <option key={value} value={value}>
@@ -941,7 +941,7 @@ export default function AdminListingsApprovalWorkspace() {
                     type="button"
                     disabled={page <= 1}
                     onClick={() => setPage((current) => Math.max(1, current - 1))}
-                    className="rounded-2xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50 disabled:opacity-50"
+                    className="rounded-2xl border border-[#c9ddd2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
                   >
                     Previous
                   </button>
@@ -949,7 +949,7 @@ export default function AdminListingsApprovalWorkspace() {
                     type="button"
                     disabled={page >= totalPages}
                     onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                    className="rounded-2xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50 disabled:opacity-50"
+                    className="rounded-2xl border border-[#c9ddd2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
                   >
                     Next
                   </button>
@@ -959,7 +959,7 @@ export default function AdminListingsApprovalWorkspace() {
           </div>
 
           <aside className="space-y-6">
-            <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
+            <section className="rounded-[28px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Property type mix</h2>
               <p className="mt-1 text-sm text-slate-500">
                 Distribution across the full pending queue.
@@ -971,35 +971,35 @@ export default function AdminListingsApprovalWorkspace() {
                       <span className="font-semibold text-slate-700">{formatLabel(row.type)}</span>
                       <span className="text-slate-500">{row.count}</span>
                     </div>
-                    <div className="h-2 rounded-full bg-emerald-100">
+                    <div className="h-2 rounded-full bg-[#e9f3ee]">
                       <div
-                        className="h-2 rounded-full bg-emerald-600"
+                        className="h-2 rounded-full bg-[#316249]"
                         style={{ width: `${(row.count / maxTypeCount) * 100}%` }}
                       />
                     </div>
                   </div>
                 ))}
                 {!stats.byType.length ? (
-                  <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-4 text-sm text-slate-500">
+                  <div className="rounded-2xl border border-dashed border-[#c9ddd2] bg-[#f4fbf7] px-4 py-4 text-sm text-slate-500">
                     Type distribution will appear once the queue has pending listings.
                   </div>
                 ) : null}
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
+            <section className="rounded-[28px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Review guidance</h2>
               <p className="mt-1 text-sm text-slate-500">
                 Keep moderation decisions aligned with the current property workflow.
               </p>
               <div className="mt-5 space-y-3 text-sm text-slate-600">
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
+                <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3">
                   Approving a listing moves its property status to <span className="font-semibold text-slate-900">active</span>.
                 </div>
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
+                <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3">
                   Rejecting a listing moves its property status to <span className="font-semibold text-slate-900">rejected</span>.
                 </div>
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
+                <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3">
                   Seller edits still reset a listing back to <span className="font-semibold text-slate-900">pending</span> for review.
                 </div>
               </div>
@@ -1036,3 +1036,4 @@ export default function AdminListingsApprovalWorkspace() {
     </main>
   );
 }
+

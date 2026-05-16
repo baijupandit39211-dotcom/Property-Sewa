@@ -1,7 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { Eye, Filter, Home, RefreshCcw, Search, ShieldCheck, Trash2, TriangleAlert } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  Clock3,
+  Eye,
+  FileText,
+  Filter,
+  Home,
+  RefreshCcw,
+  Search,
+  ShieldCheck,
+  Trash2,
+  TriangleAlert,
+  XCircle,
+} from "lucide-react";
 import { apiFetchAdmin } from "@/app/lib/api";
 import AdminToast from "@/components/admin/AdminToast";
 
@@ -75,21 +89,36 @@ function formatMoney(value?: number, currency?: string) {
 function StatusPill({ value }: { value: string }) {
   const tone =
     value === "active"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      ? "border-[#c9ddd2] bg-[#e9f3ee] text-[#316249]"
       : value === "pending"
-      ? "border-amber-200 bg-amber-50 text-amber-800"
+      ? "border-[#e8dcc0] bg-[#faf6eb] text-[#7b6430]"
       : value === "rejected"
-      ? "border-rose-200 bg-rose-50 text-rose-800"
+      ? "border-[#ecd2d2] bg-[#fdf2f2] text-[#8f3e3e]"
       : "border-slate-200 bg-slate-100 text-slate-700";
 
   return <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-semibold", tone)}>{formatLabel(value)}</span>;
 }
 
-function SummaryCard({ title, value, detail }: { title: string; value: string; detail: string }) {
+function SummaryCard({
+  title,
+  value,
+  detail,
+  icon,
+}: {
+  title: string;
+  value: string;
+  detail: string;
+  icon: React.ReactNode;
+}) {
   return (
-    <div className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
-      <p className="text-sm font-semibold text-slate-600">{title}</p>
-      <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+    <div className="rounded-2xl border border-[#dfe8e2] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-semibold text-slate-600">{title}</p>
+        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#e9f3ee] text-[#316249] ring-1 ring-[#d2e2d8]">
+          {icon}
+        </div>
+      </div>
+      <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
       <p className="mt-2 text-sm text-slate-500">{detail}</p>
     </div>
   );
@@ -110,9 +139,9 @@ function DeleteModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[28px] border border-rose-100 bg-white shadow-xl">
+      <div className="w-full max-w-md rounded-2xl border border-rose-100 bg-white shadow-xl">
         <div className="border-b border-rose-100 px-6 py-5">
-          <h3 className="text-lg font-bold text-slate-900">Delete property?</h3>
+          <h3 className="text-lg font-semibold text-slate-900">Delete property?</h3>
           <p className="mt-2 text-sm text-slate-500">{property.title} will be permanently removed.</p>
         </div>
         <div className="flex items-center justify-end gap-3 px-6 py-4">
@@ -145,20 +174,20 @@ function PropertyDrawer({
 
   return (
     <div className="fixed inset-0 z-[90] flex justify-end bg-slate-950/45 backdrop-blur-sm">
-      <div className="h-full w-full max-w-2xl overflow-y-auto border-l border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-2xl">
-        <div className="sticky top-0 z-10 border-b border-emerald-100 bg-white/95 px-6 py-5 backdrop-blur">
+      <div className="h-full w-full max-w-2xl overflow-y-auto border-l border-[#dfe8e2] bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-2xl">
+        <div className="sticky top-0 z-10 border-b border-[#dfe8e2] bg-white/95 px-6 py-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Property overview</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{property.title}</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#316249]">Property overview</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{property.title}</h2>
               <p className="mt-2 text-sm text-slate-500">Created {formatDate(property.createdAt)} by {property.createdBy?.name || "Unknown owner"}</p>
             </div>
-            <button type="button" onClick={onClose} className="rounded-2xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50">Close</button>
+            <button type="button" onClick={onClose} className="rounded-2xl border border-[#dfe8e2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]">Close</button>
           </div>
         </div>
 
         <div className="space-y-6 px-6 py-6">
-          <div className="overflow-hidden rounded-[28px] border border-emerald-100 bg-emerald-50/40">
+          <div className="overflow-hidden rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7]">
             {property.images?.[0]?.url ? (
               <img src={property.images[0].url} alt={property.title} className="h-72 w-full object-cover" />
             ) : (
@@ -167,39 +196,39 @@ function PropertyDrawer({
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p><div className="mt-2"><StatusPill value={property.status} /></div></div>
-            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Price</p><p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(propertyPrice(property), property.currency)}</p></div>
-            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Type</p><p className="mt-2 text-sm font-semibold text-slate-900">{formatLabel(property.propertyType)} / {formatLabel(property.listingType)}</p></div>
-            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Location</p><p className="mt-2 text-sm font-semibold text-slate-900">{property.location || property.address || "Unknown"}</p></div>
+            <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-4"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p><div className="mt-2"><StatusPill value={property.status} /></div></div>
+            <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-4"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Price</p><p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(propertyPrice(property), property.currency)}</p></div>
+            <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-4"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Type</p><p className="mt-2 text-sm font-semibold text-slate-900">{formatLabel(property.propertyType)} / {formatLabel(property.listingType)}</p></div>
+            <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-4"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Location</p><p className="mt-2 text-sm font-semibold text-slate-900">{property.location || property.address || "Unknown"}</p></div>
           </div>
 
-          <div className="rounded-[28px] border border-emerald-100 bg-white px-5 py-5 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900">Owner details</h3>
+          <div className="rounded-2xl border border-[#dfe8e2] bg-white px-5 py-5 shadow-sm">
+            <h3 className="text-base font-semibold text-slate-900">Owner details</h3>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">Name: <span className="font-semibold text-slate-900">{property.createdBy?.name || "Unknown"}</span></div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">Role: <span className="font-semibold text-slate-900">{formatLabel(property.createdBy?.role)}</span></div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">Email: <span className="font-semibold text-slate-900">{property.createdBy?.email || "N/A"}</span></div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">Phone: <span className="font-semibold text-slate-900">{property.createdBy?.phone || "N/A"}</span></div>
+              <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">Name: <span className="font-semibold text-slate-900">{property.createdBy?.name || "Unknown"}</span></div>
+              <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">Role: <span className="font-semibold text-slate-900">{formatLabel(property.createdBy?.role)}</span></div>
+              <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">Email: <span className="font-semibold text-slate-900">{property.createdBy?.email || "N/A"}</span></div>
+              <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">Phone: <span className="font-semibold text-slate-900">{property.createdBy?.phone || "N/A"}</span></div>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-emerald-100 bg-white px-5 py-5 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900">Listing details</h3>
+          <div className="rounded-2xl border border-[#dfe8e2] bg-white px-5 py-5 shadow-sm">
+            <h3 className="text-base font-semibold text-slate-900">Listing details</h3>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">Beds: <span className="font-semibold text-slate-900">{property.beds || 0}</span></div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">Baths: <span className="font-semibold text-slate-900">{property.baths || 0}</span></div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-slate-700">Sqft: <span className="font-semibold text-slate-900">{property.sqft || 0}</span></div>
+              <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">Beds: <span className="font-semibold text-slate-900">{property.beds || 0}</span></div>
+              <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">Baths: <span className="font-semibold text-slate-900">{property.baths || 0}</span></div>
+              <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-3 text-sm text-slate-700">Sqft: <span className="font-semibold text-slate-900">{property.sqft || 0}</span></div>
             </div>
             <p className="mt-4 text-sm leading-6 text-slate-600">{property.description || "No description provided for this property."}</p>
           </div>
 
-          <div className="rounded-[28px] border border-emerald-100 bg-white px-5 py-5 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900">Admin actions</h3>
+          <div className="rounded-2xl border border-[#dfe8e2] bg-white px-5 py-5 shadow-sm">
+            <h3 className="text-base font-semibold text-slate-900">Admin actions</h3>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <select value={draftStatus} onChange={(event) => onStatusChange(event.target.value)} className="rounded-2xl border border-emerald-100 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+              <select value={draftStatus} onChange={(event) => onStatusChange(event.target.value)} className="rounded-2xl border border-[#dfe8e2] px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20">
                 {STATUS_MUTATION_OPTIONS.map((option) => <option key={option} value={option}>{formatLabel(option)}</option>)}
               </select>
-              <button type="button" onClick={onSaveStatus} disabled={busy || draftStatus === property.status} className="rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">{busy ? "Saving..." : "Change Status"}</button>
+              <button type="button" onClick={onSaveStatus} disabled={busy || draftStatus === property.status} className="rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b] disabled:opacity-60">{busy ? "Saving..." : "Change Status"}</button>
               <button type="button" onClick={onDelete} disabled={busy} className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60">Delete Property</button>
             </div>
           </div>
@@ -350,9 +379,9 @@ export default function AdminAllPropertiesWorkspace() {
               <TriangleAlert className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Properties failed to load</h1>
+              <h1 className="text-2xl font-semibold text-slate-900">Properties failed to load</h1>
               <p className="mt-2 text-sm text-slate-500">{error}</p>
-              <button type="button" onClick={() => void loadProperties()} className="mt-5 rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800">
+              <button type="button" onClick={() => void loadProperties()} className="mt-5 rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b]">
                 Retry
               </button>
             </div>
@@ -367,36 +396,36 @@ export default function AdminAllPropertiesWorkspace() {
       <AdminToast show={!!notice} message={notice?.message || ""} tone={notice?.tone || "success"} />
 
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_90px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">Property management</span>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">View All Properties</h1>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">Live admin overview</span>
+              <h1 className="mt-4 ps-page-title text-white">View All Properties</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">Review the full property inventory, inspect owners, and moderate status changes from one admin workspace.</p>
             </div>
 
-            <button type="button" onClick={() => void loadProperties(true)} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15">
+            <button type="button" onClick={() => void loadProperties(true)} className="inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15">
               <RefreshCcw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-              Refresh list
+              Refresh
             </button>
           </div>
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <SummaryCard title="All Properties" value={String(stats.total)} detail="Inventory across every status." />
-          <SummaryCard title="Active" value={String(stats.active)} detail="Visible to approved buyer flows." />
-          <SummaryCard title="Pending" value={String(stats.pending)} detail="Awaiting review or re-review." />
-          <SummaryCard title="Rejected" value={String(stats.rejected)} detail="Removed from public visibility." />
-          <SummaryCard title="Draft" value={String(stats.draft)} detail="Saved without approval." />
+          <SummaryCard title="All Properties" value={String(stats.total)} detail="Inventory across every status." icon={<Building2 className="h-5 w-5" />} />
+          <SummaryCard title="Active" value={String(stats.active)} detail="Visible to approved buyer flows." icon={<CheckCircle2 className="h-5 w-5" />} />
+          <SummaryCard title="Pending" value={String(stats.pending)} detail="Awaiting review or re-review." icon={<Clock3 className="h-5 w-5" />} />
+          <SummaryCard title="Rejected" value={String(stats.rejected)} detail="Removed from public visibility." icon={<XCircle className="h-5 w-5" />} />
+          <SummaryCard title="Draft" value={String(stats.draft)} detail="Saved without approval." icon={<FileText className="h-5 w-5" />} />
         </section>
 
-        <section className="rounded-[28px] border border-emerald-100 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-[#dfe8e2] bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+            <div className="rounded-2xl bg-[#e9f3ee] p-3 text-[#316249]">
               <Filter className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Filter properties</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Filter properties</h2>
               <p className="text-sm text-slate-500">Search the database-backed property inventory with admin filters.</p>
             </div>
           </div>
@@ -404,32 +433,32 @@ export default function AdminAllPropertiesWorkspace() {
           <form className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5" onSubmit={(event) => { event.preventDefault(); setPage(1); setSearch(searchInput); }}>
             <label className="block xl:col-span-2">
               <span className="mb-2 block text-sm font-semibold text-slate-700">Search</span>
-              <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 px-4 py-3 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-100">
+              <div className="flex items-center gap-2 rounded-2xl border border-[#dfe8e2] px-4 py-3 focus-within:border-[#316249] focus-within:ring-4 focus-within:ring-[#316249]/20">
                 <Search className="h-4 w-4 text-slate-400" />
                 <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Title, description, address, or location" className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400" />
               </div>
             </label>
 
-            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Status</span><select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-emerald-100 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{STATUS_OPTIONS.map((option) => <option key={option} value={option}>{formatLabel(option)}</option>)}</select></label>
-            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Listing Type</span><select value={listingType} onChange={(event) => { setListingType(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-emerald-100 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{LISTING_TYPES.map((option) => <option key={option} value={option}>{formatLabel(option)}</option>)}</select></label>
-            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Property Type</span><select value={propertyType} onChange={(event) => { setPropertyType(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-emerald-100 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{PROPERTY_TYPES.map((option) => <option key={option} value={option}>{formatLabel(option)}</option>)}</select></label>
-            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Sort</span><select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-emerald-100 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">{SORT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Status</span><select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-[#dfe8e2] px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20">{STATUS_OPTIONS.map((option) => <option key={option} value={option}>{formatLabel(option)}</option>)}</select></label>
+            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Listing Type</span><select value={listingType} onChange={(event) => { setListingType(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-[#dfe8e2] px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20">{LISTING_TYPES.map((option) => <option key={option} value={option}>{formatLabel(option)}</option>)}</select></label>
+            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Property Type</span><select value={propertyType} onChange={(event) => { setPropertyType(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-[#dfe8e2] px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20">{PROPERTY_TYPES.map((option) => <option key={option} value={option}>{formatLabel(option)}</option>)}</select></label>
+            <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Sort</span><select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-[#dfe8e2] px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20">{SORT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
 
             <div className="flex flex-wrap items-center gap-3 md:col-span-2 xl:col-span-5">
-              <button type="submit" className="rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800">Apply filters</button>
-              <button type="button" onClick={resetFilters} className="rounded-2xl border border-emerald-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50">Reset</button>
+              <button type="submit" className="rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b]">Apply filters</button>
+              <button type="button" onClick={resetFilters} className="rounded-2xl border border-[#dfe8e2] px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]">Reset</button>
               <p className="text-sm text-slate-500">Visible result set: <span className="font-semibold text-slate-700">{total}</span></p>
             </div>
           </form>
         </section>
 
-        <section className="overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-[#dfe8e2] bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">All property records</h2>
+              <h2 className="text-lg font-semibold text-slate-900">All property records</h2>
               <p className="mt-1 text-sm text-slate-500">Review images, ownership, and moderation status for every property in the system.</p>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 ring-1 ring-emerald-200">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#e9f3ee] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#316249] ring-1 ring-[#c9ddd2]">
               <ShieldCheck className="h-4 w-4" />
               Admin inventory
             </div>
@@ -445,11 +474,11 @@ export default function AdminAllPropertiesWorkspace() {
             </div>
           ) : (
             <>
-              <div className="space-y-4 bg-emerald-50/40 p-4 md:hidden">
+              <div className="space-y-4 bg-[#f4fbf7] p-4 md:hidden">
                 {items.map((property) => (
-                  <div key={property._id} className="rounded-[24px] border border-emerald-100 bg-white p-5 shadow-sm">
+                  <div key={property._id} className="rounded-2xl border border-[#dfe8e2] bg-white p-5 shadow-sm">
                     <div className="flex items-start gap-3">
-                      <div className="h-16 w-20 overflow-hidden rounded-2xl bg-emerald-100">
+                      <div className="h-16 w-20 overflow-hidden rounded-2xl bg-[#e9f3ee]">
                         {property.images?.[0]?.url ? <img src={property.images[0].url} alt={property.title} className="h-full w-full object-cover" /> : null}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -460,22 +489,22 @@ export default function AdminAllPropertiesWorkspace() {
                     </div>
 
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Owner</p><p className="mt-2 text-sm font-semibold text-slate-900">{property.createdBy?.name || "Unknown"}</p></div>
-                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Price</p><p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(propertyPrice(property), property.currency)}</p></div>
+                      <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-3"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Owner</p><p className="mt-2 text-sm font-semibold text-slate-900">{property.createdBy?.name || "Unknown"}</p></div>
+                      <div className="rounded-2xl border border-[#dfe8e2] bg-[#f4fbf7] px-4 py-3"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Price</p><p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(propertyPrice(property), property.currency)}</p></div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button type="button" onClick={() => setSelected(property)} className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><Eye className="h-4 w-4" />View</button>
-                      <button type="button" onClick={() => void updateStatus(property._id, property.status === "active" ? "pending" : "active")} disabled={busyId === property._id} className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">Change Status</button>
-                      <button type="button" onClick={() => setDeleteTarget(property)} disabled={busyId === property._id} className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"><Trash2 className="h-4 w-4" />Delete</button>
+                    <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <button type="button" onClick={() => setSelected(property)} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><Eye className="h-4 w-4" />View</button>
+                      <button type="button" onClick={() => void updateStatus(property._id, property.status === "active" ? "pending" : "active")} disabled={busyId === property._id} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#316249] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#274e3b] disabled:opacity-60">Change Status</button>
+                      <button type="button" onClick={() => setDeleteTarget(property)} disabled={busyId === property._id} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"><Trash2 className="h-4 w-4" />Delete</button>
                     </div>
                   </div>
                 ))}
               </div>
 
               <div className="hidden overflow-x-auto md:block">
-                <table className="min-w-[1280px] w-full text-sm">
-                  <thead className="bg-emerald-50/70 text-slate-600">
+                <table className="min-w-[1100px] w-full text-sm">
+                  <thead className="bg-[#f4fbf7] text-slate-600">
                     <tr>
                       <th className="px-5 py-4 text-left font-semibold">Property</th>
                       <th className="px-5 py-4 text-left font-semibold">Type</th>
@@ -488,14 +517,14 @@ export default function AdminAllPropertiesWorkspace() {
                   </thead>
                   <tbody>
                     {items.map((property) => (
-                      <tr key={property._id} className="border-t border-emerald-100 transition hover:bg-emerald-50/40">
-                        <td className="px-5 py-4"><div className="flex items-center gap-3"><div className="h-12 w-16 overflow-hidden rounded-xl bg-slate-200">{property.images?.[0]?.url ? <img src={property.images[0].url} alt={property.title} className="h-full w-full object-cover" /> : null}</div><div className="min-w-0"><p className="truncate font-semibold text-slate-900">{property.title}</p><p className="truncate text-sm text-slate-500">{property.location || property.address}</p></div></div></td>
+                      <tr key={property._id} className="border-t border-[#e3ece6] transition hover:bg-[#f4fbf7]">
+                        <td className="px-5 py-4"><div className="flex items-center gap-3"><div className="h-12 w-16 overflow-hidden rounded-xl bg-slate-200">{property.images?.[0]?.url ? <img src={property.images[0].url} alt={property.title} className="h-full w-full object-cover" /> : null}</div><div className="min-w-0 max-w-[260px]"><p className="truncate font-semibold text-slate-900">{property.title}</p><p className="truncate text-sm text-slate-500">{property.location || property.address}</p></div></div></td>
                         <td className="px-5 py-4 text-slate-600">{formatLabel(property.propertyType)} / {formatLabel(property.listingType)}</td>
                         <td className="px-5 py-4 text-slate-700">{formatMoney(propertyPrice(property), property.currency)}</td>
                         <td className="px-5 py-4 text-slate-700"><p className="font-semibold text-slate-900">{property.createdBy?.name || "Unknown"}</p><p className="text-sm text-slate-500">{property.createdBy?.email || "N/A"}</p></td>
                         <td className="px-5 py-4"><StatusPill value={property.status} /></td>
                         <td className="px-5 py-4 text-slate-600">{formatDate(property.createdAt)}</td>
-                        <td className="px-5 py-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => setSelected(property)} className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50"><Eye className="h-4 w-4" />View</button><button type="button" onClick={() => setDeleteTarget(property)} disabled={busyId === property._id} className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"><Trash2 className="h-4 w-4" />Delete</button></div></td>
+                        <td className="px-5 py-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => setSelected(property)} className="inline-flex items-center gap-2 rounded-2xl border border-[#dfe8e2] px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#e9f3ee]"><Eye className="h-4 w-4" />View</button><button type="button" onClick={() => setDeleteTarget(property)} disabled={busyId === property._id} className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"><Trash2 className="h-4 w-4" />Delete</button></div></td>
                       </tr>
                     ))}
                   </tbody>
@@ -505,20 +534,20 @@ export default function AdminAllPropertiesWorkspace() {
           )}
         </section>
 
-        <section className="flex flex-col gap-4 rounded-[28px] border border-emerald-100 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <section className="flex flex-col gap-4 rounded-2xl border border-[#dfe8e2] bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-900">Page {page} of {totalPages}</p>
             <p className="mt-1 text-sm text-slate-500">Properties matching the current admin filters: {total}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <select value={limit} onChange={(event) => { setLimit(Number(event.target.value)); setPage(1); }} className="rounded-2xl border border-emerald-100 px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+            <select value={limit} onChange={(event) => { setLimit(Number(event.target.value)); setPage(1); }} className="rounded-2xl border border-[#dfe8e2] px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20">
               {[6, 12, 24, 36].map((value) => <option key={value} value={value}>{value} / page</option>)}
             </select>
 
             <div className="flex items-center gap-2">
-              <button type="button" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-2xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50 disabled:opacity-50">Previous</button>
-              <button type="button" disabled={page >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="rounded-2xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50 disabled:opacity-50">Next</button>
+              <button type="button" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-2xl border border-[#dfe8e2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50">Previous</button>
+              <button type="button" disabled={page >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="rounded-2xl border border-[#dfe8e2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50">Next</button>
             </div>
           </div>
         </section>

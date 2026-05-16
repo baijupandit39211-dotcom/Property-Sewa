@@ -68,7 +68,7 @@ function SidebarLink({
         "group flex items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-semibold transition-colors",
         active
           ? "bg-[#316249] text-white shadow-sm"
-          : "text-slate-700 hover:bg-emerald-50 hover:text-[#316249]",
+          : "text-slate-700 hover:bg-[#e9f3ee] hover:text-[#316249]",
       ].join(" ")}
     >
       <Icon
@@ -87,7 +87,7 @@ function SidebarAction({ label, icon: Icon }: ActionItem) {
   return (
     <button
       type="button"
-      className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-[15px] font-semibold text-slate-700 transition-colors hover:bg-emerald-50 hover:text-[#316249]"
+      className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-[15px] font-semibold text-slate-700 transition-colors hover:bg-[#e9f3ee] hover:text-[#316249]"
     >
       <Icon className="h-5 w-5 shrink-0 text-slate-600 group-hover:text-[#316249]" strokeWidth={2} />
       <span className="truncate leading-none">{label}</span>

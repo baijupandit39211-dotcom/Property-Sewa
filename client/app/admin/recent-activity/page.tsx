@@ -137,21 +137,21 @@ function sourceIcon(source: ActivitySource) {
 }
 
 function sourceTone(source: ActivitySource) {
-  if (source === "audit") return "bg-slate-900 text-white";
-  if (source === "user") return "bg-emerald-100 text-emerald-900";
-  if (source === "property") return "bg-teal-100 text-teal-900";
-  if (source === "report") return "bg-amber-100 text-amber-900";
-  if (source === "payment") return "bg-sky-100 text-sky-900";
-  return "bg-fuchsia-100 text-fuchsia-900";
+  if (source === "audit") return "bg-[#316249] text-white";
+  if (source === "user") return "bg-[#e9f3ee] text-[#2a523d]";
+  if (source === "property") return "bg-[#f4fbf7] text-[#316249]";
+  if (source === "report") return "bg-amber-50 text-amber-800";
+  if (source === "payment") return "bg-sky-50 text-sky-800";
+  return "bg-[#f4fbf7] text-[#3f6f57]";
 }
 
 function statusTone(status: string) {
   const value = status.toLowerCase();
   if (value === "paid" || value === "active" || value === "recorded") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+    return "border-[#c9ddd2] bg-[#f4fbf7] text-[#2a523d]";
   }
   if (value === "pending" || value === "requested") {
-    return "border-amber-200 bg-amber-50 text-amber-800";
+    return "border-amber-200 bg-amber-50 text-amber-700";
   }
   if (value === "rejected" || value === "suspended" || value === "failed" || value === "archived") {
     return "border-rose-200 bg-rose-50 text-rose-700";
@@ -171,14 +171,14 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[28px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
+    <div className="rounded-[28px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-slate-600">{title}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
           <p className="mt-2 text-sm text-slate-500">{detail}</p>
         </div>
-        <div className="rounded-2xl bg-[linear-gradient(135deg,#18794e_0%,#72d6ab_100%)] p-3 text-white shadow-sm">
+        <div className="rounded-2xl bg-[linear-gradient(135deg,#316249_0%,#5b8f73_100%)] p-3 text-white shadow-sm">
           {icon}
         </div>
       </div>
@@ -327,7 +327,7 @@ export default function RecentActivityPage() {
       />
 
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="relative overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-7 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-8">
+        <section className="relative overflow-hidden rounded-[32px] border border-[#c9ddd2]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-7 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-8">
           <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(236,246,240,0.20)_0%,rgba(236,246,240,0.04)_58%,transparent_100%)]" />
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
@@ -335,10 +335,10 @@ export default function RecentActivityPage() {
                 <Activity className="h-3.5 w-3.5" />
                 Admin activity feed
               </span>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
                 Recent activity
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
+              <p className="mt-3 max-w-xl text-sm leading-6 text-emerald-50/90 sm:max-w-2xl sm:text-base">
                 Review user operations, moderation events, listing submissions, payment movement, and reservation flow from one audit surface.
               </p>
             </div>
@@ -370,15 +370,15 @@ export default function RecentActivityPage() {
           ))}
         </section>
 
-        <section className="rounded-[30px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-sm">
-          <div className="flex flex-col gap-4 border-b border-emerald-100 px-6 py-5 xl:flex-row xl:items-end xl:justify-between">
+        <section className="rounded-[30px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-[#d7e7df] px-6 py-5 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">Filter feed</h2>
+              <h2 className="text-lg font-semibold tracking-tight text-slate-900">Filter feed</h2>
               <p className="mt-1 text-sm leading-6 text-slate-500">
                 Narrow the activity timeline by source, category, status, or keyword.
               </p>
             </div>
-            <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+            <div className="rounded-full bg-[#f4fbf7] px-3 py-1 text-xs font-semibold text-[#316249] ring-1 ring-[#d7e7df]">
               <Filter className="mr-2 inline h-3.5 w-3.5" />
               Live filters
             </div>
@@ -393,7 +393,7 @@ export default function RecentActivityPage() {
                   value={searchInput}
                   onChange={(event) => setSearchInput(event.target.value)}
                   placeholder="Search titles, users, subjects, or event text"
-                  className="w-full rounded-2xl border border-emerald-100 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  className="w-full rounded-2xl border border-[#d7e7df] bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
                 />
               </div>
             </label>
@@ -406,7 +406,7 @@ export default function RecentActivityPage() {
                   setSource(event.target.value);
                   setPage(1);
                 }}
-                className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                className="w-full rounded-2xl border border-[#d7e7df] bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
               >
                 {SOURCE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -424,7 +424,7 @@ export default function RecentActivityPage() {
                   setCategory(event.target.value);
                   setPage(1);
                 }}
-                className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                className="w-full rounded-2xl border border-[#d7e7df] bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
               >
                 {CATEGORY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -442,7 +442,7 @@ export default function RecentActivityPage() {
                   setStatus(event.target.value);
                   setPage(1);
                 }}
-                className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                className="w-full rounded-2xl border border-[#d7e7df] bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
               >
                 {STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -455,14 +455,14 @@ export default function RecentActivityPage() {
             <div className="flex flex-wrap items-center gap-3 md:col-span-2 xl:col-span-5">
               <button
                 type="submit"
-                className="rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+                className="rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b]"
               >
                 Apply filters
               </button>
               <button
                 type="button"
                 onClick={resetFilters}
-                className="rounded-2xl border border-emerald-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50"
+                className="rounded-2xl border border-[#c9ddd2] px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]"
               >
                 Reset
               </button>
@@ -474,15 +474,15 @@ export default function RecentActivityPage() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_360px]">
-          <div className="rounded-[30px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 px-6 py-5">
+          <div className="rounded-[30px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d7e7df] px-6 py-5">
               <div>
-                <h2 className="text-lg font-bold tracking-tight text-slate-900">Timeline</h2>
+                <h2 className="text-lg font-semibold tracking-tight text-slate-900">Timeline</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {loading ? "Loading activity..." : `${items.length} events on this page.`}
                 </p>
               </div>
-              <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+              <div className="rounded-full bg-[#f4fbf7] px-3 py-1 text-xs font-semibold text-[#316249] ring-1 ring-[#d7e7df]">
                 Page {page} of {totalPages}
               </div>
             </div>
@@ -498,7 +498,7 @@ export default function RecentActivityPage() {
             {loading ? (
               <div className="space-y-4 px-6 py-6">
                 {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="rounded-[24px] border border-emerald-100 bg-white p-5 shadow-sm">
+                  <div key={index} className="rounded-[24px] border border-[#d7e7df] bg-white p-5 shadow-sm">
                     <div className="flex animate-pulse gap-4">
                       <div className="h-12 w-12 rounded-2xl bg-slate-200" />
                       <div className="flex-1 space-y-3">
@@ -512,13 +512,20 @@ export default function RecentActivityPage() {
               </div>
             ) : items.length === 0 ? (
               <div className="px-6 py-16 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f4fbf7] text-[#316249]">
                   <Activity className="h-8 w-8" />
                 </div>
                 <h3 className="mt-5 text-lg font-semibold text-slate-900">No activity found</h3>
-                <p className="mt-2 max-w-md text-sm text-slate-500 mx-auto">
+                <p className="mt-2 mx-auto max-w-md text-sm text-slate-500">
                   Adjust the filters or search query to broaden the feed.
                 </p>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="mt-5 rounded-2xl border border-[#c9ddd2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]"
+                >
+                  Reset filters
+                </button>
               </div>
             ) : (
               <div className="space-y-4 px-6 py-6">
@@ -527,7 +534,7 @@ export default function RecentActivityPage() {
                   return (
                     <div
                       key={item.id}
-                      className="rounded-[26px] border border-emerald-100 bg-white p-5 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30"
+                      className="rounded-[26px] border border-[#d7e7df] bg-white p-5 shadow-sm transition hover:border-[#c9ddd2] hover:bg-[#f4fbf7]"
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="flex min-w-0 gap-4">
@@ -542,7 +549,7 @@ export default function RecentActivityPage() {
 
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-base font-bold text-slate-900">{item.title}</p>
+                              <p className="text-base font-semibold text-slate-900">{item.title}</p>
                               <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
                                 {formatLabel(item.source)}
                               </span>
@@ -558,17 +565,17 @@ export default function RecentActivityPage() {
 
                             <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
 
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                            <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+                              <span className="rounded-full border border-[#d7e7df] bg-[#f4fbf7] px-3 py-1 text-xs font-semibold text-[#2a523d]">
                                 Actor: {item.actorName} ({item.actorRole})
                               </span>
                               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
                                 Subject: {item.subjectName}
                               </span>
-                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
                                 {formatLabel(item.category)}
                               </span>
-                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
                                 {formatLabel(item.action)}
                               </span>
                             </div>
@@ -577,8 +584,8 @@ export default function RecentActivityPage() {
 
                         <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
                           <div className="text-right">
-                            <p className="text-sm font-semibold text-slate-900">{formatTime(item.timestamp)}</p>
-                            <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                            <p className="text-sm font-medium text-slate-700">{formatTime(item.timestamp)}</p>
+                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
                               {relativeTime(item.timestamp)}
                             </p>
                           </div>
@@ -586,7 +593,7 @@ export default function RecentActivityPage() {
                           {item.href ? (
                             <Link
                               href={item.href}
-                              className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                              className="inline-flex items-center gap-2 rounded-2xl border border-[#c9ddd2] bg-[#f4fbf7] px-4 py-2 text-sm font-semibold text-[#316249] hover:bg-[#e9f3ee]"
                             >
                               Open
                               <ArrowUpRight className="h-4 w-4" />
@@ -600,7 +607,7 @@ export default function RecentActivityPage() {
               </div>
             )}
 
-            <div className="flex flex-col gap-4 border-t border-emerald-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 border-t border-[#d7e7df] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-900">
                   Showing {items.length ? (page - 1) * limit + 1 : 0}-{(page - 1) * limit + items.length} of {total}
@@ -617,7 +624,7 @@ export default function RecentActivityPage() {
                     setLimit(Number(event.target.value));
                     setPage(1);
                   }}
-                  className="rounded-2xl border border-emerald-100 px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  className="rounded-2xl border border-[#d7e7df] px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
                 >
                   {[12, 24, 36, 48].map((value) => (
                     <option key={value} value={value}>
@@ -631,7 +638,7 @@ export default function RecentActivityPage() {
                     type="button"
                     disabled={!hasPrev}
                     onClick={() => setPage((current) => Math.max(1, current - 1))}
-                    className="rounded-2xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50 disabled:opacity-50"
+                    className="rounded-2xl border border-[#c9ddd2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
                   >
                     Previous
                   </button>
@@ -639,7 +646,7 @@ export default function RecentActivityPage() {
                     type="button"
                     disabled={!hasNext}
                     onClick={() => setPage((current) => current + 1)}
-                    className="rounded-2xl border border-emerald-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50 disabled:opacity-50"
+                    className="rounded-2xl border border-[#c9ddd2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
                   >
                     Next
                   </button>
@@ -649,17 +656,17 @@ export default function RecentActivityPage() {
           </div>
 
           <aside className="space-y-6">
-            <section className="rounded-[30px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
+            <section className="rounded-[30px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] p-5 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Source breakdown</h2>
               <p className="mt-1 text-sm text-slate-500">Counts for the current feed scope.</p>
               <div className="mt-5 space-y-3">
                 {SOURCE_OPTIONS.filter((option) => option.value !== "all").map((option) => (
                   <div
                     key={option.value}
-                    className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3"
+                    className="flex items-center justify-between rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3"
                   >
                     <span className="text-sm font-semibold text-slate-700">{option.label}</span>
-                    <span className="text-base font-bold text-slate-900">
+                    <span className="text-base font-semibold text-slate-900">
                       {stats.sourceCounts[option.value as ActivitySource]}
                     </span>
                   </div>
@@ -667,7 +674,7 @@ export default function RecentActivityPage() {
               </div>
             </section>
 
-            <section className="rounded-[30px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
+            <section className="rounded-[30px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] p-5 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Category focus</h2>
               <p className="mt-1 text-sm text-slate-500">Quick operational mix across the feed.</p>
               <div className="mt-5 space-y-3">
@@ -677,7 +684,7 @@ export default function RecentActivityPage() {
                     className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-white px-4 py-3"
                   >
                     <span className="text-sm font-semibold text-slate-700">{option.label}</span>
-                    <span className="text-base font-bold text-slate-900">
+                    <span className="text-base font-semibold text-slate-900">
                       {stats.categoryCounts[option.value as ActivityCategory]}
                     </span>
                   </div>
@@ -685,19 +692,19 @@ export default function RecentActivityPage() {
               </div>
             </section>
 
-            <section className="rounded-[30px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] p-5 shadow-sm">
+            <section className="rounded-[30px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] p-5 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Feed logic</h2>
               <p className="mt-1 text-sm text-slate-500">
                 This page merges multiple real collections into one normalized timeline.
               </p>
               <div className="mt-5 space-y-3 text-sm text-slate-600">
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
+                <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3">
                   Audit entries come from persisted admin user-management actions.
                 </div>
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
+                <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3">
                   Listing, report, payment, reservation, and signup events are inferred from their source models.
                 </div>
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3">
+                <div className="rounded-2xl border border-[#d7e7df] bg-[#f4fbf7] px-4 py-3">
                   Filtering is applied server-side before pagination so counts stay aligned with the visible feed.
                 </div>
               </div>

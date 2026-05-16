@@ -83,14 +83,14 @@ function formatProvider(provider?: string) {
 function RolePill({ role }: { role?: RoleApi }) {
   const tone =
     role === "buyer"
-      ? "border-sky-200 bg-sky-50 text-sky-700"
+      ? "border-[#cfe0ff] bg-[#f4f8ff] text-[#335b99]"
       : role === "seller"
-      ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+      ? "border-[#d8d2ff] bg-[#f7f5ff] text-[#4f46a5]"
       : role === "agent"
-      ? "border-amber-200 bg-amber-50 text-amber-800"
+      ? "border-amber-200 bg-amber-50 text-amber-700"
       : role === "admin"
-      ? "border-violet-200 bg-violet-50 text-violet-700"
-      : "border-emerald-200 bg-emerald-50 text-emerald-800";
+      ? "border-[#d7e7df] bg-[#f4fbf7] text-[#316249]"
+      : "border-[#c9ddd2] bg-[#e9f3ee] text-[#2a523d]";
 
   return <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-semibold", tone)}>{capitalizeRole(role)}</span>;
 }
@@ -99,7 +99,7 @@ function StatusBadge({ status }: { status?: StatusApi }) {
   const safeStatus = status || "active";
   const tone =
     safeStatus === "active"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      ? "border-[#c9ddd2] bg-[#f4fbf7] text-[#2a523d]"
       : safeStatus === "archived"
       ? "border-slate-200 bg-slate-100 text-slate-700"
       : "border-rose-200 bg-rose-50 text-rose-700";
@@ -131,12 +131,12 @@ function ConfirmModal({
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-[28px] border border-slate-200 bg-white shadow-[0_30px_80px_-30px_rgba(15,23,42,0.4)]">
         <div className="border-b border-slate-200 px-6 py-5">
-          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           {description ? <p className="mt-2 text-sm text-slate-500">{description}</p> : null}
         </div>
         <div className="flex items-center justify-end gap-3 px-6 py-4">
           <button onClick={onClose} disabled={loading} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
-          <button onClick={onConfirm} disabled={loading} className={cn("rounded-2xl px-4 py-2 text-sm font-semibold text-white", danger ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-700 hover:bg-emerald-800", loading && "opacity-70")}>{loading ? "Working..." : confirmText || "Confirm"}</button>
+          <button onClick={onConfirm} disabled={loading} className={cn("rounded-2xl px-4 py-2 text-sm font-semibold text-white", danger ? "bg-rose-600 hover:bg-rose-700" : "bg-[#316249] hover:bg-[#274e3b]", loading && "opacity-70")}>{loading ? "Working..." : confirmText || "Confirm"}</button>
         </div>
       </div>
     </div>
@@ -253,7 +253,7 @@ export default function AdminUserProfilePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4 sm:p-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(110,231,183,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(52,211,153,0.12),transparent_24%),linear-gradient(180deg,#f3fff9_0%,#ecfdf5_100%)] p-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <AdminToast
           show={!!notice}
@@ -261,18 +261,18 @@ export default function AdminUserProfilePage() {
           tone={notice?.tone || "success"}
         />
 
-        <section className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a_0%,#14532d_45%,#ecfdf5_100%)] px-6 py-7 text-white shadow-[0_30px_80px_-40px_rgba(15,23,42,0.85)] sm:px-8 sm:py-9">
+        <section className="overflow-hidden rounded-[32px] border border-[#c9ddd2]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-7 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-9">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <Link href="/admin/users" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to users
               </Link>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">User profile</h1>
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">User profile</h1>
               <p className="mt-3 text-sm leading-6 text-slate-200 sm:text-base">Inspect account details and run the same moderation actions from a dedicated profile screen.</p>
             </div>
             <div className="rounded-[28px] border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100/80">Account snapshot</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-50/90">Account snapshot</p>
               <div className="mt-3 flex flex-wrap gap-2">{user ? <><RolePill role={user.role} /><StatusBadge status={user.status} /></> : null}</div>
             </div>
           </div>
@@ -295,9 +295,9 @@ export default function AdminUserProfilePage() {
             <div className="space-y-6">
               <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex flex-col items-start gap-4">
-                  {user.avatar ? <img src={user.avatar} alt={user.name || "User"} className="h-20 w-20 rounded-[24px] object-cover ring-4 ring-emerald-50" /> : <div className="flex h-20 w-20 items-center justify-center rounded-[24px] bg-gradient-to-br from-emerald-600 to-teal-500 text-2xl font-bold text-white">{(user.name || "NA").slice(0, 2).toUpperCase()}</div>}
+                  {user.avatar ? <img src={user.avatar} alt={user.name || "User"} className="h-20 w-20 rounded-[24px] object-cover ring-4 ring-[#e9f3ee]" /> : <div className="flex h-20 w-20 items-center justify-center rounded-[24px] bg-gradient-to-br from-[#316249] to-[#5b8f73] text-2xl font-semibold text-white">{(user.name || "NA").slice(0, 2).toUpperCase()}</div>}
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">{user.name || "Unnamed user"}</h2>
+                    <h2 className="text-2xl font-semibold text-slate-900">{user.name || "Unnamed user"}</h2>
                     <p className="mt-1 text-sm text-slate-500">{user.email || "No email provided"}</p>
                     <div className="mt-3 flex flex-wrap gap-2"><RolePill role={user.role} /><StatusBadge status={user.status} /></div>
                   </div>
@@ -313,9 +313,9 @@ export default function AdminUserProfilePage() {
 
             <div className="space-y-6">
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-600">Member since</p><p className="mt-2 text-xl font-bold text-slate-900">{formatDate(user.createdAt)}</p></div>
-                <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-600">Last updated</p><p className="mt-2 text-xl font-bold text-slate-900">{formatDate(user.updatedAt)}</p></div>
-                <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-600">Provider</p><p className="mt-2 text-xl font-bold text-slate-900">{formatProvider(user.provider)}</p></div>
+                <div className="rounded-[24px] border border-[#d7e7df] bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-600">Member since</p><p className="mt-2 text-xl font-semibold text-slate-900">{formatDate(user.createdAt)}</p></div>
+                <div className="rounded-[24px] border border-[#d7e7df] bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-600">Last updated</p><p className="mt-2 text-xl font-semibold text-slate-900">{formatDate(user.updatedAt)}</p></div>
+                <div className="rounded-[24px] border border-[#d7e7df] bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-600">Provider</p><p className="mt-2 text-xl font-semibold text-slate-900">{formatProvider(user.provider)}</p></div>
               </div>
 
               <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -324,20 +324,20 @@ export default function AdminUserProfilePage() {
                     <h3 className="text-lg font-semibold text-slate-900">Quick actions</h3>
                     <p className="mt-1 text-sm text-slate-500">These controls use the same admin rules as the manage menu.</p>
                   </div>
-                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                  <Sparkles className="h-5 w-5 text-[#316249]" />
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <button disabled={disableActions || saving} onClick={() => setEditorOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800 disabled:opacity-50"><PencilLine className="h-4 w-4" />Edit</button>
-                  <button disabled={disableActions || saving || user.status === "active"} onClick={() => setConfirm({ open: true, title: "Restore user?", description: "The account will be returned to active status.", confirmText: "Restore", action: () => patchUser(`/api/admin/users/${user._id}/status`, { status: "active" }) })} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 disabled:opacity-50"><RotateCcw className="h-4 w-4" />Restore</button>
+                  <button disabled={disableActions || saving} onClick={() => setEditorOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#c9ddd2] bg-[#f4fbf7] px-4 py-3 text-sm font-semibold text-[#316249] hover:bg-[#e9f3ee] disabled:opacity-50"><PencilLine className="h-4 w-4" />Edit</button>
+                  <button disabled={disableActions || saving || user.status === "active"} onClick={() => setConfirm({ open: true, title: "Restore user?", description: "The account will be returned to active status.", confirmText: "Restore", action: () => patchUser(`/api/admin/users/${user._id}/status`, { status: "active" }) })} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#c9ddd2] bg-[#f4fbf7] px-4 py-3 text-sm font-semibold text-[#2a523d] hover:bg-[#e9f3ee] disabled:opacity-50"><RotateCcw className="h-4 w-4" />Restore</button>
                   <button disabled={disableActions || saving || user.status === "archived"} onClick={() => setConfirm({ open: true, title: "Archive user?", description: "Archived users are removed from the active working set.", confirmText: "Archive", danger: true, action: () => patchUser(`/api/admin/users/${user._id}/status`, { status: "archived" }) })} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 disabled:opacity-50"><Archive className="h-4 w-4" />Archive</button>
                   <button disabled={disableActions || saving || user.status === "suspended"} onClick={() => setConfirm({ open: true, title: "Suspend user?", description: "Use this for fraud or spam. Access can be restored later.", confirmText: "Suspend", danger: true, action: () => patchUser(`/api/admin/users/${user._id}/status`, { status: "suspended" }) })} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 disabled:opacity-50"><Ban className="h-4 w-4" />Suspend</button>
                 </div>
                 <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900"><ShieldCheck className="h-4 w-4 text-emerald-600" />Role management</div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900"><ShieldCheck className="h-4 w-4 text-[#316249]" />Role management</div>
                   <p className="mt-1 text-sm text-slate-500">Only SuperAdmin can change roles. Existing self and SuperAdmin protections are preserved.</p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {(["buyer", "seller", "agent", "admin", "superadmin"] as RoleApi[]).map((role) => (
-                      <button key={role} disabled={!isSuperAdmin || disableActions || saving} onClick={() => setConfirm({ open: true, title: `Set role to ${capitalizeRole(role)}?`, confirmText: "Change role", action: () => patchUser(`/api/admin/users/${user._id}/role`, { role }) })} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50"><UserCog className="h-4 w-4" />Set as {capitalizeRole(role)}</button>
+                      <button key={role} disabled={!isSuperAdmin || disableActions || saving} onClick={() => setConfirm({ open: true, title: `Set role to ${capitalizeRole(role)}?`, confirmText: "Change role", action: () => patchUser(`/api/admin/users/${user._id}/role`, { role }) })} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d7e7df] bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"><UserCog className="h-4 w-4" />Set as {capitalizeRole(role)}</button>
                     ))}
                   </div>
                 </div>

@@ -60,8 +60,6 @@ export default function AdminHeader({
     }
   };
 
-  const roleLabel = (user?.role || "admin").toUpperCase();
-
   return (
     <header className="h-16 bg-[#316249] shadow-md">
       <div className="flex h-full items-center justify-between px-4 text-white sm:px-6">
@@ -70,7 +68,7 @@ export default function AdminHeader({
             <button
               type="button"
               onClick={onToggleSidebar}
-              className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10 transition hover:bg-white/15 lg:hidden"
+              className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10 transition hover:bg-white/20 lg:hidden"
               aria-label={mobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
               title={mobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
@@ -92,22 +90,18 @@ export default function AdminHeader({
               notificationsPageHref="/admin/notifications"
               endpointBase="/api/admin/notifications"
               authMode="admin"
-              buttonClassName="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
+              buttonClassName="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:bg-[#e9f3ee] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             />
 
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 shadow-sm ring-1 ring-white/30">
-              {roleLabel}
-            </span>
+            <div className="hidden text-sm font-medium text-white sm:block">{user.name}</div>
 
-            <div className="hidden text-sm font-semibold text-white sm:block">{user.name}</div>
-
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-white text-sm font-bold text-slate-700 shadow-sm ring-1 ring-white/30">
+            <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-white/30">
               {getInitials(user.name)}
             </div>
 
             <button
               onClick={logout}
-              className="hidden rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.02] sm:inline-flex"
+              className="hidden h-10 items-center rounded-2xl bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-white/30 transition hover:bg-[#e9f3ee] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:inline-flex"
             >
               Logout
             </button>

@@ -107,6 +107,14 @@ type OverviewResponse = {
       status: string;
       createdAt: string;
     }>;
+    topOwners: Array<{
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      status: string;
+      propertyCount: number;
+    }>;
     topReportReasons: Array<{ reason: string; count: number }>;
   };
 };
@@ -146,6 +154,7 @@ const EMPTY_OVERVIEW: OverviewResponse = {
     recentReports: [],
     recentPayments: [],
     recentUsers: [],
+    topOwners: [],
     topReportReasons: [],
   },
 };
@@ -184,7 +193,7 @@ function CardShell({
   return (
     <section
       className={cn(
-        "rounded-[14px] border border-[#dfe8e2] bg-white shadow-[0_6px_24px_rgba(16,24,40,0.05)]",
+        "rounded-2xl border border-[#dfe8e2] bg-white shadow-[0_6px_24px_rgba(16,24,40,0.05)]",
         className
       )}
     >
@@ -210,7 +219,7 @@ function StatCard({
 }) {
   return (
     <motion.div
-      className="rounded-[14px] border border-[#dfe8e2] bg-white px-5 py-5 shadow-[0_6px_24px_rgba(16,24,40,0.04)]"
+      className="rounded-2xl border border-[#dfe8e2] bg-white px-5 py-5 shadow-[0_6px_24px_rgba(16,24,40,0.04)]"
       whileHover={{ y: -4, scale: 1.01 }}
       transition={{ type: "spring", stiffness: 320, damping: 24 }}
     >
@@ -226,7 +235,7 @@ function StatCard({
           </p>
           <p className={`mt-2 ${typography.helperText}`}>{detail}</p>
         </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#61b24a] text-white shadow-sm">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#316249] text-white shadow-sm">
           {icon}
         </div>
       </div>
@@ -238,7 +247,7 @@ function LinkLike({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-1.5 rounded-md border border-[#dbe5de] bg-[#f3f8f4] px-3 py-2 text-[#56725f] transition hover:bg-[#ebf3ed] ${typography.buttonText}`}
+      className={`inline-flex items-center gap-1.5 rounded-xl border border-[#dbe5de] bg-[#f3f8f4] px-3 py-2 text-[#316249] transition hover:bg-[#e9f3ee] ${typography.buttonText}`}
     >
       {label}
       <ArrowRight className="h-4 w-4" />
@@ -255,15 +264,15 @@ function StatusPill({ value }: { value: string }) {
     lower === "reviewed" ||
     lower === "for sale" ||
     lower === "approved"
-      ? "bg-[#e8f6ec] text-[#2f8f4e]"
+      ? "bg-[#e9f3ee] text-[#316249]"
       : lower === "pending" || lower === "for rent"
-      ? "bg-[#fff3d8] text-[#b88710]"
+      ? "bg-[#f2f7f4] text-[#3f6f57]"
       : lower === "sold" || lower === "rejected" || lower === "failed" || lower === "inactive"
-      ? "bg-[#ffeae2] text-[#d9822b]"
-      : "bg-[#eef2f4] text-[#62707c]";
+      ? "bg-[#edf2ef] text-[#4d5f56]"
+      : "bg-[#eef2f4] text-[#5f6f67]";
 
   return (
-    <span className={cn("inline-flex rounded-md px-2.5 py-1 text-xs font-semibold", tone)}>
+    <span className={cn("inline-flex rounded-xl px-2.5 py-1 text-xs font-semibold", tone)}>
       {formatLabel(value)}
     </span>
   );
@@ -292,7 +301,7 @@ const PAGE_BG =
 
 const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-const PIE_COLORS = ["#2f8f4e", "#62b33d", "#f2b233", "#74719a", "#cfd8d3"];
+const PIE_COLORS = ["#316249", "#3f7a5a", "#5f9475", "#8bb79d", "#cfd8d3"];
 
 function renderPieLabel(props: any) {
   const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
@@ -334,10 +343,10 @@ function CustomRevenueTooltip({
   return (
     <div className="rounded-md border border-[#d9e3dc] bg-white px-4 py-3 shadow-md">
       <p className="mb-2 text-[15px] font-medium text-[#243b53]">{label}</p>
-      <p className="text-[14px] font-medium text-[#62b33d]">
+      <p className="text-[14px] font-medium text-[#3f7a5a]">
         payments : {fmtNumber(Number(payments))}
       </p>
-      <p className="mt-2 text-[14px] font-medium text-[#2d6a4f]">
+      <p className="mt-2 text-[14px] font-medium text-[#316249]">
         revenue : {fmtNumber(Number(revenue))}
       </p>
     </div>
@@ -441,7 +450,7 @@ export default function AdminOverviewWorkspace() {
   const hasPropertyStatusData = propertyStatusData.length > 0 && propertyStatusTotal > 0;
 
   const recentProperties = overview.lists.pendingListings.slice(0, 4);
-  const topAgents = overview.lists.recentUsers.slice(0, 4);
+  const topOwners = overview.lists.topOwners.slice(0, 4);
   const latestLeads = overview.lists.recentReports.slice(0, 5);
 
   const statCards = React.useMemo(
@@ -512,18 +521,18 @@ export default function AdminOverviewWorkspace() {
           <div className="h-56 rounded-[34px] bg-slate-200/70" />
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-32 rounded-[14px] bg-white shadow-sm" />
+              <div key={index} className="h-32 rounded-2xl bg-white shadow-sm" />
             ))}
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="h-[340px] rounded-[14px] bg-white shadow-sm" />
-            <div className="h-[340px] rounded-[14px] bg-white shadow-sm" />
+            <div className="h-[340px] rounded-2xl bg-white shadow-sm" />
+            <div className="h-[340px] rounded-2xl bg-white shadow-sm" />
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="h-[280px] rounded-[14px] bg-white shadow-sm" />
-            <div className="h-[280px] rounded-[14px] bg-white shadow-sm" />
+            <div className="h-[280px] rounded-2xl bg-white shadow-sm" />
+            <div className="h-[280px] rounded-2xl bg-white shadow-sm" />
           </div>
-          <div className="h-[260px] rounded-[14px] bg-white shadow-sm" />
+          <div className="h-[260px] rounded-2xl bg-white shadow-sm" />
         </div>
       </main>
     );
@@ -543,7 +552,7 @@ export default function AdminOverviewWorkspace() {
               <button
                 type="button"
                 onClick={() => void loadOverview()}
-                className={`mt-5 rounded-2xl bg-emerald-700 px-5 py-3 text-white hover:bg-emerald-800 ${typography.buttonText}`}
+                className={`mt-5 rounded-2xl bg-[#316249] px-5 py-3 text-white hover:bg-[#274e3b] ${typography.buttonText}`}
               >
                 Retry
               </button>
@@ -654,14 +663,14 @@ export default function AdminOverviewWorkspace() {
               <h2 className={typography.sectionTitle}>Revenue Stats</h2>
             </div>
 
-            <div className="p-4">
-              <div className="mb-4 flex flex-wrap items-center gap-6 text-sm">
+            <div className="px-5 py-4">
+              <div className="mb-4 flex flex-wrap items-center gap-4 text-xs sm:text-sm">
                 <div className="flex items-center gap-2 text-[#4f5d75]">
-                  <span className="inline-block h-[5px] w-7 rounded-full bg-[#2d6a4f]" />
+                  <span className="inline-block h-[5px] w-7 rounded-full bg-[#316249]" />
                   Monthly Earnings
                 </div>
                 <div className="flex items-center gap-2 text-[#4f5d75]">
-                  <span className="inline-block h-[5px] w-7 rounded-full bg-[#62b33d]" />
+                  <span className="inline-block h-[5px] w-7 rounded-full bg-[#3f7a5a]" />
                   Commission
                 </div>
               </div>
@@ -672,12 +681,12 @@ export default function AdminOverviewWorkspace() {
                     <ComposedChart data={revenueChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="earningsFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#2d6a4f" stopOpacity={0.18} />
-                          <stop offset="100%" stopColor="#2d6a4f" stopOpacity={0.03} />
+                          <stop offset="0%" stopColor="#316249" stopOpacity={0.18} />
+                          <stop offset="100%" stopColor="#316249" stopOpacity={0.03} />
                         </linearGradient>
                         <linearGradient id="commissionFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#62b33d" stopOpacity={0.14} />
-                          <stop offset="100%" stopColor="#62b33d" stopOpacity={0.02} />
+                          <stop offset="0%" stopColor="#3f7a5a" stopOpacity={0.14} />
+                          <stop offset="100%" stopColor="#3f7a5a" stopOpacity={0.02} />
                         </linearGradient>
                       </defs>
 
@@ -718,10 +727,10 @@ export default function AdminOverviewWorkspace() {
                       <Line
                         type="monotone"
                         dataKey="revenue"
-                        stroke="#2d6a4f"
+                        stroke="#316249"
                         strokeWidth={3}
-                        dot={{ r: 3, fill: "#ffffff", stroke: "#2d6a4f", strokeWidth: 2 }}
-                        activeDot={{ r: 5, fill: "#ffffff", stroke: "#2d6a4f", strokeWidth: 2 }}
+                        dot={{ r: 3, fill: "#ffffff", stroke: "#316249", strokeWidth: 2 }}
+                        activeDot={{ r: 5, fill: "#ffffff", stroke: "#316249", strokeWidth: 2 }}
                         isAnimationActive={true}
                         animationDuration={1200}
                         animationEasing="ease-out"
@@ -729,10 +738,10 @@ export default function AdminOverviewWorkspace() {
                       <Line
                         type="monotone"
                         dataKey="payments"
-                        stroke="#62b33d"
+                        stroke="#3f7a5a"
                         strokeWidth={3}
-                        dot={{ r: 3, fill: "#ffffff", stroke: "#62b33d", strokeWidth: 2 }}
-                        activeDot={{ r: 5, fill: "#ffffff", stroke: "#62b33d", strokeWidth: 2 }}
+                        dot={{ r: 3, fill: "#ffffff", stroke: "#3f7a5a", strokeWidth: 2 }}
+                        activeDot={{ r: 5, fill: "#ffffff", stroke: "#3f7a5a", strokeWidth: 2 }}
                         isAnimationActive={true}
                         animationDuration={1200}
                         animationEasing="ease-out"
@@ -758,7 +767,7 @@ export default function AdminOverviewWorkspace() {
               <LinkLike href="/admin/listings-approval" label="View All" />
             </div>
 
-            <div className="grid gap-2 p-4 md:grid-cols-[1fr_180px] md:items-center">
+            <div className="grid gap-4 px-5 py-4 lg:grid-cols-[1fr_180px] lg:items-center">
               <div className="h-[250px]">
                 {hasPropertyStatusData ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -837,22 +846,32 @@ export default function AdminOverviewWorkspace() {
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="bg-[#f8fbf9] text-left text-[#52606d]">
-                    <th className="px-5 py-3 font-semibold">Property</th>
-                    <th className="px-5 py-3 font-semibold">Location</th>
-                    <th className="px-5 py-3 font-semibold">Status</th>
-                    <th className="px-5 py-3 font-semibold">Price</th>
+                    <th className="whitespace-nowrap px-5 py-3 font-semibold">Property</th>
+                    <th className="whitespace-nowrap px-5 py-3 font-semibold">Location</th>
+                    <th className="whitespace-nowrap px-5 py-3 font-semibold">Status</th>
+                    <th className="whitespace-nowrap px-5 py-3 font-semibold">Price</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentProperties.length ? (
                     recentProperties.map((listing) => (
                       <tr key={listing.id} className="border-t border-[#edf2ef]">
-                        <td className="px-5 py-3 font-semibold text-[#243b53]">{listing.title}</td>
-                        <td className="px-5 py-3 text-[#52606d]">{listing.location}</td>
+                        <td
+                          className="max-w-[220px] truncate px-5 py-3 font-semibold text-[#243b53]"
+                          title={listing.title}
+                        >
+                          {listing.title}
+                        </td>
+                        <td
+                          className="max-w-[180px] truncate px-5 py-3 font-normal text-[#52606d]"
+                          title={listing.location}
+                        >
+                          {listing.location}
+                        </td>
                         <td className="px-5 py-3">
                           <StatusPill value={listing.listingType || "pending"} />
                         </td>
-                        <td className="px-5 py-3 font-semibold text-[#243b53]">
+                        <td className="px-5 py-3 font-medium text-[#243b53]">
                           {listing.currency} {fmtMoney(listing.price)}
                         </td>
                       </tr>
@@ -876,31 +895,22 @@ export default function AdminOverviewWorkspace() {
             </div>
 
             <div className="divide-y divide-[#edf2ef]">
-              {topAgents.length ? (
-                topAgents.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between gap-4 px-5 py-4">
+              {topOwners.length ? (
+                topOwners.map((owner) => (
+                  <div key={owner.id} className="flex items-center justify-between gap-4 px-5 py-4">
                     <div className="flex min-w-0 items-center gap-3">
-                      <MiniAvatar name={user.name} />
+                      <MiniAvatar name={owner.name} />
                       <div className="min-w-0">
-                        <p className="truncate font-semibold text-[#243b53]">{user.name}</p>
+                        <p className="truncate font-semibold text-[#243b53]">{owner.name}</p>
                         <p className="text-sm text-[#7b8794]">
-                          {fmtNumber(
-                            user.role.toLowerCase() === "agent"
-                              ? overview.stats.users.agents
-                              : overview.stats.users.sellers
-                          )}{" "}
-                          Properties
+                          {formatLabel(owner.role)} Owner
                         </p>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <p className="text-[18px] font-bold text-[#243b53]">
-                        {fmtNumber(
-                          user.role.toLowerCase() === "agent"
-                            ? overview.stats.users.agents
-                            : overview.stats.users.sellers
-                        )}
+                        {fmtNumber(owner.propertyCount)}
                       </p>
                       <p className="text-sm text-[#7b8794]">Properties</p>
                     </div>
@@ -926,23 +936,26 @@ export default function AdminOverviewWorkspace() {
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="bg-[#f8fbf9] text-left text-[#52606d]">
-                    <th className="px-5 py-3 font-semibold">Name</th>
-                    <th className="px-5 py-3 font-semibold">Email</th>
-                    <th className="px-5 py-3 font-semibold">Interested In</th>
-                    <th className="px-5 py-3 font-semibold">Status</th>
+                    <th className="whitespace-nowrap px-5 py-3 font-semibold">Name</th>
+                    <th className="whitespace-nowrap px-5 py-3 font-semibold">Email</th>
+                    <th className="whitespace-nowrap px-5 py-3 font-semibold">Interested In</th>
+                    <th className="whitespace-nowrap px-5 py-3 font-semibold">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {latestLeads.length ? (
                     latestLeads.map((report) => (
                       <tr key={report.id} className="border-t border-[#edf2ef]">
-                        <td className="px-5 py-3 font-semibold text-[#2f5aa8]">
+                        <td className="max-w-[180px] truncate px-5 py-3 font-semibold text-[#316249]">
                           {report.reporterName || "Unknown"}
                         </td>
-                        <td className="px-5 py-3 text-[#2f5aa8]">
+                        <td className="max-w-[180px] truncate px-5 py-3 font-normal text-[#52606d]">
                           {report.reporterName || "Unknown"}
                         </td>
-                        <td className="px-5 py-3 text-[#52606d]">
+                        <td
+                          className="max-w-[220px] truncate px-5 py-3 font-normal text-[#52606d]"
+                          title={report.propertyTitle || report.reason}
+                        >
                           {report.propertyTitle || report.reason}
                         </td>
                         <td className="px-5 py-3">

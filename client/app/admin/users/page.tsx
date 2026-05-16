@@ -116,14 +116,14 @@ function initials(name: string) {
 function UserAvatar({ name, role }: { name: string; role: RoleApi }) {
   const accent =
     role === "superadmin"
-      ? "from-emerald-700 to-teal-500"
+      ? "from-[#214f3b] to-[#316249]"
       : role === "admin"
-      ? "from-emerald-600 to-teal-500"
+      ? "from-[#2b5f47] to-[#3f7a5a]"
       : role === "agent"
-      ? "from-emerald-500 to-lime-500"
+      ? "from-[#3f7a5a] to-[#5f9475]"
       : role === "seller"
-      ? "from-emerald-500 to-teal-500"
-      : "from-teal-500 to-emerald-400";
+      ? "from-[#3f7a5a] to-[#4b8a66]"
+      : "from-[#4b8a66] to-[#6aa487]";
 
   return (
     <div
@@ -149,14 +149,14 @@ function StatCard({
   iconTone: string;
 }) {
   return (
-    <div className="rounded-[14px] border border-[#e2e8e5] bg-white px-5 py-5 shadow-[0_6px_24px_rgba(16,24,40,0.05)]">
+    <div className="rounded-2xl border border-[#e2e8e5] bg-white px-5 py-5 shadow-[0_6px_24px_rgba(16,24,40,0.05)]">
       <div className="flex items-start gap-4">
         <div className={cn("flex h-10 w-10 items-center justify-center rounded-full text-white", iconTone)}>
           {icon}
         </div>
         <div>
           <p className="text-[15px] font-semibold text-[#3b4a54]">{title}</p>
-          <p className="mt-2 text-[22px] font-bold tracking-tight text-[#24323d]">{value}</p>
+          <p className="mt-2 text-[22px] font-semibold tracking-tight text-[#24323d]">{value}</p>
         </div>
       </div>
     </div>
@@ -166,7 +166,7 @@ function StatCard({
 function StatusBadge({ status }: { status: StatusApi }) {
   if (status === "active") {
     return (
-      <span className="inline-flex rounded-md bg-[#45b26b] px-3 py-1 text-xs font-semibold text-white">
+      <span className="inline-flex rounded-full border border-[#c9ddd2] bg-[#e9f3ee] px-3 py-1 text-xs font-semibold text-[#316249]">
         Active
       </span>
     );
@@ -174,14 +174,14 @@ function StatusBadge({ status }: { status: StatusApi }) {
 
   if (status === "archived") {
     return (
-      <span className="inline-flex rounded-md bg-[#f0b23d] px-3 py-1 text-xs font-semibold text-white">
+      <span className="inline-flex rounded-full border border-[#e8dcc0] bg-[#faf6eb] px-3 py-1 text-xs font-semibold text-[#7b6430]">
         Inactive
       </span>
     );
   }
 
   return (
-    <span className="inline-flex rounded-md bg-[#e54848] px-3 py-1 text-xs font-semibold text-white">
+    <span className="inline-flex rounded-full border border-[#ecd2d2] bg-[#fdf2f2] px-3 py-1 text-xs font-semibold text-[#8f3e3e]">
       Banned
     </span>
   );
@@ -214,16 +214,16 @@ function Modal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_80px_-30px_rgba(15,23,42,0.4)]">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-[0_30px_80px_-30px_rgba(15,23,42,0.4)]">
         <div className="border-b border-slate-200 px-6 py-5">
-          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           {description ? <p className="mt-2 text-sm text-slate-500">{description}</p> : null}
         </div>
         <div className="flex items-center justify-end gap-3 px-6 py-4">
           <button
             onClick={onClose}
             disabled={loading}
-            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]"
           >
             Cancel
           </button>
@@ -232,7 +232,7 @@ function Modal({
             disabled={loading}
             className={cn(
               "rounded-xl px-4 py-2 text-sm font-semibold text-white",
-              danger ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-700 hover:bg-emerald-800",
+              danger ? "bg-rose-600 hover:bg-rose-700" : "bg-[#316249] hover:bg-[#274e3b]",
               loading && "opacity-70"
             )}
           >
@@ -297,39 +297,39 @@ function ActionMenu({
           if (!disabled) setOpen((value) => !value);
         }}
         disabled={disabled}
-        className="inline-flex items-center gap-2 rounded-lg border border-[#d9dfdb] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-lg border border-[#d9dfdb] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
       >
         Manage
         <MoreHorizontal className="h-4 w-4" />
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-[20px] border border-slate-200 bg-white p-2 shadow-[0_20px_50px_-25px_rgba(15,23,42,0.35)]">
+        <div className="absolute right-0 top-full z-50 mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_20px_50px_-25px_rgba(15,23,42,0.35)]">
           <button
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-[#e9f3ee]"
             onClick={() => run(onView)}
           >
             <Eye className="h-4 w-4 text-slate-400" />
             View profile
           </button>
           <button
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
             onClick={() => run(onEdit)}
             disabled={saving}
           >
-            <PencilLine className="h-4 w-4 text-emerald-600" />
+            <PencilLine className="h-4 w-4 text-[#316249]" />
             Edit user
           </button>
           <button
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
             onClick={() => run(onRestore)}
             disabled={saving || !canRestore}
           >
-            <RotateCcw className="h-4 w-4 text-emerald-500" />
+            <RotateCcw className="h-4 w-4 text-[#316249]" />
             Restore
           </button>
           <button
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
             onClick={() => run(onArchive)}
             disabled={saving || !canArchive}
           >
@@ -337,7 +337,7 @@ function ActionMenu({
             Archive
           </button>
           <button
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
             onClick={() => run(onSuspend)}
             disabled={saving || !canSuspend}
           >
@@ -355,7 +355,7 @@ function ActionMenu({
               {ROLE_OPTIONS.map((role) => (
                 <button
                   key={role}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
                   onClick={() => run(() => onSetRole(role))}
                   disabled={saving}
                 >
@@ -636,16 +636,14 @@ export default function AdminUsersPage() {
     <main className={PAGE_BG}>
       <div className="mx-auto max-w-7xl space-y-6">
         {/* KEEP THIS TOP HERO PART */}
-        <section className="overflow-hidden rounded-[32px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+        <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-50">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
-                Admin workspace
+                Live admin overview
               </span>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-                Users management
-              </h1>
+              <h1 className="mt-4 ps-page-title text-white">Users Management</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
                 Review account health, manage roles, and control user access from one
                 production-ready directory without changing the existing behavior.
@@ -675,36 +673,36 @@ export default function AdminUsersPage() {
             title="Total Users"
             value={summaryStats.total || total}
             icon={<Users className="h-5 w-5" />}
-            iconTone="bg-[#1f8a5b]"
+            iconTone="bg-[#316249]"
           />
           <StatCard
             title="Active Owners"
             value={ownerCount}
             icon={<ShieldCheck className="h-5 w-5" />}
-            iconTone="bg-[#36b37e]"
+            iconTone="bg-[#3f7a5a]"
           />
           <StatCard
-            title="Verified Users"
+            title="Active Accounts"
             value={verifiedCount}
             icon={<CheckCircle2 className="h-5 w-5" />}
-            iconTone="bg-[#2fb36f]"
+            iconTone="bg-[#5f9475]"
           />
           <StatCard
             title="Banned Users"
             value={suspendedCount}
             icon={<AlertTriangle className="h-5 w-5" />}
-            iconTone="bg-[#df3f3f]"
+            iconTone="bg-[#c94f4f]"
           />
         </section>
 
         {error ? (
-          <section className="rounded-[16px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 shadow-sm">
+          <section className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 shadow-sm">
             {error}
           </section>
         ) : null}
 
         {/* FILTER + TABLE MAIN */}
-        <section className="rounded-[16px] border border-[#e1e7e3] bg-white shadow-[0_8px_28px_rgba(15,23,42,0.05)]">
+        <section className="rounded-2xl border border-[#e1e7e3] bg-white shadow-[0_8px_28px_rgba(15,23,42,0.05)]">
           {/* FILTER BAR */}
           <div className="border-b border-[#ebf0ec] px-5 py-5">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -718,7 +716,7 @@ export default function AdminUsersPage() {
                       setPage(1);
                     }}
                     placeholder="Search by Name or Email"
-                    className="w-full rounded-[10px] border border-[#d8dfdb] bg-white px-10 py-3 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                    className="w-full rounded-xl border border-[#dfe8e2] bg-white px-10 py-3 text-sm text-slate-900 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20"
                   />
                 </div>
 
@@ -728,7 +726,7 @@ export default function AdminUsersPage() {
                     setRoleFilter(event.target.value as RoleApi | "all");
                     setPage(1);
                   }}
-                  className="rounded-[10px] border border-[#d8dfdb] bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  className="rounded-xl border border-[#dfe8e2] bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20"
                 >
                   <option value="all">All Roles</option>
                   <option value="buyer">Buyer</option>
@@ -744,7 +742,7 @@ export default function AdminUsersPage() {
                     setStatusFilter(event.target.value as StatusApi | "all");
                     setPage(1);
                   }}
-                  className="rounded-[10px] border border-[#d8dfdb] bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  className="rounded-xl border border-[#dfe8e2] bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
@@ -753,17 +751,17 @@ export default function AdminUsersPage() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={resetFilters}
-                  className="rounded-[10px] border border-[#d8dfdb] bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-xl border border-[#dfe8e2] bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee]"
                 >
                   Reset
                 </button>
 
                 <button
                   onClick={() => setAddUserOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-[10px] bg-[#2f9e61] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#278752]"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#274e3b]"
                 >
                   <UserPlus className="h-4 w-4" />
                   Add New User
@@ -774,17 +772,17 @@ export default function AdminUsersPage() {
             {(query.trim() || roleFilter !== "all" || statusFilter !== "all") && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {query.trim() ? (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                  <span className="rounded-full border border-[#c9ddd2] bg-[#e9f3ee] px-3 py-1 text-xs font-semibold text-[#316249]">
                     Search: {query.trim()}
                   </span>
                 ) : null}
                 {roleFilter !== "all" ? (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                  <span className="rounded-full border border-[#c9ddd2] bg-[#e9f3ee] px-3 py-1 text-xs font-semibold text-[#316249]">
                     Role: {capitalizeRole(roleFilter)}
                   </span>
                 ) : null}
                 {statusFilter !== "all" ? (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                  <span className="rounded-full border border-[#c9ddd2] bg-[#e9f3ee] px-3 py-1 text-xs font-semibold text-[#316249]">
                     Status: {statusDisplayLabel(statusFilter)}
                   </span>
                 ) : null}
@@ -798,7 +796,7 @@ export default function AdminUsersPage() {
               Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="animate-pulse rounded-[16px] border border-[#e4ebe7] bg-white p-5"
+                  className="animate-pulse rounded-2xl border border-[#e4ebe7] bg-white p-5"
                 >
                   <div className="flex items-center gap-3">
                     <div className="h-11 w-11 rounded-full bg-slate-200" />
@@ -811,7 +809,7 @@ export default function AdminUsersPage() {
               ))
             ) : !users.length ? (
               <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#e9f3ee] text-[#316249]">
                   <Users className="h-8 w-8" />
                 </div>
                 <h3 className="mt-5 text-lg font-semibold text-slate-900">No users found</h3>
@@ -829,7 +827,7 @@ export default function AdminUsersPage() {
                 return (
                   <div
                     key={user.id}
-                    className="rounded-[16px] border border-[#e4ebe7] bg-white p-5 shadow-sm"
+                    className="rounded-2xl border border-[#e4ebe7] bg-white p-5 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex min-w-0 items-center gap-3">
@@ -840,58 +838,60 @@ export default function AdminUsersPage() {
                         </div>
                       </div>
 
-                      <ActionMenu
-                        disabled={disabled}
-                        saving={saving}
-                        isSuperAdmin={isSuperAdmin}
-                        canRestore={canRestore}
-                        canSuspend={canSuspend}
-                        canArchive={canArchive}
-                        onView={() => {
-                          window.location.assign(`/admin/users/${user.id}`);
-                        }}
-                        onEdit={() => setEditorUser(user)}
-                        onRestore={() =>
-                          setConfirm({
-                            open: true,
-                            title: "Restore user?",
-                            description: "The account will be returned to active status.",
-                            confirmText: "Restore",
-                            action: () => changeStatus(user.id, "active"),
-                          })
-                        }
-                        onArchive={() =>
-                          setConfirm({
-                            open: true,
-                            title: "Archive user?",
-                            description: "Archived users are removed from the active working set.",
-                            confirmText: "Archive",
-                            danger: true,
-                            action: () => changeStatus(user.id, "archived"),
-                          })
-                        }
-                        onSuspend={() =>
-                          setConfirm({
-                            open: true,
-                            title: "Suspend user?",
-                            description: "Use this for fraud or spam. Access can be restored later.",
-                            confirmText: "Suspend",
-                            danger: true,
-                            action: () => changeStatus(user.id, "suspended"),
-                          })
-                        }
-                        onSetRole={
-                          isSuperAdmin
-                            ? (role) =>
-                                setConfirm({
-                                  open: true,
-                                  title: `Set role to ${capitalizeRole(role)}?`,
-                                  confirmText: "Change role",
-                                  action: () => changeRole(user.id, role),
-                                })
-                            : undefined
-                        }
-                      />
+                      <div className="shrink-0">
+                        <ActionMenu
+                          disabled={disabled}
+                          saving={saving}
+                          isSuperAdmin={isSuperAdmin}
+                          canRestore={canRestore}
+                          canSuspend={canSuspend}
+                          canArchive={canArchive}
+                          onView={() => {
+                            window.location.assign(`/admin/users/${user.id}`);
+                          }}
+                          onEdit={() => setEditorUser(user)}
+                          onRestore={() =>
+                            setConfirm({
+                              open: true,
+                              title: "Restore user?",
+                              description: "The account will be returned to active status.",
+                              confirmText: "Restore",
+                              action: () => changeStatus(user.id, "active"),
+                            })
+                          }
+                          onArchive={() =>
+                            setConfirm({
+                              open: true,
+                              title: "Archive user?",
+                              description: "Archived users are removed from the active working set.",
+                              confirmText: "Archive",
+                              danger: true,
+                              action: () => changeStatus(user.id, "archived"),
+                            })
+                          }
+                          onSuspend={() =>
+                            setConfirm({
+                              open: true,
+                              title: "Suspend user?",
+                              description: "Use this for fraud or spam. Access can be restored later.",
+                              confirmText: "Suspend",
+                              danger: true,
+                              action: () => changeStatus(user.id, "suspended"),
+                            })
+                          }
+                          onSetRole={
+                            isSuperAdmin
+                              ? (role) =>
+                                  setConfirm({
+                                    open: true,
+                                    title: `Set role to ${capitalizeRole(role)}?`,
+                                    confirmText: "Change role",
+                                    action: () => changeRole(user.id, role),
+                                  })
+                              : undefined
+                          }
+                        />
+                      </div>
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -924,13 +924,13 @@ export default function AdminUsersPage() {
           <div className="hidden overflow-x-auto md:block">
             {loading && !users.length ? (
               <div className="p-5">
-                <div className="animate-pulse rounded-[16px] border border-[#e4ebe7] bg-white p-5">
+                <div className="animate-pulse rounded-2xl border border-[#e4ebe7] bg-white p-5">
                   <div className="h-72 rounded bg-slate-100" />
                 </div>
               </div>
             ) : !users.length ? (
               <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#e9f3ee] text-[#316249]">
                   <Users className="h-8 w-8" />
                 </div>
                 <h3 className="mt-5 text-lg font-semibold text-slate-900">No users found</h3>
@@ -939,14 +939,13 @@ export default function AdminUsersPage() {
                 </p>
               </div>
             ) : (
-              <table className="min-w-[1100px] w-full text-sm">
+              <table className="min-w-[1000px] w-full text-sm">
                 <thead className="bg-[#edf4ef] text-[#33434d]">
                   <tr>
                     <th className="px-5 py-4 text-left font-semibold">Name</th>
                     <th className="px-5 py-4 text-left font-semibold">Email</th>
                     <th className="px-5 py-4 text-left font-semibold">Role</th>
                     <th className="px-5 py-4 text-left font-semibold">Status</th>
-                    <th className="px-5 py-4 text-left font-semibold">Properties</th>
                     <th className="px-5 py-4 text-left font-semibold">Joined</th>
                     <th className="px-5 py-4 text-right font-semibold">Actions</th>
                   </tr>
@@ -959,12 +958,6 @@ export default function AdminUsersPage() {
                     const canSuspend = user.status !== "suspended";
                     const canArchive = user.status !== "archived";
 
-                    const propertyCount =
-                      user.role === "agent" ? 24 :
-                      user.role === "seller" ? 19 :
-                      user.role === "admin" || user.role === "superadmin" ? "N/A" :
-                      0;
-
                     return (
                       <tr
                         key={user.id}
@@ -973,11 +966,13 @@ export default function AdminUsersPage() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
                             <UserAvatar name={user.name} role={user.role} />
-                            <span className="font-semibold text-[#24323d]">{user.name}</span>
+                            <span className="block max-w-[180px] truncate font-semibold text-[#24323d]">{user.name}</span>
                           </div>
                         </td>
 
-                        <td className="px-5 py-4 font-medium text-[#33434d]">{user.email}</td>
+                        <td className="px-5 py-4 font-medium text-[#33434d]">
+                          <span className="block max-w-[220px] truncate">{user.email}</span>
+                        </td>
 
                         <td className="px-5 py-4">
                           <RoleCell role={user.role} />
@@ -986,8 +981,6 @@ export default function AdminUsersPage() {
                         <td className="px-5 py-4">
                           <StatusBadge status={user.status} />
                         </td>
-
-                        <td className="px-5 py-4 font-medium text-[#24323d]">{propertyCount}</td>
 
                         <td className="px-5 py-4 font-medium text-[#3f4d57]">{formatDate(user.createdAt)}</td>
 
@@ -1068,7 +1061,7 @@ export default function AdminUsersPage() {
                   setLimit(Number(event.target.value));
                   setPage(1);
                 }}
-                className="rounded-[10px] border border-[#d8dfdb] px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                className="rounded-xl border border-[#dfe8e2] px-4 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#316249] focus:ring-4 focus:ring-[#316249]/20"
               >
                 {[10, 20, 50, 100].map((value) => (
                   <option key={value} value={value}>
@@ -1081,19 +1074,19 @@ export default function AdminUsersPage() {
                 <button
                   disabled={page <= 1}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  className="rounded-[10px] border border-[#d8dfdb] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-xl border border-[#dfe8e2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
                 >
                   Previous
                 </button>
 
-                <button className="rounded-[10px] bg-[#355d5a] px-4 py-2 text-sm font-semibold text-white">
+                <button className="rounded-xl bg-[#316249] px-4 py-2 text-sm font-semibold text-white">
                   {page}
                 </button>
 
                 <button
                   disabled={page >= totalPages}
                   onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                  className="rounded-[10px] border border-[#d8dfdb] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-xl border border-[#dfe8e2] px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-[#e9f3ee] disabled:opacity-50"
                 >
                   Next
                 </button>

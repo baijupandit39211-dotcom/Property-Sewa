@@ -172,8 +172,8 @@ function Shell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[30px] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)] shadow-sm">
-      <div className="flex flex-col gap-4 border-b border-emerald-100 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
+    <section className="rounded-[30px] border border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-[#d7e7df] px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className={typography.sectionTitle}>{title}</h2>
           <p className={`mt-1 max-w-2xl ${typography.pageSubtitle}`}>{description}</p>
@@ -232,7 +232,7 @@ function Field({
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+        className="w-full rounded-2xl border border-[#d7e7df] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
       />
     </label>
   );
@@ -258,7 +258,7 @@ function Area({
         rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+        className="w-full rounded-2xl border border-[#d7e7df] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
       />
     </label>
   );
@@ -276,7 +276,7 @@ function Toggle({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
+    <div className="flex items-start justify-between gap-4 rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4">
       <div>
         <p className="text-sm font-medium text-slate-900">{title}</p>
         <p className={`mt-1 ${typography.pageSubtitle}`}>{description}</p>
@@ -288,7 +288,7 @@ function Toggle({
         onClick={() => onChange(!checked)}
         className={cn(
           "relative mt-1 inline-flex h-8 w-14 shrink-0 rounded-full transition",
-          checked ? "bg-emerald-600" : "bg-emerald-200"
+          checked ? "bg-[#316249]" : "bg-[#c9ddd2]"
         )}
       >
         <span
@@ -538,7 +538,7 @@ export default function AdminSettingsWorkspace() {
               <button
                 type="button"
                 onClick={() => void loadSettings()}
-                className={`mt-5 rounded-2xl bg-emerald-700 px-5 py-3 text-white hover:bg-emerald-800 ${typography.buttonText}`}
+                className={`mt-5 rounded-2xl bg-[#316249] px-5 py-3 text-white hover:bg-[#274e3b] ${typography.buttonText}`}
               >
                 Retry
               </button>
@@ -558,7 +558,7 @@ export default function AdminSettingsWorkspace() {
       />
 
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-[34px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
+        <section className="overflow-hidden rounded-[34px] border border-[#c9ddd2]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50">
@@ -594,21 +594,21 @@ export default function AdminSettingsWorkspace() {
             title="Profile readiness"
             value={`${profileScore(profile)}%`}
             detail="Completion across the current admin account fields."
-            tone="border-emerald-100 bg-emerald-50/80"
+            tone="border-[#d7e7df] bg-[#f4fbf7]"
             icon={<UserCog className="h-5 w-5" />}
           />
           <Stat
             title="Report SLA"
             value={`${operations.reportReviewSlaHours}h`}
             detail="Moderation target configured for reports."
-            tone="border-emerald-100 bg-emerald-50/80"
+            tone="border-[#d7e7df] bg-[#f4fbf7]"
             icon={<Clock3 className="h-5 w-5" />}
           />
           <Stat
             title="Notifications on"
             value={`${enabledAlerts(notifications)}/5`}
             detail={`Daily digest set for ${String(notifications.digestHour).padStart(2, "0")}:00`}
-            tone="border-emerald-100 bg-emerald-50/80"
+            tone="border-[#d7e7df] bg-[#f4fbf7]"
             icon={<BellRing className="h-5 w-5" />}
           />
           <Stat
@@ -619,7 +619,7 @@ export default function AdminSettingsWorkspace() {
                 ? "New listings require review."
                 : "New listings can publish directly."
             }
-            tone="border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fffb_100%)]"
+            tone="border-[#d7e7df] bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)]"
             icon={<Globe2 className="h-5 w-5" />}
           />
         </section>
@@ -628,7 +628,7 @@ export default function AdminSettingsWorkspace() {
           title="Admin profile"
           description="Saving this section updates the signed-in admin account details without changing auth or role logic."
           action={
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <span className="rounded-full border border-[#c9ddd2] bg-[#f4fbf7] px-3 py-1 text-xs font-semibold text-[#316249]">
               Account owner
             </span>
           }
@@ -673,22 +673,22 @@ export default function AdminSettingsWorkspace() {
               />
             </div>
 
-            <div className="flex flex-col gap-4 rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-700">
-                <span className="rounded-full border border-emerald-200 bg-white px-3 py-1">
+                <span className="rounded-full border border-[#c9ddd2] bg-white px-3 py-1">
                   Role: {label(profile.role)}
                 </span>
-                <span className="rounded-full border border-emerald-200 bg-white px-3 py-1">
+                <span className="rounded-full border border-[#c9ddd2] bg-white px-3 py-1">
                   Provider: {label(profile.provider)}
                 </span>
-                <span className="rounded-full border border-emerald-200 bg-white px-3 py-1">
+                <span className="rounded-full border border-[#c9ddd2] bg-white px-3 py-1">
                   Created: {fmtDate(profile.createdAt)}
                 </span>
               </div>
               <button
                 type="submit"
                 disabled={saving === "profile" || !profileDirty}
-                className="rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                className="rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b] disabled:opacity-60"
               >
                 {saving === "profile"
                   ? "Saving..."
@@ -704,7 +704,7 @@ export default function AdminSettingsWorkspace() {
           title="Platform and operations"
           description="This section persists the shared platform identity and moderation defaults used by the admin side."
           action={
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <span className="rounded-full bg-[#f4fbf7] px-3 py-1 text-xs font-semibold text-[#316249]">
               Shared config
             </span>
           }
@@ -772,13 +772,13 @@ export default function AdminSettingsWorkspace() {
               />
             </div>
 
-            <div className="rounded-[28px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
+            <div className="rounded-[28px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-white p-3 text-emerald-700 shadow-sm ring-1 ring-emerald-100">
+                <div className="rounded-2xl bg-white p-3 text-[#316249] shadow-sm ring-1 ring-[#d7e7df]">
                   <Settings2 className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Operational rules</h3>
+                  <h3 className="text-base font-semibold text-slate-900">Operational rules</h3>
                   <p className="mt-1 text-sm text-slate-500">
                     These controls update moderation defaults and feature flags.
                   </p>
@@ -856,7 +856,7 @@ export default function AdminSettingsWorkspace() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-slate-500">
                 Last shared settings sync:{" "}
                 <span className="font-semibold text-slate-700">{fmtDate(updatedAt)}</span>
@@ -864,7 +864,7 @@ export default function AdminSettingsWorkspace() {
               <button
                 type="submit"
                 disabled={saving === "platform" || !platformDirty}
-                className="rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                className="rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b] disabled:opacity-60"
               >
                 {saving === "platform"
                   ? "Saving..."
@@ -881,7 +881,7 @@ export default function AdminSettingsWorkspace() {
             title="Notification preferences"
             description="Choose which operational alerts and summaries stay active for the admin workspace."
             action={
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <span className="rounded-full bg-[#f4fbf7] px-3 py-1 text-xs font-semibold text-[#316249]">
                 Alerts
               </span>
             }
@@ -945,7 +945,7 @@ export default function AdminSettingsWorkspace() {
                 />
               </div>
               <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_180px]">
-                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 text-sm text-slate-600">
+                <div className="rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4 text-sm text-slate-600">
                   Use 24-hour format. The backend stores the digest hour between 0 and 23.
                 </div>
                 <Field
@@ -960,7 +960,7 @@ export default function AdminSettingsWorkspace() {
                   }
                 />
               </div>
-              <div className="flex flex-col gap-4 rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-500">
                   Enabled alert rules:{" "}
                   <span className="font-semibold text-slate-700">
@@ -970,7 +970,7 @@ export default function AdminSettingsWorkspace() {
                 <button
                   type="submit"
                   disabled={saving === "notifications" || !notificationsDirty}
-                  className="rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                  className="rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b] disabled:opacity-60"
                 >
                   {saving === "notifications"
                     ? "Saving..."
@@ -993,7 +993,7 @@ export default function AdminSettingsWorkspace() {
               }
             >
               <form className="space-y-5" onSubmit={savePassword}>
-                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4 text-sm text-slate-600">
+                <div className="rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4 text-sm text-slate-600">
                   Provider:{" "}
                   <span className="font-semibold text-slate-700">{label(profile.provider)}</span>.
                   Google-authenticated accounts cannot change passwords from this form.
@@ -1025,7 +1025,7 @@ export default function AdminSettingsWorkspace() {
                 <button
                   type="submit"
                   disabled={saving === "security" || profile.provider === "google"}
-                  className="w-full rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                  className="w-full rounded-2xl bg-[#316249] px-5 py-3 text-sm font-semibold text-white hover:bg-[#274e3b] disabled:opacity-60"
                 >
                   {saving === "security" ? "Saving..." : "Change password"}
                 </button>
@@ -1037,7 +1037,7 @@ export default function AdminSettingsWorkspace() {
               description="Quick readout of the saved platform identity and current live rules."
             >
               <div className="space-y-4 text-sm text-slate-600">
-                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
+                <div className="rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4">
                   <div className="flex items-center gap-3">
                     <Building2 className="h-5 w-5 text-slate-700" />
                     <div>
@@ -1046,9 +1046,9 @@ export default function AdminSettingsWorkspace() {
                     </div>
                   </div>
                 </div>
-                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
+                <div className="rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4">
                   <div className="flex items-center gap-3">
-                    <ShieldCheck className="h-5 w-5 text-emerald-700" />
+                    <ShieldCheck className="h-5 w-5 text-[#316249]" />
                     <p>
                       Listing moderation:{" "}
                       <span className="font-semibold text-slate-700">
@@ -1059,7 +1059,7 @@ export default function AdminSettingsWorkspace() {
                     </p>
                   </div>
                 </div>
-                <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/45 px-4 py-4">
+                <div className="rounded-[24px] border border-[#d7e7df] bg-[#f4fbf7] px-4 py-4">
                   <div className="flex items-center gap-3">
                     <LockKeyhole className="h-5 w-5 text-slate-700" />
                     <p>
@@ -1076,3 +1076,4 @@ export default function AdminSettingsWorkspace() {
     </main>
   );
 }
+

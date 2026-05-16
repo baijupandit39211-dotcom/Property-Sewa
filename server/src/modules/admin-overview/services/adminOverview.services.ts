@@ -311,6 +311,7 @@ export async function getAdminOverview() {
     suspendedUsers,
     roleCounts,
     recentUsers,
+    topOwnersRaw,
     totalReports,
     pendingReports,
     reviewedReports,
@@ -345,6 +346,40 @@ export async function getAdminOverview() {
       .sort({ createdAt: -1 })
       .limit(6)
       .lean(),
+    Property.aggregate([
+      {
+        $match: {
+          createdBy: { $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: "$createdBy",
+          propertyCount: { $sum: 1 },
+        },
+      },
+      { $sort: { propertyCount: -1 } },
+      { $limit: 8 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "owner",
+        },
+      },
+      { $unwind: "$owner" },
+      {
+        $project: {
+          _id: 1,
+          propertyCount: 1,
+          name: "$owner.name",
+          email: "$owner.email",
+          role: "$owner.role",
+          status: "$owner.status",
+        },
+      },
+    ]),
     Report.countDocuments({}),
     Report.countDocuments({ status: "pending" }),
     Report.countDocuments({ status: "reviewed" }),
@@ -501,6 +536,14 @@ export async function getAdminOverview() {
         role: user.role || "buyer",
         status: user.status || "active",
         createdAt: user.createdAt,
+      })),
+      topOwners: topOwnersRaw.map((owner: any) => ({
+        id: String(owner._id),
+        name: owner.name || "Unknown",
+        email: owner.email || "",
+        role: owner.role || "seller",
+        status: owner.status || "active",
+        propertyCount: Number(owner.propertyCount || 0),
       })),
       topReportReasons: reportReasons.map((row: any) => ({
         reason: String(row?._id || "Other"),

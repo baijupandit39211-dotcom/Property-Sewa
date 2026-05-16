@@ -122,10 +122,10 @@ function formatDate(value: string) {
 function StatusBadge({ status }: { status: ContactStatus }) {
   const tone =
     status === "new"
-      ? "bg-sky-50 text-sky-700 ring-sky-200"
+      ? "bg-[#f4f8ff] text-[#335b99] ring-[#cfe0ff]"
       : status === "reviewed"
         ? "bg-amber-50 text-amber-700 ring-amber-200"
-        : "bg-emerald-50 text-emerald-700 ring-emerald-200";
+        : "bg-[#f4fbf7] text-[#2a523d] ring-[#c9ddd2]";
 
   return (
     <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1", tone)}>
@@ -148,9 +148,9 @@ function StatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{value}</p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{value}</p>
         </div>
-        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#f4fbf7] text-[#316249]">
           {icon}
         </div>
       </div>
@@ -368,13 +368,13 @@ function AdminContactMessagesPageContent() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[30px] border border-emerald-200/80 bg-[linear-gradient(120deg,#0f2f29_0%,#1f5c46_45%,#98c9af_100%)] px-7 py-7 text-white shadow-[0_24px_80px_rgba(19,74,54,0.22)]">
+      <section className="rounded-[30px] border border-[#c9ddd2]/80 bg-[linear-gradient(120deg,#0f2f29_0%,#1f5c46_45%,#98c9af_100%)] px-7 py-7 text-white shadow-[0_24px_80px_rgba(19,74,54,0.22)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-50/80">
               Contact Inbox
             </p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
               Contact Messages
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-emerald-50/90 sm:text-base">
@@ -409,7 +409,7 @@ function AdminContactMessagesPageContent() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by name, email, phone, subject, or message"
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#316249] focus:bg-white focus:ring-4 focus:ring-[#d7e7df]"
             />
           </div>
 
@@ -422,7 +422,7 @@ function AdminContactMessagesPageContent() {
                 className={cn(
                   "rounded-full px-4 py-2 text-sm font-semibold transition",
                   statusFilter === option.value
-                    ? "bg-emerald-600 text-white shadow-sm"
+                    ? "bg-[#316249] text-white shadow-sm"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 )}
               >
@@ -457,8 +457,8 @@ function AdminContactMessagesPageContent() {
                         key={item.id}
                         onClick={() => setSelectedId(item.id)}
                         className={cn(
-                          "cursor-pointer border-t border-slate-200 transition hover:bg-emerald-50/50",
-                          selectedId === item.id && "bg-emerald-50/70"
+                          "cursor-pointer border-t border-slate-200 transition hover:bg-[#f4fbf7]",
+                          selectedId === item.id && "bg-[#e9f3ee]"
                         )}
                       >
                         <td className="px-5 py-4">
@@ -492,10 +492,10 @@ function AdminContactMessagesPageContent() {
               <div className="space-y-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#316249]">
                       Selected Message
                     </p>
-                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
                       {selectedMessage.subject}
                     </h2>
                   </div>
@@ -509,13 +509,13 @@ function AdminContactMessagesPageContent() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Email</p>
-                    <a href={`mailto:${selectedMessage.email}`} className="mt-1 block text-sm font-medium text-emerald-700">
+                    <a href={`mailto:${selectedMessage.email}`} className="mt-1 block text-sm font-medium text-[#316249]">
                       {selectedMessage.email}
                     </a>
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Phone</p>
-                    <a href={`tel:${selectedMessage.phone}`} className="mt-1 block text-sm font-medium text-emerald-700">
+                    <a href={`tel:${selectedMessage.phone}`} className="mt-1 block text-sm font-medium text-[#316249]">
                       {selectedMessage.phone}
                     </a>
                   </div>
@@ -548,7 +548,7 @@ function AdminContactMessagesPageContent() {
                         className={cn(
                           "rounded-full px-4 py-2 text-sm font-semibold transition",
                           selectedMessage.status === status
-                            ? "bg-emerald-600 text-white"
+                            ? "bg-[#316249] text-white"
                             : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100",
                           (updatingId === selectedMessage.id || selectedMessage.status === status) &&
                             "cursor-not-allowed opacity-70"
@@ -568,7 +568,7 @@ function AdminContactMessagesPageContent() {
                       onClick={() => void generateAiReply()}
                       disabled={generatingReply}
                       className={cn(
-                        "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100",
+                        "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-[#c9ddd2] bg-[#f4fbf7] px-4 text-sm font-semibold text-[#316249] transition hover:bg-[#e9f3ee]",
                         generatingReply && "cursor-not-allowed opacity-70"
                       )}
                     >
@@ -589,7 +589,7 @@ function AdminContactMessagesPageContent() {
                           setReplySubject(event.target.value);
                           setError("");
                         }}
-                        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
                         placeholder="Reply subject"
                       />
                     </div>
@@ -606,7 +606,7 @@ function AdminContactMessagesPageContent() {
                           setReplyMessage(event.target.value);
                           setError("");
                         }}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-800 outline-none transition focus:border-[#316249] focus:ring-4 focus:ring-[#d7e7df]"
                         placeholder="Write your reply to the sender here."
                       />
                     </div>
@@ -616,7 +616,7 @@ function AdminContactMessagesPageContent() {
                       onClick={() => void sendReply()}
                       disabled={sendingReply || Boolean(replyValidationError)}
                       className={cn(
-                        "inline-flex h-11 items-center justify-center rounded-2xl bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700",
+                        "inline-flex h-11 items-center justify-center rounded-2xl bg-[#316249] px-5 text-sm font-semibold text-white transition hover:bg-[#274e3b]",
                         (sendingReply || Boolean(replyValidationError)) &&
                           "cursor-not-allowed opacity-70"
                       )}
@@ -631,7 +631,7 @@ function AdminContactMessagesPageContent() {
                 </div>
 
                 {actionNotice ? (
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                  <div className="rounded-2xl border border-[#c9ddd2] bg-[#f4fbf7] px-4 py-3 text-sm font-medium text-[#2a523d]">
                     {actionNotice}
                   </div>
                 ) : null}

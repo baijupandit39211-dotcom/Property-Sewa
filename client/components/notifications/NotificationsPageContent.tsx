@@ -190,7 +190,7 @@ export default function NotificationsPageContent({
               <Bell className="h-3.5 w-3.5" />
               {roleLabel} Notification Center
             </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">Notifications</h1>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Notifications</h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-white/90 sm:text-base">
               Review new messages, transaction updates, and account alerts in one polished workspace.
             </p>
@@ -200,7 +200,7 @@ export default function NotificationsPageContent({
             type="button"
             onClick={handleMarkAllAsRead}
             disabled={markingAll || loading || data.items.length === 0}
-            className={`relative z-10 inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-[#0D1C12] shadow-sm transition hover:bg-[#EEF8EB] disabled:cursor-not-allowed disabled:opacity-60 ${typography.buttonText}`}
+            className={`relative z-10 inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-[#0D1C12] shadow-sm transition hover:bg-[#EEF8EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]/30 disabled:cursor-not-allowed disabled:opacity-60 ${typography.buttonText}`}
           >
             <CheckCheck className="mr-2 h-4 w-4" />
             {markingAll ? "Updating..." : "Mark all as read"}
@@ -330,17 +330,17 @@ export default function NotificationsPageContent({
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <div className="mb-2 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
                       <p className="text-[15px] font-semibold text-[#0D1C12]">{notification.title}</p>
                       {!notification.isRead && (
                         <span className="rounded-full bg-[#316249] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-white">
                           New
                         </span>
                       )}
-                      <span className="rounded-full bg-[#ECF5EF] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#618975]">
+                      <span className="rounded-full bg-[#ECF5EF] px-2.5 py-1 text-xs font-medium uppercase tracking-[0.08em] text-[#618975]">
                         {notification.category}
                       </span>
-                      <span className="rounded-full bg-[#ECF5EF] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#618975]">
+                      <span className="rounded-full bg-[#ECF5EF] px-2.5 py-1 text-xs font-medium uppercase tracking-[0.08em] text-[#618975]">
                         {notification.priority}
                       </span>
                     </div>
@@ -363,7 +363,7 @@ export default function NotificationsPageContent({
             type="button"
             onClick={() => setPage((prev) => Math.max(1, prev - 1))}
             disabled={!data.hasPrev || loading}
-            className={`inline-flex items-center gap-2 rounded-2xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-[#0D1C12] transition hover:bg-[#F7FCFA] disabled:cursor-not-allowed disabled:opacity-50 ${typography.buttonText}`}
+            className={`inline-flex items-center gap-2 rounded-2xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-[#0D1C12] transition hover:bg-[#F7FCFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]/30 disabled:cursor-not-allowed disabled:opacity-50 ${typography.buttonText}`}
           >
             <ChevronLeft className="h-4 w-4" />
             Previous
@@ -378,7 +378,7 @@ export default function NotificationsPageContent({
             type="button"
             onClick={() => setPage((prev) => prev + 1)}
             disabled={!data.hasNext || loading}
-            className={`inline-flex items-center gap-2 rounded-2xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-[#0D1C12] transition hover:bg-[#F7FCFA] disabled:cursor-not-allowed disabled:opacity-50 ${typography.buttonText}`}
+            className={`inline-flex items-center gap-2 rounded-2xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-[#0D1C12] transition hover:bg-[#F7FCFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]/30 disabled:cursor-not-allowed disabled:opacity-50 ${typography.buttonText}`}
           >
             Next
             <ChevronRight className="h-4 w-4" />
