@@ -91,8 +91,7 @@ export default function ForgotPasswordPage() {
         }}
       >
         <div className="flex h-[68px] w-full items-center justify-between px-6 lg:px-[80px]">
-          <Link
-            href="/"
+          <Link prefetch={true} href="/"
             className="inline-flex items-center gap-3 leading-none text-[16px] font-extrabold tracking-wide text-white"
           >
             <PropertySewaLogoMark className="h-[26px] w-[26px] shrink-0 translate-y-[0.5px]" />
@@ -100,20 +99,17 @@ export default function ForgotPasswordPage() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/login"
+            <Link prefetch={true} href="/login"
               className="rounded-full bg-white/10 px-5 py-1.5 text-[13px] font-semibold text-white shadow-sm"
             >
               Back to Login
             </Link>
-            <Link
-              href="/login"
+            <Link prefetch={true} href="/login"
               className="rounded-full bg-white px-5 py-1.5 text-[13px] font-semibold text-black shadow-sm"
             >
               Log In
             </Link>
-            <Link
-              href="/register"
+            <Link prefetch={true} href="/register"
               className="rounded-full bg-[#13EC80] px-5 py-1.5 text-[13px] font-semibold text-[#0D1C12] shadow-sm"
             >
               Sign Up
@@ -181,7 +177,7 @@ export default function ForgotPasswordPage() {
                   <div className="mt-2 text-[#618975]">Redirecting to login...</div>
                   <div className="mt-1 text-[#618975]">
                     Back to{" "}
-                    <Link href="/login" className="font-semibold text-[#316249] hover:underline">
+                    <Link prefetch={true} href="/login" className="font-semibold text-[#316249] hover:underline">
                       Login
                     </Link>
                   </div>

@@ -11,8 +11,8 @@ import {
   PhoneCall,
   X,
 } from "lucide-react";
-import { apiFetchSafe } from "@/app/lib/api";
 import { getDashboardPath, logoutByRole } from "@/app/lib/auth";
+import { getCachedPublicSessionUser, getPublicSessionUser } from "@/app/lib/publicSessionCache";
 import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
 
 type SessionUser = {
@@ -37,16 +37,12 @@ export default function PublicSiteHeader() {
 
   React.useEffect(() => {
     let active = true;
+    const cached = getCachedPublicSessionUser();
+    if (cached) setUser(cached);
 
     (async () => {
-      const meResponse = await apiFetchSafe<{ user?: SessionUser }>("/auth/me");
-      if (meResponse?.user) {
-        if (active) setUser(meResponse.user);
-        return;
-      }
-
-      const adminResponse = await apiFetchSafe<{ user?: SessionUser }>("/auth/admin/me");
-      if (active) setUser(adminResponse?.user || null);
+      const sessionUser = await getPublicSessionUser();
+      if (active) setUser(sessionUser);
     })();
 
     return () => {
@@ -121,6 +117,7 @@ export default function PublicSiteHeader() {
           <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-2.5">
           <Link
             href="/"
+            prefetch={true}
             aria-label="Go to Property Sewa landing page"
             className="flex items-center gap-2.5 rounded-2xl transition hover:opacity-95"
             onClick={() => setMobileNavOpen(false)}
@@ -135,24 +132,28 @@ export default function PublicSiteHeader() {
             <Link
               className="text-[#F7FCFA] transition hover:text-white"
               href="/properties?type=sale"
+              prefetch={true}
             >
               For Sale
             </Link>
             <Link
               className="text-[#E8F2EB] transition hover:text-white"
               href="/properties?type=rent"
+              prefetch={true}
             >
               For Rent
             </Link>
             <Link
               className="text-[#E8F2EB] transition hover:text-white"
               href="/properties"
+              prefetch={true}
             >
               Browse All
             </Link>
             <Link
               className="text-[#E8F2EB] transition hover:text-white"
               href="/faq"
+              prefetch={true}
             >
               FAQ
             </Link>
@@ -186,6 +187,8 @@ export default function PublicSiteHeader() {
                       alt={user.name || "User avatar"}
                       width={36}
                       height={36}
+                      loading="lazy"
+                      decoding="async"
                       className="h-9 w-9 rounded-full object-cover"
                     />
                   ) : (
@@ -235,6 +238,7 @@ export default function PublicSiteHeader() {
               <>
                 <Link
                   href="/login"
+                  prefetch={true}
                   className="rounded-full bg-white px-3.5 py-1.5 text-sm font-semibold text-[#0D1C12] shadow-sm ring-1 ring-[#D1D5DB] transition hover:scale-[1.02] active:scale-[0.99]"
                 >
                   Log In
@@ -242,6 +246,7 @@ export default function PublicSiteHeader() {
 
                 <Link
                   href="/register"
+                  prefetch={true}
                   className="rounded-full bg-[#13EC80] px-3.5 py-1.5 text-sm font-semibold text-[#0D1C12] shadow-sm transition hover:scale-[1.02] hover:bg-[#10DD78] active:scale-[0.99]"
                 >
                   Sign Up
@@ -251,6 +256,7 @@ export default function PublicSiteHeader() {
 
             <Link
               href="/contact"
+              prefetch={true}
               aria-label="Contact support"
               title="Contact support"
               className="grid h-9 w-9 place-items-center rounded-full bg-white shadow-sm ring-1 ring-white/30 transition hover:scale-[1.02] active:scale-[0.99]"
@@ -269,6 +275,7 @@ export default function PublicSiteHeader() {
             <div className="mx-auto grid max-w-7xl gap-2 px-4 py-4 sm:px-6">
               <Link
                 href="/properties?type=sale"
+                prefetch={true}
                 onClick={() => setMobileNavOpen(false)}
                 className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100"
               >
@@ -276,6 +283,7 @@ export default function PublicSiteHeader() {
               </Link>
               <Link
                 href="/properties?type=rent"
+                prefetch={true}
                 onClick={() => setMobileNavOpen(false)}
                 className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100"
               >
@@ -283,6 +291,7 @@ export default function PublicSiteHeader() {
               </Link>
               <Link
                 href="/properties"
+                prefetch={true}
                 onClick={() => setMobileNavOpen(false)}
                 className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100"
               >
@@ -321,6 +330,7 @@ export default function PublicSiteHeader() {
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Link
                       href="/login"
+                      prefetch={true}
                       onClick={() => setMobileNavOpen(false)}
                       className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
                     >
@@ -328,6 +338,7 @@ export default function PublicSiteHeader() {
                     </Link>
                     <Link
                       href="/register"
+                      prefetch={true}
                       onClick={() => setMobileNavOpen(false)}
                       className="inline-flex items-center justify-center rounded-2xl bg-[#316249] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#24472E]"
                     >
@@ -338,6 +349,7 @@ export default function PublicSiteHeader() {
 
                 <Link
                   href="/contact"
+                  prefetch={true}
                   onClick={() => setMobileNavOpen(false)}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50"
                 >

@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import {
@@ -751,6 +752,8 @@ function BuyerPropertyDetailsView({
             <img
               src={activeImg || images[0]}
               alt={property?.title || "Property"}
+              loading="lazy"
+              decoding="async"
               className="h-[280px] w-full object-cover sm:h-[420px] lg:h-[520px]"
             />
 
@@ -858,6 +861,8 @@ function BuyerPropertyDetailsView({
                 <img
                   src={url}
                   alt={`Thumbnail ${idx + 1}`}
+                  loading="lazy"
+                  decoding="async"
                   className="h-24 w-full object-cover sm:h-28"
                 />
               </button>
@@ -1165,14 +1170,17 @@ function BuyerPropertyDetailsView({
                     {similar.map((p) => {
                       const img = getUniqueSimilarImage(p, usedSimilarImgs);
                       return (
-                        <a
+                        <Link
                           key={p._id}
+                          prefetch={true}
                           href={`/buyer/property/${p._id}`}
                           className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                         >
                           <img
                             src={img}
                             alt={p.title}
+                            loading="lazy"
+                            decoding="async"
                             className="h-44 w-full object-cover"
                           />
                           <div className="p-3">
@@ -1187,7 +1195,7 @@ function BuyerPropertyDetailsView({
                               {Number(p.price || 0).toLocaleString()}
                             </div>
                           </div>
-                        </a>
+                        </Link>
                       );
                     })}
                   </div>
@@ -1701,6 +1709,30 @@ function PropertyDetailsPageContent() {
   const [loading, setLoading] = useState(true);
   const [fatalError, setFatalError] = useState("");
 
+  const loadingShell = (
+    <main className="min-h-screen bg-[#f5f7fb] px-4 py-6">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="grid gap-4 lg:grid-cols-[1.7fr_0.95fr]">
+          <div className="space-y-4">
+            <div className="h-[420px] animate-pulse rounded-2xl bg-[#DFE8E4]" />
+            <div className="grid grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="h-20 animate-pulse rounded-xl bg-[#E8EFEC]" />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="h-7 w-3/5 animate-pulse rounded bg-[#E8EFEC]" />
+            <div className="h-5 w-2/5 animate-pulse rounded bg-[#E8EFEC]" />
+            <div className="h-24 animate-pulse rounded-xl bg-[#E8EFEC]" />
+            <div className="h-11 animate-pulse rounded-lg bg-[#DDECE4]" />
+            <div className="h-11 animate-pulse rounded-lg bg-[#E8EFEC]" />
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -1743,14 +1775,7 @@ function PropertyDetailsPageContent() {
   }, [params?.id, preview]);
 
   if (loading) {
-    return (
-      <div className="grid min-h-[calc(100vh-64px)] place-items-center bg-[#f5f7fb] px-4">
-        <div className="rounded-2xl border border-slate-200 bg-white px-10 py-12 text-center shadow-sm">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-r-2 border-emerald-600" />
-          <p className="mt-4 text-slate-600">Loading property...</p>
-        </div>
-      </div>
-    );
+    return loadingShell;
   }
 
   if (fatalError && !property) {
@@ -1775,7 +1800,15 @@ function PropertyDetailsPageContent() {
 
 export default function PropertyDetailsPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#f5f7fb] px-4 py-6">
+          <div className="mx-auto max-w-7xl">
+            <div className="h-[420px] animate-pulse rounded-2xl bg-[#DFE8E4]" />
+          </div>
+        </main>
+      }
+    >
       <PropertyDetailsPageContent />
     </Suspense>
   );

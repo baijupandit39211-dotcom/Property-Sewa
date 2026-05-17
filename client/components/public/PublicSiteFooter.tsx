@@ -6,8 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Home } from "lucide-react";
-import { apiFetchSafe } from "@/app/lib/api";
 import { getDashboardPath } from "@/app/lib/auth";
+import { getCachedPublicSessionUser, getPublicSessionUser } from "@/app/lib/publicSessionCache";
 
 type SessionUser = {
   name?: string;
@@ -21,16 +21,12 @@ export default function PublicSiteFooter() {
 
   React.useEffect(() => {
     let active = true;
+    const cached = getCachedPublicSessionUser();
+    if (cached) setUser(cached);
 
     (async () => {
-      const meResponse = await apiFetchSafe<{ user?: SessionUser }>("/auth/me");
-      if (meResponse?.user) {
-        if (active) setUser(meResponse.user);
-        return;
-      }
-
-      const adminResponse = await apiFetchSafe<{ user?: SessionUser }>("/auth/admin/me");
-      if (active) setUser(adminResponse?.user || null);
+      const sessionUser = await getPublicSessionUser();
+      if (active) setUser(sessionUser);
     })();
 
     return () => {
@@ -103,6 +99,8 @@ export default function PublicSiteFooter() {
               src="/house-3d.png"
               alt="House"
               fill
+              loading="lazy"
+              decoding="async"
               className="object-contain drop-shadow-[0_22px_22px_rgba(0,0,0,0.22)]"
             />
           </motion.div>
@@ -173,7 +171,7 @@ function FooterCol({
       <ul className="mt-3 space-y-2 text-sm text-emerald-950/70">
         {links.map((link) => (
           <li key={link.label}>
-            <Link className="transition hover:text-emerald-950" href={link.href}>
+            <Link className="transition hover:text-emerald-950" href={link.href} prefetch={true}>
               {link.label}
             </Link>
           </li>

@@ -275,20 +275,18 @@ export default function RegisterPage() {
         style={{ background: "linear-gradient(90deg, #1F5B41 0%, #2D6A4E 55%, #5E7F70 100%)" }}
       >
         <div className="flex h-[72px] w-full items-center justify-between px-4 sm:px-6 lg:px-[80px]">
-          <Link href="/" className="flex items-center gap-3 text-lg font-extrabold text-white">
+          <Link prefetch={true} href="/" className="flex items-center gap-3 text-lg font-extrabold text-white">
             <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
             <span>PROPERTY SEWA</span>
           </Link>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/"
+            <Link prefetch={true} href="/"
               className="hidden rounded-full bg-white/10 px-5 py-1.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
             >
               Back to Home
             </Link>
-            <Link
-              href="/login"
+            <Link prefetch={true} href="/login"
               className="hidden rounded-full bg-white/10 px-5 py-1.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
             >
               Log In
@@ -473,7 +471,7 @@ export default function RegisterPage() {
 
               <p className="text-left text-[14px] text-[#618975]">
                 Already have an account?{" "}
-                <Link href="/login" className="font-medium text-[#316249] hover:underline">
+                <Link prefetch={true} href="/login" className="font-medium text-[#316249] hover:underline">
                   Login
                 </Link>
               </p>

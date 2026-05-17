@@ -247,6 +247,7 @@ function LinkLike({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
+      prefetch={true}
       className={`inline-flex items-center gap-1.5 rounded-xl border border-[#dbe5de] bg-[#f3f8f4] px-3 py-2 text-[#316249] transition hover:bg-[#e9f3ee] ${typography.buttonText}`}
     >
       {label}
@@ -601,6 +602,7 @@ export default function AdminOverviewWorkspace() {
           <div className="mt-4">
             <Link
               href="/"
+              prefetch={true}
               className={`inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-white backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}
             >
               Back to Home

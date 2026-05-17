@@ -65,6 +65,36 @@ function pageCopy(listingType: string) {
   };
 }
 
+function PropertyGridSkeleton() {
+  return (
+    <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <article
+          key={index}
+          className="overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white shadow-sm"
+        >
+          <div className="h-[230px] w-full animate-pulse bg-[#EAF2EE]" />
+          <div className="space-y-4 p-5">
+            <div className="space-y-2">
+              <div className="h-3 w-20 animate-pulse rounded bg-[#EAF2EE]" />
+              <div className="h-7 w-36 animate-pulse rounded bg-[#DFECE5]" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-6 w-4/5 animate-pulse rounded bg-[#EAF2EE]" />
+              <div className="h-4 w-3/5 animate-pulse rounded bg-[#EAF2EE]" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="h-8 animate-pulse rounded-full bg-[#EAF2EE]" />
+              <div className="h-8 animate-pulse rounded-full bg-[#EAF2EE]" />
+              <div className="h-8 animate-pulse rounded-full bg-[#EAF2EE]" />
+            </div>
+          </div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function PublicPropertiesPageContent() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
@@ -156,14 +186,12 @@ function PublicPropertiesPageContent() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href="/"
+              <Link prefetch={true} href="/"
                 className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15"
               >
                 Back to Home
               </Link>
-              <Link
-                href="/buyer/search-properties"
+              <Link prefetch={true} href="/buyer/search-properties"
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50"
               >
                 Advanced Search
@@ -176,8 +204,7 @@ function PublicPropertiesPageContent() {
         <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-3">
-              <Link
-                href="/properties?type=sale"
+              <Link prefetch={true} href="/properties?type=sale"
                 className={cn(
                   "rounded-full px-4 py-2 text-sm font-semibold transition",
                   listingType === "buy"
@@ -187,8 +214,7 @@ function PublicPropertiesPageContent() {
               >
                 For Sale
               </Link>
-              <Link
-                href="/properties?type=rent"
+              <Link prefetch={true} href="/properties?type=rent"
                 className={cn(
                   "rounded-full px-4 py-2 text-sm font-semibold transition",
                   listingType === "rent"
@@ -198,8 +224,7 @@ function PublicPropertiesPageContent() {
               >
                 For Rent
               </Link>
-              <Link
-                href="/properties"
+              <Link prefetch={true} href="/properties"
                 className={cn(
                   "rounded-full px-4 py-2 text-sm font-semibold transition",
                   listingType === ""
@@ -223,6 +248,7 @@ function PublicPropertiesPageContent() {
               </button>
               {categoryFilter ? (
                 <Link
+                  prefetch={true}
                   href={showOnlyOffers ? "/properties?offersOnly=true" : "/properties"}
                   className="rounded-full bg-[#0D1C12] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1A3321]"
                 >
@@ -249,10 +275,7 @@ function PublicPropertiesPageContent() {
             <p className="mt-2 text-sm text-[#618975]">Please refresh or try another filter.</p>
           </section>
         ) : loading ? (
-          <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-8 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#0D1C12]">Loading listings...</h2>
-            <p className="mt-2 text-sm text-[#618975]">Fetching the latest properties.</p>
-          </section>
+          <PropertyGridSkeleton />
         ) : visibleItems.length === 0 ? (
           <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-10 text-center shadow-sm">
             <h2 className="text-2xl font-semibold text-[#0D1C12]">No properties found</h2>
@@ -265,6 +288,7 @@ function PublicPropertiesPageContent() {
             {visibleItems.map((property) => (
               <Link
                 key={property._id}
+                prefetch={true}
                 href={`/buyer/property/${property._id}`}
                 className="group overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-20px_rgba(13,28,18,0.16)]"
               >
@@ -272,6 +296,8 @@ function PublicPropertiesPageContent() {
                   <img
                     src={property.images?.[0]?.url || "/placeholder.jpg"}
                     alt={property.title || "Property"}
+                    loading="lazy"
+                    decoding="async"
                     className="h-[230px] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
                   />
                   <div className="absolute left-4 top-4">
@@ -335,10 +361,10 @@ export default function PublicPropertiesPage() {
     <React.Suspense
       fallback={
         <main className="min-h-screen bg-[#F7FCFA] px-4 py-6 sm:px-6">
-          <div className="mx-auto max-w-7xl">
-            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-8 text-sm text-[#618975] shadow-sm">
-              Loading properties...
-            </div>
+          <div className="mx-auto max-w-7xl space-y-6">
+            <div className="h-[208px] animate-pulse rounded-[32px] border border-emerald-200/80 bg-[#DFECE5]" />
+            <div className="h-[112px] animate-pulse rounded-[28px] border border-[#E5E7EB] bg-white" />
+            <PropertyGridSkeleton />
           </div>
         </main>
       }

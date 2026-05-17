@@ -440,6 +440,7 @@ export default function BuyerDashboardPage() {
                 </div>
 
                 <Link
+                  prefetch={true}
                   href={searchText.trim() ? `/buyer/search-properties?q=${encodeURIComponent(searchText.trim())}` : "/buyer/search-properties"}
                   className={`inline-flex h-12 items-center gap-3 self-start rounded-xl border border-white/15 bg-white/10 px-6 text-sm font-semibold text-white transition hover:bg-white/15`}
                 >
@@ -450,6 +451,7 @@ export default function BuyerDashboardPage() {
 
               <div className="mt-4">
                 <Link
+                  prefetch={true}
                   href="/"
                   className={`inline-flex items-center gap-1.5 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#0D1C12] shadow-sm transition hover:bg-[#EEF8EB]`}
                 >

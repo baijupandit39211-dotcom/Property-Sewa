@@ -243,7 +243,7 @@ export default function SellerDashboardPage() {
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90">
                   Get a clear view of your real estate portfolio.
                 </p>
-                <Link href="/" className={`mt-4 inline-flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-white backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}>
+                <Link prefetch={true} href="/" className={`mt-4 inline-flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-white backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}>
                   Back to Home
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -252,7 +252,7 @@ export default function SellerDashboardPage() {
               <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap xl:w-auto xl:flex-nowrap xl:items-center xl:justify-end">
                 <HeaderSearch value={search} onChange={setSearch} />
 
-                <Link href="/seller/add-property" className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}>
+                <Link prefetch={true} href="/seller/add-property" className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/15 ${typography.buttonText}`}>
                   <Plus className="h-4 w-4" />
                   Add Property
                 </Link>
@@ -314,7 +314,7 @@ export default function SellerDashboardPage() {
                     </p>
                   </div>
                   {filteredRecentActivity.length > 0 ? (
-                    <Link href="/seller/leads" className={`text-[#316249] transition hover:text-[#28513D] ${typography.buttonTextMuted}`}>
+                    <Link prefetch={true} href="/seller/leads" className={`text-[#316249] transition hover:text-[#28513D] ${typography.buttonTextMuted}`}>
                       Open Inbox
                     </Link>
                   ) : null}
@@ -565,7 +565,7 @@ export default function SellerDashboardPage() {
                 </p>
               </div>
 
-              <Link href="/seller/my-properties" className={`text-[#316249] transition hover:text-[#28513D] ${typography.buttonTextMuted}`}>
+              <Link prefetch={true} href="/seller/my-properties" className={`text-[#316249] transition hover:text-[#28513D] ${typography.buttonTextMuted}`}>
                 View All
               </Link>
             </div>
@@ -589,7 +589,7 @@ export default function SellerDashboardPage() {
                       : "Add your first property to start seeing portfolio insights."}
                   </p>
                   {!normalizedSearch ? (
-                    <Link href="/seller/add-property" className={`mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#316249] px-5 text-white transition hover:bg-[#28513D] ${typography.buttonTextMuted}`}>
+                    <Link prefetch={true} href="/seller/add-property" className={`mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#316249] px-5 text-white transition hover:bg-[#28513D] ${typography.buttonTextMuted}`}>
                       <Plus className="h-4 w-4" />
                       Add Property
                     </Link>
@@ -612,7 +612,7 @@ export default function SellerDashboardPage() {
                       Latest lead and visit activity across your properties.
                     </p>
                   </div>
-                  <Link href="/seller/leads" className={`text-[#316249] transition hover:text-[#28513D] ${typography.buttonTextMuted}`}>
+                  <Link prefetch={true} href="/seller/leads" className={`text-[#316249] transition hover:text-[#28513D] ${typography.buttonTextMuted}`}>
                     Open Inbox
                   </Link>
                 </div>
@@ -662,7 +662,7 @@ export default function SellerDashboardPage() {
                     ].map((item) => {
                       const Icon = item.icon;
                       return (
-                        <Link key={item.href} href={item.href} className={cn(SOFT_CARD, "group seller-soft-hover flex items-center justify-between gap-3 border-[#e9efeb] p-4 hover:border-emerald-200 hover:bg-white")}>
+                        <Link key={item.href} prefetch={true} href={item.href} className={cn(SOFT_CARD, "group seller-soft-hover flex items-center justify-between gap-3 border-[#e9efeb] p-4 hover:border-emerald-200 hover:bg-white")}>
                           <div className="flex items-center gap-3">
                             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-[#316249] ring-1 ring-emerald-100">
                               <Icon className="h-5 w-5" />

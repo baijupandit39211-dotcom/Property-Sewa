@@ -300,6 +300,7 @@ export default function DashboardLandingLike() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href={browseHref}
+                  prefetch={true}
                   className="rounded-full bg-[#13EC80] px-8 py-3 text-base font-semibold text-[#0D1C12] shadow-sm shadow-[#13EC80]/20 transition hover:bg-[#10DD78] active:scale-[0.98]"
                 >
                   {mode === "rent"
@@ -310,6 +311,7 @@ export default function DashboardLandingLike() {
                 </Link>
                 <Link
                   href={addPropertyHref}
+                  prefetch={true}
                   className="rounded-full bg-white/35 px-8 py-3 text-base font-semibold text-white ring-1 ring-white/70 transition hover:bg-white/45 active:scale-[0.98]"
                 >
                   List Your Property
@@ -439,6 +441,7 @@ export default function DashboardLandingLike() {
 
                 <Link
                   href="/properties"
+                  prefetch={true}
                   className="group inline-flex items-center gap-2 self-end text-sm font-semibold text-[#13EC80] transition hover:text-[#0D1C12] sm:self-auto"
                 >
                   View All
@@ -539,6 +542,7 @@ export default function DashboardLandingLike() {
           <div className="mt-10 flex justify-center">
             <Link
               href="/properties"
+              prefetch={true}
               className="rounded-full bg-[#316249] px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-[#316249]/30 transition hover:bg-[#24472E] active:scale-[0.98]"
             >
               Browse Listings
@@ -696,7 +700,7 @@ function MiniCard({
   href: string;
 }) {
   return (
-    <Link href={href}>
+    <Link href={href} prefetch={true}>
       <motion.div
         whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 240, damping: 16 }}
@@ -789,6 +793,7 @@ function OfferSection({
 
           <Link
             href={href}
+            prefetch={true}
             className="group inline-flex items-center gap-2 text-sm font-semibold text-[#316249] transition hover:text-[#0D1C12]"
           >
             View All
@@ -851,7 +856,7 @@ function FooterCol({
       <ul className="mt-3 space-y-2 text-sm text-[#102219]/70">
         {links.map((l) => (
           <li key={l.label}>
-            <Link className="transition hover:text-[#102219]" href={l.href}>
+            <Link className="transition hover:text-[#102219]" href={l.href} prefetch={true}>
               {l.label}
             </Link>
           </li>

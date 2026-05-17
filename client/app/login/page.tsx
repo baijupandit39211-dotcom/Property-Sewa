@@ -196,7 +196,7 @@ export default function LoginPage() {
         <div className="flex h-[72px] w-full items-center justify-between px-4 sm:px-6 lg:px-[80px]">
           {/* Left: brand */}
           <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-3">
+            <Link prefetch={true} href="/" className="flex items-center gap-3">
               <PropertySewaLogoMark className="h-[31px] w-[31px] shrink-0" />
               <span className="text-[18px] font-extrabold tracking-wide text-white">
                 PROPERTY SEWA
@@ -206,28 +206,26 @@ export default function LoginPage() {
 
           {/* Center links */}
           <nav className="hidden flex-1 items-center justify-center gap-10 text-[14px] font-medium text-white/90 md:flex">
-            <Link href="/properties?type=sale" className="hover:text-white transition">
+            <Link prefetch={true} href="/properties?type=sale" className="hover:text-white transition">
               For Sale
             </Link>
-            <Link href="/properties?type=rent" className="hover:text-white/95 transition">
+            <Link prefetch={true} href="/properties?type=rent" className="hover:text-white/95 transition">
               For Rent
             </Link>
-            <Link href="/agents" className="hover:text-white/95 transition">
+            <Link prefetch={true} href="/agents" className="hover:text-white/95 transition">
               Agents
             </Link>
           </nav>
 
           {/* Right */}
           <div className="flex items-center gap-3">
-            <Link
-              href="/"
+            <Link prefetch={true} href="/"
               className="hidden rounded-full bg-white/10 px-5 py-1.5 text-[14px] font-semibold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-lg lg:inline-flex"
             >
               Back to Home
             </Link>
 
-            <Link
-              href="/register"
+            <Link prefetch={true} href="/register"
               className="hidden rounded-full bg-[#13EC80] px-5 py-1.5 text-[14px] font-semibold text-[#0D1C12] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-[#10DD78] hover:shadow-[0_18px_30px_rgba(19,236,128,0.24)] lg:inline-flex"
             >
               Sign Up
@@ -351,8 +349,7 @@ export default function LoginPage() {
               </button>
 
               <div className="text-center">
-                <Link
-                  href="/forgot-password"
+                <Link prefetch={true} href="/forgot-password"
                   className="text-[15px] font-semibold text-[#316249] hover:text-[#24472E] hover:underline"
                 >
                   Forgot password?
@@ -366,7 +363,7 @@ export default function LoginPage() {
 
               <p className="text-center text-[15px] text-[#618975]">
                 Don&apos;t have an account?{" "}
-                <Link href="/register" className="font-semibold text-[#13EC80]">
+                <Link prefetch={true} href="/register" className="font-semibold text-[#13EC80]">
                   Sign Up
                 </Link>
               </p>

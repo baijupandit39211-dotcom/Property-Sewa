@@ -60,19 +60,17 @@ function ResetPasswordPageContent() {
         }}
       >
         <div className="mx-auto flex h-[84px] max-w-7xl items-center justify-between px-6">
-          <Link href="/" className="text-[18px] font-extrabold tracking-wide text-white">
+          <Link prefetch={true} href="/" className="text-[18px] font-extrabold tracking-wide text-white">
             PROPERTY SEWA
           </Link>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/login"
+            <Link prefetch={true} href="/login"
               className="rounded-full bg-white px-6 py-2 text-[14px] font-semibold text-black shadow-sm"
             >
               Log In
             </Link>
-            <Link
-              href="/register"
+            <Link prefetch={true} href="/register"
               className="rounded-full bg-[#1DFF91] px-6 py-2 text-[14px] font-extrabold text-[#062016] shadow-sm"
             >
               Sign Up
@@ -96,7 +94,7 @@ function ResetPasswordPageContent() {
                 Reset token is missing/invalid.
                 <div className="mt-2 text-[#6B8D80]">
                   Please{" "}
-                  <Link href="/forgot-password" className="font-semibold text-[#18B57B] hover:underline">
+                  <Link prefetch={true} href="/forgot-password" className="font-semibold text-[#18B57B] hover:underline">
                     request a new reset link
                   </Link>
                   .
@@ -175,7 +173,7 @@ function ResetPasswordPageContent() {
 
                 <p className="text-center text-[15px] text-[#6B8D80]">
                   Back to{" "}
-                  <Link href="/login" className="font-semibold text-[#18B57B] hover:underline">
+                  <Link prefetch={true} href="/login" className="font-semibold text-[#18B57B] hover:underline">
                     Login
                   </Link>
                 </p>
@@ -190,7 +188,36 @@ function ResetPasswordPageContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <React.Suspense fallback={null}>
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F0F4F2]">
+          <header
+            className="sticky top-0 z-40 shadow-[0_10px_30px_rgba(0,0,0,0.12)]"
+            style={{
+              background:
+                "linear-gradient(90deg, #012B21 0%, #1E4739 50%, #5B786A 100%)",
+            }}
+          >
+            <div className="mx-auto flex h-[84px] max-w-7xl items-center justify-between px-6">
+              <div className="h-6 w-40 animate-pulse rounded bg-white/30" />
+              <div className="flex gap-3">
+                <div className="h-9 w-24 animate-pulse rounded-full bg-white/40" />
+                <div className="h-9 w-24 animate-pulse rounded-full bg-[#1DFF91]/60" />
+              </div>
+            </div>
+          </header>
+          <main className="mx-auto max-w-7xl px-6 py-10">
+            <div className="max-w-[640px] space-y-5">
+              <div className="h-10 w-64 animate-pulse rounded bg-[#DCE9E2]" />
+              <div className="h-5 w-80 animate-pulse rounded bg-[#E5EFEA]" />
+              <div className="h-[58px] animate-pulse rounded-[12px] bg-[#E5EFEA]" />
+              <div className="h-[58px] animate-pulse rounded-[12px] bg-[#E5EFEA]" />
+              <div className="h-[52px] animate-pulse rounded-[10px] bg-[#C6E7D7]" />
+            </div>
+          </main>
+        </div>
+      }
+    >
       <ResetPasswordPageContent />
     </React.Suspense>
   );
