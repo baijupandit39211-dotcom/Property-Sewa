@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import {
+  BUYER_CACHE_KEYS,
+  readFreshBuyerCache,
+  writeBuyerCache,
+} from "@/app/buyer/prefetchCache";
+import {
   Calendar,
   ChevronRight,
   MessageCircle,
@@ -37,9 +42,16 @@ export default function BuyerMessagesPage() {
   useEffect(() => {
     const fetchInquiries = async () => {
       try {
+        const cached = readFreshBuyerCache<{ success: boolean; items: Lead[] }>(BUYER_CACHE_KEYS.leads);
+        if (cached?.items) setLeads(cached.items || []);
+        if (cached?.items?.length) {
+          setLoading(false);
+          return;
+        }
         const response = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/my-inquiries");
         if (response.success) {
           setLeads(response.items || []);
+          writeBuyerCache(BUYER_CACHE_KEYS.leads, response);
         }
       } catch (err: any) {
         setError(err.message || "Failed to fetch inquiries");

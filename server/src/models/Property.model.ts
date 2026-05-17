@@ -112,6 +112,8 @@ const PropertySchema = new Schema(
 );
 
 PropertySchema.index({ status: 1, createdAt: -1 });
+PropertySchema.index({ status: 1, price: 1, createdAt: -1 });
+PropertySchema.index({ status: 1, price: -1, createdAt: -1 });
 PropertySchema.index({ createdBy: 1, status: 1, createdAt: -1 });
 PropertySchema.index({ listingType: 1, propertyType: 1, status: 1, createdAt: -1 });
 

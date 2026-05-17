@@ -16,6 +16,11 @@ import {
 
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
+import {
+  BUYER_CACHE_KEYS,
+  readFreshBuyerCache,
+  writeBuyerCache,
+} from "@/app/buyer/prefetchCache";
 
 type ToastState = { show: boolean; text: string };
 type WishlistItem = { propertyId: Property | null };
@@ -146,7 +151,21 @@ export default function BuyerWishlistPage() {
   async function refresh(showRefreshToast = true) {
     setLoading(true);
     try {
+      const cached = readFreshBuyerCache<ListResponse>(BUYER_CACHE_KEYS.wishlist);
+      if (cached?.items?.length) {
+        const cachedProperties = (cached.items || [])
+          .map((item) => item.propertyId)
+          .filter((item): item is Property => Boolean(item));
+        setAllProperties(cachedProperties);
+        setWishlistIds(cachedProperties.map((item) => item._id));
+        if (!showRefreshToast) {
+          setLoading(false);
+          return;
+        }
+      }
+
       const res = await apiFetch<ListResponse>("/wishlist");
+      writeBuyerCache(BUYER_CACHE_KEYS.wishlist, res);
       const properties = (res.items || [])
         .map((item) => item.propertyId)
         .filter((item): item is Property => Boolean(item));
@@ -507,6 +526,8 @@ export default function BuyerWishlistPage() {
                           <img
                             src={safeImage(property)}
                             alt={property.title ?? "Property image"}
+                            loading="lazy"
+                            decoding="async"
                             className="h-[220px] w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                           />
                         </div>
@@ -638,6 +659,8 @@ export default function BuyerWishlistPage() {
                             <img
                               src={safeImage(property)}
                               alt={property.title ?? "Property image"}
+                              loading="lazy"
+                              decoding="async"
                               className="h-[220px] w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                             />
                           </div>

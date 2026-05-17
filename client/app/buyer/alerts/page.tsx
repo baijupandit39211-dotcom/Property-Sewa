@@ -634,7 +634,7 @@ export default function BuyerAlertsPage() {
                   {/* right image */}
                   <div className="overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
                     {img ? (
-                      <img src={img} alt="property" className="h-[170px] w-full object-cover" />
+                      <img src={img} alt="property" loading="lazy" decoding="async" className="h-[170px] w-full object-cover" />
                     ) : (
                       <div className="grid h-[170px] w-full place-items-center text-sm font-semibold text-slate-500">
                         No image

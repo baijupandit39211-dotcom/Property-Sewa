@@ -156,7 +156,7 @@ function renderAttachmentContent(message: Message, onPreviewPdf: (url: string, n
   if (message.fileType === "image") {
     return (
       <a href={message.fileUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl">
-        <img src={message.fileUrl} alt={message.fileName || "Shared image"} className="max-h-72 w-full rounded-2xl object-cover" />
+        <img src={message.fileUrl} alt={message.fileName || "Shared image"} loading="lazy" decoding="async" className="max-h-72 w-full rounded-2xl object-cover" />
       </a>
     );
   }
@@ -843,6 +843,8 @@ export default function BuyerMessageDetailPage() {
                         <img
                           src={lead.propertyId.images[0].url}
                           alt={lead.propertyId.title}
+                          loading="lazy"
+                          decoding="async"
                           className="h-full w-full object-cover"
                         />
                       ) : (

@@ -71,6 +71,7 @@ export default function BuyerSidebar({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 onClick={() => onCloseMobile()}
                 className={[
                   "flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition",
@@ -95,6 +96,7 @@ export default function BuyerSidebar({
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={true}
                     onClick={() => onCloseMobile()}
                     className="flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold text-[#0D1C12] hover:bg-[#EEF8EB] hover:text-[#316249]"
                   >

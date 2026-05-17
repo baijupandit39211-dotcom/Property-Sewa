@@ -177,32 +177,43 @@ async function getLeadsByBuyer(buyerId: string) {
     .sort({ createdAt: -1 })
     .lean();
 
-  // For each lead, find the most recent visit for that property
-  const leadsWithVisitStatus = await Promise.all(
-    leads.map(async (lead) => {
-      try {
-        // Find the most recent visit for this buyer and property
-        const latestVisit = await Visit.findOne({
-          buyerId: buyerId,
-          propertyId: (lead as any).propertyId?._id
-        })
-        .sort({ createdAt: -1 });
+  const propertyIds = leads
+    .map((lead: any) => String(lead?.propertyId?._id || ""))
+    .filter((id) => Types.ObjectId.isValid(id))
+    .map((id) => new Types.ObjectId(id));
 
-        const leadObj: any = lead;
-        if (latestVisit) {
-          leadObj.latestVisitStatus = latestVisit.status;
-          leadObj.latestVisitDate = latestVisit.createdAt;
-        }
-        
-        return leadObj;
-      } catch (err) {
-        // If visit lookup fails, return lead without visit info
-        return lead;
-      }
-    })
+  if (!propertyIds.length) return leads;
+
+  const latestVisits = await Visit.aggregate([
+    {
+      $match: {
+        buyerId: new Types.ObjectId(buyerId),
+        propertyId: { $in: propertyIds },
+      },
+    },
+    { $sort: { createdAt: -1 } },
+    {
+      $group: {
+        _id: "$propertyId",
+        visit: { $first: "$$ROOT" },
+      },
+    },
+  ]);
+
+  const latestVisitByProperty = new Map(
+    latestVisits.map((row: any) => [String(row._id), row.visit])
   );
 
-  return leadsWithVisitStatus;
+  return leads.map((lead: any) => {
+    const propertyId = String(lead?.propertyId?._id || "");
+    const latestVisit = latestVisitByProperty.get(propertyId);
+    if (!latestVisit) return lead;
+    return {
+      ...lead,
+      latestVisitStatus: latestVisit.status,
+      latestVisitDate: latestVisit.createdAt,
+    };
+  });
 }
 
 async function getLeadById(leadId: string, userId: string) {

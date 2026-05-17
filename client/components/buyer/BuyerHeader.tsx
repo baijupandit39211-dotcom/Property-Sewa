@@ -60,6 +60,7 @@ export default function BuyerHeader({
           />
           <Link
             href="/buyer/profile"
+            prefetch={true}
             className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#0D1C12] shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
             aria-label="Buyer profile"
           >

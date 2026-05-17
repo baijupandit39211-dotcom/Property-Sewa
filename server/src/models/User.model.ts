@@ -43,7 +43,6 @@ const UserSchema = new Schema(
 
 UserSchema.index({ role: 1, status: 1, createdAt: -1 });
 UserSchema.index({ createdAt: -1 });
-UserSchema.index({ email: 1 });
 
 export type UserDoc = InferSchemaType<typeof UserSchema>;
 const User = mongoose.models.User || mongoose.model("User", UserSchema);

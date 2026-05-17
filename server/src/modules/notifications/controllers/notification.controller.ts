@@ -11,7 +11,10 @@ export async function getUserNotifications(req: Request, res: Response, next: Ne
 
     const result = await notificationService.getUserNotifications(userId, req.query);
     const payload = { success: true, ...result };
-    logDevTiming("GET /api/admin/notifications", {
+    const endpoint = req.baseUrl.includes("/admin/notifications")
+      ? "GET /api/admin/notifications"
+      : "GET /notifications";
+    logDevTiming(endpoint, {
       totalMs: Number((nowMs() - started).toFixed(2)),
       payloadBytes: payloadSizeBytes(payload),
       resultCount: result?.items?.length ?? 0,
@@ -31,7 +34,10 @@ export async function getUnreadCount(req: Request, res: Response, next: NextFunc
 
     const count = await notificationService.getUnreadCount(userId);
     const payload = { success: true, count };
-    logDevTiming("GET /api/admin/notifications/unread-count", {
+    const endpoint = req.baseUrl.includes("/admin/notifications")
+      ? "GET /api/admin/notifications/unread-count"
+      : "GET /notifications/unread-count";
+    logDevTiming(endpoint, {
       totalMs: Number((nowMs() - started).toFixed(2)),
       payloadBytes: payloadSizeBytes(payload),
       count,

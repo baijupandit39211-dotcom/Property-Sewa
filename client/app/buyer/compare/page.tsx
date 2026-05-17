@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -18,6 +19,11 @@ import {
 
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
+import {
+  BUYER_CACHE_KEYS,
+  readFreshBuyerCache,
+  writeBuyerCache,
+} from "@/app/buyer/prefetchCache";
 
 type PropertyListResponse = { items: Property[] };
 type WishlistResponse = { items: Array<{ propertyId?: string | { _id?: string } }> };
@@ -39,6 +45,10 @@ type CompareRow = {
 const COMPARE_KEY = "property-sewa:compare:v1";
 const LEGACY_COMPARE_KEY = "property_compare_ids";
 const MAX_COMPARE = 2;
+const ComparePropertyPanel = dynamic(() => import("./ComparePropertyPanel"), {
+  ssr: false,
+  loading: () => <div className="min-h-[540px] rounded-[28px] border border-[#D1D5DB] bg-white shadow-sm" />,
+});
 
 const THEME = {
   primary: "#316249",
@@ -240,10 +250,32 @@ export default function BuyerComparePage() {
       const nextCompareIds = readCompareIds();
       setCompareIds(nextCompareIds);
 
+      const cachedWishlist = readFreshBuyerCache<WishlistResponse>(BUYER_CACHE_KEYS.wishlist);
+      const cachedLeads = readFreshBuyerCache<InquiryResponse>(BUYER_CACHE_KEYS.leads);
+      if (cachedWishlist && cachedLeads && !showRefreshToast) {
+        const nextWishlistIds = (cachedWishlist.items || [])
+          .map((item) =>
+            typeof item.propertyId === "string" ? item.propertyId : item.propertyId?._id
+          )
+          .filter((id): id is string => Boolean(id));
+        setWishlistIds(nextWishlistIds);
+        const leadMap = (cachedLeads.items || []).reduce<Record<string, string>>((acc, lead) => {
+          const propertyId =
+            typeof lead.propertyId === "string" ? lead.propertyId : lead.propertyId?._id;
+          if (propertyId && !acc[propertyId]) acc[propertyId] = lead._id;
+          return acc;
+        }, {});
+        setLeadIdsByProperty(leadMap);
+        setLoading(false);
+        return;
+      }
+
       const [wishlistResponse, inquiryResponse] = await Promise.all([
-        apiFetch<WishlistResponse>("/wishlist").catch(() => ({ items: [] })),
-        apiFetch<InquiryResponse>("/leads/my-inquiries").catch(() => ({ success: false, items: [] })),
+        (cachedWishlist ? Promise.resolve(cachedWishlist) : apiFetch<WishlistResponse>("/wishlist")).catch(() => ({ items: [] })),
+        (cachedLeads ? Promise.resolve(cachedLeads) : apiFetch<InquiryResponse>("/leads/my-inquiries")).catch(() => ({ success: false, items: [] })),
       ]);
+      writeBuyerCache(BUYER_CACHE_KEYS.wishlist, wishlistResponse);
+      writeBuyerCache(BUYER_CACHE_KEYS.leads, inquiryResponse);
 
       const nextWishlistIds = (wishlistResponse.items || [])
         .map((item) =>
@@ -661,109 +693,15 @@ export default function BuyerComparePage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     {[left, right].map((property, index) =>
                       property ? (
-                        <motion.div
+                        <ComparePropertyPanel
                           key={property._id}
-                          whileHover={{ y: -4 }}
-                          transition={{ duration: 0.18 }}
-                          className="overflow-hidden rounded-[28px] border bg-white shadow-sm"
-                          style={{ borderColor: THEME.primaryBorder }}
-                        >
-                          <div className="relative h-[260px] overflow-hidden">
-                            <img
-                              src={safeImage(property)}
-                              alt={property.title || "Property image"}
-                              className="h-full w-full object-cover"
-                            />
-
-                            <button
-                              type="button"
-                              onClick={() => addToWishlist(property._id)}
-                              className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition"
-                              style={{
-                                backgroundColor: wishlistSet.has(property._id)
-                                  ? THEME.primary
-                                  : "rgba(255,255,255,0.95)",
-                                color: wishlistSet.has(property._id) ? "#fff" : THEME.text,
-                              }}
-                            >
-                              <Heart
-                                className={[
-                                  "h-3.5 w-3.5",
-                                  wishlistSet.has(property._id) ? "fill-white" : "",
-                                ].join(" ")}
-                              />
-                              {wishlistSet.has(property._id) ? "Saved" : "Save"}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => removeFromCompare(property._id)}
-                              className="absolute left-3 top-3 grid h-10 w-10 place-items-center rounded-xl border bg-white/95"
-                              style={{ borderColor: "#E5E7EB", color: THEME.text }}
-                              title="Remove from compare"
-                              aria-label="Remove from compare"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-
-                          <div className="space-y-4 p-5">
-                            <div>
-                              <div className="text-3xl font-semibold leading-none" style={{ color: THEME.text }}>
-                                {formatPrice(property)}
-                              </div>
-                              <p className="mt-2 text-lg font-semibold leading-7" style={{ color: THEME.text }}>
-                                {property.title}
-                              </p>
-                              <div className="mt-2 flex items-center gap-1 text-sm leading-6" style={{ color: THEME.textSoft }}>
-                                <MapPin className="h-4 w-4" />
-                                <span>{formatLocation(property)}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                              {[
-                                `${property.beds ?? "-"} Beds`,
-                                `${property.baths ?? "-"} Baths`,
-                                `${property.sqft ?? "-"} Sqft`,
-                              ].map((item) => (
-                                <span
-                                  key={item}
-                                  className="rounded-full px-3 py-1.5 text-xs font-semibold"
-                                  style={{
-                                    backgroundColor: THEME.primarySoft,
-                                    color: THEME.primaryDark,
-                                  }}
-                                >
-                                  {item}
-                                </span>
-                              ))}
-                            </div>
-
-                            <div className="flex flex-wrap gap-3">
-                              <Link
-                                href={`/buyer/property/${property._id}`}
-                                className="inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white"
-                                style={{ backgroundColor: THEME.primary }}
-                              >
-                                View Listing
-                              </Link>
-
-                              <Link
-                                href={getMessageHref(property._id, leadIdsByProperty[property._id])}
-                                className="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition"
-                                style={{
-                                  borderColor: THEME.border,
-                                  backgroundColor: "#fff",
-                                  color: THEME.text,
-                                }}
-                              >
-                                <MessageCircle className="h-4 w-4" />
-                                {leadIdsByProperty[property._id] ? "Open Messages" : "Contact Seller"}
-                              </Link>
-                            </div>
-                          </div>
-                        </motion.div>
+                          property={property}
+                          saved={wishlistSet.has(property._id)}
+                          theme={THEME}
+                          messageHref={getMessageHref(property._id, leadIdsByProperty[property._id])}
+                          onSave={() => addToWishlist(property._id)}
+                          onRemove={() => removeFromCompare(property._id)}
+                        />
                       ) : (
                         <Link
                           key={`empty-slot-${index}`}

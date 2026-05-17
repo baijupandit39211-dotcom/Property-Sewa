@@ -12,6 +12,11 @@ import { typography } from "../../lib/typography";
 import type { Property } from "../../lib/property.types";
 import { useBuyerAuth } from "@/app/buyer/BuyerAuthContext";
 import {
+  BUYER_CACHE_KEYS,
+  readFreshBuyerCache,
+  writeBuyerCache,
+} from "@/app/buyer/prefetchCache";
+import {
   BudgetOverviewCard,
   DiscoveryCard,
   EmptyState,
@@ -20,7 +25,6 @@ import {
   OverviewCard,
   PageSearchBar,
   RecentSearchesCard,
-  SavedPropertyCard,
   SectionHeading,
   Toast,
   UpcomingVisitsCard,
@@ -30,6 +34,13 @@ import {
 const ReportAdModal = dynamic(() => import("@/app/property/[id]/_components/ReportAdModal"), {
   ssr: false,
 });
+const SavedPropertyCard = dynamic(
+  () => import("./dashboard-ui").then((mod) => mod.SavedPropertyCard),
+  {
+    ssr: false,
+    loading: () => <div className="h-[360px] rounded-[24px] border border-[#E5E7EB] bg-white shadow-sm" />,
+  }
+);
 
 type ListResponse = {
   success: boolean;
@@ -95,6 +106,25 @@ export default function BuyerDashboardPage() {
     setCompareIds(readIds(COMPARE_KEY));
 
     (async () => {
+      const cachedWishlist = readFreshBuyerCache<{ items: Array<{ propertyId?: string | { _id?: string } }> }>(
+        BUYER_CACHE_KEYS.wishlist
+      );
+      const cachedProperties = readFreshBuyerCache<ListResponse>(BUYER_CACHE_KEYS.propertiesDashboard);
+      const cachedOffers = readFreshBuyerCache<ListResponse>(BUYER_CACHE_KEYS.offersDashboard);
+      if (cachedWishlist?.items) {
+        const ids = (cachedWishlist.items || [])
+          .map((item) =>
+            typeof item.propertyId === "string" ? item.propertyId : item.propertyId?._id
+          )
+          .filter((id): id is string => Boolean(id));
+        setWishlistIds(ids);
+      }
+      if (cachedProperties?.items) setProperties(cachedProperties.items || []);
+      if (cachedOffers?.items) setOfferProperties(cachedOffers.items || []);
+
+      const hasFreshCoreCache = !!(cachedWishlist && cachedProperties && cachedOffers);
+      if (hasFreshCoreCache) return;
+
       const [wishlistResult, propertiesResult, offersResult] = await Promise.allSettled([
         apiFetch<{ items: Array<{ propertyId?: string | { _id?: string } }> }>("/wishlist", {
           signal: controller.signal,
@@ -112,6 +142,7 @@ export default function BuyerDashboardPage() {
       }
 
       if (wishlistResult.status === "fulfilled") {
+        writeBuyerCache(BUYER_CACHE_KEYS.wishlist, wishlistResult.value);
         const ids = (wishlistResult.value.items || [])
           .map((item) =>
             typeof item.propertyId === "string" ? item.propertyId : item.propertyId?._id
@@ -123,6 +154,7 @@ export default function BuyerDashboardPage() {
       }
 
       if (propertiesResult.status === "fulfilled") {
+        writeBuyerCache(BUYER_CACHE_KEYS.propertiesDashboard, propertiesResult.value);
         setProperties(propertiesResult.value.items || []);
       } else {
         console.error(propertiesResult.reason);
@@ -130,6 +162,7 @@ export default function BuyerDashboardPage() {
       }
 
       if (offersResult.status === "fulfilled") {
+        writeBuyerCache(BUYER_CACHE_KEYS.offersDashboard, offersResult.value);
         setOfferProperties(offersResult.value.items || []);
       } else {
         console.error(offersResult.reason);
@@ -158,9 +191,16 @@ export default function BuyerDashboardPage() {
     }
 
     (async () => {
-      const leads = await apiFetch<{ items?: Array<{ _id?: string }> }>("/leads/my-inquiries", {
-        signal: controller.signal,
-      }).catch(() => null);
+      const cachedLeads = readFreshBuyerCache<{ items?: Array<{ _id?: string }> }>(
+        BUYER_CACHE_KEYS.leads
+      );
+      const leads = cachedLeads
+        ? cachedLeads
+        : await apiFetch<{ items?: Array<{ _id?: string }> }>("/leads/my-inquiries", {
+            signal: controller.signal,
+          }).catch(() => null);
+      if (leads) writeBuyerCache(BUYER_CACHE_KEYS.leads, leads);
+      if (cachedLeads?.items?.length) return;
 
       if (cancelled) return;
 
