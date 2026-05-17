@@ -126,5 +126,8 @@ VisitSchema.index({ propertyId: 1, status: 1 });
 VisitSchema.index({ buyerId: 1, status: 1 });
 VisitSchema.index({ sellerId: 1, status: 1 });
 VisitSchema.index({ requestedDate: 1, status: 1 });
+VisitSchema.index({ sellerId: 1, createdAt: -1 });
+VisitSchema.index({ sellerId: 1, propertyId: 1, createdAt: -1 });
+VisitSchema.index({ buyerId: 1, propertyId: 1, createdAt: -1 });
 
 export default mongoose.model<IVisit>("Visit", VisitSchema);

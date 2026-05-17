@@ -7,6 +7,7 @@ import {
   getReservationExpiresAt,
   getReservationStatus,
 } from "../utils/reservation.utils";
+import { logDevTiming, nowMs } from "../../../utils/devTiming";
 
 type ViewerContext =
   | {
@@ -239,10 +240,14 @@ async function getMyProperties(userId: string, query: any) {
 
   const [items, total] = await Promise.all([
     Property.find(q)
+      .select(
+        "_id title description price monthlyRent currency location address beds baths sqft propertyType listingType status images createdAt updatedAt createdBy"
+      )
       .populate("createdBy", "name phone email role")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit),
+      .limit(limit)
+      .lean(),
     Property.countDocuments(q),
   ]);
 
@@ -462,6 +467,7 @@ async function listPending(query: any = {}) {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+  const dbStarted = nowMs();
   const [items, total, totalPending, activeCount, rejectedCount, buyCount, rentCount, recentCount, byTypeRaw] =
     await Promise.all([
       Property.find(filter)
@@ -482,6 +488,12 @@ async function listPending(query: any = {}) {
         { $sort: { count: -1, _id: 1 } },
       ]),
     ]);
+  logDevTiming("db /properties/admin/pending", {
+    dbMs: Number((nowMs() - dbStarted).toFixed(2)),
+    resultCount: items.length,
+    total,
+    byTypeCount: byTypeRaw.length,
+  });
 
   return {
     items,

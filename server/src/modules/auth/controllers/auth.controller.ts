@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import authService from "../services/auth.services";
 import { sendWelcomeEmail, sendResetPasswordEmail } from "../../../services/email.service";
+import { logDevTiming, nowMs, payloadSizeBytes } from "../../../utils/devTiming";
 
 /**
  * Cookie options for SETTING cookies
@@ -152,10 +153,16 @@ export async function me(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function adminMe(req: Request, res: Response, next: NextFunction) {
+  const started = nowMs();
   try {
     const userId = req.user?.userId as string;
     const user = await authService.getMe(userId);
-    return res.status(200).json({ success: true, user });
+    const payload = { success: true, user };
+    logDevTiming("GET /auth/admin/me", {
+      totalMs: Number((nowMs() - started).toFixed(2)),
+      payloadBytes: payloadSizeBytes(payload),
+    });
+    return res.status(200).json(payload);
   } catch (err) {
     return next(err);
   }

@@ -388,11 +388,13 @@ class SellerAnalyticsService {
       aggregateStatusCounts(Lead, sellerObjectId, periodStart, periodEndExclusive),
       aggregateStatusCounts(Visit, sellerObjectId, periodStart, periodEndExclusive),
       Lead.find({ sellerId: sellerObjectId })
+        .select("_id status createdAt propertyId name email message")
         .sort({ createdAt: -1 })
         .limit(6)
         .populate("propertyId", "title location")
         .lean(),
       Visit.find({ sellerId: sellerObjectId })
+        .select("_id status createdAt propertyId buyerId requestedDate preferredTime message")
         .sort({ createdAt: -1 })
         .limit(6)
         .populate("propertyId", "title location")

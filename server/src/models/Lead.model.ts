@@ -18,5 +18,10 @@ const LeadSchema = new Schema(
   { timestamps: true }
 );
 
+LeadSchema.index({ sellerId: 1, createdAt: -1 });
+LeadSchema.index({ sellerId: 1, status: 1, createdAt: -1 });
+LeadSchema.index({ buyerId: 1, createdAt: -1 });
+LeadSchema.index({ propertyId: 1, createdAt: -1 });
+
 export type LeadDoc = InferSchemaType<typeof LeadSchema>;
 export default mongoose.model("Lead", LeadSchema);

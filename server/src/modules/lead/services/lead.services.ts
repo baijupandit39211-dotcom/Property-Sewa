@@ -3,6 +3,7 @@ import Lead from "../../../models/Lead.model";
 import Visit from "../../../models/Visit.model";
 import Message from "../../../models/Message.model";
 import { ApiError } from "../../../utils/apiError";
+import { Types } from "mongoose";
 
 export interface CreateLeadInput {
   propertyId: string;
@@ -19,35 +20,103 @@ export interface UpdateLeadStatusInput {
   status: "new" | "contacted" | "visit_scheduled" | "negotiating" | "reserved" | "closed";
 }
 
-async function enrichLead(lead: any) {
-  const [lastMessage, messageCount, latestVisit] = await Promise.all([
-    Message.findOne({ leadId: lead._id })
-      .populate({
-        path: "senderId",
-        select: "name email",
-      })
-      .sort({ createdAt: -1 })
-      .lean(),
-    Message.countDocuments({ leadId: lead._id }),
-    lead.buyerId
-      ? Visit.findOne({
-          buyerId: lead.buyerId,
-          propertyId: lead.propertyId?._id || lead.propertyId,
-        })
-          .sort({ createdAt: -1 })
-          .lean()
-      : null,
+async function enrichLeadsBatch(leads: any[]) {
+  if (!leads.length) return [];
+
+  const leadObjects = leads.map((lead) =>
+    typeof lead.toObject === "function" ? lead.toObject() : lead
+  );
+  const leadIds = leadObjects.map((lead) => String(lead._id));
+  const leadObjectIds = leadIds.map((id) => new Types.ObjectId(id));
+
+  const messageSummaries = await Message.aggregate([
+    { $match: { leadId: { $in: leadObjectIds } } },
+    { $sort: { createdAt: -1 } },
+    {
+      $group: {
+        _id: "$leadId",
+        lastMessageId: { $first: "$_id" },
+        messageCount: { $sum: 1 },
+      },
+    },
   ]);
 
-  const leadObject = typeof lead.toObject === "function" ? lead.toObject() : lead;
+  const lastMessageIds = messageSummaries
+    .map((row: any) => row.lastMessageId)
+    .filter(Boolean);
 
-  return {
-    ...leadObject,
-    lastMessage,
-    messageCount,
-    latestActivityAt: lastMessage?.createdAt || leadObject.createdAt,
-    latestVisit,
-  };
+  const lastMessages = await Message.find({ _id: { $in: lastMessageIds } })
+    .populate({ path: "senderId", select: "name email" })
+    .lean();
+
+  const lastMessageById = new Map(
+    lastMessages.map((message: any) => [String(message._id), message])
+  );
+
+  const messageSummaryByLead = new Map(
+    messageSummaries.map((row: any) => [
+      String(row._id),
+      {
+        messageCount: Number(row.messageCount || 0),
+        lastMessage: row.lastMessageId ? lastMessageById.get(String(row.lastMessageId)) || null : null,
+      },
+    ])
+  );
+
+  const visitQueryPairs = leadObjects
+    .map((lead) => {
+      const buyerId = lead.buyerId?._id || lead.buyerId || null;
+      const propertyId = lead.propertyId?._id || lead.propertyId || null;
+      if (!buyerId || !propertyId) return null;
+      return {
+        buyerId: new Types.ObjectId(String(buyerId)),
+        propertyId: new Types.ObjectId(String(propertyId)),
+      };
+    })
+    .filter(Boolean) as Array<{ buyerId: Types.ObjectId; propertyId: Types.ObjectId }>;
+
+  const latestVisits = visitQueryPairs.length
+    ? await Visit.aggregate([
+        {
+          $match: {
+            $or: visitQueryPairs.map((pair) => ({
+              buyerId: pair.buyerId,
+              propertyId: pair.propertyId,
+            })),
+          },
+        },
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id: { buyerId: "$buyerId", propertyId: "$propertyId" },
+            visit: { $first: "$$ROOT" },
+          },
+        },
+      ])
+    : [];
+
+  const latestVisitByPair = new Map(
+    latestVisits.map((row: any) => [
+      `${String(row._id.buyerId)}:${String(row._id.propertyId)}`,
+      row.visit,
+    ])
+  );
+
+  return leadObjects.map((lead) => {
+    const leadId = String(lead._id);
+    const summary = messageSummaryByLead.get(leadId) || { messageCount: 0, lastMessage: null };
+    const buyerId = String(lead.buyerId?._id || lead.buyerId || "");
+    const propertyId = String(lead.propertyId?._id || lead.propertyId || "");
+    const latestVisit = buyerId && propertyId ? latestVisitByPair.get(`${buyerId}:${propertyId}`) || null : null;
+
+    return {
+      ...lead,
+      lastMessage: summary.lastMessage,
+      messageCount: summary.messageCount,
+      latestActivityAt: summary.lastMessage?.createdAt || lead.createdAt,
+      latestVisit,
+    };
+  });
 }
 
 async function createLead(input: CreateLeadInput) {
@@ -87,9 +156,10 @@ async function getLeadsBySeller(sellerId: string) {
       path: "buyerId",
       select: "name email phone"
     })
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
-  const enriched = await Promise.all(leads.map((lead) => enrichLead(lead)));
+  const enriched = await enrichLeadsBatch(leads);
   enriched.sort(
     (left, right) =>
       new Date(right.latestActivityAt).getTime() - new Date(left.latestActivityAt).getTime()
@@ -104,7 +174,8 @@ async function getLeadsByBuyer(buyerId: string) {
       path: "propertyId",
       select: "title location"
     })
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   // For each lead, find the most recent visit for that property
   const leadsWithVisitStatus = await Promise.all(
@@ -113,12 +184,11 @@ async function getLeadsByBuyer(buyerId: string) {
         // Find the most recent visit for this buyer and property
         const latestVisit = await Visit.findOne({
           buyerId: buyerId,
-          propertyId: lead.propertyId._id
+          propertyId: (lead as any).propertyId?._id
         })
         .sort({ createdAt: -1 });
 
-        // Convert lead to plain object and add visit info
-        const leadObj: any = lead.toObject();
+        const leadObj: any = lead;
         if (latestVisit) {
           leadObj.latestVisitStatus = latestVisit.status;
           leadObj.latestVisitDate = latestVisit.createdAt;
@@ -127,7 +197,7 @@ async function getLeadsByBuyer(buyerId: string) {
         return leadObj;
       } catch (err) {
         // If visit lookup fails, return lead without visit info
-        return lead.toObject();
+        return lead;
       }
     })
   );
@@ -144,7 +214,8 @@ async function getLeadById(leadId: string, userId: string) {
     .populate({
       path: "buyerId",
       select: "name email phone"
-    });
+    })
+    .lean();
 
   if (!lead) {
     throw new ApiError(404, "Lead not found");
@@ -157,7 +228,8 @@ async function getLeadById(leadId: string, userId: string) {
     throw new ApiError(403, "You can only access your own leads");
   }
 
-  return enrichLead(lead);
+  const [enriched] = await enrichLeadsBatch([lead]);
+  return enriched;
 }
 
 async function updateLeadStatus(input: UpdateLeadStatusInput) {

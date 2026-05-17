@@ -5,6 +5,7 @@ import Reservation from "../../../models/Reservation.model";
 import User from "../../../models/User.model";
 import AuditLog from "../../../models/AuditLog.model";
 import Report from "../../reports/report.model";
+import { logDevTiming, nowMs } from "../../../utils/devTiming";
 
 function monthBuckets(count = 6) {
   const now = new Date();
@@ -299,6 +300,14 @@ export async function getAdminOverview() {
   const last30Days = new Date();
   last30Days.setDate(last30Days.getDate() - 30);
 
+  const dbTimings: Record<string, number> = {};
+  const timeDb = async <T>(label: string, work: () => Promise<T>) => {
+    const started = nowMs();
+    const result = await work();
+    dbTimings[label] = Number((nowMs() - started).toFixed(2));
+    return result;
+  };
+
   const [
     totalProperties,
     activeProperties,
@@ -327,26 +336,35 @@ export async function getAdminOverview() {
     confirmedReservations,
     propertyViews30d,
   ] = await Promise.all([
-    Property.countDocuments({}),
-    Property.countDocuments({ status: "active" }),
-    Property.countDocuments({ status: "pending" }),
-    Property.countDocuments({ status: "rejected" }),
-    Property.find({ status: "pending" })
-      .populate("createdBy", "name email role")
-      .sort({ createdAt: -1 })
-      .limit(8)
-      .lean(),
-    User.countDocuments({}),
-    User.countDocuments({ status: "active" }),
-    User.countDocuments({ status: { $in: ["archived", "inactive"] } }),
-    User.countDocuments({ status: "suspended" }),
-    User.aggregate([{ $group: { _id: "$role", count: { $sum: 1 } } }]),
-    User.find({})
-      .select("_id name email role status createdAt")
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .lean(),
-    Property.aggregate([
+    timeDb("property.count.total", () => Property.countDocuments({})),
+    timeDb("property.count.active", () => Property.countDocuments({ status: "active" })),
+    timeDb("property.count.pending", () => Property.countDocuments({ status: "pending" })),
+    timeDb("property.count.rejected", () => Property.countDocuments({ status: "rejected" })),
+    timeDb("property.pending.find", () =>
+      Property.find({ status: "pending" })
+        .populate("createdBy", "name email role")
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean()
+    ),
+    timeDb("user.count.total", () => User.countDocuments({})),
+    timeDb("user.count.active", () => User.countDocuments({ status: "active" })),
+    timeDb("user.count.archived", () =>
+      User.countDocuments({ status: { $in: ["archived", "inactive"] } })
+    ),
+    timeDb("user.count.suspended", () => User.countDocuments({ status: "suspended" })),
+    timeDb("user.roles.aggregate", () =>
+      User.aggregate([{ $group: { _id: "$role", count: { $sum: 1 } } }])
+    ),
+    timeDb("user.recent.find", () =>
+      User.find({})
+        .select("_id name email role status createdAt")
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .lean()
+    ),
+    timeDb("property.topOwners.aggregate", () =>
+      Property.aggregate([
       {
         $match: {
           createdBy: { $ne: null },
@@ -379,30 +397,40 @@ export async function getAdminOverview() {
           status: "$owner.status",
         },
       },
-    ]),
-    Report.countDocuments({}),
-    Report.countDocuments({ status: "pending" }),
-    Report.countDocuments({ status: "reviewed" }),
-    Report.countDocuments({ status: "action_taken" }),
-    Report.countDocuments({ status: "rejected" }),
-    Report.aggregate([
+      ])
+    ),
+    timeDb("report.count.total", () => Report.countDocuments({})),
+    timeDb("report.count.pending", () => Report.countDocuments({ status: "pending" })),
+    timeDb("report.count.reviewed", () => Report.countDocuments({ status: "reviewed" })),
+    timeDb("report.count.action_taken", () =>
+      Report.countDocuments({ status: "action_taken" })
+    ),
+    timeDb("report.count.rejected", () => Report.countDocuments({ status: "rejected" })),
+    timeDb("report.reasons.aggregate", () =>
+      Report.aggregate([
       { $group: { _id: "$reason", count: { $sum: 1 } } },
       { $sort: { count: -1, _id: 1 } },
       { $limit: 5 },
-    ]),
-    Report.find({})
-      .populate("propertyId", "title location")
-      .populate("adId", "title location")
-      .populate("reporterId", "name email")
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .lean(),
-    Payment.aggregate([
+      ])
+    ),
+    timeDb("report.recent.find", () =>
+      Report.find({})
+        .populate("propertyId", "title location")
+        .populate("adId", "title location")
+        .populate("reporterId", "name email")
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .lean()
+    ),
+    timeDb("payment.paid.aggregate", () =>
+      Payment.aggregate([
       { $match: { status: "paid" } },
       { $group: { _id: null, revenue: { $sum: "$amount" }, count: { $sum: 1 } } },
-    ]),
-    Payment.countDocuments({ status: "pending" }),
-    Payment.aggregate([
+      ])
+    ),
+    timeDb("payment.count.pending", () => Payment.countDocuments({ status: "pending" })),
+    timeDb("payment.trend.aggregate", () =>
+      Payment.aggregate([
       { $match: { status: "paid", createdAt: { $gte: rangeStart } } },
       {
         $group: {
@@ -412,17 +440,29 @@ export async function getAdminOverview() {
         },
       },
       { $sort: { _id: 1 } },
-    ]),
-    Payment.find({})
-      .populate("propertyId", "title location")
-      .populate("buyerId", "name email")
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .lean(),
-    Reservation.countDocuments({}),
-    Reservation.countDocuments({ reservationStatus: "CONFIRMED" }),
-    PropertyView.countDocuments({ createdAt: { $gte: last30Days } }),
+      ])
+    ),
+    timeDb("payment.recent.find", () =>
+      Payment.find({})
+        .populate("propertyId", "title location")
+        .populate("buyerId", "name email")
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .lean()
+    ),
+    timeDb("reservation.count.total", () => Reservation.countDocuments({})),
+    timeDb("reservation.count.confirmed", () =>
+      Reservation.countDocuments({ reservationStatus: "CONFIRMED" })
+    ),
+    timeDb("propertyView.count.30d", () =>
+      PropertyView.countDocuments({ createdAt: { $gte: last30Days } })
+    ),
   ]);
+
+  logDevTiming("db /api/admin/overview", {
+    queryMs: dbTimings,
+    slowestMs: Math.max(...Object.values(dbTimings), 0),
+  });
 
   const paidStats = paidStatsRaw[0] || { revenue: 0, count: 0 };
   const paymentTrend = buckets.map((bucket) => {

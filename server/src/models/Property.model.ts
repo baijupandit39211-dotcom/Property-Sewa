@@ -111,5 +111,9 @@ const PropertySchema = new Schema(
   { timestamps: true }
 );
 
+PropertySchema.index({ status: 1, createdAt: -1 });
+PropertySchema.index({ createdBy: 1, status: 1, createdAt: -1 });
+PropertySchema.index({ listingType: 1, propertyType: 1, status: 1, createdAt: -1 });
+
 export type PropertyDoc = InferSchemaType<typeof PropertySchema>;
 export default mongoose.model("Property", PropertySchema);

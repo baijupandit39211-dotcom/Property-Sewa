@@ -4,6 +4,7 @@ import propertyService from "../services/property.services";
 import cloudinary from "../../../config/cloudinary";
 import User from "../../../models/User.model";
 import notificationService from "../../notifications/services/notification.services";
+import { logDevTiming, nowMs, payloadSizeBytes } from "../../../utils/devTiming";
 
 async function uploadToCloudinary(buffer: Buffer) {
   return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
@@ -258,9 +259,19 @@ export async function getApprovedById(req: Request, res: Response, next: NextFun
 
 // ADMIN
 export async function listPending(req: Request, res: Response, next: NextFunction) {
+  const started = nowMs();
   try {
     const result = await propertyService.listPending(req.query);
-    return res.status(200).json({ success: true, ...result });
+    const payload = { success: true, ...result };
+    logDevTiming("GET /properties/admin/pending", {
+      totalMs: Number((nowMs() - started).toFixed(2)),
+      payloadBytes: payloadSizeBytes(payload),
+      resultCount: result?.items?.length ?? 0,
+      total: result?.total ?? 0,
+      page: result?.page ?? 1,
+      limit: result?.limit ?? 0,
+    });
+    return res.status(200).json(payload);
   } catch (err) {
     return next(err);
   }

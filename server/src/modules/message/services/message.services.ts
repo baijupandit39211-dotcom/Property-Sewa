@@ -98,10 +98,10 @@ async function getSellerReplySuggestions(leadId: string, userId: string) {
 
 async function getMessagesByLead(leadId: string, userId: string) {
   // Verify user owns this lead (either as seller or buyer)
-  const lead = await Lead.findById(leadId);
+  const lead = await Lead.findById(leadId).select("sellerId buyerId").lean();
   if (!lead) throw new ApiError(404, "Lead not found");
   
-  if (lead.sellerId.toString() !== userId && lead.buyerId?.toString() !== userId) {
+  if (String(lead.sellerId) !== userId && String(lead.buyerId || "") !== userId) {
     throw new ApiError(403, "You can only access messages for your own leads");
   }
 
@@ -110,7 +110,8 @@ async function getMessagesByLead(leadId: string, userId: string) {
       path: "senderId",
       select: "name email"
     })
-    .sort({ createdAt: 1 }); // Oldest first for chat thread
+    .sort({ createdAt: 1 }) // Oldest first for chat thread
+    .lean();
 
   return messages;
 }

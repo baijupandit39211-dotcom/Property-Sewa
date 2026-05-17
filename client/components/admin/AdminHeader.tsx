@@ -8,6 +8,11 @@ import { Menu, X } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
 import { logoutByRole } from "@/app/lib/auth";
 import PropertySewaLogoMark from "@/components/brand/PropertySewaLogoMark";
+import {
+  ADMIN_CACHE_KEYS,
+  readFreshAdminCache,
+  writeAdminCache,
+} from "@/app/admin/prefetchCache";
 
 const NotificationBell = dynamic(() => import("@/components/notifications/NotificationBell"), {
   ssr: false,
@@ -46,9 +51,15 @@ export default function AdminHeader({
   const [user, setUser] = useState<AdminMeResponse["user"] | null>(null);
 
   useEffect(() => {
+    const cached = readFreshAdminCache<AdminMeResponse>(ADMIN_CACHE_KEYS.auth);
+    if (cached?.user) setUser(cached.user);
+
     apiFetch<AdminMeResponse>("/auth/admin/me")
-      .then((res) => setUser(res.user))
-      .catch(() => setUser(null));
+      .then((res) => {
+        setUser(res.user);
+        writeAdminCache(ADMIN_CACHE_KEYS.auth, res);
+      })
+      .catch(() => setUser(cached?.user || null));
   }, []);
 
   const logout = async () => {
@@ -76,7 +87,7 @@ export default function AdminHeader({
             </button>
           ) : null}
 
-          <Link href="/admin/overview" className="flex items-center gap-3">
+          <Link href="/admin/overview" prefetch={true} className="flex items-center gap-3">
             <PropertySewaLogoMark className="h-7 w-7 shrink-0 sm:h-[31px] sm:w-[31px]" />
             <span className="text-[15px] font-extrabold tracking-[0.1em] text-white sm:text-base sm:tracking-[0.12em]">
               PROPERTY SEWA

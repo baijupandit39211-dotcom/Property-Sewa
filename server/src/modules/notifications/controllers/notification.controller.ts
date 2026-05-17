@@ -1,26 +1,42 @@
 import type { NextFunction, Request, Response } from "express";
 import { ApiError } from "../../../utils/apiError";
 import notificationService from "../services/notification.services";
+import { logDevTiming, nowMs, payloadSizeBytes } from "../../../utils/devTiming";
 
 export async function getUserNotifications(req: Request, res: Response, next: NextFunction) {
+  const started = nowMs();
   try {
     const userId = req.user?.userId as string;
     if (!userId) throw new ApiError(401, "Unauthorized");
 
     const result = await notificationService.getUserNotifications(userId, req.query);
-    return res.status(200).json({ success: true, ...result });
+    const payload = { success: true, ...result };
+    logDevTiming("GET /api/admin/notifications", {
+      totalMs: Number((nowMs() - started).toFixed(2)),
+      payloadBytes: payloadSizeBytes(payload),
+      resultCount: result?.items?.length ?? 0,
+      total: result?.total ?? 0,
+    });
+    return res.status(200).json(payload);
   } catch (err) {
     return next(err);
   }
 }
 
 export async function getUnreadCount(req: Request, res: Response, next: NextFunction) {
+  const started = nowMs();
   try {
     const userId = req.user?.userId as string;
     if (!userId) throw new ApiError(401, "Unauthorized");
 
     const count = await notificationService.getUnreadCount(userId);
-    return res.status(200).json({ success: true, count });
+    const payload = { success: true, count };
+    logDevTiming("GET /api/admin/notifications/unread-count", {
+      totalMs: Number((nowMs() - started).toFixed(2)),
+      payloadBytes: payloadSizeBytes(payload),
+      count,
+    });
+    return res.status(200).json(payload);
   } catch (err) {
     return next(err);
   }

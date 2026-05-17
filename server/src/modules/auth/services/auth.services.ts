@@ -6,6 +6,7 @@ import crypto from "crypto";
 import User from "../../../models/User.model";
 import { ApiError } from "../../../utils/apiError";
 import type { RegisterInput, LoginInput } from "../types/auth.types";
+import { logDevTiming, nowMs } from "../../../utils/devTiming";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -166,7 +167,12 @@ async function googleLogin(input: any) {
 }
 
 async function getMe(userId: string) {
-  const user = await User.findById(userId).select("-passwordHash");
+  const dbStarted = nowMs();
+  const user = await User.findById(userId).select("-passwordHash").lean();
+  logDevTiming("db /auth/admin/me User.findById", {
+    dbMs: Number((nowMs() - dbStarted).toFixed(2)),
+    found: !!user,
+  });
   if (!user) throw new ApiError(404, "User not found");
   return user;
 }

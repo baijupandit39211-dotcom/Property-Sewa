@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { apiFetchAdmin } from "@/app/lib/api";
+import {
+  ADMIN_CACHE_KEYS,
+  readFreshAdminCache,
+  writeAdminCache,
+} from "@/app/admin/prefetchCache";
 import AddUserModal, { type AddUserValues } from "@/components/admin/AddUserModal";
 import AdminUserEditorModal, {
   type AdminUserEditorValues,
@@ -378,6 +384,7 @@ function ActionMenu({
 }
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const [users, setUsers] = React.useState<UserRow[]>([]);
   const [total, setTotal] = React.useState(0);
   const [stats, setStats] = React.useState({
@@ -424,10 +431,15 @@ export default function AdminUsersPage() {
   const canCreateAdminUsers = me?.role === "superadmin";
 
   const fetchMe = React.useCallback(async () => {
+    const cached = readFreshAdminCache<MeResponse>(ADMIN_CACHE_KEYS.auth);
+    if (cached?.user?._id) {
+      setMe({ id: cached.user._id, role: (cached.user.role || "admin") as RoleApi });
+    }
     try {
       const res = await apiFetchAdmin<MeResponse>("/auth/admin/me");
       if (res?.user?._id) {
         setMe({ id: res.user._id, role: (res.user.role || "admin") as RoleApi });
+        writeAdminCache(ADMIN_CACHE_KEYS.auth, res);
       }
     } catch (err) {
       console.error(err);
@@ -847,7 +859,7 @@ export default function AdminUsersPage() {
                           canSuspend={canSuspend}
                           canArchive={canArchive}
                           onView={() => {
-                            window.location.assign(`/admin/users/${user.id}`);
+                            router.push(`/admin/users/${user.id}`);
                           }}
                           onEdit={() => setEditorUser(user)}
                           onRestore={() =>
@@ -994,7 +1006,7 @@ export default function AdminUsersPage() {
                               canSuspend={canSuspend}
                               canArchive={canArchive}
                               onView={() => {
-                                window.location.assign(`/admin/users/${user.id}`);
+                                router.push(`/admin/users/${user.id}`);
                               }}
                               onEdit={() => setEditorUser(user)}
                               onRestore={() =>

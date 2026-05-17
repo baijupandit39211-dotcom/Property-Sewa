@@ -23,5 +23,10 @@ const MessageSchema = new Schema(
   { timestamps: true }
 );
 
+MessageSchema.index({ leadId: 1, createdAt: 1 });
+MessageSchema.index({ leadId: 1, createdAt: -1 });
+MessageSchema.index({ leadId: 1, senderRole: 1, isAutoReply: 1 });
+MessageSchema.index({ senderId: 1, createdAt: -1 });
+
 export type MessageDoc = InferSchemaType<typeof MessageSchema>;
 export default mongoose.model("Message", MessageSchema);

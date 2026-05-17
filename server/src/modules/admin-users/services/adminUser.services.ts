@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { ApiError } from "../../../utils/apiError";
 import User from "../../../models/User.model";
 import AuditLog from "../../../models/AuditLog.model";
+import { logDevTiming, nowMs } from "../../../utils/devTiming";
 
 const ALLOWED_STATUSES = ["active", "archived", "suspended"] as const;
 const ALLOWED_ROLES = ["buyer", "seller", "agent", "admin", "superadmin"] as const;
@@ -104,6 +105,7 @@ export async function listUsers(params: {
     if (query) listQuery.status = query;
   }
 
+  const dbStarted = nowMs();
   const [items, total, totalBase, active, archived, suspended] = await Promise.all([
     User.find(listQuery)
       .select(SAFE_USER_FIELDS)
@@ -117,6 +119,11 @@ export async function listUsers(params: {
     User.countDocuments({ ...baseQuery, status: { $in: ["archived", "inactive"] } }),
     User.countDocuments({ ...baseQuery, status: "suspended" }),
   ]);
+  logDevTiming("db /api/admin/users", {
+    dbMs: Number((nowMs() - dbStarted).toFixed(2)),
+    resultCount: items.length,
+    total,
+  });
 
   return {
     items: items.map((item) => toSafeUser(item)),
@@ -133,6 +140,7 @@ export async function listUsers(params: {
 }
 
 export async function getUserStats() {
+  const dbStarted = nowMs();
   const [total, active, archived, suspended, owners, verified] = await Promise.all([
     User.countDocuments({}),
     User.countDocuments({ status: "active" }),
@@ -141,6 +149,10 @@ export async function getUserStats() {
     User.countDocuments({ role: { $in: ["seller", "agent"] } }),
     User.countDocuments({ status: "active" }),
   ]);
+  logDevTiming("db /api/admin/users/stats", {
+    dbMs: Number((nowMs() - dbStarted).toFixed(2)),
+    total,
+  });
 
   return {
     total,

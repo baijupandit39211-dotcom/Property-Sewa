@@ -6,6 +6,7 @@ import {
   emitNotificationReadAll,
 } from "../../../realtime/notification.socket";
 import Notification from "../notification.model";
+import { logDevTiming, nowMs } from "../../../utils/devTiming";
 import type {
   CreateNotificationInput,
   NotificationCategory,
@@ -162,10 +163,16 @@ async function getUserNotifications(
   const skip = (page - 1) * limit;
   const query = buildListQuery(userId, filters);
 
+  const dbStarted = nowMs();
   const [items, total] = await Promise.all([
-    Notification.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Notification.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     Notification.countDocuments(query),
   ]);
+  logDevTiming("db /api/admin/notifications", {
+    dbMs: Number((nowMs() - dbStarted).toFixed(2)),
+    resultCount: items.length,
+    total,
+  });
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -182,7 +189,13 @@ async function getUserNotifications(
 
 async function getUnreadCount(userId: string) {
   ensureObjectId(userId, "userId");
-  return Notification.countDocuments({ recipientId: userId, isRead: false });
+  const dbStarted = nowMs();
+  const count = await Notification.countDocuments({ recipientId: userId, isRead: false });
+  logDevTiming("db /api/admin/notifications/unread-count", {
+    dbMs: Number((nowMs() - dbStarted).toFixed(2)),
+    count,
+  });
+  return count;
 }
 
 async function markAsRead(notificationId: string, userId: string) {

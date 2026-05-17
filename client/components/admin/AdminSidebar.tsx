@@ -64,6 +64,7 @@ function SidebarLink({
   return (
     <Link
       href={href}
+      prefetch={true}
       aria-current={active ? "page" : undefined}
       className={[
         "group flex items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-semibold transition-colors",
@@ -88,6 +89,7 @@ function SidebarAction({ label, href, icon: Icon }: ActionItem) {
   return (
     <Link
       href={href}
+      prefetch={true}
       className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-[15px] font-semibold text-slate-700 transition-colors hover:bg-[#e9f3ee] hover:text-[#316249]"
     >
       <Icon className="h-5 w-5 shrink-0 text-slate-600 group-hover:text-[#316249]" strokeWidth={2} />
