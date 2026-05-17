@@ -51,10 +51,22 @@ export default function SellerViewPropertyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-emerald-50 px-6 py-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-r-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading property details...</p>
+      <div className="min-h-0 bg-emerald-50 px-6 py-8">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-6 h-6 w-44 animate-pulse rounded bg-emerald-100" />
+          <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+            <div className="aspect-video animate-pulse bg-slate-100" />
+            <div className="space-y-5 p-6">
+              <div className="h-8 w-2/3 animate-pulse rounded bg-slate-100" />
+              <div className="h-5 w-1/3 animate-pulse rounded bg-slate-100" />
+              <div className="grid grid-cols-3 gap-4">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div key={idx} className="h-[76px] animate-pulse rounded-lg bg-slate-100" />
+                ))}
+              </div>
+              <div className="h-24 animate-pulse rounded bg-slate-100" />
+            </div>
+          </div>
         </div>
       </div>
     );

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { apiFetch, apiFetchAdmin, apiFetchSafe } from "@/app/lib/api";
 import { subscribeToNotificationSocket } from "@/app/lib/notificationsSocket";
+import { readFreshCache, SELLER_CACHE_KEYS, writeCache } from "@/app/seller/prefetchCache";
 
 type NotificationItem = {
   _id: string;
@@ -120,6 +121,17 @@ export default function NotificationBell({
   };
 
   useEffect(() => {
+    if (endpointBase === "/notifications") {
+      const cachedCount = readFreshCache<number>(SELLER_CACHE_KEYS.notificationsUnread);
+      if (typeof cachedCount === "number") {
+        setUnreadCount(cachedCount);
+      }
+      const cachedList = readFreshCache<NotificationItem[]>(SELLER_CACHE_KEYS.notificationsList);
+      if (Array.isArray(cachedList) && cachedList.length) {
+        setNotifications(cachedList.slice(0, 8));
+      }
+    }
+
     if (typeof window === "undefined") return;
 
     const audio = new Audio("/sounds/message.mp3?v=20260416-notify");
@@ -141,6 +153,9 @@ export default function NotificationBell({
       }
 
       setUnreadCount(response.count || 0);
+      if (endpointBase === "/notifications") {
+        writeCache(SELLER_CACHE_KEYS.notificationsUnread, response.count || 0);
+      }
     } catch {
       setUnreadCount(0);
     }
@@ -150,7 +165,11 @@ export default function NotificationBell({
     try {
       setLoading(true);
       const response = await apiFetchSafe<NotificationListResponse>(`${endpointBase}?limit=8`);
-      setNotifications(response?.items || []);
+      const items = response?.items || [];
+      setNotifications(items);
+      if (endpointBase === "/notifications" && items.length) {
+        writeCache(SELLER_CACHE_KEYS.notificationsList, items);
+      }
     } catch {
       setNotifications([]);
     } finally {

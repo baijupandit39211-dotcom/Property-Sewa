@@ -41,6 +41,7 @@ import {
   X,
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
+import { readFreshCache, SELLER_CACHE_KEYS, writeCache } from "@/app/seller/prefetchCache";
 import {
   emitChatDelivered,
   emitChatSeen,
@@ -775,6 +776,9 @@ function SellerLeadsPageContent() {
         new Date(left.latestActivityAt || left.createdAt).getTime()
     );
     setLeads(items);
+    try {
+      writeCache(SELLER_CACHE_KEYS.leads, items);
+    } catch {}
 
     const requestedLeadId = searchParams?.get("lead") || "";
     const nextSelectedId =
@@ -832,6 +836,15 @@ function SellerLeadsPageContent() {
   });
 
   useEffect(() => {
+    try {
+      const cachedItems = readFreshCache<Lead[]>(SELLER_CACHE_KEYS.leads) || [];
+      if (cachedItems.length) {
+        setLeads(cachedItems);
+        setSelectedId(cachedItems[0]?._id || "");
+        setLoading(false);
+      }
+    } catch {}
+
     async function bootstrap() {
       setLoading(true);
       setError("");
@@ -1322,14 +1335,28 @@ function SellerLeadsPageContent() {
 
   const buyer = getBuyerSnapshot(selectedLead);
 
-  if (loading) {
+  if (loading && leads.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-r-2 border-emerald-600" />
-          <p className="mt-4 text-sm text-slate-600">Loading seller leads...</p>
-        </div>
-      </div>
+      <main className="mx-auto w-full max-w-7xl space-y-6">
+        <section className="overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] p-5 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:p-6">
+          <div className="h-4 w-48 animate-pulse rounded-full bg-white/25" />
+          <div className="mt-4 h-10 w-72 animate-pulse rounded-xl bg-white/20" />
+          <div className="mt-3 h-4 w-[28rem] max-w-full animate-pulse rounded-full bg-white/20" />
+        </section>
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-[122px] animate-pulse rounded-[24px] border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.07)]"
+            />
+          ))}
+        </section>
+        <section className="scroll-mt-24 grid grid-cols-1 gap-6 xl:grid-cols-[340px_minmax(0,1fr)_340px]">
+          <div className="h-[560px] animate-pulse rounded-[24px] border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.07)] xl:h-[calc(100vh-240px)]" />
+          <div className="h-[560px] animate-pulse rounded-[24px] border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.07)] xl:h-[calc(100vh-240px)]" />
+          <div className="h-[560px] animate-pulse rounded-[24px] border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.07)] xl:h-[calc(100vh-240px)]" />
+        </section>
+      </main>
     );
   }
 
@@ -1365,6 +1392,7 @@ function SellerLeadsPageContent() {
               </button>
               <Link
                 href="/seller/messages"
+                prefetch={true}
                 className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
               >
                 <MessageCircle className="h-4 w-4" />
@@ -1632,8 +1660,8 @@ function SellerLeadsPageContent() {
                   })}
                 </div>
               )}
-            </div>
-          </section>
+        </div>
+      </section>
         </div>
 
         <div className="relative flex min-h-[520px] min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.07)] xl:h-[calc(100vh-240px)] xl:min-h-[620px]">

@@ -1364,7 +1364,7 @@ export default function AnalyticsPage() {
     );
   }
 
-  if (!analytics || !summary) return null;
+  if (!analytics || !summary) return <LoadingState />;
 
   const inquiryBreakdown = analytics.breakdowns.leads;
   const listingBreakdown = analytics.breakdowns.listings;

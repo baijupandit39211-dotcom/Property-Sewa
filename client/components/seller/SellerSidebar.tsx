@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -90,9 +91,10 @@ export default function SellerSidebar({
           const active = pathname === link.href;
           const isMessages = link.href === "/seller/messages";
           return (
-            <a
+            <Link
               key={`${link.href}-${idx}`}
               href={link.href}
+              prefetch={true}
               onClick={() => onCloseMobile()}
               className={[
                 "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition",
@@ -108,7 +110,7 @@ export default function SellerSidebar({
                   {unreadLabel}
                 </span>
               ) : null}
-            </a>
+            </Link>
           );
         })}
       </nav>
@@ -118,15 +120,16 @@ export default function SellerSidebar({
           {bottomLinks.map((link, idx) => {
             const Icon = link.icon;
             return (
-              <a
+              <Link
                 key={`${link.href}-${idx}`}
                 href={link.href}
+                prefetch={true}
                 onClick={() => onCloseMobile()}
                 className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 hover:bg-emerald-50 hover:text-[#316249]"
               >
                 <Icon className="h-5 w-5" />
                 {link.label}
-              </a>
+              </Link>
             );
           })}
         </div>

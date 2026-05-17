@@ -61,6 +61,7 @@ export default function SellerHeader({
         />
         <Link
           href="/seller/profile"
+          prefetch={true}
           className="grid h-9 w-9 place-items-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-white/30 transition hover:scale-[1.03]"
           aria-label="Seller profile"
         >

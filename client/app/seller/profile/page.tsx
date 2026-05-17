@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import { logoutUser } from "@/app/lib/auth";
+import { useSellerAuth } from "@/app/seller/SellerAuthContext";
 
 type MeResponse = {
   success?: boolean;
@@ -45,8 +46,9 @@ const formatDate = (d?: string) => {
 
 export default function SellerProfilePage() {
   const router = useRouter();
+  const { user: contextUser } = useSellerAuth();
   const [user, setUser] = useState<MeResponse["user"] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!contextUser);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<Tab>("profile");
   const [editOpen, setEditOpen] = useState(false);
@@ -62,9 +64,17 @@ export default function SellerProfilePage() {
   const [saveSuccess, setSaveSuccess] = useState("");
 
   useEffect(() => {
+    if (contextUser) {
+      setUser((prev) => prev || (contextUser as MeResponse["user"]));
+      setForm((prev) => ({
+        ...prev,
+        name: prev.name || contextUser.name || "",
+      }));
+    }
+
     (async () => {
       try {
-        setLoading(true);
+        if (!contextUser) setLoading(true);
         const res = await apiFetch<MeResponse>("/auth/me");
         if (res?.success === false || !res?.user) {
           throw new Error(res?.message || "Failed to load profile");
@@ -83,7 +93,7 @@ export default function SellerProfilePage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [contextUser]);
 
   const initials = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
 

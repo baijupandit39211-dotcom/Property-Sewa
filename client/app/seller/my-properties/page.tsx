@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 
 import { apiFetch } from "@/app/lib/api";
+import { readFreshCache, SELLER_CACHE_KEYS, writeCache } from "@/app/seller/prefetchCache";
 import {
   FiltersBar,
   KpiStrip,
@@ -353,6 +354,15 @@ export default function SellerMyPropertiesPage() {
   }, []);
 
   useEffect(() => {
+    const cacheKey = range === "30d" ? SELLER_CACHE_KEYS.myProperties30d : "";
+    if (cacheKey) {
+      const cached = readFreshCache<AnalyticsPayload>(cacheKey);
+      if (cached) {
+        setAnalytics((prev) => prev || cached);
+        setIsFetching(false);
+      }
+    }
+
     const controller = new AbortController();
 
     async function loadInventory() {
@@ -367,6 +377,7 @@ export default function SellerMyPropertiesPage() {
         if (!controller.signal.aborted && response.success) {
           setAnalytics(response.data);
           setLastUpdatedAt(new Date().toISOString());
+          if (range === "30d") writeCache(SELLER_CACHE_KEYS.myProperties30d, response.data);
         }
       } catch (err: any) {
         if (controller.signal.aborted) return;
@@ -540,7 +551,7 @@ export default function SellerMyPropertiesPage() {
   }
 
   if (!analytics || !summary) {
-    return null;
+    return <LoadingState />;
   }
 
   return (

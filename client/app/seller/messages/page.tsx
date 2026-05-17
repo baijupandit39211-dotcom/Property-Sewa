@@ -33,6 +33,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
+import { readFreshCache, SELLER_CACHE_KEYS, writeCache } from "@/app/seller/prefetchCache";
 import {
   emitChatDelivered,
   emitChatSeen,
@@ -52,6 +53,9 @@ type Lead = {
   message: string;
   status: "new" | "contacted" | "closed";
   createdAt: string;
+  lastMessage?: Message | null;
+  latestActivityAt?: string;
+  messageCount?: number;
 };
 
 type Message = {
@@ -307,27 +311,24 @@ export default function SellerMessagesPage() {
   const loadInbox = useEffectEvent(async (keepSelection = true) => {
     const leadsRes = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/mine");
     const leads = leadsRes.items || [];
-    const summaries = await Promise.all(
-      leads.map(async (lead) => {
-        const thread = await fetchConversationMessages(lead._id);
-        const lastMessage = thread[thread.length - 1] || null;
-        const marker = readMarkers[lead._id];
-        let unreadCount = 0;
-        if (!marker) unreadCount = thread.filter((item) => item.senderRole === "buyer").length;
-        else {
-          const markerIndex = thread.findIndex((item) => item._id === marker);
-          const unseen = markerIndex === -1 ? thread : thread.slice(markerIndex + 1);
-          unreadCount = unseen.filter((item) => item.senderRole === "buyer").length;
-        }
-        return { ...lead, lastMessage, unreadCount };
-      })
-    );
+    const summaries = leads.map((lead) => {
+      const lastMessage = lead.lastMessage || null;
+      const marker = readMarkers[lead._id];
+      const unreadCount =
+        lastMessage && lastMessage.senderRole === "buyer" && (!marker || marker !== lastMessage._id)
+          ? 1
+          : 0;
+      return { ...lead, lastMessage, unreadCount };
+    });
     summaries.sort((a, b) => {
-      const aTime = a.lastMessage?.createdAt || a.createdAt;
-      const bTime = b.lastMessage?.createdAt || b.createdAt;
+      const aTime = a.latestActivityAt || a.lastMessage?.createdAt || a.createdAt;
+      const bTime = b.latestActivityAt || b.lastMessage?.createdAt || b.createdAt;
       return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
     setConversations(summaries);
+    try {
+      writeCache(SELLER_CACHE_KEYS.messages, summaries);
+    } catch {}
     if (!keepSelection || !selectedId) setSelectedId(summaries[0]?._id || "");
     else if (!summaries.some((item) => item._id === selectedId)) setSelectedId(summaries[0]?._id || "");
   });
@@ -348,8 +349,17 @@ export default function SellerMessagesPage() {
   });
 
   useEffect(() => {
+    try {
+      const cachedItems = readFreshCache<ConversationSummary[]>(SELLER_CACHE_KEYS.messages) || [];
+      if (cachedItems.length) {
+        setConversations(cachedItems);
+        setSelectedId(cachedItems[0]?._id || "");
+        setLoading(false);
+      }
+    } catch {}
+
     async function bootstrap() {
-      setLoading(true);
+      setLoading((prev) => (conversations.length ? prev : true));
       setError("");
       try {
         await loadInbox(false);
@@ -704,13 +714,18 @@ export default function SellerMessagesPage() {
     }
   }
 
-  if (loading) {
+  if (loading && conversations.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-r-2 border-emerald-600" />
-          <p className="mt-4 text-sm text-slate-600">Loading seller inbox...</p>
-        </div>
+      <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
+        <section className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-5 py-5 text-white shadow-[0_18px_48px_rgba(19,74,54,0.16)] sm:px-6 sm:py-6">
+          <div className="h-5 w-44 animate-pulse rounded-full bg-white/20" />
+          <div className="mt-4 h-10 w-64 animate-pulse rounded-xl bg-white/20" />
+          <div className="mt-3 h-4 w-80 max-w-full animate-pulse rounded-full bg-white/20" />
+        </section>
+        <section className="grid min-h-0 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="h-[620px] animate-pulse rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)] shadow-[0_10px_26px_rgba(15,23,42,0.06)]" />
+          <div className="h-[620px] animate-pulse rounded-[24px] border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.06)]" />
+        </section>
       </div>
     );
   }
@@ -739,7 +754,7 @@ export default function SellerMessagesPage() {
               <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
               {refreshing ? "Refreshing..." : "Refresh inbox"}
             </button>
-            <Link href="/seller/leads" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#edf6f0] px-4 py-3 text-sm font-semibold text-[#17614b] transition hover:bg-white">
+            <Link prefetch={true} href="/seller/leads" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#edf6f0] px-4 py-3 text-sm font-semibold text-[#17614b] transition hover:bg-white">
               Open leads
               <ChevronRight className="h-4 w-4" />
             </Link>

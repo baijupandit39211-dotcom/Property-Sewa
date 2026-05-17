@@ -410,10 +410,21 @@ export default function SellerEditPropertyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-50 px-6 py-10">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-r-2 border-emerald-600" />
-          <p className="mt-4 text-slate-600">Loading property details...</p>
+      <div className="min-h-0 bg-gradient-to-b from-emerald-50 via-white to-slate-50 px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white/75 px-4 py-4 backdrop-blur">
+            <div className="h-5 w-20 animate-pulse rounded bg-slate-100" />
+            <div className="mt-3 h-4 w-40 animate-pulse rounded bg-slate-100" />
+          </div>
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-7">
+            <div className="h-6 w-52 animate-pulse rounded bg-slate-100" />
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div key={idx} className="h-11 animate-pulse rounded-xl bg-slate-100" />
+              ))}
+            </div>
+            <div className="mt-6 h-28 animate-pulse rounded-xl bg-slate-100" />
+          </div>
         </div>
       </div>
     );
