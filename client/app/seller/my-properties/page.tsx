@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   startTransition,
   useDeferredValue,
@@ -40,9 +41,21 @@ import {
   PaginationBar,
   PropertyList,
   RecentActivityCard,
-  StatusSummaryDonut,
   TopListingCard,
 } from "./ui";
+
+const StatusSummaryDonut = dynamic(
+  () => import("./ui").then((mod) => ({ default: mod.StatusSummaryDonut })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+        <div className="h-5 w-40 animate-pulse rounded bg-slate-100" />
+        <div className="mt-5 h-[280px] animate-pulse rounded-2xl bg-slate-100" />
+      </div>
+    ),
+  }
+);
 
 type RangeOption = "7d" | "30d" | "90d";
 type SortOption =

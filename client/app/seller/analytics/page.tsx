@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { startTransition, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import {
@@ -148,6 +149,32 @@ const RANGE_OPTIONS: Array<{ value: RangeOption; label: string }> = [
   { value: "30d", label: "Last 30 days" },
   { value: "90d", label: "Last 90 days" },
 ];
+
+const PerformanceOverviewLazy = dynamic(
+  async () => ({ default: PerformanceOverview }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-[28px] border border-[#e4ebe6] bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.06)] xl:h-[430px]">
+        <div className="h-5 w-52 animate-pulse rounded bg-slate-100" />
+        <div className="mt-4 h-[300px] animate-pulse rounded-[24px] bg-slate-100" />
+      </div>
+    ),
+  }
+);
+
+const DonutCardLazy = dynamic(
+  async () => ({ default: DonutCard }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-[28px] border border-[#e4ebe6] bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.06)] xl:h-[430px]">
+        <div className="h-5 w-44 animate-pulse rounded bg-slate-100" />
+        <div className="mt-8 h-[320px] animate-pulse rounded-[24px] bg-slate-100" />
+      </div>
+    ),
+  }
+);
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
@@ -1533,8 +1560,8 @@ export default function AnalyticsPage() {
       </section>
 
       <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_0.88fr_0.95fr]">
-        <PerformanceOverview trends={analytics.trends} />
-        <DonutCard
+        <PerformanceOverviewLazy trends={analytics.trends} />
+        <DonutCardLazy
           title="Lead Status Breakdown"
           items={inquiryBreakdown}
           totalLabel="Current lead-status mix in the selected range"

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import CountUp from "react-countup";
@@ -30,8 +31,6 @@ import {
   LoadingSkeleton,
   HeaderSearch,
   MetricCard,
-  TrendChartCard,
-  DistributionCard,
   PropertyCard,
   cn,
   fmtDateTime,
@@ -39,6 +38,32 @@ import {
   fmtPct,
   getSignedDelta,
 } from "./dashboard-ui";
+
+const TrendChartCard = dynamic(
+  () => import("./dashboard-ui").then((mod) => ({ default: mod.TrendChartCard })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-[24px] border border-[#dce7df] bg-white p-5 shadow-[0_18px_40px_rgba(17,24,39,0.06)]">
+        <div className="h-6 w-44 animate-pulse rounded bg-slate-100" />
+        <div className="mt-4 h-[300px] animate-pulse rounded-2xl bg-slate-100" />
+      </div>
+    ),
+  }
+);
+
+const DistributionCard = dynamic(
+  () => import("./dashboard-ui").then((mod) => ({ default: mod.DistributionCard })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-[24px] border border-[#dce7df] bg-white p-5 shadow-[0_18px_40px_rgba(17,24,39,0.06)]">
+        <div className="h-6 w-36 animate-pulse rounded bg-slate-100" />
+        <div className="mt-4 h-[220px] animate-pulse rounded-2xl bg-slate-100" />
+      </div>
+    ),
+  }
+);
 
 type RangeOption = "7d" | "30d" | "90d";
 type Summary = {

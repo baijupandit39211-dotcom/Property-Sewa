@@ -11,6 +11,20 @@ export type ApiError = {
  */
 export const API_BASE = "http://localhost:5000";
 
+const TIMED_ENDPOINT_PATTERNS = [
+  "/auth/me",
+  "/leads/mine",
+  "/analytics/seller",
+  "/notifications",
+  "/properties/mine",
+  "/messages/",
+] as const;
+
+function getTimedEndpointLabel(path: string) {
+  const normalized = String(path || "");
+  return TIMED_ENDPOINT_PATTERNS.find((pattern) => normalized.includes(pattern)) || null;
+}
+
 /**
  * Parse helper: tries JSON first, otherwise returns null
  */
@@ -42,14 +56,34 @@ async function coreFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
     bodyType: init.body instanceof FormData ? "FormData" : typeof init.body,
   });
 
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...(init.headers || {}),
-    },
-    credentials: "include",
-  });
+  // TEMP PERF LOGGING (remove after navigation audit)
+  const timedLabel = getTimedEndpointLabel(path);
+  const perfLabel = timedLabel ? `[PERF] ${method} ${timedLabel}` : null;
+  if (perfLabel && typeof window !== "undefined") {
+    const perfWindow = window as typeof window & { __apiPerfCounts?: Record<string, number> };
+    perfWindow.__apiPerfCounts = perfWindow.__apiPerfCounts || {};
+    perfWindow.__apiPerfCounts[perfLabel] = (perfWindow.__apiPerfCounts[perfLabel] || 0) + 1;
+    const count = perfWindow.__apiPerfCounts[perfLabel];
+    console.time(`${perfLabel} #${count}`);
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: {
+        ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+        ...(init.headers || {}),
+      },
+      credentials: "include",
+    });
+  } finally {
+    if (perfLabel && typeof window !== "undefined") {
+      const perfWindow = window as typeof window & { __apiPerfCounts?: Record<string, number> };
+      const count = perfWindow.__apiPerfCounts?.[perfLabel] || 1;
+      console.timeEnd(`${perfLabel} #${count}`);
+    }
+  }
 
   const contentType = res.headers.get("content-type") || "";
 
