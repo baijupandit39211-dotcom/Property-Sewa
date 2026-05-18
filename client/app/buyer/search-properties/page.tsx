@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   Bath,
@@ -33,6 +33,11 @@ type PropertySuggestion = {
 type PropertySuggestionsResponse = {
   success: boolean;
   items: PropertySuggestion[];
+};
+
+type ActiveFilter = {
+  key: "search" | "location" | "listingType" | "minPrice" | "maxPrice" | "showOnlyOffers" | "sort";
+  label: string;
 };
 
 function isOfferActive(property: Property) {
@@ -161,11 +166,29 @@ function LoadingSkeleton() {
 }
 
 function formatCardArea(property: Property) {
-  if (typeof property.sqft === "number" && property.sqft > 0) {
+  const sqft = Number(property.sqft || 0);
+  if (Number.isFinite(sqft) && sqft >= 100) {
     return `${property.sqft} sqft`;
   }
 
   return "Area on request";
+}
+
+function getDisplayCurrency(property: Property) {
+  const raw = String(property.currency || "").trim().toUpperCase();
+  // Current display rule: normalize to NPR unless explicitly supported.
+  if (raw === "NPR") return raw;
+  return "NPR";
+}
+
+function formatCardPrice(property: Property) {
+  const value = Number(property.price || 0);
+  const listingType = String(property.listingType || "").toLowerCase();
+  const minReasonablePrice = listingType === "rent" ? 1000 : 10000;
+  if (!Number.isFinite(value) || value < minReasonablePrice) {
+    return "Price on request";
+  }
+  return `${getDisplayCurrency(property)} ${value.toLocaleString()}`;
 }
 
 function getStatusBadgeLabel(property: Property) {
@@ -257,7 +280,11 @@ function parseSmartSearch(input: string) {
 
 function SearchPropertiesPageContent() {
   const ITEMS_PER_PAGE = 6;
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const requestSeq = useRef(0);
+  const filterSyncReadyRef = useRef(false);
   const [items, setItems] = useState<Property[]>([]);
   const [showOnlyOffers, setShowOnlyOffers] = useState(false);
   const [search, setSearch] = useState("");
@@ -298,9 +325,29 @@ function SearchPropertiesPageContent() {
   }, []);
 
   useEffect(() => {
-    setShowOnlyOffers(offersOnlyEnabled);
-    setPage(1);
-  }, [offersOnlyEnabled]);
+    const nextSearch = searchParams.get("search") || "";
+    const nextLocation = searchParams.get("location") || "";
+    const nextListingType = searchParams.get("listingType") || "";
+    const nextMinPrice = searchParams.get("minPrice") || "";
+    const nextMaxPrice = searchParams.get("maxPrice") || "";
+    const nextSort = searchParams.get("sort") || "";
+    const rawPage = Number(searchParams.get("page") || "1");
+    const nextPage = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+    const nextOffersOnly =
+      searchParams.get("offersOnly") === "true" ||
+      searchParams.get("offersOnly") === "1" ||
+      searchParams.get("offersOnly") === "yes";
+
+    setSearch((prev) => (prev === nextSearch ? prev : nextSearch));
+    setLocation((prev) => (prev === nextLocation ? prev : nextLocation));
+    setListingType((prev) => (prev === nextListingType ? prev : nextListingType));
+    setMinPrice((prev) => (prev === nextMinPrice ? prev : nextMinPrice));
+    setMaxPrice((prev) => (prev === nextMaxPrice ? prev : nextMaxPrice));
+    setSort((prev) => (prev === nextSort ? prev : nextSort));
+    setPage((prev) => (prev === nextPage ? prev : nextPage));
+    setShowOnlyOffers((prev) => (prev === nextOffersOnly ? prev : nextOffersOnly));
+    filterSyncReadyRef.current = true;
+  }, [searchParams]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -349,6 +396,25 @@ function SearchPropertiesPageContent() {
   }, []);
 
   useEffect(() => {
+    if (!filterSyncReadyRef.current) return;
+
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("search", search.trim());
+    if (location.trim()) params.set("location", location.trim());
+    if (listingType) params.set("listingType", listingType);
+    if (minPrice) params.set("minPrice", minPrice);
+    if (maxPrice) params.set("maxPrice", maxPrice);
+    if (sort) params.set("sort", sort);
+    if (showOnlyOffers) params.set("offersOnly", "true");
+    if (page > 1) params.set("page", String(page));
+
+    const nextQuery = params.toString();
+    const current = searchParams.toString();
+    if (nextQuery === current) return;
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [router, pathname, searchParams, search, location, listingType, minPrice, maxPrice, sort, showOnlyOffers, page]);
+
+  useEffect(() => {
     const params = new URLSearchParams();
 
     if (debouncedSearch) params.set("search", debouncedSearch);
@@ -362,20 +428,44 @@ function SearchPropertiesPageContent() {
     if (showOnlyOffers) params.set("offersOnly", "true");
     params.set("excludeReserved", "true");
 
+    const reqId = ++requestSeq.current;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      controller.abort("timeout");
+    }, 12000);
+
     setLoading(true);
     setError("");
 
-    apiFetch<ListResponse>(`/properties${params.toString() ? `?${params.toString()}` : ""}`)
+    apiFetch<ListResponse>(`/properties${params.toString() ? `?${params.toString()}` : ""}`, {
+      signal: controller.signal,
+    })
       .then((res) => {
+        if (reqId !== requestSeq.current) return;
         setItems(res.items);
         setTotal(res.total);
       })
-      .catch(() => {
+      .catch((err: any) => {
+        if (reqId !== requestSeq.current) return;
+        if (controller.signal.aborted) {
+          if (err?.name === "AbortError" || String(err?.message || "").includes("aborted")) {
+            return;
+          }
+          setError("Loading timed out. Please retry.");
+          return;
+        }
         setError("Failed to fetch properties");
       })
       .finally(() => {
+        window.clearTimeout(timeout);
+        if (reqId !== requestSeq.current) return;
         setLoading(false);
       });
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort("filter-change");
+    };
   }, [
     debouncedSearch,
     debouncedLocation,
@@ -436,23 +526,27 @@ function SearchPropertiesPageContent() {
     () => (showOnlyOffers ? items.filter((item) => isOfferActive(item)) : items),
     [items, showOnlyOffers]
   );
-  const activeFilters = useMemo(() => {
-    const filters: string[] = [];
+  const activeFilters = useMemo<ActiveFilter[]>(() => {
+    const filters: ActiveFilter[] = [];
 
-    if (search.trim()) filters.push(`Keyword: ${search.trim()}`);
-    if (location.trim()) filters.push(`Location: ${location.trim()}`);
-    if (listingType) filters.push(`Type: ${listingType === "buy" ? "Buy" : "Rent"}`);
-    if (minPrice) filters.push(`Min: ${minPrice}`);
-    if (maxPrice) filters.push(`Max: ${maxPrice}`);
-    if (showOnlyOffers) filters.push("Offers only");
+    if (search.trim()) filters.push({ key: "search", label: `Keyword: ${search.trim()}` });
+    if (location.trim()) filters.push({ key: "location", label: `Location: ${location.trim()}` });
+    if (listingType) {
+      filters.push({ key: "listingType", label: `Type: ${listingType === "buy" ? "Buy" : "Rent"}` });
+    }
+    if (minPrice) filters.push({ key: "minPrice", label: `Min: ${minPrice}` });
+    if (maxPrice) filters.push({ key: "maxPrice", label: `Max: ${maxPrice}` });
+    if (showOnlyOffers) filters.push({ key: "showOnlyOffers", label: "Offers only" });
     if (sort) {
-      filters.push(
-        sort === "price_asc"
-          ? "Sort: Price low to high"
-          : sort === "price_desc"
+      filters.push({
+        key: "sort",
+        label:
+          sort === "price_asc"
+            ? "Sort: Price low to high"
+            : sort === "price_desc"
             ? "Sort: Price high to low"
-            : "Sort: Latest"
-      );
+            : "Sort: Latest",
+      });
     }
 
     return filters;
@@ -495,6 +589,17 @@ function SearchPropertiesPageContent() {
     setMinPrice("");
     setMaxPrice("");
     setSort("");
+    setPage(1);
+  }
+
+  function removeFilter(key: ActiveFilter["key"]) {
+    if (key === "search") setSearch("");
+    if (key === "location") setLocation("");
+    if (key === "listingType") setListingType("");
+    if (key === "minPrice") setMinPrice("");
+    if (key === "maxPrice") setMaxPrice("");
+    if (key === "showOnlyOffers") setShowOnlyOffers(false);
+    if (key === "sort") setSort("");
     setPage(1);
   }
 
@@ -739,12 +844,16 @@ function SearchPropertiesPageContent() {
                   </div>
                   {activeFilters.length > 0 ? (
                     activeFilters.map((filter) => (
-                      <span
-                        key={filter}
-                        className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#618975] ring-1 ring-[#D1D5DB]"
+                      <button
+                        type="button"
+                        key={`${filter.key}:${filter.label}`}
+                        onClick={() => removeFilter(filter.key)}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#618975] ring-1 ring-[#D1D5DB] transition hover:bg-[#EEF8EB] hover:text-[#316249]"
+                        title="Remove filter"
                       >
-                        {formatFilterChipLabel(filter)}
-                      </span>
+                        {formatFilterChipLabel(filter.label)}
+                        <span className="text-[11px] font-bold">×</span>
+                      </button>
                     ))
                   ) : (
                     <span className="text-sm text-[#618975]">No active filters</span>
@@ -894,15 +1003,15 @@ function SearchPropertiesPageContent() {
               return (
                 <article
                   key={p._id}
-                  className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-[#D1D5DB]/80 bg-white shadow-[0_10px_24px_rgba(13,28,18,0.06)] transition-all duration-300 hover:-translate-y-[3px] hover:border-[#E5E7EB] hover:shadow-[0_16px_34px_rgba(13,28,18,0.10)] hover:ring-1 hover:ring-[#E5E7EB]"
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_6px_16px_rgba(13,28,18,0.06)] transition-all duration-300 hover:-translate-y-[2px] hover:border-[#D1D5DB] hover:shadow-[0_10px_24px_rgba(13,28,18,0.08)]"
                 >
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => toggleCompare(p._id)}
                       className={[
-                        "absolute right-[3.35rem] top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/70 bg-white/70 text-[10px] shadow-sm backdrop-blur-md transition active:scale-95",
-                        compareOn ? "bg-[#316249] text-white border-[#316249]/60" : "text-[#0D1C12]",
+                        "absolute right-[2.8rem] top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E5E7EB] bg-white/95 text-[10px] text-[#0D1C12] shadow-sm backdrop-blur-sm transition active:scale-95 hover:border-[#316249]/40 hover:bg-[#EEF8EB]",
+                        compareOn ? "border-[#316249]/60 bg-[#316249] text-white" : "text-[#0D1C12]",
                         scalePop ? "scale-105" : "",
                       ].join(" ")}
                       aria-label={compareOn ? "Remove from compare" : "Add to compare"}
@@ -915,8 +1024,8 @@ function SearchPropertiesPageContent() {
                       type="button"
                       onClick={() => toggleWishlist(p._id)}
                       className={[
-                        "absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-xl border border-white/70 bg-white/70 shadow-sm backdrop-blur-md transition active:scale-95",
-                        saved ? "text-[#316249]" : "text-[#0D1C12]",
+                        "absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full border border-[#E5E7EB] bg-white/95 text-[#0D1C12] shadow-sm backdrop-blur-sm transition active:scale-95 hover:border-[#316249]/40 hover:bg-[#EEF8EB]",
+                        saved ? "border-[#316249]/60 bg-[#316249] text-white" : "text-[#0D1C12]",
                         heartPop ? "scale-110" : "",
                       ].join(" ")}
                       aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
@@ -925,82 +1034,67 @@ function SearchPropertiesPageContent() {
                       <Heart
                         className={[
                           "h-3.5 w-3.5 transition-transform duration-200",
-                          saved ? "fill-[#316249]" : "",
+                          saved ? "fill-white" : "",
                           heartPop ? "scale-110" : "",
                         ].join(" ")}
                       />
                     </button>
 
-                    <Link href={`/buyer/property/${p._id}`} className="block">
-                      <div className="relative overflow-hidden rounded-t-[24px]">
+                    <Link
+                      href={`/buyer/property/${p._id}`}
+                      className="block focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#316249]/35"
+                    >
+                      <div className="relative overflow-hidden rounded-t-2xl">
                         <img
                           src={getPrimaryImage(p)}
                           alt={p.title ?? "Property image"}
                           loading="lazy"
                           decoding="async"
-                          className="aspect-[16/10] w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+                          className="h-56 w-full object-cover transition-transform duration-700 group-hover:scale-[1.02] sm:h-60"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0D1C12]/35 via-[#0D1C12]/10 to-transparent" />
-
-                        <div className="absolute left-3 top-3 z-20 flex flex-wrap items-center gap-2">
-                          <span
-                            className={[
-                              "inline-flex min-h-9 items-center rounded-xl px-3.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white shadow-sm",
-                              statusBadgeLabel === "Featured" ? "bg-[#316249]" : "bg-[#316249]/85",
-                            ].join(" ")}
-                          >
-                            {statusBadgeLabel}
-                          </span>
-                          <span className="inline-flex items-center rounded-xl bg-white/90 px-3 py-1 text-xs font-semibold text-[#0D1C12] shadow-sm backdrop-blur-sm">
-                            {p.listingType === "rent" ? "For Rent" : "For Sale"}
-                          </span>
-                        </div>
+                        {statusBadgeLabel === "Featured" ? (
+                          <div className="absolute left-3 top-3 z-20">
+                            <span className="inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-[#316249] shadow-sm">
+                              Featured
+                            </span>
+                          </div>
+                        ) : null}
                       </div>
                     </Link>
                   </div>
 
                   <Link
                     href={`/buyer/property/${p._id}`}
-                    className="flex h-full flex-1 flex-col p-5"
+                    className="flex h-full flex-1 flex-col p-4 sm:p-5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#316249]/35"
                   >
-                    <p className="text-[1.35rem] font-bold leading-none tracking-tight text-[#0D1C12]">
-                      {p.currency} {Number(p.price || 0).toLocaleString()}
-                    </p>
-
-                    <h3 className="mt-2.5 line-clamp-2 text-[1.05rem] font-bold leading-7 tracking-tight text-[#0D1C12] transition-colors group-hover:text-[#316249]">
-                      {p.title || "Property listing"}
-                    </h3>
-
-                    <p className="mt-2 flex items-center gap-2 text-sm text-[#618975]">
-            <MapPin className="h-4 w-4 shrink-0 text-[#316249]" strokeWidth={2} />
-                      <span className="truncate">{p.address || p.location}</span>
-                    </p>
-
-                    <div className="mt-4">
-                      <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-[#618975]">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F2EB] px-2.5 py-1 text-[13px] text-[#618975]">
-                          <BedDouble className="h-4 w-4 text-[#618975]" strokeWidth={2} />
-                          {p.beds} bd
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F2EB] px-2.5 py-1 text-[13px] text-[#618975]">
-                          <Bath className="h-4 w-4 text-[#618975]" strokeWidth={2} />
-                          {p.baths} ba
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F2EB] px-2.5 py-1 text-[13px] text-[#618975]">
-                          <Expand className="h-4 w-4 text-[#618975]" strokeWidth={2} />
-                          {cardArea.includes("sqft") ? cardArea : "Area"}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF8EB] px-2.5 py-1 text-[12px] font-semibold text-[#316249] ring-1 ring-[#D1D5DB]">
-                          <ShieldCheck className="h-3 w-3 text-[#13EC80]" strokeWidth={2} />
-                          Verified
-                        </span>
-                      </div>
+                    <div className="mb-2 flex items-start justify-between gap-2.5">
+                      <h3 className="line-clamp-2 text-[1.06rem] font-semibold leading-6 tracking-tight text-[#111827] transition-colors group-hover:text-[#316249]">
+                        {p.title || "Property listing"}
+                      </h3>
+                      <span className="shrink-0 rounded-full border border-[#E5E7EB] bg-[#F8FAF9] px-3 py-1 text-xs font-semibold text-[#316249]">
+                        {formatCardPrice(p)}
+                      </span>
                     </div>
 
-                    <div className="mt-3">
-                      <div className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#316249] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#28513D] hover:shadow-md active:scale-[0.98]">
-                        <span>View details</span>
-                        <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    <p className="mt-0.5 flex items-center gap-1.5 text-sm text-[#6B7280]">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-[#6B7280]" strokeWidth={2} />
+                      <span className="truncate">{p.address || p.location || "Location on request"}</span>
+                    </p>
+
+                    <div className="mt-4 border-t border-[#EEF2F0] pt-3">
+                      <div className="grid grid-cols-3 gap-2 text-sm font-medium text-[#6B7280]">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F6F8F7] px-2.5 py-1.5 text-[12px] text-[#4B5563]">
+                          <BedDouble className="h-3.5 w-3.5 text-[#4B5563]" strokeWidth={2} />
+                          {p.beds} bd
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F6F8F7] px-2.5 py-1.5 text-[12px] text-[#4B5563]">
+                          <Bath className="h-3.5 w-3.5 text-[#4B5563]" strokeWidth={2} />
+                          {p.baths} ba
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F6F8F7] px-2.5 py-1.5 text-[12px] text-[#4B5563]">
+                          <Expand className="h-3.5 w-3.5 text-[#4B5563]" strokeWidth={2} />
+                          {cardArea.includes("sqft") ? cardArea : "Area"}
+                        </span>
                       </div>
                     </div>
                   </Link>
