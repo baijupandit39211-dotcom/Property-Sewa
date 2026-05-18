@@ -20,7 +20,7 @@ function loadGoogleScript(): Promise<void> {
   return new Promise((resolve) => {
     if (window.google?.accounts?.id) return resolve();
     const s = document.createElement("script");
-    s.src = "https://accounts.google.com/gsi/client";
+    s.src = "https://accounts.google.com/gsi/client?hl=en";
     s.async = true;
     s.defer = true;
     s.onload = () => resolve();
@@ -247,9 +247,10 @@ export default function LoginPage() {
       <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           className="
-            grid items-center gap-10
-            py-10
-            md:grid-cols-2
+            grid items-center gap-8
+            py-6 sm:py-8
+            md:grid-cols-2 md:items-start
+            lg:py-10
           "
           style={{
             // keep page compact to avoid scroll
@@ -284,27 +285,27 @@ export default function LoginPage() {
             >
               {/* Email */}
               <div>
-                <label className="text-[16px] font-semibold text-[#0D1C12]">
+                <label className="text-[16px] font-semibold text-[#111827]">
                   Email
                 </label>
-                <div className="mt-2 flex h-[58px] items-center gap-3 rounded-[12px] border border-[#D1D5DB] bg-[#F7FCFA] px-4 shadow-[0_10px_22px_rgba(13,28,18,0.05)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(13,28,18,0.07)] focus-within:-translate-y-0.5 focus-within:border-[#316249] focus-within:shadow-[0_16px_34px_rgba(49,98,73,0.12)]">
+                <div className="mt-2 flex h-[58px] items-center gap-3 rounded-[12px] border border-[#D1D5DB] bg-[#F7FCFA] px-4 shadow-[0_10px_22px_rgba(13,28,18,0.05)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(13,28,18,0.07)] focus-within:-translate-y-0.5 focus-within:border-[#316249] focus-within:shadow-[0_16px_34px_rgba(49,98,73,0.12)] focus-within:ring-2 focus-within:ring-[#316249]/20">
                   <Mail className="h-5 w-5 text-[#316249]" />
                   <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email"
                     type="email"
-                    className="h-full w-full bg-transparent text-[16px] text-[#0D1C12] outline-none placeholder:text-[#618975]"
+                    className="h-full w-full bg-transparent text-[16px] text-[#0D1C12] outline-none placeholder:text-[#4B6358]"
                   />
                 </div>
               </div>
 
               {/* Password */}
               <div>
-                <label className="text-[16px] font-semibold text-[#0D1C12]">
+                <label className="text-[16px] font-semibold text-[#111827]">
                   Password
                 </label>
-                <div className="mt-2 flex h-[58px] items-center gap-3 rounded-[12px] border border-[#D1D5DB] bg-[#F7FCFA] px-4 shadow-[0_10px_22px_rgba(13,28,18,0.05)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(13,28,18,0.07)] focus-within:-translate-y-0.5 focus-within:border-[#316249] focus-within:shadow-[0_16px_34px_rgba(49,98,73,0.12)]">
+                <div className="mt-2 flex h-[58px] items-center gap-3 rounded-[12px] border border-[#D1D5DB] bg-[#F7FCFA] px-4 shadow-[0_10px_22px_rgba(13,28,18,0.05)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(13,28,18,0.07)] focus-within:-translate-y-0.5 focus-within:border-[#316249] focus-within:shadow-[0_16px_34px_rgba(49,98,73,0.12)] focus-within:ring-2 focus-within:ring-[#316249]/20">
                   <Lock className="h-5 w-5 text-[#316249]" />
 
                   <input
@@ -312,13 +313,13 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
                     type={showPw ? "text" : "password"}
-                    className="h-full w-full bg-transparent text-[16px] text-[#0D1C12] outline-none placeholder:text-[#618975]"
+                    className="h-full w-full bg-transparent text-[16px] text-[#0D1C12] outline-none placeholder:text-[#4B6358]"
                   />
 
                   <button
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
-                    className="grid h-9 w-9 place-items-center rounded-full transition duration-300 hover:scale-105 hover:bg-black/5"
+                    className="grid h-9 w-9 place-items-center rounded-full transition duration-300 hover:scale-105 hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]/35"
                     aria-label={showPw ? "Hide password" : "Show password"}
                     title={showPw ? "Hide password" : "Show password"}
                   >
@@ -342,6 +343,7 @@ export default function LoginPage() {
                   text-[16px] font-semibold text-white
                   shadow-[0_18px_35px_rgba(0,0,0,0.10)]
                   transition duration-300 hover:-translate-y-0.5 hover:bg-[#24472E] hover:shadow-[0_24px_40px_rgba(49,98,73,0.20)]
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]/35
                   disabled:cursor-not-allowed disabled:opacity-70
                 "
               >
@@ -361,7 +363,7 @@ export default function LoginPage() {
                 <div ref={googleBtnRef} className="flex justify-center" />
               </div>
 
-              <p className="text-center text-[15px] text-[#618975]">
+              <p className="text-center text-[15px] text-[#4B6358]">
                 Don&apos;t have an account?{" "}
                 <Link prefetch={true} href="/register" className="font-semibold text-[#13EC80]">
                   Sign Up
@@ -378,7 +380,7 @@ export default function LoginPage() {
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.18 }}
           >
             <motion.div
-              className="relative mx-auto aspect-[1.05/1] w-full max-w-[520px]"
+              className="relative mx-auto aspect-[1.05/1] w-full max-w-[430px] lg:max-w-[520px]"
               whileHover={{ y: -8, rotate: -1, scale: 1.02 }}
               transition={{ type: "spring", stiffness: 180, damping: 16 }}
             >

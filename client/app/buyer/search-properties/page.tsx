@@ -174,6 +174,31 @@ function formatCardArea(property: Property) {
   return "Area on request";
 }
 
+function RefreshingCardSkeletons() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <article
+          key={`refresh-skeleton-${index}`}
+          aria-hidden="true"
+          className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_6px_16px_rgba(13,28,18,0.06)]"
+        >
+          <div className="h-52 w-full animate-pulse bg-[#E8F2EB] sm:h-56" />
+          <div className="p-4 sm:p-5">
+            <div className="mb-2 h-6 w-3/4 animate-pulse rounded-md bg-[#E8F2EB]" />
+            <div className="mb-3 h-4 w-1/2 animate-pulse rounded-md bg-[#E8F2EB]" />
+            <div className="grid grid-cols-3 gap-1.5">
+              <div className="h-7 animate-pulse rounded-lg bg-[#E8F2EB]" />
+              <div className="h-7 animate-pulse rounded-lg bg-[#E8F2EB]" />
+              <div className="h-7 animate-pulse rounded-lg bg-[#E8F2EB]" />
+            </div>
+          </div>
+        </article>
+      ))}
+    </>
+  );
+}
+
 function getDisplayCurrency(property: Property) {
   const raw = String(property.currency || "").trim().toUpperCase();
   // Current display rule: normalize to NPR unless explicitly supported.
@@ -552,6 +577,8 @@ function SearchPropertiesPageContent() {
     return filters;
   }, [search, location, listingType, minPrice, maxPrice, showOnlyOffers, sort]);
   const totalPages = Math.max(1, Math.ceil(total / limit));
+  const showInitialSkeleton = loading && items.length === 0 && !error;
+  const showRefreshingSkeleton = loading && items.length > 0 && !error;
 
   function showToast(text: string) {
     setToast({ show: true, text });
@@ -986,7 +1013,7 @@ function SearchPropertiesPageContent() {
               </button>
             </div>
           </div>
-        ) : loading ? (
+        ) : showInitialSkeleton ? (
           <LoadingSkeleton />
         ) : visibleItems.length === 0 ? (
           <EmptyState onResetFilters={clearFilters} />
@@ -1003,18 +1030,20 @@ function SearchPropertiesPageContent() {
               return (
                 <article
                   key={p._id}
-                  className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_6px_16px_rgba(13,28,18,0.06)] transition-all duration-300 hover:-translate-y-[3px] hover:border-[#D1D5DB] hover:shadow-[0_14px_28px_rgba(13,28,18,0.10)]"
+                  className="group flex h-full min-h-[22.5rem] cursor-pointer flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_6px_16px_rgba(13,28,18,0.06)] transition-all duration-300 hover:-translate-y-[3px] hover:border-[#D1D5DB] hover:shadow-[0_14px_28px_rgba(13,28,18,0.10)]"
                 >
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => toggleCompare(p._id)}
+                      onFocus={() => setComparePopIds((prev) => ({ ...prev, [p._id]: true }))}
+                      onBlur={() => setComparePopIds((prev) => ({ ...prev, [p._id]: false }))}
                       className={[
-                        "absolute right-[2.8rem] top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E5E7EB] bg-white/95 text-[10px] text-[#0D1C12] shadow-sm backdrop-blur-sm transition active:scale-95 hover:border-[#316249]/40 hover:bg-[#EEF8EB]",
+                        "absolute right-[2.55rem] top-3 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#E5E7EB] bg-white/95 text-[10px] text-[#0D1C12] shadow-sm backdrop-blur-sm transition active:scale-95 hover:border-[#316249]/40 hover:bg-[#EEF8EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]/45 sm:right-[2.8rem] sm:h-9 sm:w-9",
                         compareOn ? "border-[#316249]/60 bg-[#316249] text-white" : "text-[#0D1C12]",
                         scalePop ? "scale-105" : "",
                       ].join(" ")}
-                      aria-label={compareOn ? "Remove from compare" : "Add to compare"}
+                      aria-label={`${compareOn ? "Remove from compare" : "Add to compare"}: ${p.title || "property"}`}
                       title={compareOn ? "Remove from compare" : "Add to compare"}
                     >
                       <Scale className={["h-4 w-4", scalePop ? "scale-110" : ""].join(" ")} />
@@ -1023,12 +1052,14 @@ function SearchPropertiesPageContent() {
                     <button
                       type="button"
                       onClick={() => toggleWishlist(p._id)}
+                      onFocus={() => setPoppingIds((prev) => ({ ...prev, [p._id]: true }))}
+                      onBlur={() => setPoppingIds((prev) => ({ ...prev, [p._id]: false }))}
                       className={[
-                        "absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full border border-[#E5E7EB] bg-white/95 text-[#0D1C12] shadow-sm backdrop-blur-sm transition active:scale-95 hover:border-[#316249]/40 hover:bg-[#EEF8EB]",
+                        "absolute right-2.5 top-3 z-20 grid h-8 w-8 place-items-center rounded-full border border-[#E5E7EB] bg-white/95 text-[#0D1C12] shadow-sm backdrop-blur-sm transition active:scale-95 hover:border-[#316249]/40 hover:bg-[#EEF8EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]/45 sm:right-3 sm:h-9 sm:w-9",
                         saved ? "border-[#316249]/60 bg-[#316249] text-white" : "text-[#0D1C12]",
                         heartPop ? "scale-110" : "",
                       ].join(" ")}
-                      aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+                      aria-label={`${saved ? "Remove from wishlist" : "Save to wishlist"}: ${p.title || "property"}`}
                       title={saved ? "Saved" : "Save"}
                     >
                       <Heart
@@ -1050,11 +1081,15 @@ function SearchPropertiesPageContent() {
                           alt={p.title ?? "Property image"}
                           loading="lazy"
                           decoding="async"
-                          className="h-52 w-full object-cover transition-transform duration-700 group-hover:scale-[1.02] sm:h-56"
+                          onError={(event) => {
+                            event.currentTarget.src =
+                              "https://placehold.co/900x700/e8f5ee/0f172a?text=Property+Sewa";
+                          }}
+                          className="h-52 w-full object-cover transition-transform duration-700 group-hover:scale-[1.015] sm:h-56"
                         />
                         <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5">
                           {statusBadgeLabel === "Featured" ? (
-                            <span className="inline-flex items-center rounded-full border border-[#D8E5DD] bg-white/88 px-2.5 py-0.5 text-[10px] font-medium text-[#316249] shadow-sm backdrop-blur-sm">
+                            <span className="inline-flex items-center rounded-full border border-[#DDE7E1] bg-white/82 px-2 py-0.5 text-[9px] font-medium text-[#316249] shadow-sm backdrop-blur-sm">
                               Featured
                             </span>
                           ) : null}
@@ -1074,17 +1109,23 @@ function SearchPropertiesPageContent() {
                       <h3 className="line-clamp-2 text-[18px] font-semibold leading-6 tracking-tight text-black transition-colors group-hover:text-[#316249] sm:text-[19px]">
                         {p.title || "Property listing"}
                       </h3>
-                      <span className="shrink-0 rounded-full border border-[#DDE5E0] bg-[#F2F8F4] px-3 py-1 text-[14px] font-semibold text-black">
+                      <span className="inline-flex min-w-[9.5rem] justify-center shrink-0 rounded-full border border-[#DDE5E0] bg-[#F2F8F4] px-3 py-1 text-[14px] font-semibold text-black sm:min-w-[10.5rem]">
                         {formatCardPrice(p)}
                       </span>
                     </div>
 
                     <p className="mt-0.5 flex items-center gap-1.5 text-sm text-black">
                       <MapPin className="h-[17px] w-[17px] shrink-0 text-[#374151]" strokeWidth={2.3} />
-                      <span className="truncate">{p.address || p.location || "Location on request"}</span>
+                      <span
+                        className="truncate"
+                        title={p.address || p.location || "Location on request"}
+                      >
+                        {p.address || p.location || "Location on request"}
+                      </span>
                     </p>
 
-                    <div className="mt-3.5 border-t border-[#EEF2F0] pt-2.5">
+                    <div className="mt-auto pt-3.5">
+                      <div className="border-t border-[#EEF2F0] pt-2.5">
                       <div className="grid grid-cols-3 gap-1.5 text-[13px] font-medium text-black">
                         <span className="inline-flex items-center gap-1 rounded-lg bg-[#F7FAF8] px-2 py-1 text-[13px] text-black">
                           <BedDouble className="h-4 w-4 text-[#374151]" strokeWidth={2.2} />
@@ -1094,16 +1135,21 @@ function SearchPropertiesPageContent() {
                           <Bath className="h-4 w-4 text-[#374151]" strokeWidth={2.2} />
                           {p.baths} ba
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-[#F7FAF8] px-2 py-1 text-[13px] text-black">
+                        <span
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#F7FAF8] px-2 py-1 text-[13px] text-black"
+                          title={cardArea}
+                        >
                           <Expand className="h-4 w-4 text-[#374151]" strokeWidth={2.2} />
                           {cardArea.includes("sqft") ? cardArea : "Area"}
                         </span>
+                      </div>
                       </div>
                     </div>
                   </Link>
                 </article>
               );
             })}
+            {showRefreshingSkeleton ? <RefreshingCardSkeletons /> : null}
           </section>
         )}
 
