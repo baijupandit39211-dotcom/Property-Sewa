@@ -33,10 +33,34 @@ export async function initiatePayment(params: {
   buyerId: string;
   gateway: "khalti" | "esewa";
 }) {
+  console.log("[payments:initiate] start", {
+    propertyId: params.propertyId,
+    buyerId: params.buyerId,
+    gateway: params.gateway,
+  });
+
   const property = await Property.findOne({ _id: params.propertyId, status: "active" });
   if (!property) throw new ApiError(404, "Property not found");
 
+  console.log("[payments:initiate] property-before-expire-check", {
+    propertyId: String(property._id),
+    reservationStatus: property.reservationStatus,
+    reservationType: property.reservationType,
+    reservedBy: property.reservedBy ? String(property.reservedBy) : null,
+    reservationExpiresAt: property.reservationExpiresAt || null,
+    reservedUntil: (property as any).reservedUntil || null,
+  });
+
   await expirePropertyReservationIfNeeded(property);
+
+  console.log("[payments:initiate] property-after-expire-check", {
+    propertyId: String(property._id),
+    reservationStatus: property.reservationStatus,
+    reservationType: property.reservationType,
+    reservedBy: property.reservedBy ? String(property.reservedBy) : null,
+    reservationExpiresAt: property.reservationExpiresAt || null,
+    reservedUntil: (property as any).reservedUntil || null,
+  });
 
   if (isReservationActive(property) && getReservationBuyerId(property) !== String(params.buyerId)) {
     throw new ApiError(409, "This property is already reserved by another user");
@@ -54,8 +78,8 @@ export async function initiatePayment(params: {
     throw new ApiError(400, "Advance amount is not set for this property");
   }
 
-  const reservedAt = new Date();
-  const expiresAt = new Date(reservedAt.getTime() + PROPERTY_RESERVATION_WINDOW_MS);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + PROPERTY_RESERVATION_WINDOW_MS);
 
   // Cancel old pending payments from same buyer/property (optional but good)
   await Payment.updateMany(
@@ -73,14 +97,28 @@ export async function initiatePayment(params: {
     expiresAt,
   });
 
-  assignPropertyReservation(property, {
-    buyerId: params.buyerId,
-    type: "ADVANCE",
-    reservedAt,
-    expiresAt,
-    status: "active",
+  console.log("[payments:initiate] payment-created", {
+    paymentId: String(payment._id),
+    propertyId: String(payment.propertyId),
+    buyerId: String(payment.buyerId),
+    gateway: payment.gateway,
+    amount: payment.amount,
+    status: payment.status,
+    expiresAt: payment.expiresAt,
   });
-  await property.save();
+
+  const propertyAfter = await Property.findById(property._id).select(
+    "reservationStatus reservationType reservedBy reservationExpiresAt reservedUntil updatedAt"
+  );
+  console.log("[payments:initiate] property-after-payment-create", {
+    propertyId: String(property._id),
+    reservationStatus: propertyAfter?.reservationStatus ?? null,
+    reservationType: propertyAfter?.reservationType ?? null,
+    reservedBy: propertyAfter?.reservedBy ? String(propertyAfter.reservedBy) : null,
+    reservationExpiresAt: propertyAfter?.reservationExpiresAt ?? null,
+    reservedUntil: (propertyAfter as any)?.reservedUntil ?? null,
+    updatedAt: propertyAfter?.updatedAt ?? null,
+  });
 
   return { payment, property, amount, expiresAt };
 }
@@ -194,4 +232,93 @@ export async function autoExpireReservations() {
     { $set: { reservationStatus: "EXPIRED" } }
   );
   return { expiredProps };
+}
+
+export async function cleanupStaleOrWrongReservations(params?: {
+  dryRun?: boolean;
+  limit?: number;
+}) {
+  const dryRun = params?.dryRun !== false;
+  const limit = Math.max(1, Math.min(Number(params?.limit || 500), 5000));
+  const now = new Date();
+
+  const candidates = await Property.find({
+    reservationStatus: { $in: ["active", "reserved", "paid"] },
+  })
+    .sort({ updatedAt: -1 })
+    .limit(limit);
+
+  const toClear: typeof candidates = [];
+  for (const property of candidates) {
+    const paidPayment = await Payment.findOne({
+      propertyId: property._id,
+      status: "paid",
+    })
+      .select("_id")
+      .lean();
+
+    if (!paidPayment) {
+      toClear.push(property);
+    }
+  }
+
+  const propertyIds = toClear.map((property) => property._id);
+  if (dryRun || propertyIds.length === 0) {
+    return {
+      dryRun: true,
+      scanned: candidates.length,
+      wouldClear: propertyIds.length,
+      propertyIds: propertyIds.map((id) => String(id)),
+      payments: {
+        wouldExpirePending: propertyIds.length
+          ? await Payment.countDocuments({
+              propertyId: { $in: propertyIds },
+              status: "pending",
+              expiresAt: { $lt: now },
+            })
+          : 0,
+        wouldCancelPending: propertyIds.length
+          ? await Payment.countDocuments({
+              propertyId: { $in: propertyIds },
+              status: "pending",
+              $or: [{ expiresAt: { $gte: now } }, { expiresAt: { $exists: false } }],
+            })
+          : 0,
+      },
+    };
+  }
+
+  for (const property of toClear) {
+    clearPropertyReservation(property, "expired");
+    await property.save();
+  }
+
+  const expiredResult = await Payment.updateMany(
+    {
+      propertyId: { $in: propertyIds },
+      status: "pending",
+      expiresAt: { $lt: now },
+    },
+    { $set: { status: "expired" } }
+  );
+
+  const cancelledResult = await Payment.updateMany(
+    {
+      propertyId: { $in: propertyIds },
+      status: "pending",
+      $or: [{ expiresAt: { $gte: now } }, { expiresAt: { $exists: false } }],
+    },
+    { $set: { status: "cancelled" } }
+  );
+
+  return {
+    dryRun: false,
+    scanned: candidates.length,
+    cleared: propertyIds.length,
+    propertyIds: propertyIds.map((id) => String(id)),
+    payments: {
+      expiredPending: Number(expiredResult.modifiedCount || 0),
+      cancelledPending: Number(cancelledResult.modifiedCount || 0),
+    },
+  };
 }

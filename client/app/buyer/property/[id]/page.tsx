@@ -203,7 +203,7 @@ function Toast({ show, text }: ToastState) {
         show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
       ].join(" ")}
     >
-      <div className="rounded-2xl bg-emerald-600/95 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-emerald-300/50">
+      <div className="rounded-2xl bg-emerald-600/95 px-4 py-3 text-base font-bold text-white shadow-lg ring-1 ring-emerald-300/50">
         {text}
       </div>
     </div>
@@ -240,6 +240,8 @@ function BuyerPropertyDetailsView({
   const inquiryRef = useRef<HTMLDivElement | null>(null);
 
   const [openSchedule, setOpenSchedule] = useState(false);
+  const [openShareFallback, setOpenShareFallback] = useState(false);
+  const [shareFallbackUrl, setShareFallbackUrl] = useState("");
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
   const [scheduleError, setScheduleError] = useState("");
@@ -283,7 +285,11 @@ function BuyerPropertyDetailsView({
   const seller =
     property?.seller || property?.createdBy || property?.owner || null;
   const sellerRoleText = seller?.role
-    ? String(seller.role).replace(/^./, (c) => c.toUpperCase())
+    ? String(seller.role)
+        .replace(/[_-]+/g, " ")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .toLowerCase()
+        .replace(/\b\w/g, (c) => c.toUpperCase())
     : "Senior Property Agent";
   const agentImageSrc = "/agents/baiju.jpg";
   const sellerInitials = String(seller?.name || "Agent")
@@ -502,6 +508,13 @@ function BuyerPropertyDetailsView({
       setScheduleError("Please choose date and time.");
       return;
     }
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    if (visitData.requestedDate < todayStr) {
+      setScheduleError("Please choose a valid date.");
+      showToast("Past dates are not allowed");
+      return;
+    }
 
     setScheduleLoading(true);
     setScheduleError("");
@@ -649,13 +662,20 @@ function BuyerPropertyDetailsView({
 
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
-        alert("Property link copied to clipboard");
+        showToast("Property link copied");
         return;
       }
 
-      window.prompt("Copy this link:", url);
+      setShareFallbackUrl(url);
+      setOpenShareFallback(true);
     } catch {
-      //
+      const url = typeof window !== "undefined" ? window.location.href : "";
+      if (url) {
+        setShareFallbackUrl(url);
+        setOpenShareFallback(true);
+      } else {
+        showToast("Unable to share right now");
+      }
     }
   };
 
@@ -669,6 +689,10 @@ function BuyerPropertyDetailsView({
         ? parsed.ids.filter((value: unknown): value is string => typeof value === "string")
         : [];
       const propertyId = String(property._id);
+      if (!current.includes(propertyId) && current.length >= 2) {
+        showToast("Only 2 properties can be compared");
+        return;
+      }
       const next = current.includes(propertyId) ? current : [propertyId, ...current];
       localStorage.setItem(key, JSON.stringify({ ids: next.slice(0, 2) }));
       router.push("/buyer/compare");
@@ -689,6 +713,28 @@ function BuyerPropertyDetailsView({
     const nextIndex = activeIndex === images.length - 1 ? 0 : activeIndex + 1;
     setActiveIndex(nextIndex);
     setActiveImg(images[nextIndex]);
+  };
+  const minVisitDate = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }, []);
+
+  const copyPhoneNumber = async () => {
+    const value = String(seller?.phone || "").trim();
+    if (!value) {
+      showToast("Phone number unavailable");
+      return;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+        showToast("Phone number copied");
+        return;
+      }
+      showToast("Copy not supported on this browser");
+    } catch {
+      showToast("Unable to copy phone number");
+    }
   };
 
   const statusLabel =
@@ -735,7 +781,7 @@ function BuyerPropertyDetailsView({
         <div className="mb-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-slate-800">
             <Building2 className="h-6 w-6 text-emerald-700" />
-            <h1 className="text-2xl font-extrabold tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
               Property Details
             </h1>
           </div>
@@ -831,7 +877,7 @@ function BuyerPropertyDetailsView({
                     const first = document.getElementById("property-thumbnails");
                     first?.scrollIntoView({ behavior: "smooth", block: "center" });
                   }}
-                  className="self-start rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-blue-700 sm:self-auto"
+                  className="self-start rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-emerald-700 sm:self-auto"
                 >
                   View All Photos
                 </button>
@@ -903,7 +949,7 @@ function BuyerPropertyDetailsView({
           <button
             type="button"
             onClick={toggleWishlist}
-            className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             <Heart
               className={[
@@ -917,7 +963,7 @@ function BuyerPropertyDetailsView({
           <button
             type="button"
             onClick={handleShare}
-            className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             <Share2 className="h-5 w-5 text-emerald-700" />
             Share
@@ -926,7 +972,7 @@ function BuyerPropertyDetailsView({
           <button
             type="button"
             onClick={handleCompare}
-            className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             <Scale className="h-5 w-5 text-slate-700" />
             Compare
@@ -937,7 +983,7 @@ function BuyerPropertyDetailsView({
           <div className="space-y-6 lg:col-span-8">
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
-                <h2 className="text-2xl font-extrabold text-slate-800">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">
                   Property Description
                 </h2>
               </div>
@@ -949,7 +995,7 @@ function BuyerPropertyDetailsView({
                 </p>
 
                 <div className="mt-5 rounded-lg bg-slate-50 p-4">
-                  <div className="space-y-3 text-sm font-semibold text-slate-700">
+                  <div className="space-y-3 text-base font-semibold text-slate-700">
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />
                       <span>
@@ -1051,7 +1097,7 @@ function BuyerPropertyDetailsView({
 
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
-                <h2 className="text-2xl font-extrabold text-slate-800">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">
                   Amenities & Features
                 </h2>
               </div>
@@ -1085,7 +1131,7 @@ function BuyerPropertyDetailsView({
                     })}
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-base text-slate-600">
                     No amenities selected.
                   </div>
                 )}
@@ -1094,7 +1140,7 @@ function BuyerPropertyDetailsView({
 
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
-                <h2 className="text-2xl font-extrabold text-slate-800">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">
                   Location
                 </h2>
               </div>
@@ -1129,7 +1175,7 @@ function BuyerPropertyDetailsView({
                               className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3"
                             >
                               <Icon className="h-5 w-5 text-emerald-700" />
-                              <span className="text-sm font-semibold text-slate-700">
+                              <span className="text-base font-semibold text-slate-700">
                                 {item.label}
                               </span>
                             </div>
@@ -1150,7 +1196,7 @@ function BuyerPropertyDetailsView({
                     </div>
                   </>
                 ) : (
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-base text-slate-600">
                     No Google Map provided. We will use address/location for direction search.
                   </div>
                 )}
@@ -1159,7 +1205,7 @@ function BuyerPropertyDetailsView({
 
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
-                <h2 className="text-2xl font-extrabold text-slate-800">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">
                   Similar Properties
                 </h2>
               </div>
@@ -1200,7 +1246,7 @@ function BuyerPropertyDetailsView({
                     })}
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-base text-slate-600">
                     No similar properties found right now.
                   </div>
                 )}
@@ -1211,7 +1257,7 @@ function BuyerPropertyDetailsView({
           <aside className="space-y-6 lg:col-span-4">
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
-                <h2 className="text-2xl font-extrabold text-slate-800">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">
                   Contact Agent
                 </h2>
               </div>
@@ -1244,36 +1290,36 @@ function BuyerPropertyDetailsView({
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <div className="text-xl font-extrabold text-slate-800">
-                          {seller?.name || "Agent not provided"}
+                        <div className="text-xl font-bold tracking-tight text-slate-900">
+                          {seller?.name || "Name unavailable"}
                         </div>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
                           <BadgeCheck className="h-3.5 w-3.5" />
                           Verified
                         </span>
                       </div>
 
-                      <div className="mt-1 text-sm font-semibold text-slate-600">
+                      <div className="mt-1 text-base font-medium text-slate-600">
                         {sellerRoleText}
                       </div>
 
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         <div className="rounded-lg border border-white bg-white/90 px-3 py-2">
-                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                             <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />
                             Trust
                           </div>
-                          <div className="mt-1 text-sm font-extrabold text-slate-800">
+                          <div className="mt-1 text-base font-bold text-slate-800">
                             Identity reviewed
                           </div>
                         </div>
 
                         <div className="rounded-lg border border-white bg-white/90 px-3 py-2">
-                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
                             Verification
                           </div>
-                          <div className="mt-1 text-sm font-extrabold text-slate-800">
+                          <div className="mt-1 text-base font-bold text-slate-800">
                             Active seller profile
                           </div>
                         </div>
@@ -1285,25 +1331,36 @@ function BuyerPropertyDetailsView({
                 <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
                   <div className="flex items-center gap-2 text-2xl font-extrabold text-slate-800">
                     <Phone className="h-5 w-5 text-emerald-700" />
-                    <span>{seller?.phone || "Not provided"}</span>
+                    <span className={seller?.phone ? "" : "text-base font-semibold text-slate-600"}>
+                      {seller?.phone || "Phone unavailable"}
+                    </span>
                   </div>
                 </div>
 
                 <div className="mt-4 space-y-3">
                   {seller?.phone ? (
-                    <a
-                      href={`tel:${seller.phone}`}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-800"
-                    >
-                      <Phone className="h-4 w-4" />
-                      Call
-                    </a>
+                    <>
+                      <a
+                        href={`tel:${seller.phone}`}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 text-base font-bold text-white hover:bg-emerald-800"
+                      >
+                        <Phone className="h-4 w-4" />
+                        Call
+                      </a>
+                      <button
+                        type="button"
+                        onClick={copyPhoneNumber}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-800 hover:bg-slate-50"
+                      >
+                        Copy phone number
+                      </button>
+                    </>
                   ) : null}
 
                   <button
                     type="button"
                     onClick={handleContactAgent}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-700"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-base font-bold text-white hover:bg-emerald-700"
                   >
                     <Send className="h-4 w-4" />
                     Send Message
@@ -1312,7 +1369,7 @@ function BuyerPropertyDetailsView({
                   <button
                     type="button"
                     onClick={handleContactAgent}
-                    className="inline-flex w-full items-center justify-center rounded-lg bg-[#2e7d32] px-4 py-3 text-sm font-extrabold text-white hover:bg-[#27692a]"
+                    className="inline-flex w-full items-center justify-center rounded-lg bg-[#2e7d32] px-4 py-3 text-base font-bold text-white hover:bg-[#27692a]"
                   >
                     Contact Agent
                   </button>
@@ -1336,7 +1393,7 @@ function BuyerPropertyDetailsView({
                     }}
                     disabled={!isAvailable && !showCompleteAdvancePayment}
                     className={[
-                      "inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-extrabold text-white transition",
+                      "inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-base font-bold text-white transition",
                       isAvailable || showCompleteAdvancePayment
                         ? "bg-slate-900 hover:bg-black"
                         : isReserved
@@ -1377,7 +1434,7 @@ function BuyerPropertyDetailsView({
                   <button
                     type="button"
                     onClick={handleOpenSchedule}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-extrabold text-slate-800 hover:bg-slate-50"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-800 hover:bg-slate-50"
                   >
                     <Calendar className="h-4 w-4" />
                     Schedule Visit
@@ -1426,7 +1483,7 @@ function BuyerPropertyDetailsView({
                   </div>
                 )}
 
-                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">
                   COD and advance reservations stay active for 1 hour. If payment is not completed
                   in time, the reservation expires automatically and the property becomes available
                   again.
@@ -1439,7 +1496,7 @@ function BuyerPropertyDetailsView({
               className="rounded-xl border border-slate-200 bg-white shadow-sm"
             >
               <div className="border-b border-slate-200 px-5 py-4">
-                <h2 className="text-2xl font-extrabold text-slate-800">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">
                   Make an Inquiry
                 </h2>
               </div>
@@ -1459,9 +1516,9 @@ function BuyerPropertyDetailsView({
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-2 block text-base font-semibold text-slate-700">
                       Name *
                     </label>
                     <input
@@ -1474,13 +1531,13 @@ function BuyerPropertyDetailsView({
                           name: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-300 px-3 py-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="Your full name"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-2 block text-base font-semibold text-slate-700">
                       Email *
                     </label>
                     <input
@@ -1493,13 +1550,13 @@ function BuyerPropertyDetailsView({
                           email: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-300 px-3 py-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="your.email@example.com"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-2 block text-base font-semibold text-slate-700">
                       Phone
                     </label>
                     <input
@@ -1511,13 +1568,13 @@ function BuyerPropertyDetailsView({
                           phone: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-300 px-3 py-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="+977 98XXXXXXXX"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-2 block text-base font-semibold text-slate-700">
                       Message *
                     </label>
                     <textarea
@@ -1531,7 +1588,7 @@ function BuyerPropertyDetailsView({
                           message: e.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-300 px-3 py-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                       placeholder="I'm interested in this property..."
                     />
                   </div>
@@ -1539,7 +1596,7 @@ function BuyerPropertyDetailsView({
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-base font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {submitting ? (
                       <>
@@ -1563,7 +1620,7 @@ function BuyerPropertyDetailsView({
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl ring-1 ring-black/10">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-extrabold text-slate-900">
+                <h3 className="text-xl font-bold tracking-tight text-slate-900">
                   Schedule a Visit
                 </h3>
                 <button
@@ -1576,7 +1633,7 @@ function BuyerPropertyDetailsView({
                 </button>
               </div>
 
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-base text-slate-600">
                 Request a visit for{" "}
                 <span className="font-semibold text-slate-900">
                   {property?.title}
@@ -1598,7 +1655,7 @@ function BuyerPropertyDetailsView({
 
               <div className="mt-4 space-y-3">
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  <label className="mb-2 block text-base font-semibold text-slate-700">
                     Visit Type
                   </label>
                   <select
@@ -1609,7 +1666,7 @@ function BuyerPropertyDetailsView({
                         visitType: e.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white py-3 px-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 px-3 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                   >
                     <option value="in_person">In Person</option>
                     <option value="virtual">Virtual</option>
@@ -1617,13 +1674,14 @@ function BuyerPropertyDetailsView({
                   </select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  <label className="mb-2 block text-base font-semibold text-slate-700">
                     Date
                   </label>
                   <div className="relative">
                     <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <input
                       type="date"
+                      min={minVisitDate}
                       value={visitData.requestedDate}
                       onChange={(e) =>
                         setVisitData((p) => ({
@@ -1631,13 +1689,13 @@ function BuyerPropertyDetailsView({
                           requestedDate: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  <label className="mb-2 block text-base font-semibold text-slate-700">
                     Preferred Time
                   </label>
                   <div className="relative">
@@ -1651,13 +1709,13 @@ function BuyerPropertyDetailsView({
                           preferredTime: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  <label className="mb-2 block text-base font-semibold text-slate-700">
                     Message (optional)
                   </label>
                   <textarea
@@ -1666,7 +1724,7 @@ function BuyerPropertyDetailsView({
                     onChange={(e) =>
                       setVisitData((p) => ({ ...p, message: e.target.value }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                     placeholder="Any note for the seller..."
                   />
                 </div>
@@ -1676,7 +1734,7 @@ function BuyerPropertyDetailsView({
                 <button
                   type="button"
                   onClick={() => setOpenSchedule(false)}
-                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
@@ -1685,9 +1743,67 @@ function BuyerPropertyDetailsView({
                   type="button"
                   onClick={submitScheduleVisit}
                   disabled={scheduleLoading}
-                  className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-base font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {scheduleLoading ? "Sending..." : "Request Visit"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {openShareFallback && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl ring-1 ring-black/10">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold tracking-tight text-slate-900">
+                  Share Property
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setOpenShareFallback(false)}
+                  className="grid h-9 w-9 place-items-center rounded-xl hover:bg-slate-100"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5 text-slate-700" />
+                </button>
+              </div>
+              <p className="mt-2 text-base text-slate-600">
+                Copy and share this link manually.
+              </p>
+              <div className="mt-4 rounded-xl border border-slate-300 bg-white p-3">
+                <input
+                  readOnly
+                  value={shareFallbackUrl}
+                  className="w-full bg-transparent text-sm text-slate-700 outline-none"
+                  onFocus={(event) => event.currentTarget.select()}
+                />
+              </div>
+              <div className="mt-5 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setOpenShareFallback(false)}
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      if (navigator.clipboard?.writeText && shareFallbackUrl) {
+                        await navigator.clipboard.writeText(shareFallbackUrl);
+                        showToast("Property link copied");
+                      } else {
+                        showToast("Copy not supported on this browser");
+                      }
+                    } catch {
+                      showToast("Unable to copy link");
+                    }
+                  }}
+                  className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-base font-bold text-white hover:bg-emerald-700"
+                >
+                  Copy Link
                 </button>
               </div>
             </div>
@@ -1708,6 +1824,7 @@ function PropertyDetailsPageContent() {
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [fatalError, setFatalError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   const loadingShell = (
     <main className="min-h-screen bg-[#f5f7fb] px-4 py-6">
@@ -1734,7 +1851,15 @@ function PropertyDetailsPageContent() {
   );
 
   useEffect(() => {
+    let active = true;
     const fetchData = async () => {
+      const timeoutId = window.setTimeout(() => {
+        if (!active) return;
+        setFatalError("Loading is taking too long. Please retry.");
+        setProperty(null);
+        setLoading(false);
+      }, 15000);
+
       try {
         setFatalError("");
         setLoading(true);
@@ -1752,27 +1877,40 @@ function PropertyDetailsPageContent() {
           propertyResponse;
 
         if (propertyResponse?.success === false) {
+          window.clearTimeout(timeoutId);
+          if (!active) return;
           setFatalError(propertyResponse?.message || "Property not found");
           setProperty(null);
           return;
         }
 
         if (p && (p._id || p.id)) {
+          window.clearTimeout(timeoutId);
+          if (!active) return;
           setProperty(p);
         } else {
+          window.clearTimeout(timeoutId);
+          if (!active) return;
           setFatalError("Property not found");
           setProperty(null);
         }
       } catch (err: any) {
+        window.clearTimeout(timeoutId);
+        if (!active) return;
         setFatalError(err?.message || "Failed to load data");
         setProperty(null);
       } finally {
+        window.clearTimeout(timeoutId);
+        if (!active) return;
         setLoading(false);
       }
     };
 
     if (params?.id) fetchData();
-  }, [params?.id, preview]);
+    return () => {
+      active = false;
+    };
+  }, [params?.id, preview, reloadKey]);
 
   if (loading) {
     return loadingShell;
@@ -1785,8 +1923,15 @@ function PropertyDetailsPageContent() {
           <p className="text-red-600">{fatalError}</p>
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => setReloadKey((k) => k + 1)}
             className="mt-4 rounded-xl bg-emerald-600 px-4 py-2.5 text-white hover:bg-emerald-700"
+          >
+            Retry
+          </button>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="ml-3 mt-4 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50"
           >
             Go Back
           </button>
@@ -1813,3 +1958,5 @@ export default function PropertyDetailsPage() {
     </Suspense>
   );
 }
+
+

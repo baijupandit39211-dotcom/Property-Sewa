@@ -1,11 +1,16 @@
 import type { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
+import https from "https";
 import { ApiError } from "../../../utils/apiError";
 import * as paymentService from "../services/payment.services";
 import Payment from "../../../models/Payment.model";
 import Property from "../../../models/Property.model";
 
 const KHALTI_SECRET_KEY = process.env.KHALTI_SECRET_KEY || "";
+const KHALTI_INITIATE_URL =
+  process.env.KHALTI_INITIATE_URL || "https://a.khalti.com/api/v2/epayment/initiate/";
+const KHALTI_LOOKUP_URL =
+  process.env.KHALTI_LOOKUP_URL || "https://a.khalti.com/api/v2/epayment/lookup/";
 
 // eSewa v2 configs
 const ESEWA_PRODUCT_CODE =
@@ -25,6 +30,73 @@ function buildEsewaSignature(params: {
 }) {
   const msg = `total_amount=${params.total_amount},transaction_uuid=${params.transaction_uuid},product_code=${params.product_code}`;
   return hmacBase64(msg, ESEWA_SECRET_KEY);
+}
+
+function cleanToken(value: any) {
+  return String(value || "").split("?")[0].split("&")[0].trim();
+}
+
+function verifyEsewaCallbackSignature(data: any) {
+  const signedFieldNames = String(data?.signed_field_names || "").trim();
+  const signature = String(data?.signature || "").trim();
+  if (!signedFieldNames || !signature) return false;
+
+  const fields = signedFieldNames
+    .split(",")
+    .map((field) => field.trim())
+    .filter(Boolean);
+  if (!fields.length) return false;
+
+  const message = fields
+    .map((field) => `${field}=${String(data?.[field] ?? "")}`)
+    .join(",");
+
+  const expected = hmacBase64(message, ESEWA_SECRET_KEY);
+  return expected === signature;
+}
+
+async function postJson<T = any>(urlString: string, body: Record<string, any>, headers: Record<string, string>) {
+  const payload = JSON.stringify(body);
+  const url = new URL(urlString);
+
+  return new Promise<T>((resolve, reject) => {
+    const req = https.request(
+      {
+        protocol: url.protocol,
+        hostname: url.hostname,
+        port: url.port ? Number(url.port) : undefined,
+        path: `${url.pathname}${url.search}`,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload),
+          ...headers,
+        },
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+        res.on("end", () => {
+          const raw = Buffer.concat(chunks).toString("utf8");
+          const statusCode = Number(res.statusCode || 500);
+          let parsed: any = null;
+          try {
+            parsed = raw ? JSON.parse(raw) : {};
+          } catch {
+            parsed = { raw };
+          }
+          if (statusCode < 200 || statusCode >= 300) {
+            return reject(new ApiError(statusCode, parsed?.detail || parsed?.message || "Gateway request failed"));
+          }
+          resolve(parsed as T);
+        });
+      }
+    );
+
+    req.on("error", (error) => reject(error));
+    req.write(payload);
+    req.end();
+  });
 }
 
 export async function initiate(req: Request, res: Response, next: NextFunction) {
@@ -50,12 +122,39 @@ export async function initiate(req: Request, res: Response, next: NextFunction) 
     if (gateway === "khalti") {
       if (!KHALTI_SECRET_KEY) throw new ApiError(500, "KHALTI_SECRET_KEY missing");
 
+      const purchase_order_id = String(payment._id);
+      const purchase_order_name = String((payment as any)?.propertyId || propertyId);
+      const amountPaisa = Math.round(Number(amount) * 100);
+
+      const return_url = `${FRONTEND_BASE}/buyer/payment/khalti/success`;
+      const website_url = FRONTEND_BASE;
+
+      const khalti = await postJson<any>(
+        KHALTI_INITIATE_URL,
+        {
+          return_url,
+          website_url,
+          amount: amountPaisa,
+          purchase_order_id,
+          purchase_order_name,
+        },
+        {
+          Authorization: `Key ${KHALTI_SECRET_KEY}`,
+        }
+      );
+
       return res.status(200).json({
         success: true,
         gateway,
         paymentId: String(payment._id),
         amount,
         expiresAt,
+        khalti: {
+          pidx: khalti?.pidx || "",
+          payment_url: khalti?.payment_url || "",
+          expires_at: khalti?.expires_at || null,
+          expires_in: khalti?.expires_in || null,
+        },
       });
     }
 
@@ -110,12 +209,50 @@ export async function khaltiVerify(req: Request, res: Response, next: NextFuncti
     if (!buyerId) throw new ApiError(401, "Unauthorized");
 
     const { paymentId, pidx, transaction_id } = req.body as any;
-    if (!paymentId) throw new ApiError(400, "paymentId is required");
+    if (!paymentId || !pidx) throw new ApiError(400, "paymentId and pidx are required");
+    if (!KHALTI_SECRET_KEY) throw new ApiError(500, "KHALTI_SECRET_KEY missing");
+
+    const existing = await Payment.findById(String(paymentId));
+    if (!existing) throw new ApiError(404, "Payment not found");
+    if (String(existing.buyerId) !== String(buyerId)) throw new ApiError(403, "Not allowed");
+
+    const lookup = await postJson<any>(
+      KHALTI_LOOKUP_URL,
+      { pidx: String(pidx) },
+      { Authorization: `Key ${KHALTI_SECRET_KEY}` }
+    );
+
+    const status = String(lookup?.status || "").toLowerCase();
+    if (status !== "completed") {
+      throw new ApiError(409, lookup?.detail || "Khalti payment not completed");
+    }
+
+    const lookupPidx = String(lookup?.pidx || "").trim();
+    if (!lookupPidx || lookupPidx !== String(pidx).trim()) {
+      throw new ApiError(409, "Khalti pidx mismatch");
+    }
+
+    const lookupOrderId = String(lookup?.purchase_order_id || "").trim();
+    if (!lookupOrderId || lookupOrderId !== String(paymentId).trim()) {
+      throw new ApiError(409, "Khalti purchase order mismatch");
+    }
+
+    const lookupAmountPaisa = Number(lookup?.total_amount || lookup?.amount || 0);
+    const expectedAmountPaisa = Math.round(Number(existing.amount || 0) * 100);
+    if (!Number.isFinite(lookupAmountPaisa) || lookupAmountPaisa <= 0) {
+      throw new ApiError(409, "Invalid Khalti amount");
+    }
+    if (lookupAmountPaisa !== expectedAmountPaisa) {
+      throw new ApiError(409, "Khalti amount mismatch");
+    }
 
     const payment = await paymentService.markPaid({
       paymentId,
       buyerId,
-      gatewayRef: { pidx, transaction_id },
+      gatewayRef: {
+        pidx: String(pidx),
+        transaction_id: String(transaction_id || lookup?.transaction_id || lookup?.transactionId || ""),
+      },
     });
 
     const property = await Property.findById(payment.propertyId);
@@ -142,6 +279,7 @@ export async function esewaVerify(req: Request, res: Response, next: NextFunctio
   try {
     const buyerId = req.user?.userId;
     if (!buyerId) throw new ApiError(401, "Unauthorized");
+    if (!ESEWA_SECRET_KEY) throw new ApiError(500, "ESEWA_SECRET_KEY missing");
 
     const body = (req.body || {}) as any;
     const data = body.data ?? null;
@@ -159,6 +297,26 @@ export async function esewaVerify(req: Request, res: Response, next: NextFunctio
       );
     }
 
+    if (!data || typeof data !== "object") {
+      throw new ApiError(400, "Missing eSewa callback data for verification");
+    }
+
+    const status = String(data?.status || "").toUpperCase();
+    if (status !== "COMPLETE") {
+      throw new ApiError(409, `eSewa status is ${status || "UNKNOWN"}, not COMPLETE`);
+    }
+
+    const callbackTxnId = cleanToken(data?.transaction_uuid || data?.transactionUuid);
+    const cleanPaymentId = cleanToken(paymentId);
+    if (!callbackTxnId || callbackTxnId !== cleanPaymentId) {
+      throw new ApiError(400, "transaction_uuid does not match paymentId");
+    }
+
+    const signatureOk = verifyEsewaCallbackSignature(data);
+    if (!signatureOk) {
+      throw new ApiError(400, "Invalid eSewa callback signature");
+    }
+
     // optional refId (best effort)
     const refId =
       body.refId ||
@@ -172,7 +330,14 @@ export async function esewaVerify(req: Request, res: Response, next: NextFunctio
     const existing = await Payment.findById(paymentId);
     if (!existing) throw new ApiError(404, "Payment not found");
 
-    // TODO: call real eSewa status API here, then only markPaid if success
+    const callbackAmount = Number(data?.total_amount || data?.amount || 0);
+    if (!Number.isFinite(callbackAmount) || callbackAmount <= 0) {
+      throw new ApiError(400, "Invalid eSewa callback amount");
+    }
+    if (Number(existing.amount).toFixed(2) !== callbackAmount.toFixed(2)) {
+      throw new ApiError(409, "eSewa callback amount mismatch");
+    }
+
     const payment = await paymentService.markPaid({
       paymentId,
       buyerId,
@@ -183,7 +348,7 @@ export async function esewaVerify(req: Request, res: Response, next: NextFunctio
 
     return res.status(200).json({
       success: true,
-      message: "eSewa payment marked paid (status API verify TODO).",
+      message: "eSewa payment verified and marked paid.",
       payment,
       property,
       propertyId: String(property?._id || ""),
@@ -201,6 +366,26 @@ export async function cancel(req: Request, res: Response, next: NextFunction) {
 
     const updated = await paymentService.cancelReservation({ propertyId });
     return res.status(200).json({ success: true, property: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function cleanupStaleReservations(req: Request, res: Response, next: NextFunction) {
+  try {
+    const dryRun = req.body?.dryRun !== false;
+    const limitRaw = Number(req.body?.limit || 500);
+    const limit = Number.isFinite(limitRaw) ? limitRaw : 500;
+
+    const result = await paymentService.cleanupStaleOrWrongReservations({
+      dryRun,
+      limit,
+    });
+
+    return res.status(200).json({
+      success: true,
+      result,
+    });
   } catch (err) {
     next(err);
   }

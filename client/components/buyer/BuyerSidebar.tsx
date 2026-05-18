@@ -62,7 +62,7 @@ export default function BuyerSidebar({
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >
-        <nav className="flex flex-col gap-1 px-3 py-4">
+        <nav className="flex flex-col gap-1.5 px-3 py-4">
           {links.map((item) => {
             const Icon = item.icon;
             const isActive = active(item.href);
@@ -74,9 +74,9 @@ export default function BuyerSidebar({
                 prefetch={true}
                 onClick={() => onCloseMobile()}
                 className={[
-                  "flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold transition",
+                  "flex items-center gap-3 rounded-xl px-3 py-3 text-[14px] leading-5 font-medium transition",
                   isActive
-                    ? "bg-[#316249] text-white"
+                    ? "bg-[#316249] font-semibold text-white"
                     : "text-[#0D1C12] hover:bg-[#EEF8EB] hover:text-[#316249]",
                 ].join(" ")}
               >
@@ -95,11 +95,11 @@ export default function BuyerSidebar({
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
-                    prefetch={true}
-                    onClick={() => onCloseMobile()}
-                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-semibold text-[#0D1C12] hover:bg-[#EEF8EB] hover:text-[#316249]"
-                  >
+                  href={item.href}
+                  prefetch={true}
+                  onClick={() => onCloseMobile()}
+                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-[14px] leading-5 font-medium text-[#0D1C12] hover:bg-[#EEF8EB] hover:text-[#316249]"
+                >
                     <Icon className="h-5 w-5" />
                     {item.label}
                   </Link>

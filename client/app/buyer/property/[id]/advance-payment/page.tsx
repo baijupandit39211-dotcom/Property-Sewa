@@ -243,9 +243,12 @@ export default function AdvancePaymentPage() {
         return;
       }
 
-      alert(
-        `Khalti initiated.\nPaymentId: ${res.paymentId}\n\nNext step: integrate Khalti checkout redirect/popup, then call /payments/khalti/verify with paymentId + pidx/transaction_id`
-      );
+      if (gateway === "khalti") {
+        const paymentUrl = res?.khalti?.payment_url;
+        if (!paymentUrl) throw new Error("Invalid Khalti init response");
+        window.location.href = String(paymentUrl);
+        return;
+      }
     } catch (e: any) {
       setActionError(e?.message || "Payment initiation failed");
     } finally {

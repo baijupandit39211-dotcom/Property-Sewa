@@ -21,4 +21,12 @@ router.delete(
   paymentController.cancel
 );
 
+// admin-only stale/wrong reservation cleanup utility
+router.post(
+  "/reservation/cleanup-stale",
+  requireUserAuth,
+  requireRoles(["admin", "superadmin"]),
+  paymentController.cleanupStaleReservations
+);
+
 export default router;
