@@ -93,7 +93,18 @@ async function postJson<T = any>(urlString: string, body: Record<string, any>, h
       }
     );
 
-    req.on("error", (error) => reject(error));
+    // Prevent hung gateway requests from blocking verify forever.
+    req.setTimeout(7000, () => {
+      req.destroy(new ApiError(504, "Khalti gateway timeout"));
+    });
+
+    req.on("error", (error: any) => {
+      if (error instanceof ApiError) return reject(error);
+      if (String(error?.message || "").toLowerCase().includes("timeout")) {
+        return reject(new ApiError(504, "Khalti gateway timeout"));
+      }
+      reject(error);
+    });
     req.write(payload);
     req.end();
   });
@@ -126,7 +137,9 @@ export async function initiate(req: Request, res: Response, next: NextFunction) 
       const purchase_order_name = String((payment as any)?.propertyId || propertyId);
       const amountPaisa = Math.round(Number(amount) * 100);
 
-      const return_url = `${FRONTEND_BASE}/buyer/payment/khalti/success`;
+      const return_url = `${FRONTEND_BASE}/buyer/payment/khalti/success?purchase_order_id=${encodeURIComponent(
+        purchase_order_id
+      )}`;
       const website_url = FRONTEND_BASE;
 
       const khalti = await postJson<any>(
@@ -205,26 +218,100 @@ export async function initiate(req: Request, res: Response, next: NextFunction) 
 
 export async function khaltiVerify(req: Request, res: Response, next: NextFunction) {
   try {
+    const startedAt = Date.now();
     const buyerId = req.user?.userId;
     if (!buyerId) throw new ApiError(401, "Unauthorized");
 
     const { paymentId, pidx, transaction_id } = req.body as any;
+    console.log("[khaltiVerify] received", {
+      buyerId: String(buyerId || ""),
+      paymentId: String(paymentId || ""),
+      pidx: String(pidx || ""),
+    });
+
     if (!paymentId || !pidx) throw new ApiError(400, "paymentId and pidx are required");
     if (!KHALTI_SECRET_KEY) throw new ApiError(500, "KHALTI_SECRET_KEY missing");
 
     const existing = await Payment.findById(String(paymentId));
     if (!existing) throw new ApiError(404, "Payment not found");
     if (String(existing.buyerId) !== String(buyerId)) throw new ApiError(403, "Not allowed");
+    if (String(existing.status || "").toLowerCase() === "paid") {
+      const propertyPaid = await Property.findById(existing.propertyId);
+      console.log("[khaltiVerify] before-response", {
+        elapsedMs: Date.now() - startedAt,
+        paymentId: String(existing?._id || ""),
+        paymentStatus: String(existing?.status || ""),
+        propertyId: String(propertyPaid?._id || ""),
+        reservationStatus: String(propertyPaid?.reservationStatus || ""),
+        source: "db-already-paid-prelookup",
+      });
+      return res.status(200).json({
+        success: true,
+        payment: existing,
+        property: propertyPaid,
+        propertyId: String(propertyPaid?._id || ""),
+        reservationStatus: propertyPaid?.reservationStatus,
+        paymentStatus: "paid",
+      });
+    }
 
-    const lookup = await postJson<any>(
-      KHALTI_LOOKUP_URL,
-      { pidx: String(pidx) },
-      { Authorization: `Key ${KHALTI_SECRET_KEY}` }
-    );
+    console.log("[khaltiVerify] before-lookup", {
+      paymentId: String(paymentId || ""),
+      pidx: String(pidx || ""),
+    });
+    let lookup: any;
+    try {
+      lookup = await postJson<any>(
+        KHALTI_LOOKUP_URL,
+        { pidx: String(pidx) },
+        { Authorization: `Key ${KHALTI_SECRET_KEY}` }
+      );
+    } catch (lookupErr: any) {
+      const latest = await Payment.findById(String(paymentId));
+      if (
+        latest &&
+        String(latest.buyerId) === String(buyerId) &&
+        String(latest.status || "").toLowerCase() === "paid"
+      ) {
+        const propertyPaid = await Property.findById(latest.propertyId);
+        console.log("[khaltiVerify] before-response", {
+          elapsedMs: Date.now() - startedAt,
+          paymentId: String(latest?._id || ""),
+          paymentStatus: String(latest?.status || ""),
+          propertyId: String(propertyPaid?._id || ""),
+          reservationStatus: String(propertyPaid?.reservationStatus || ""),
+          source: "db-already-paid-post-lookup-error",
+          lookupError: String(lookupErr?.message || lookupErr || ""),
+        });
+        return res.status(200).json({
+          success: true,
+          payment: latest,
+          property: propertyPaid,
+          propertyId: String(propertyPaid?._id || ""),
+          reservationStatus: propertyPaid?.reservationStatus,
+          paymentStatus: "paid",
+        });
+      }
+      throw lookupErr;
+    }
+    console.log("[khaltiVerify] after-lookup", {
+      elapsedMs: Date.now() - startedAt,
+      status: String(lookup?.status || ""),
+      purchase_order_id: String(lookup?.purchase_order_id || ""),
+      pidx: String(lookup?.pidx || ""),
+      amount: Number(lookup?.total_amount || lookup?.amount || 0),
+    });
 
     const status = String(lookup?.status || "").toLowerCase();
     if (status !== "completed") {
-      throw new ApiError(409, lookup?.detail || "Khalti payment not completed");
+      const statusCode = String(lookup?.status || "UNKNOWN")
+        .trim()
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .toUpperCase();
+      throw new ApiError(
+        409,
+        `KHALTI_STATUS_${statusCode}: ${lookup?.detail || "Payment received, waiting for confirmation"}`
+      );
     }
 
     const lookupPidx = String(lookup?.pidx || "").trim();
@@ -233,7 +320,10 @@ export async function khaltiVerify(req: Request, res: Response, next: NextFuncti
     }
 
     const lookupOrderId = String(lookup?.purchase_order_id || "").trim();
-    if (!lookupOrderId || lookupOrderId !== String(paymentId).trim()) {
+    // NOTE:
+    // Khalti sandbox lookup may return an empty purchase_order_id even for completed payments.
+    // Enforce strict order-id match only when purchase_order_id is present.
+    if (lookupOrderId && lookupOrderId !== String(paymentId).trim()) {
       throw new ApiError(409, "Khalti purchase order mismatch");
     }
 
@@ -256,6 +346,13 @@ export async function khaltiVerify(req: Request, res: Response, next: NextFuncti
     });
 
     const property = await Property.findById(payment.propertyId);
+    console.log("[khaltiVerify] before-response", {
+      elapsedMs: Date.now() - startedAt,
+      paymentId: String(payment?._id || ""),
+      paymentStatus: String(payment?.status || ""),
+      propertyId: String(property?._id || ""),
+      reservationStatus: String(property?.reservationStatus || ""),
+    });
 
     return res.status(200).json({
       success: true,
@@ -263,6 +360,36 @@ export async function khaltiVerify(req: Request, res: Response, next: NextFuncti
       property,
       propertyId: String(property?._id || ""),
       reservationStatus: property?.reservationStatus,
+      paymentStatus: String(payment?.status || ""),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function paymentStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const buyerId = req.user?.userId;
+    if (!buyerId) throw new ApiError(401, "Unauthorized");
+
+    const paymentId = String(req.params?.paymentId || "").trim();
+    if (!paymentId) throw new ApiError(400, "paymentId is required");
+
+    const payment = await Payment.findById(paymentId);
+    if (!payment) throw new ApiError(404, "Payment not found");
+    if (String(payment.buyerId) !== String(buyerId)) throw new ApiError(403, "Not allowed");
+
+    const property = await Property.findById(payment.propertyId);
+    const paymentStatus = String(payment.status || "").toLowerCase();
+    const reservationStatus = String(property?.reservationStatus || "").toLowerCase();
+
+    return res.status(200).json({
+      success: paymentStatus === "paid" || reservationStatus === "paid",
+      payment,
+      property,
+      propertyId: String(property?._id || ""),
+      paymentStatus,
+      reservationStatus,
     });
   } catch (err) {
     next(err);

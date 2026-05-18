@@ -12,6 +12,7 @@ router.post("/initiate", requireUserAuth, paymentController.initiate);
 // verify endpoints (buyer only)
 router.post("/khalti/verify", requireUserAuth, paymentController.khaltiVerify);
 router.post("/esewa/verify", requireUserAuth, paymentController.esewaVerify);
+router.get("/status/:paymentId", requireUserAuth, paymentController.paymentStatus);
 
 // cancel reservation (admin OR seller)
 router.delete(

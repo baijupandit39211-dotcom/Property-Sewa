@@ -33,6 +33,8 @@ async function coreFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
 
   const method = init.method || "GET";
+  const silentErrorLogging =
+    (init.headers as Record<string, string> | undefined)?.["x-silent-error"] === "1";
 
   // Optional debug (keep if you want)
   console.log("API Request:", {
@@ -40,17 +42,28 @@ async function coreFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
     url,
     hasBody: !!init.body,
     bodyType: init.body instanceof FormData ? "FormData" : typeof init.body,
+    hasSignal: !!init.signal,
   });
 
   let res: Response;
-  res = await fetch(url, {
-    ...init,
-    headers: {
-      ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...(init.headers || {}),
-    },
-    credentials: "include",
-  });
+  try {
+    res = await fetch(url, {
+      ...init,
+      signal: init.signal,
+      headers: {
+        ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+        ...(init.headers || {}),
+      },
+      credentials: "include",
+    });
+  } catch (err: any) {
+    const aborted =
+      err?.name === "AbortError" || String(err?.message || "").toLowerCase().includes("aborted");
+    if (aborted) {
+      throw new Error("Verification request timed out.");
+    }
+    throw err;
+  }
 
   const contentType = res.headers.get("content-type") || "";
 
@@ -79,12 +92,14 @@ async function coreFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
       `Request failed (${res.status})`;
 
     // ✅ Better error logging (you’ll now see real message + raw body)
-    console.error("API Error:", url, method, res.status, res.statusText, {
-  contentType,
-  message: msg,
-  data,
-  raw,
-});
+    if (!silentErrorLogging) {
+      console.error("API Error:", url, method, res.status, res.statusText, {
+        contentType,
+        message: msg,
+        data,
+        raw,
+      });
+    }
 
     throw new Error(msg);
   }
