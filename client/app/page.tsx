@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
-import OfferBadge from "@/components/offers/OfferBadge";
 import PublicSiteHeader from "@/components/public/PublicSiteHeader";
+import SharedPropertyCard from "@/components/property/PropertyCard";
 import { apiFetch, apiFetchSafe } from "@/app/lib/api";
 import { getDashboardPath } from "@/app/lib/auth";
+import type { Property as ListingProperty } from "@/app/lib/property.types";
 import {
   Home,
   Building2,
@@ -19,29 +20,14 @@ import {
   Headphones,
   BarChart3,
   Search,
-  Heart,
   ChevronRight,
   BriefcaseBusiness,
   Building,
 } from "lucide-react";
 
-type Property = {
+type Property = ListingProperty & {
   id?: string;
-  _id?: string;
-  title: string;
-  location: string;
-  price: string;
   image: string;
-  beds: number;
-  baths: number;
-  sqft: number;
-  offerCategory?: "none" | "dashain" | "latest" | "hot" | "limited_time";
-  offerBadge?: string;
-  offerTitle?: string;
-  offerActive?: boolean;
-  currency?: string;
-  address?: string;
-  images?: { url: string }[];
 };
 
 type PropertyListResponse = {
@@ -97,7 +83,7 @@ export default function DashboardLandingLike() {
           _id: item._id,
           title: item.title,
           location: item.address || item.location,
-          price: `${item.currency || "NPR"} ${Number(item.price || 0).toLocaleString()}`,
+          price: Number(item.price || 0),
           image: item.images?.[0]?.url || "/placeholder.jpg",
           beds: Number(item.beds || 0),
           baths: Number(item.baths || 0),
@@ -450,7 +436,7 @@ export default function DashboardLandingLike() {
               </div>
             </div>
 
-            <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {featuredProperties.map((p, i) => (
                 <motion.div
                   key={p._id || p.id}
@@ -459,7 +445,15 @@ export default function DashboardLandingLike() {
                   viewport={{ once: true, amount: 0.25 }}
                   transition={{ duration: 0.5, delay: i * 0.06 }}
                 >
-                  <PropertyCard p={p} />
+                  <SharedPropertyCard
+                    property={p}
+                    variant="featured"
+                    href={p._id ? `/buyer/property/${p._id}` : "/properties"}
+                    onToggleWishlist={() => {}}
+                    onToggleCompare={() => {}}
+                    showFeaturedBadge
+                    viewLabel="View Listing"
+                  />
                 </motion.div>
               ))}
             </div>
@@ -716,57 +710,6 @@ function MiniCard({
   );
 }
 
-function PropertyCard({ p }: { p: Property }) {
-  const href = p._id ? `/buyer/property/${p._id}` : "/properties";
-
-  return (
-    <Link href={href} className="group block">
-      <motion.div
-        whileHover={{ y: -8 }}
-        transition={{ type: "spring", stiffness: 240, damping: 18 }}
-        className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#E5E7EB] hover:shadow-md"
-      >
-        <div className="relative aspect-[4/3] overflow-hidden">
-          <img
-            src={p.image}
-            alt={p.title}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.06]"
-          />
-          <div className="absolute left-3 top-3 z-10">
-            <OfferBadge
-              category={p.offerCategory}
-              active={p.offerActive}
-              label={p.offerBadge || p.offerTitle}
-            />
-          </div>
-          <button
-            type="button"
-            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-[#2C3F35] shadow-sm ring-1 ring-[#E5E7EB] opacity-0 transition group-hover:opacity-100"
-            aria-label="Save"
-            onClick={(e) => e.preventDefault()}
-          >
-            <Heart className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="p-4">
-          <p className="text-lg font-extrabold text-[#111814]">{p.price}</p>
-          <p className="mt-1 text-sm font-semibold text-[#1B2A24]">{p.title}</p>
-          <p className="mt-1 text-xs text-[#618975]">{p.location}</p>
-
-          <div className="mt-3 flex items-center gap-3 text-[11px] text-[#618975]">
-            <span>{p.beds} bd</span>
-            <span>â€¢</span>
-            <span>{p.baths} ba</span>
-            <span>â€¢</span>
-            <span>{p.sqft} sqft</span>
-          </div>
-        </div>
-      </motion.div>
-    </Link>
-  );
-}
-
 function OfferSection({
   title,
   description,
@@ -801,7 +744,7 @@ function OfferSection({
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {items.slice(0, 4).map((p, i) => (
             <motion.div
               key={p._id || p.id || `${title}-${i}`}
@@ -810,7 +753,15 @@ function OfferSection({
               viewport={{ once: true, amount: 0.25 }}
               transition={{ duration: 0.45, delay: i * 0.05 }}
             >
-              <PropertyCard p={p} />
+              <SharedPropertyCard
+                property={p}
+                variant="featured"
+                href={p._id ? `/buyer/property/${p._id}` : "/properties"}
+                onToggleWishlist={() => {}}
+                onToggleCompare={() => {}}
+                showFeaturedBadge
+                viewLabel="View Listing"
+              />
             </motion.div>
           ))}
         </div>

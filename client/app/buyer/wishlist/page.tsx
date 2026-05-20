@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
   Heart,
-  MapPin,
   Plus,
   RefreshCcw,
   Scale,
@@ -16,8 +15,10 @@ import {
 
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
+import PropertyCard from "@/components/property/PropertyCard";
 import {
   BUYER_CACHE_KEYS,
+  removeWishlistIdFromCache,
   readFreshBuyerCache,
   writeBuyerCache,
 } from "@/app/buyer/prefetchCache";
@@ -57,20 +58,6 @@ function readCompareIds(): string[] {
 function writeCompareIds(ids: string[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(COMPARE_KEY, JSON.stringify({ ids: ids.slice(0, MAX_COMPARE) }));
-}
-
-function formatPrice(property: Property) {
-  const currency = property.currency || "NPR";
-  const price = Number(property.price || 0);
-  return `${currency} ${price.toLocaleString()}`;
-}
-
-function formatLocation(property: Property) {
-  return property.address || property.location || "Location unavailable";
-}
-
-function safeImage(property: Property) {
-  return property.images?.[0]?.url || "/placeholder-property.jpg";
 }
 
 function Toast({ show, text }: { show: boolean; text: string }) {
@@ -232,6 +219,7 @@ export default function BuyerWishlistPage() {
 
       const next = wishlistIds.filter((x) => x !== id);
       setWishlistIds(next);
+      removeWishlistIdFromCache(id);
       setAllProperties((prev) => prev.filter((property) => property._id !== id));
       showToast("Removed from wishlist");
     } catch (e) {
@@ -492,7 +480,7 @@ export default function BuyerWishlistPage() {
               </div>
             ) : (
               <>
-                <section className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+                <section className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {filteredItems.slice(0, 3).map((property) => {
                     const compareOn = compareSet.has(property._id);
 
@@ -501,115 +489,16 @@ export default function BuyerWishlistPage() {
                         key={property._id}
                         whileHover={{ y: -6 }}
                         transition={{ duration: 0.18 }}
-                        className="group overflow-hidden rounded-[28px] border bg-white shadow-sm transition"
-                        style={{ borderColor: THEME.primaryBorder }}
+                        className="h-full"
                       >
-                        <div className="relative overflow-hidden">
-                          <div
-                            className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur-sm"
-                            style={{
-                              backgroundColor: THEME.primary,
-                              color: "#ffffff",
-                            }}
-                          >
-                            Saved
-                          </div>
-
-                          <div
-                            className="absolute right-4 top-4 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm"
-                            style={{ backgroundColor: "rgba(255,255,255,0.92)", color: THEME.text }}
-                          >
-                            <Heart className="h-3.5 w-3.5 fill-[#316249] text-[#316249]" />
-                            Save
-                          </div>
-
-                          <img
-                            src={safeImage(property)}
-                            alt={property.title ?? "Property image"}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-[220px] w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                          />
-                        </div>
-
-                        <div className="space-y-4 p-5">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="line-clamp-2 text-lg font-semibold leading-7" style={{ color: THEME.text }}>
-                                {property.title}
-                              </div>
-                              <div className="mt-2 flex items-center gap-1 text-sm leading-6" style={{ color: THEME.textSoft }}>
-                                <MapPin className="h-4 w-4" />
-                                <span className="line-clamp-1">{formatLocation(property)}</span>
-                              </div>
-                            </div>
-                            <div className="text-right text-2xl font-bold tracking-tight" style={{ color: THEME.text }}>
-                              {formatPrice(property)}
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            {[
-                              `${property.beds ?? "-"} beds`,
-                              `${property.baths ?? "-"} baths`,
-                              `${property.sqft ?? "-"} sq ft`,
-                            ].map((item) => (
-                              <span
-                                key={item}
-                                className="rounded-full px-3 py-1.5 text-xs font-semibold"
-                                style={{ backgroundColor: THEME.primarySoft, color: THEME.primaryDark }}
-                              >
-                                {item}
-                              </span>
-                            ))}
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <Link
-                              href={`/buyer/property/${property._id}`}
-                              className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition"
-                              style={{ backgroundColor: THEME.primary }}
-                            >
-                              View Listing
-                            </Link>
-
-                            <button
-                              type="button"
-                              onClick={() => toggleCompare(property._id)}
-                              className="inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition"
-                              style={{
-                                backgroundColor: compareOn ? THEME.primarySoft : "#ffffff",
-                                borderColor: compareOn ? THEME.primaryBorder : THEME.border,
-                                color: compareOn ? THEME.primaryDark : THEME.text,
-                              }}
-                            >
-                              <Scale className="h-4 w-4" />
-                              {compareOn ? "Comparing" : "Compare"}
-                            </button>
-                          </div>
-
-                          <div className="flex items-center justify-between border-t pt-4" style={{ borderColor: "#E5E7EB" }}>
-                            <div className="text-xl font-bold" style={{ color: THEME.primary }}>
-                              {formatPrice(property)}
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => removeOne(property._id)}
-                              className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition"
-                              style={{
-                                backgroundColor: "#ffffff",
-                                borderColor: THEME.border,
-                                color: THEME.text,
-                              }}
-                              title="Remove"
-                              aria-label="Remove"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Remove
-                            </button>
-                          </div>
-                        </div>
+                        <PropertyCard
+                          property={property}
+                          variant="default"
+                          saved={wishlistSet.has(property._id)}
+                          onToggleWishlist={removeOne}
+                          compareOn={compareOn}
+                          onToggleCompare={toggleCompare}
+                        />
                       </motion.div>
                     );
                   })}
@@ -637,108 +526,16 @@ export default function BuyerWishlistPage() {
                           key={property._id}
                           whileHover={{ y: -6 }}
                           transition={{ duration: 0.18 }}
-                          className="group overflow-hidden rounded-[28px] border bg-white shadow-sm transition"
-                          style={{ borderColor: THEME.primaryBorder }}
+                          className="h-full"
                         >
-                          <div className="relative overflow-hidden">
-                            <div
-                              className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
-                              style={{ backgroundColor: THEME.primary, color: "#ffffff" }}
-                            >
-                              Saved
-                            </div>
-
-                            <div
-                              className="absolute right-4 top-4 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm"
-                              style={{ backgroundColor: "rgba(255,255,255,0.92)", color: THEME.text }}
-                            >
-                              <Heart className="h-3.5 w-3.5 fill-[#316249] text-[#316249]" />
-                              Save
-                            </div>
-
-                            <img
-                              src={safeImage(property)}
-                              alt={property.title ?? "Property image"}
-                              loading="lazy"
-                              decoding="async"
-                              className="h-[220px] w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                            />
-                          </div>
-
-                          <div className="space-y-4 p-5">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="min-w-0">
-                                <div className="line-clamp-2 text-lg font-semibold leading-7" style={{ color: THEME.text }}>
-                                  {property.title}
-                                </div>
-                                <div className="mt-2 flex items-center gap-1 text-sm leading-6" style={{ color: THEME.textSoft }}>
-                                  <MapPin className="h-4 w-4" />
-                                  <span className="line-clamp-1">{formatLocation(property)}</span>
-                                </div>
-                              </div>
-                              <div className="text-right text-2xl font-bold tracking-tight" style={{ color: THEME.text }}>
-                                {formatPrice(property)}
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                              {[
-                                `${property.beds ?? "-"} beds`,
-                                `${property.baths ?? "-"} baths`,
-                                `${property.sqft ?? "-"} sq ft`,
-                              ].map((item) => (
-                                <span
-                                  key={item}
-                                  className="rounded-full px-3 py-1.5 text-xs font-semibold"
-                                  style={{ backgroundColor: THEME.primarySoft, color: THEME.primaryDark }}
-                                >
-                                  {item}
-                                </span>
-                              ))}
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                              <Link
-                                href={`/buyer/property/${property._id}`}
-                                className="inline-flex items-center justify-center rounded-2xl border px-4 py-3 text-sm font-semibold transition sm:col-span-1"
-                                style={{
-                                  backgroundColor: "#ffffff",
-                                  borderColor: THEME.border,
-                                  color: THEME.text,
-                                }}
-                              >
-                                View
-                              </Link>
-
-                              <button
-                                type="button"
-                                onClick={() => toggleCompare(property._id)}
-                                className="inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition sm:col-span-1"
-                                style={{
-                                  backgroundColor: compareOn ? THEME.primarySoft : "#ffffff",
-                                  borderColor: compareOn ? THEME.primaryBorder : THEME.border,
-                                  color: compareOn ? THEME.primaryDark : THEME.text,
-                                }}
-                              >
-                                <Scale className="h-4 w-4" />
-                                {compareOn ? "Comparing" : "Compare"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => removeOne(property._id)}
-                                className="inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition sm:col-span-1"
-                                style={{
-                                  backgroundColor: "#ffffff",
-                                  borderColor: THEME.border,
-                                  color: THEME.text,
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Remove
-                              </button>
-                            </div>
-                          </div>
+                          <PropertyCard
+                            property={property}
+                            variant="default"
+                            saved={wishlistSet.has(property._id)}
+                            onToggleWishlist={removeOne}
+                            compareOn={compareOn}
+                            onToggleCompare={toggleCompare}
+                          />
                         </motion.div>
                       );
                     })}

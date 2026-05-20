@@ -34,3 +34,50 @@ export function writeBuyerCache<T>(key: string, data: T): void {
     window.sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch {}
 }
+
+type WishlistCacheItem = { propertyId?: string | { _id?: string } | null };
+type WishlistCacheShape = { items?: WishlistCacheItem[]; total?: number; page?: number; limit?: number };
+
+function wishlistIdFromItem(item: WishlistCacheItem): string | null {
+  if (!item) return null;
+  if (typeof item.propertyId === "string") return item.propertyId;
+  return item.propertyId?._id || null;
+}
+
+export function readWishlistIdsFromCache(): string[] {
+  const cached = readFreshBuyerCache<WishlistCacheShape>(BUYER_CACHE_KEYS.wishlist);
+  if (!cached?.items?.length) return [];
+  return cached.items
+    .map((item) => wishlistIdFromItem(item))
+    .filter((id): id is string => Boolean(id));
+}
+
+export function writeWishlistIdsToCache(nextIds: string[]): void {
+  const current = readFreshBuyerCache<WishlistCacheShape>(BUYER_CACHE_KEYS.wishlist);
+  const currentItems = current?.items || [];
+
+  const itemById = new Map<string, WishlistCacheItem>();
+  for (const item of currentItems) {
+    const id = wishlistIdFromItem(item);
+    if (id) itemById.set(id, item);
+  }
+
+  const items = nextIds.map((id) => itemById.get(id) || { propertyId: id });
+  writeBuyerCache(BUYER_CACHE_KEYS.wishlist, {
+    items,
+    total: items.length,
+    page: 1,
+    limit: Math.max(items.length, 1),
+  });
+}
+
+export function addWishlistIdToCache(id: string): void {
+  const currentIds = readWishlistIdsFromCache();
+  if (currentIds.includes(id)) return;
+  writeWishlistIdsToCache([id, ...currentIds]);
+}
+
+export function removeWishlistIdFromCache(id: string): void {
+  const currentIds = readWishlistIdsFromCache();
+  writeWishlistIdsToCache(currentIds.filter((currentId) => currentId !== id));
+}

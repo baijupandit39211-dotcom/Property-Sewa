@@ -5,20 +5,15 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
-  Bath,
-  BedDouble,
   ChevronDown,
-  Expand,
-  Heart,
-  MapPin,
-  Scale,
   Search,
-  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
+import PropertyCard from "@/components/property/PropertyCard";
+import { addWishlistIdToCache, removeWishlistIdFromCache } from "@/app/buyer/prefetchCache";
 
 type ListResponse = {
   items: Property[];
@@ -165,15 +160,6 @@ function LoadingSkeleton() {
   );
 }
 
-function formatCardArea(property: Property) {
-  const sqft = Number(property.sqft || 0);
-  if (Number.isFinite(sqft) && sqft >= 100) {
-    return `${property.sqft} sqft`;
-  }
-
-  return "Area on request";
-}
-
 function RefreshingCardSkeletons() {
   return (
     <>
@@ -199,30 +185,9 @@ function RefreshingCardSkeletons() {
   );
 }
 
-function getDisplayCurrency(property: Property) {
-  const raw = String(property.currency || "").trim().toUpperCase();
-  // Current display rule: normalize to NPR unless explicitly supported.
-  if (raw === "NPR") return raw;
-  return "NPR";
-}
-
-function formatCardPrice(property: Property) {
-  const value = Number(property.price || 0);
-  const listingType = String(property.listingType || "").toLowerCase();
-  const minReasonablePrice = listingType === "rent" ? 1000 : 10000;
-  if (!Number.isFinite(value) || value < minReasonablePrice) {
-    return "Price on request";
-  }
-  return `${getDisplayCurrency(property)} ${value.toLocaleString()}`;
-}
-
 function getStatusBadgeLabel(property: Property) {
   if (isOfferActive(property)) return "Featured";
   return "New Listing";
-}
-
-function getPrimaryImage(property: Property) {
-  return property.images?.[0]?.url || "https://placehold.co/900x700/e8f5ee/0f172a?text=Property+Sewa";
 }
 
 function formatFilterChipLabel(filter: string) {
@@ -654,6 +619,7 @@ function SearchPropertiesPageContent() {
         await apiFetch(`/wishlist/${id}`, { method: "DELETE" });
         const next = wishlistIds.filter((x) => x !== id);
         setWishlistIds(next);
+        removeWishlistIdFromCache(id);
         showToast("Removed from wishlist");
         return;
       }
@@ -665,6 +631,7 @@ function SearchPropertiesPageContent() {
 
       const next = [id, ...wishlistIds];
       setWishlistIds(next);
+      addWishlistIdToCache(id);
       showToast("Saved to wishlist");
       pop(id, setPoppingIds);
     } catch (err) {
@@ -1022,131 +989,22 @@ function SearchPropertiesPageContent() {
             {visibleItems.map((p) => {
               const saved = wishlistSet.has(p._id);
               const compareOn = compareSet.has(p._id);
-              const cardArea = formatCardArea(p);
-              const statusBadgeLabel = getStatusBadgeLabel(p);
               const heartPop = !!poppingIds[p._id];
               const scalePop = !!comparePopIds[p._id];
 
               return (
-                <article
+                <PropertyCard
                   key={p._id}
-                  className="group flex h-full min-h-[22.5rem] cursor-pointer flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_6px_16px_rgba(13,28,18,0.06)] transition-all duration-300 hover:-translate-y-[3px] hover:border-[#D1D5DB] hover:shadow-[0_14px_28px_rgba(13,28,18,0.10)]"
-                >
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => toggleCompare(p._id)}
-                      onFocus={() => setComparePopIds((prev) => ({ ...prev, [p._id]: true }))}
-                      onBlur={() => setComparePopIds((prev) => ({ ...prev, [p._id]: false }))}
-                      className={[
-                        "absolute right-[2.55rem] top-3 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#E5E7EB] bg-white/95 text-[10px] text-[#0D1C12] shadow-sm backdrop-blur-sm transition active:scale-95 hover:border-[#316249]/40 hover:bg-[#EEF8EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]/45 sm:right-[2.8rem] sm:h-9 sm:w-9",
-                        compareOn ? "border-[#316249]/60 bg-[#316249] text-white" : "text-[#0D1C12]",
-                        scalePop ? "scale-105" : "",
-                      ].join(" ")}
-                      aria-label={`${compareOn ? "Remove from compare" : "Add to compare"}: ${p.title || "property"}`}
-                      title={compareOn ? "Remove from compare" : "Add to compare"}
-                    >
-                      <Scale className={["h-4 w-4", scalePop ? "scale-110" : ""].join(" ")} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => toggleWishlist(p._id)}
-                      onFocus={() => setPoppingIds((prev) => ({ ...prev, [p._id]: true }))}
-                      onBlur={() => setPoppingIds((prev) => ({ ...prev, [p._id]: false }))}
-                      className={[
-                        "absolute right-2.5 top-3 z-20 grid h-8 w-8 place-items-center rounded-full border border-[#E5E7EB] bg-white/95 text-[#0D1C12] shadow-sm backdrop-blur-sm transition active:scale-95 hover:border-[#316249]/40 hover:bg-[#EEF8EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249]/45 sm:right-3 sm:h-9 sm:w-9",
-                        saved ? "border-[#316249]/60 bg-[#316249] text-white" : "text-[#0D1C12]",
-                        heartPop ? "scale-110" : "",
-                      ].join(" ")}
-                      aria-label={`${saved ? "Remove from wishlist" : "Save to wishlist"}: ${p.title || "property"}`}
-                      title={saved ? "Saved" : "Save"}
-                    >
-                      <Heart
-                        className={[
-                          "h-4 w-4 transition-transform duration-200",
-                          saved ? "fill-white" : "",
-                          heartPop ? "scale-110" : "",
-                        ].join(" ")}
-                      />
-                    </button>
-
-                    <Link
-                      href={`/buyer/property/${p._id}`}
-                      className="block focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#316249]/35"
-                    >
-                      <div className="relative overflow-hidden rounded-t-2xl">
-                        <img
-                          src={getPrimaryImage(p)}
-                          alt={p.title ?? "Property image"}
-                          loading="lazy"
-                          decoding="async"
-                          onError={(event) => {
-                            event.currentTarget.src =
-                              "https://placehold.co/900x700/e8f5ee/0f172a?text=Property+Sewa";
-                          }}
-                          className="h-52 w-full object-cover transition-transform duration-700 group-hover:scale-[1.015] sm:h-56"
-                        />
-                        <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5">
-                          {statusBadgeLabel === "Featured" ? (
-                            <span className="inline-flex items-center rounded-full border border-[#DDE7E1] bg-white/82 px-2 py-0.5 text-[9px] font-medium text-[#316249] shadow-sm backdrop-blur-sm">
-                              Featured
-                            </span>
-                          ) : null}
-                          <span className="inline-flex items-center rounded-full border border-[#E5E7EB] bg-white/92 px-2.5 py-0.5 text-[10px] font-medium text-black shadow-sm backdrop-blur-sm">
-                            {p.listingType === "rent" ? "For Rent" : "For Sale"}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  </div>
-
-                  <Link
-                    href={`/buyer/property/${p._id}`}
-                    className="flex h-full flex-1 flex-col p-4 sm:p-5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#316249]/35"
-                  >
-                    <div className="mb-2 flex items-start justify-between gap-2.5">
-                      <h3 className="line-clamp-2 text-[18px] font-semibold leading-6 tracking-tight text-black transition-colors group-hover:text-[#316249] sm:text-[19px]">
-                        {p.title || "Property listing"}
-                      </h3>
-                      <span className="inline-flex min-w-[9.5rem] justify-center shrink-0 rounded-full border border-[#DDE5E0] bg-[#F2F8F4] px-3 py-1 text-[14px] font-semibold text-black sm:min-w-[10.5rem]">
-                        {formatCardPrice(p)}
-                      </span>
-                    </div>
-
-                    <p className="mt-0.5 flex items-center gap-1.5 text-sm text-black">
-                      <MapPin className="h-[17px] w-[17px] shrink-0 text-[#374151]" strokeWidth={2.3} />
-                      <span
-                        className="truncate"
-                        title={p.address || p.location || "Location on request"}
-                      >
-                        {p.address || p.location || "Location on request"}
-                      </span>
-                    </p>
-
-                    <div className="mt-auto pt-3.5">
-                      <div className="border-t border-[#EEF2F0] pt-2.5">
-                      <div className="grid grid-cols-3 gap-1.5 text-[13px] font-medium text-black">
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-[#F7FAF8] px-2 py-1 text-[13px] text-black">
-                          <BedDouble className="h-4 w-4 text-[#374151]" strokeWidth={2.2} />
-                          {p.beds} bd
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-[#F7FAF8] px-2 py-1 text-[13px] text-black">
-                          <Bath className="h-4 w-4 text-[#374151]" strokeWidth={2.2} />
-                          {p.baths} ba
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#F7FAF8] px-2 py-1 text-[13px] text-black"
-                          title={cardArea}
-                        >
-                          <Expand className="h-4 w-4 text-[#374151]" strokeWidth={2.2} />
-                          {cardArea.includes("sqft") ? cardArea : "Area"}
-                        </span>
-                      </div>
-                      </div>
-                    </div>
-                  </Link>
-                </article>
+                  variant="default"
+                  property={p}
+                  saved={saved}
+                  compareOn={compareOn}
+                  heartPop={heartPop}
+                  comparePop={scalePop}
+                  onToggleWishlist={toggleWishlist}
+                  onToggleCompare={toggleCompare}
+                  showFeaturedBadge={getStatusBadgeLabel(p) === "Featured"}
+                />
               );
             })}
             {showRefreshingSkeleton ? <RefreshingCardSkeletons /> : null}

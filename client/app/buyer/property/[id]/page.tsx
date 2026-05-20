@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
+import { addWishlistIdToCache, removeWishlistIdFromCache } from "@/app/buyer/prefetchCache";
 import {
   getReservationExpiresAt,
   getReservationOwnerId,
@@ -415,12 +416,14 @@ function BuyerPropertyDetailsView({
       if (wishlisted) {
         await apiFetch(`/wishlist/${id}`, { method: "DELETE" });
         setWishlisted(false);
+        removeWishlistIdFromCache(id);
       } else {
         await apiFetch("/wishlist", {
           method: "POST",
           body: JSON.stringify({ propertyId: id }),
         });
         setWishlisted(true);
+        addWishlistIdToCache(id);
       }
     } catch {
       //

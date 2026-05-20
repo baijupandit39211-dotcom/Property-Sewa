@@ -20,7 +20,9 @@ import {
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
 import {
+  addWishlistIdToCache,
   BUYER_CACHE_KEYS,
+  writeWishlistIdsToCache,
   readFreshBuyerCache,
   writeBuyerCache,
 } from "@/app/buyer/prefetchCache";
@@ -131,10 +133,6 @@ function yesNo(value: boolean) {
       <X className="h-3.5 w-3.5" /> No
     </span>
   );
-}
-
-function safeImage(property?: Property) {
-  return property?.images?.[0]?.url || "/placeholder-property.jpg";
 }
 
 function formatPrice(property?: Property) {
@@ -366,6 +364,7 @@ export default function BuyerComparePage() {
         body: JSON.stringify({ propertyId: id }),
       });
       setWishlistIds((current) => [id, ...current]);
+      addWishlistIdToCache(id);
       showToast("Saved to wishlist");
     } catch (err) {
       console.error(err);
@@ -392,7 +391,11 @@ export default function BuyerComparePage() {
           })
         )
       );
-      setWishlistIds((current) => [...pendingIds, ...current]);
+      setWishlistIds((current) => {
+        const next = [...pendingIds, ...current];
+        writeWishlistIdsToCache(Array.from(new Set(next)));
+        return next;
+      });
       showToast("Compared properties saved");
     } catch (err) {
       console.error(err);
@@ -697,7 +700,6 @@ export default function BuyerComparePage() {
                           key={property._id}
                           property={property}
                           saved={wishlistSet.has(property._id)}
-                          theme={THEME}
                           messageHref={getMessageHref(property._id, leadIdsByProperty[property._id])}
                           onSave={() => addToWishlist(property._id)}
                           onRemove={() => removeFromCompare(property._id)}

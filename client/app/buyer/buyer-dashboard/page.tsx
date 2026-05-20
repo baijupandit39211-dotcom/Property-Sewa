@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
-import dynamic from "next/dynamic";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import Link from "next/link";
 import { Bell, CalendarDays, Eye, Heart, Search } from "lucide-react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { apiFetch } from "../../lib/api";
 import { typography } from "../../lib/typography";
@@ -17,10 +16,9 @@ import {
   writeBuyerCache,
 } from "@/app/buyer/prefetchCache";
 import {
+  AlertsCard,
   BudgetOverviewCard,
-  DiscoveryCard,
   EmptyState,
-  LiveActivityCard,
   MessagesCard,
   OverviewCard,
   PageSearchBar,
@@ -30,17 +28,8 @@ import {
   UpcomingVisitsCard,
   firstName,
 } from "./dashboard-ui";
+import PropertyCard from "@/components/property/PropertyCard";
 
-const ReportAdModal = dynamic(() => import("@/app/property/[id]/_components/ReportAdModal"), {
-  ssr: false,
-});
-const SavedPropertyCard = dynamic(
-  () => import("./dashboard-ui").then((mod) => mod.SavedPropertyCard),
-  {
-    ssr: false,
-    loading: () => <div className="h-[360px] rounded-[24px] border border-[#E5E7EB] bg-white shadow-sm" />,
-  }
-);
 
 type ListResponse = {
   success: boolean;
@@ -81,6 +70,23 @@ function writeIds(key: string, ids: string[]) {
   localStorage.setItem(key, JSON.stringify({ ids }));
 }
 
+function dedupeProperties(items: Property[]) {
+  const seen = new Set<string>();
+  const result: Property[] = [];
+  for (const property of items) {
+    const fallbackKey = `${String(property.title || "").trim().toLowerCase()}|${Number(property.price || 0)}|${String(
+      property.location || property.address || ""
+    )
+      .trim()
+      .toLowerCase()}`;
+    const key = property._id || fallbackKey;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(property);
+  }
+  return result;
+}
+
 export default function BuyerDashboardPage() {
   const { user } = useBuyerAuth();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -89,10 +95,6 @@ export default function BuyerDashboardPage() {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [messageItems, setMessageItems] = useState<DashboardMessageItem[]>([]);
   const [searchText, setSearchText] = useState("");
-  const [reportModal, setReportModal] = useState<{ open: boolean; adId: string | null }>({
-    open: false,
-    adId: null,
-  });
   const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
   const [wishPopIds, setWishPopIds] = useState<Record<string, boolean>>({});
   const [comparePopIds, setComparePopIds] = useState<Record<string, boolean>>({});
@@ -333,10 +335,10 @@ export default function BuyerDashboardPage() {
     pop(id, setComparePopIds);
   }
 
-  const recommendedListings = useMemo(
-    () => (offerProperties.length ? offerProperties : properties).slice(0, 4),
-    [offerProperties, properties]
-  );
+  const recommendedListings = useMemo(() => {
+    const source = offerProperties.length ? offerProperties : properties;
+    return dedupeProperties(source).slice(0, 4);
+  }, [offerProperties, properties]);
 
   const savedProperties = useMemo(
     () => properties.filter((property) => wishlistSet.has(property._id)).slice(0, 4),
@@ -360,7 +362,7 @@ export default function BuyerDashboardPage() {
   }, [properties]);
 
   const marketListings = useMemo(
-    () => (offerProperties.length ? offerProperties : properties).slice(0, 5),
+    () => dedupeProperties(offerProperties.length ? offerProperties : properties).slice(0, 5),
     [offerProperties, properties]
   );
 
@@ -401,17 +403,8 @@ export default function BuyerDashboardPage() {
 
   const heroSummary = `Find your next dream property from ${properties.length || 0} active listings and ${offerProperties.length || 0} curated offer matches.`;
 
-  const handleOpenReport = (input: { adId?: string | null }) => {
-    setReportModal({ open: true, adId: input.adId || null });
-  };
-
   return (
     <motion.main initial="hidden" animate="show" variants={pageEnter} className={`min-w-0 ${PAGE_BG}`}>
-      <ReportAdModal
-        adId={reportModal.adId}
-        open={reportModal.open}
-        onClose={() => setReportModal({ open: false, adId: null })}
-      />
       <Toast show={toast.show} text={toast.text} />
 
       <div className="mx-auto max-w-7xl rounded-[28px] border border-[#E5E7EB] bg-white/70 px-4 py-4 shadow-[0_20px_50px_rgba(13,28,18,0.06)] backdrop-blur-[1px] sm:px-6 lg:px-8 lg:py-7">
@@ -422,14 +415,14 @@ export default function BuyerDashboardPage() {
           wishlistCount={wishlistIds.length}
         />
 
-        <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_292px]">
+        <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
           <div className="space-y-10">
             <section className="overflow-hidden rounded-[32px] border border-[#D1D5DB]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_30px_100px_rgba(19,74,54,0.20)] sm:px-8 sm:py-7">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
                 <div className="max-w-3xl">
                   <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/90">
                     <Sparkles className="h-3.5 w-3.5" />
-                    Buyer Dashboard
+                    Buyer Control Center
                   </span>
                   <h1 className={`mt-4 ${typography.pageTitle} text-white`}>
                     Good morning, {firstName(userName)}!
@@ -439,30 +432,14 @@ export default function BuyerDashboardPage() {
                   </p>
                 </div>
 
-                <Link
-                  prefetch={true}
-                  href={searchText.trim() ? `/buyer/search-properties?q=${encodeURIComponent(searchText.trim())}` : "/buyer/search-properties"}
-                  className={`inline-flex h-12 items-center gap-3 self-start rounded-xl border border-white/15 bg-white/10 px-6 text-sm font-semibold text-white transition hover:bg-white/15`}
-                >
+                <Link prefetch={true} href="/buyer/search-properties" className={`inline-flex h-12 items-center gap-3 self-start rounded-xl border border-white/15 bg-white/10 px-6 text-sm font-semibold text-white transition hover:bg-white/15`}>
                   <Search className="h-4 w-4" />
-                  Explore Properties
+                  Search Properties
                 </Link>
               </div>
-
-              <div className="mt-4">
-                <Link
-                  prefetch={true}
-                  href="/"
-                  className={`inline-flex items-center gap-1.5 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#0D1C12] shadow-sm transition hover:bg-[#EEF8EB]`}
-                >
-                  Back to Home
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-
             </section>
 
-            <section className="grid gap-4 xl:grid-cols-[repeat(4,minmax(0,1fr))_minmax(280px,1fr)]">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <OverviewCard
                 icon={<Heart className="h-5 w-5 text-[#316249]" />}
                 label="Saved Homes"
@@ -491,8 +468,6 @@ export default function BuyerDashboardPage() {
                 meta="Active alerts"
                 accent="#fff4dc"
               />
-
-              <DiscoveryCard property={recommendedListings[0] || savedProperties[0] || properties[0] || null} />
             </section>
 
             <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-6 shadow-[0_10px_24px_rgba(13,28,18,0.05)] sm:p-7">
@@ -502,21 +477,20 @@ export default function BuyerDashboardPage() {
                 actionText="See all"
               />
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+              <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
                 {recommendedListings.length ? (
                   recommendedListings.map((property) => (
-                    <SavedPropertyCard
+                    <PropertyCard
                       key={property._id}
                       property={property}
-                      wishSaved={wishlistSet.has(property._id)}
-                      wishPop={!!wishPopIds[property._id]}
-                      onToggleWish={() => toggleWishlist(property._id)}
+                      variant="compact"
+                      saved={wishlistSet.has(property._id)}
                       compareOn={compareSet.has(property._id)}
+                      heartPop={!!wishPopIds[property._id]}
                       comparePop={!!comparePopIds[property._id]}
+                      onToggleWishlist={toggleWishlist}
                       onToggleCompare={() => toggleCompare(property._id)}
-                      onReport={handleOpenReport}
-                      viewLabel="View"
-                      showSavedTag={false}
+                      isOfferActive={() => false}
                     />
                   ))
                 ) : (
@@ -525,7 +499,7 @@ export default function BuyerDashboardPage() {
               </div>
             </section>
 
-            <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_316px]">
+            <div className="grid gap-6">
               <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-6 shadow-[0_10px_24px_rgba(13,28,18,0.05)] sm:p-7">
                 <SectionHeading
                   title="Saved Properties"
@@ -533,19 +507,20 @@ export default function BuyerDashboardPage() {
                   actionText="See all"
                 />
 
-                <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
                   {savedProperties.length ? (
                     savedProperties.map((property) => (
-                      <SavedPropertyCard
+                      <PropertyCard
                         key={property._id}
                         property={property}
-                        wishSaved={wishlistSet.has(property._id)}
-                        wishPop={!!wishPopIds[property._id]}
-                        onToggleWish={() => toggleWishlist(property._id)}
+                        variant="compact"
+                        saved={wishlistSet.has(property._id)}
                         compareOn={compareSet.has(property._id)}
+                        heartPop={!!wishPopIds[property._id]}
                         comparePop={!!comparePopIds[property._id]}
+                        onToggleWishlist={toggleWishlist}
                         onToggleCompare={() => toggleCompare(property._id)}
-                        onReport={handleOpenReport}
+                        isOfferActive={() => false}
                       />
                     ))
                   ) : (
@@ -553,33 +528,22 @@ export default function BuyerDashboardPage() {
                   )}
                 </div>
               </section>
-
-              <section className="space-y-6">
-                <RecentSearchesCard searches={recentSearches} />
-                <LiveActivityCard
-                  items={[
-                    {
-                      label: "Wishlist Sync",
-                      text: `${wishlistIds.length} saved homes preserved in your shortlist.`,
-                    },
-                    {
-                      label: "Market Scan",
-                      text: `${marketStats.totalTracked} listings are contributing to live average PSF.`,
-                    },
-                    {
-                      label: "Compare Ready",
-                      text: `${compareIds.length} properties are pinned for side-by-side review.`,
-                    },
-                  ]}
-                />
-              </section>
             </div>
+
+            <UpcomingVisitsCard items={upcomingVisitListings} />
           </div>
 
           <aside className="space-y-6">
-            <BudgetOverviewCard budget={budgetOverview} />
-            <UpcomingVisitsCard items={upcomingVisitListings} />
+            <RecentSearchesCard searches={recentSearches} />
+            <AlertsCard
+              alerts={[
+                `${offerProperties.length} listings currently match your alert criteria.`,
+                `${compareIds.length} properties pinned for compare.`,
+                `${marketStats.totalTracked} listings analyzed for buyer insights.`,
+              ]}
+            />
             <MessagesCard items={messageItems} />
+            <BudgetOverviewCard budget={budgetOverview} />
           </aside>
         </div>
       </div>

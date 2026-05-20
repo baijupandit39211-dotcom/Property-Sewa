@@ -25,7 +25,7 @@ const links = [
   { label: "Scheduled Visits", href: "/buyer/scheduled-visits", icon: CalendarClock },
   { label: "Alerts / Notifications", href: "/buyer/notifications", icon: Bell },
   { label: "Messages / Chat", href: "/buyer/messages", icon: MessageCircle },
-  { label: "Profile Settings", href: "/buyer/profile", icon: Settings },
+  { label: "Profile", href: "/buyer/profile", icon: Settings },
 ];
 
 const bottomLinks = [
@@ -78,6 +78,7 @@ export default function BuyerSidebar({
                   isActive
                     ? "bg-[#316249] font-semibold text-white"
                     : "text-[#0D1C12] hover:bg-[#EEF8EB] hover:text-[#316249]",
+                  item.href === "/buyer/profile" ? "opacity-80" : "",
                 ].join(" ")}
               >
                 <Icon className="h-5 w-5" />

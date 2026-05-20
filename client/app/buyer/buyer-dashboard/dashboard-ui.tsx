@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -570,7 +570,7 @@ export function RecentSearchesCard({ searches }: { searches: string[] }) {
     <div className="rounded-[24px] border border-[#E5E7EB] bg-white/95 p-5 shadow-[0_10px_24px_rgba(13,28,18,0.05)]">
       <div className="flex items-center justify-between gap-4">
         <h3 className={typography.sectionTitle}>Recent Searches</h3>
-        <button className={typography.buttonTextMuted}>Clear all</button>
+        <button type="button" className={typography.buttonTextMuted}>Clear all</button>
       </div>
 
       <div className="mt-5 space-y-3">
@@ -588,6 +588,26 @@ export function RecentSearchesCard({ searches }: { searches: string[] }) {
         ) : (
           <EmptyState message="Search history will appear here once you explore listings." />
         )}
+      </div>
+    </div>
+  );
+}
+
+export function AlertsCard({ alerts }: { alerts: string[] }) {
+  return (
+    <div className="rounded-[24px] border border-[#E5E7EB] bg-white/95 p-5 shadow-[0_10px_24px_rgba(13,28,18,0.05)]">
+      <div className="flex items-center justify-between gap-4">
+        <h3 className={typography.sectionTitle}>Alerts</h3>
+        <Link href="/buyer/alerts" className={`text-[#316249] ${typography.buttonText}`}>
+          View all
+        </Link>
+      </div>
+      <div className="mt-4 space-y-3">
+        {alerts.filter(Boolean).map((alert, idx) => (
+          <div key={`${alert}-${idx}`} className="rounded-2xl border border-[#E5E7EB] bg-[#F7FCFA] px-4 py-3 text-sm text-[#0D1C12]">
+            {alert}
+          </div>
+        ))}
       </div>
     </div>
   );

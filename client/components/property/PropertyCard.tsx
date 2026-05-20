@@ -1,15 +1,7 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import {
-  Bath,
-  BedDouble,
-  Heart,
-  MapPin,
-  MoveDiagonal2,
-  Scale,
-  ShieldCheck,
-} from "lucide-react";
+import { Bath, BedDouble, Heart, MapPin, MoveDiagonal2, Scale } from "lucide-react";
 import type { Property } from "@/app/lib/property.types";
 import OfferBadge from "@/components/offers/OfferBadge";
 
@@ -20,119 +12,143 @@ export type PropertyCardOfferExpiry = {
 
 type Props = {
   property: Property;
-  saved: boolean;
-  compareOn: boolean;
-  heartPop: boolean;
-  scalePop: boolean;
-  offerExpiry: PropertyCardOfferExpiry | null;
-  isOfferActive: (property: Property) => boolean;
-  toggleWishlist: (id: string) => void;
-  toggleCompare: (id: string) => void;
+  saved?: boolean;
+  compareOn?: boolean;
+  heartPop?: boolean;
+  scalePop?: boolean;
+  comparePop?: boolean;
+  offerExpiry?: PropertyCardOfferExpiry | null;
+  isOfferActive?: (property: Property) => boolean;
+  toggleWishlist?: ((id: string) => void) | (() => void);
+  toggleCompare?: ((id: string) => void) | (() => void);
+  onToggleWishlist?: ((id: string) => void) | (() => void);
+  onToggleCompare?: ((id: string) => void) | (() => void);
+  variant?: "default" | "compact" | "featured" | string;
+  showFeaturedBadge?: boolean;
+  href?: string;
+  onRemove?: () => void;
+  secondaryAction?: {
+    href: string;
+    label: string;
+    icon?: React.ReactNode;
+  };
+  viewLabel?: string;
 };
 
 function getPrimaryImage(property: Property) {
-  return (
-    property.images?.[0]?.url ||
-    "https://placehold.co/900x700/e8f5ee/0f172a?text=Property+Sewa"
-  );
-}
-
-function getCardTypeLabel(property: Property) {
-  const title = String(property.title || "").toLowerCase();
-
-  if (title.includes("villa")) return "Villa";
-  if (title.includes("apartment")) return "Apartment";
-  if (title.includes("house")) return "House";
-  if (title.includes("flat")) return "Flat";
-  if (title.includes("land")) return "Land";
-
-  return "Property";
+  return property.images?.[0]?.url || "https://placehold.co/900x700/e8f5ee/0f172a?text=Property+Sewa";
 }
 
 function getListingBadgeLabel(property: Property) {
   const rawType = String((property as any).listingType || "").toLowerCase();
   if (rawType === "rent") return "For Rent";
-  if (rawType === "buy" || rawType === "sale") return "For Buy";
+  if (rawType === "buy" || rawType === "sale") return "For Sale";
   return "Featured";
 }
 
 function formatCardArea(property: Property) {
-  if (typeof property.sqft === "number" && property.sqft > 0) {
-    return `${property.sqft} sqft`;
-  }
-
+  if (typeof property.sqft === "number" && property.sqft >= 100) return `${property.sqft} sqft`;
   return "Area on request";
 }
 
-function getDiscountBadgeLabel(property: Property) {
-  const isActive =
-    property.offerActive === true ||
-    String(property.offerActive).toLowerCase() === "true";
+function toTitleCase(value: string) {
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
+function formatNpr(value: number) {
+  return new Intl.NumberFormat("en-NP", {
+    style: "currency",
+    currency: "NPR",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
+function getDiscountBadgeLabel(property: Property) {
+  const isActive = property.offerActive === true || String(property.offerActive).toLowerCase() === "true";
   if (!isActive) return "";
 
   const discountType = String(property.offerDiscountType || "").toLowerCase();
   const discountValue = Number(property.offerDiscountValue || 0);
-
   if (!(discountValue > 0)) return "";
 
-  if (discountType === "percentage") {
-    return `${discountValue}% OFF`;
-  }
-
-  if (discountType === "fixed") {
-    return `${property.currency || "NPR"} ${discountValue.toLocaleString()} OFF`;
-  }
-
+  if (discountType === "percentage") return `${discountValue}% OFF`;
+  if (discountType === "fixed") return `NPR ${discountValue.toLocaleString()} OFF`;
   return "";
 }
 
 export default function PropertyCard({
   property,
-  saved,
-  compareOn,
-  heartPop,
-  scalePop,
-  offerExpiry,
-  isOfferActive,
+  saved = false,
+  compareOn = false,
+  heartPop = false,
+  scalePop = false,
+  comparePop = false,
+  offerExpiry = null,
+  isOfferActive = () => false,
   toggleWishlist,
   toggleCompare,
+  onToggleWishlist,
+  onToggleCompare,
+  href,
+  variant = "default",
+  showFeaturedBadge = true,
 }: Props) {
-  const cardType = getCardTypeLabel(property);
+  const isCompact = variant === "compact";
+  const isFeatured = variant === "featured";
+  const comparePulse = scalePop || comparePop;
+
+  const handleWishlistToggle = () => {
+    const fn = (onToggleWishlist || toggleWishlist) as ((id: string) => void) | undefined;
+    if (fn) fn(property._id);
+  };
+
+  const handleCompareToggle = () => {
+    const fn = (onToggleCompare || toggleCompare) as ((id: string) => void) | undefined;
+    if (fn) fn(property._id);
+  };
+
   const listingBadgeLabel = getListingBadgeLabel(property);
   const cardArea = formatCardArea(property);
   const discountBadgeLabel = getDiscountBadgeLabel(property);
+  const displayTitle = toTitleCase(property.title || "Property Listing");
+  const displayPrice = formatNpr(Number(property.price || 0)).replace("NPR", "").trim();
 
   return (
-    <article
-      className="group overflow-hidden rounded-[30px] border border-slate-200/85 bg-white shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition-all duration-300 will-change-transform [transform:translateZ(0)] hover:-translate-y-1.5 hover:border-emerald-200 hover:shadow-[0_30px_90px_rgba(16,185,129,0.14)]"
-      style={{ contentVisibility: "auto", containIntrinsicSize: "520px" }}
-    >
-      <div className="relative flex h-full flex-col">
+    <article className="group mx-auto w-full max-w-[440px] overflow-hidden rounded-[28px] border border-[#e7ece8] bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(15,23,42,0.14)]">
+      <div className="relative">
         <button
           type="button"
-          onClick={() => toggleCompare(property._id)}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            handleCompareToggle();
+          }}
           className={[
-            "absolute right-[4.25rem] top-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full shadow-sm ring-1 backdrop-blur transition-all duration-200 active:scale-95",
-            compareOn
-              ? "bg-slate-900 text-white ring-slate-900"
-              : "bg-white/92 text-slate-700 ring-black/5 hover:bg-white hover:shadow-md",
-            scalePop ? "scale-105" : "",
+            "absolute right-[5.25rem] top-5 z-20 inline-flex size-11 items-center justify-center rounded-full bg-white/90 text-[#1f2937] shadow-md backdrop-blur-md transition-all duration-200 active:scale-95",
+            compareOn ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
+            comparePulse ? "scale-105" : "",
           ].join(" ")}
           aria-label={compareOn ? "Remove from compare" : "Add to compare"}
           title={compareOn ? "Remove from compare" : "Add to compare"}
         >
-          <Scale className={["h-[15px] w-[15px] transition-transform duration-200", scalePop ? "scale-110" : ""].join(" ")} />
+          <Scale className={["h-[18px] w-[18px] transition-transform duration-200", comparePulse ? "scale-110" : ""].join(" ")} />
         </button>
 
         <button
           type="button"
-          onClick={() => toggleWishlist(property._id)}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            handleWishlistToggle();
+          }}
           className={[
-            "absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full shadow-sm ring-1 backdrop-blur transition-all duration-200 active:scale-95",
-            saved
-              ? "bg-emerald-600 text-white ring-emerald-600"
-              : "bg-white/92 text-slate-700 ring-black/5 hover:bg-white hover:shadow-md",
+            "absolute right-5 top-5 z-20 grid size-11 place-items-center rounded-full bg-white/90 text-[#1f2937] shadow-md backdrop-blur-md transition-all duration-200 active:scale-95",
+            saved ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
             heartPop ? "scale-110" : "",
           ].join(" ")}
           aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
@@ -140,40 +156,44 @@ export default function PropertyCard({
         >
           <Heart
             className={[
-                "h-[18px] w-[18px] transition-transform duration-200",
-              saved ? "fill-white" : "",
+              "h-[18px] w-[18px] transition-transform duration-200",
+              saved ? "fill-current" : "",
               heartPop ? "scale-110" : "",
             ].join(" ")}
           />
         </button>
 
-        <Link href={`/buyer/property/${property._id}`} className="block h-full">
-          <div className="relative overflow-hidden">
+        <Link href={href || `/buyer/property/${property._id}`} className="block">
+          <div className="relative aspect-[16/10] overflow-hidden rounded-t-[28px]">
             <img
               src={getPrimaryImage(property)}
               alt={property.title ?? "Property image"}
               loading="lazy"
               decoding="async"
-              className="h-[290px] w-full object-cover transition-transform duration-500 ease-out [transform:translateZ(0)] group-hover:scale-[1.045] sm:h-[320px]"
+              className={`h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
+                isCompact ? "min-h-[210px]" : isFeatured ? "min-h-[245px]" : "min-h-[260px]"
+              }`}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-slate-950/8 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
-            <div className="absolute left-4 top-4 z-20 flex translate-y-0 flex-col gap-2 transition-transform duration-300 group-hover:-translate-y-0.5">
-              <span className="inline-flex min-h-[34px] items-center rounded-full bg-[#F4A100] px-4 text-xs font-extrabold uppercase tracking-[0.08em] text-white shadow-sm">
-                Featured
-              </span>
-              <span className="inline-flex min-h-[34px] items-center rounded-full bg-[#0E9F6E] px-4 text-xs font-extrabold uppercase tracking-[0.08em] text-white shadow-sm">
+            <div className="absolute left-5 top-5 z-20 flex items-center gap-2">
+              {showFeaturedBadge ? (
+                <span className="inline-flex h-7 items-center rounded-full bg-[#eef7f1] px-3 text-[12px] font-medium leading-none text-[#316249]">
+                  Featured
+                </span>
+              ) : null}
+              <span className="inline-flex h-7 items-center rounded-full border border-white/60 bg-white/90 px-3 text-[12px] font-medium leading-none text-[#1f2937]">
                 {listingBadgeLabel}
               </span>
               {discountBadgeLabel ? (
-                <span className="inline-flex min-h-[34px] items-center rounded-full bg-white/92 px-4 text-xs font-extrabold uppercase tracking-[0.08em] text-rose-600 shadow-sm">
+                <span className="inline-flex h-7 items-center rounded-full bg-[#fff1f2] px-3 text-[12px] font-medium leading-none text-[#e11d48]">
                   {discountBadgeLabel}
                 </span>
               ) : null}
             </div>
 
             {isOfferActive(property) ? (
-              <div className="absolute left-4 top-[8.1rem] z-20 hidden transition-transform duration-300 group-hover:-translate-y-0.5 sm:block">
+              <div className="absolute left-3 top-14 z-20 hidden sm:block">
                 <OfferBadge
                   category={property.offerCategory}
                   active={isOfferActive(property)}
@@ -181,94 +201,56 @@ export default function PropertyCard({
                 />
               </div>
             ) : null}
-
-            <div className="absolute bottom-5 left-4 z-20 transition-transform duration-300 group-hover:-translate-y-0.5">
-              <div className="rounded-[22px] bg-white/96 px-5 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.16)] backdrop-blur">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Price
-                </p>
-                <p className="mt-1 text-[1.55rem] font-black tracking-tight text-emerald-600 sm:text-[1.7rem]">
-                  {property.currency} {Number(property.price || 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
           </div>
 
-          <div className="flex h-full flex-col bg-white">
-            <div className="space-y-5 px-6 pb-6 pt-7">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-[12px] font-extrabold uppercase tracking-[0.12em] text-emerald-700 sm:text-[13px]">
-                  {cardType}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.1em] text-[#245BFF] sm:text-[13px]">
-                  <ShieldCheck className="h-[14px] w-[14px]" />
-                  Verified
-                </span>
-              </div>
-
-              <div>
-                <h3 className="line-clamp-2 text-[1.45rem] font-extrabold leading-[1.22] tracking-tight text-emerald-700 sm:text-[1.6rem]">
-                  {property.title || "Property listing"}
-                </h3>
-                <p className="mt-3 flex items-center gap-2 text-[14px] text-slate-500 sm:text-[15px]">
-                  <MapPin className="h-4 w-4 shrink-0 text-emerald-600" />
-                  <span className="truncate">{property.address || property.location}</span>
-                </p>
-              </div>
-
-              {offerExpiry ? (
-                <div
-                  className={[
-                    "inline-flex rounded-full px-3 py-1.5 text-[11px] font-semibold ring-1",
-                    offerExpiry.tone === "emerald"
-                      ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                      : offerExpiry.tone === "amber"
-                        ? "bg-amber-50 text-amber-700 ring-amber-200"
-                        : "bg-rose-50 text-rose-700 ring-rose-200",
-                  ].join(" ")}
-                >
-                  {offerExpiry.text}
-                </div>
-              ) : null}
+          <div className="flex flex-col gap-4 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <h3 className={`line-clamp-1 text-left font-semibold tracking-tight text-[#111827] ${isCompact ? "text-[18px] leading-6" : "text-[20px] leading-7"}`}>
+                {displayTitle}
+              </h3>
+              <span className="inline-flex h-9 shrink-0 items-center rounded-full border border-[#dfe7e2] bg-[#f3f7f4] px-4 text-[14px] font-semibold text-[#111827] transition-colors duration-300 group-hover:bg-[#eef6f0]">
+                NPR {displayPrice}
+              </span>
             </div>
 
-            <div className="grid grid-cols-3 border-y border-slate-200/80 bg-slate-50/40">
-              <div className="flex flex-col items-center justify-center gap-3 px-3 py-5 text-center">
-                <BedDouble className="h-[18px] w-[18px] text-slate-400 transition-colors duration-300 group-hover:text-emerald-500" strokeWidth={1.8} />
-                <div>
-                  <p className="text-[1.05rem] font-extrabold tracking-tight text-slate-900">
-                    {property.beds}
-                  </p>
-                  <p className="mt-1 text-[13px] font-semibold text-slate-600">Beds</p>
-                </div>
-              </div>
+            <p className={`mt-1 flex items-center gap-2 line-clamp-1 text-[15px] font-medium text-neutral-500 ${isCompact ? "text-[14px]" : ""}`}>
+              <MapPin className="h-4 w-4 shrink-0 text-neutral-500" />
+              <span className="truncate">{property.address || property.location}</span>
+            </p>
 
-              <div className="flex flex-col items-center justify-center gap-3 border-x border-slate-200/80 px-3 py-5 text-center">
-                <Bath className="h-[18px] w-[18px] text-slate-400 transition-colors duration-300 group-hover:text-emerald-500" strokeWidth={1.8} />
-                <div>
-                  <p className="text-[1.05rem] font-extrabold tracking-tight text-slate-900">
-                    {property.baths}
-                  </p>
-                  <p className="mt-1 text-[13px] font-semibold text-slate-600">Baths</p>
-                </div>
+            {offerExpiry ? (
+              <div
+                className={[
+                  "mt-3 inline-flex rounded-full px-3 py-1.5 text-[11px] font-semibold ring-1",
+                  offerExpiry.tone === "emerald"
+                    ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                    : offerExpiry.tone === "amber"
+                      ? "bg-amber-50 text-amber-700 ring-amber-200"
+                      : "bg-rose-50 text-rose-700 ring-rose-200",
+                ].join(" ")}
+              >
+                {offerExpiry.text}
               </div>
+            ) : null}
+          </div>
 
-              <div className="flex flex-col items-center justify-center gap-3 px-3 py-5 text-center">
-                <MoveDiagonal2 className="h-[18px] w-[18px] text-slate-400 transition-colors duration-300 group-hover:text-emerald-500" strokeWidth={1.8} />
-                <div>
-                  <p className="text-[1.05rem] font-extrabold tracking-tight text-slate-900">
-                    {cardArea.replace(" sqft", "")}
-                  </p>
-                  <p className="mt-1 text-[13px] font-semibold text-slate-600">
-                    {cardArea.includes("sqft") ? "Sqft" : "Area"}
-                  </p>
-                </div>
+          <div className={`grid grid-cols-3 gap-3 border-t border-[#e5e7eb] bg-white ${isCompact ? "px-4 pb-4 pt-3" : "px-5 pb-4 pt-4"}`}>
+            <div className="px-1">
+              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f7f8f7] px-2.5 text-[13px] font-medium text-[#374151]">
+                <BedDouble className="h-4 w-4 text-[#4b5563]" />
+                {property.beds || 0} bd
               </div>
             </div>
-
-            <div className="px-6 py-6">
-              <div className="flex items-center justify-center rounded-full border-2 border-emerald-600 px-5 py-3 text-center text-[15px] font-bold text-emerald-700 transition-all duration-300 group-hover:border-emerald-700 group-hover:bg-emerald-600 group-hover:text-white group-hover:shadow-[0_14px_30px_rgba(16,185,129,0.25)] sm:text-[16px]">
-                View Details
+            <div className="px-1">
+              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f7f8f7] px-2.5 text-[13px] font-medium text-[#374151]">
+                <Bath className="h-4 w-4 text-[#4b5563]" />
+                {property.baths || 0} ba
+              </div>
+            </div>
+            <div className="px-1">
+              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f7f8f7] px-2.5 text-[13px] font-medium text-[#374151]">
+                <MoveDiagonal2 className="h-4 w-4 text-[#4b5563]" />
+                {cardArea}
               </div>
             </div>
           </div>
