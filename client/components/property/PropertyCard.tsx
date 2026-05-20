@@ -129,7 +129,7 @@ export default function PropertyCard({
             handleCompareToggle();
           }}
           className={[
-            "absolute right-[5.25rem] top-5 z-20 inline-flex size-11 items-center justify-center rounded-full bg-white/90 text-[#1f2937] shadow-md backdrop-blur-md transition-all duration-200 active:scale-95",
+            "absolute right-[5.25rem] top-5 z-20 inline-flex size-11 items-center justify-center rounded-full bg-white/90 text-[#1f2937] shadow-[0_4px_14px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-200 active:scale-95",
             compareOn ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
             comparePulse ? "scale-105" : "",
           ].join(" ")}
@@ -147,7 +147,7 @@ export default function PropertyCard({
             handleWishlistToggle();
           }}
           className={[
-            "absolute right-5 top-5 z-20 grid size-11 place-items-center rounded-full bg-white/90 text-[#1f2937] shadow-md backdrop-blur-md transition-all duration-200 active:scale-95",
+            "absolute right-5 top-5 z-20 grid size-11 place-items-center rounded-full bg-white/90 text-[#1f2937] shadow-[0_4px_14px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-200 active:scale-95",
             saved ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
             heartPop ? "scale-110" : "",
           ].join(" ")}
@@ -178,15 +178,15 @@ export default function PropertyCard({
 
             <div className="absolute left-5 top-5 z-20 flex items-center gap-2">
               {showFeaturedBadge ? (
-                <span className="inline-flex h-7 items-center rounded-full bg-[#eef7f1] px-3 text-[12px] font-medium leading-none text-[#316249]">
+                <span className="inline-flex h-7 items-center rounded-full border border-white/50 bg-white/95 px-3 text-[12px] font-medium leading-none text-[#316249] shadow-sm backdrop-blur-md">
                   Featured
                 </span>
               ) : null}
-              <span className="inline-flex h-7 items-center rounded-full border border-white/60 bg-white/90 px-3 text-[12px] font-medium leading-none text-[#1f2937]">
+              <span className="inline-flex h-7 items-center rounded-full border border-white/50 bg-white/95 px-3 text-[12px] font-medium leading-none text-[#1f2937] shadow-sm backdrop-blur-md">
                 {listingBadgeLabel}
               </span>
               {discountBadgeLabel ? (
-                <span className="inline-flex h-7 items-center rounded-full bg-[#fff1f2] px-3 text-[12px] font-medium leading-none text-[#e11d48]">
+                <span className="inline-flex h-7 items-center rounded-full border border-white/50 bg-white/95 px-3 text-[12px] font-medium leading-none text-[#e11d48] shadow-sm backdrop-blur-md">
                   {discountBadgeLabel}
                 </span>
               ) : null}
@@ -208,13 +208,13 @@ export default function PropertyCard({
               <h3 className={`line-clamp-1 text-left font-semibold tracking-tight text-[#111827] ${isCompact ? "text-[18px] leading-6" : "text-[20px] leading-7"}`}>
                 {displayTitle}
               </h3>
-              <span className="inline-flex h-9 shrink-0 items-center rounded-full border border-[#dfe7e2] bg-[#f3f7f4] px-4 text-[14px] font-semibold text-[#111827] transition-colors duration-300 group-hover:bg-[#eef6f0]">
+              <span className="inline-flex h-9 shrink-0 items-center rounded-full border border-[#d7e2db] bg-[#f4f7f4] px-4 text-[13.5px] font-semibold text-[#111827] transition-colors duration-300 group-hover:bg-[#eef6f0]">
                 NPR {displayPrice}
               </span>
             </div>
 
-            <p className={`mt-1 flex items-center gap-2 line-clamp-1 text-[15px] font-medium text-neutral-500 ${isCompact ? "text-[14px]" : ""}`}>
-              <MapPin className="h-4 w-4 shrink-0 text-neutral-500" />
+            <p className={`mt-1 flex items-center gap-2 line-clamp-1 text-[15px] font-medium text-[#111827] ${isCompact ? "text-[14px]" : ""}`}>
+              <MapPin className="h-4 w-4 shrink-0 text-[#111827]" />
               <span className="truncate">{property.address || property.location}</span>
             </p>
 
@@ -236,20 +236,20 @@ export default function PropertyCard({
 
           <div className={`grid grid-cols-3 gap-3 border-t border-[#e5e7eb] bg-white ${isCompact ? "px-4 pb-4 pt-3" : "px-5 pb-4 pt-4"}`}>
             <div className="px-1">
-              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f7f8f7] px-2.5 text-[13px] font-medium text-[#374151]">
-                <BedDouble className="h-4 w-4 text-[#4b5563]" />
+              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f6f7f6] px-2.5 text-[13px] font-medium text-[#374151]">
+                <BedDouble className="h-4 w-4 text-[#111827]" />
                 {property.beds || 0} bd
               </div>
             </div>
             <div className="px-1">
-              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f7f8f7] px-2.5 text-[13px] font-medium text-[#374151]">
-                <Bath className="h-4 w-4 text-[#4b5563]" />
+              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f6f7f6] px-2.5 text-[13px] font-medium text-[#374151]">
+                <Bath className="h-4 w-4 text-[#111827]" />
                 {property.baths || 0} ba
               </div>
             </div>
             <div className="px-1">
-              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f7f8f7] px-2.5 text-[13px] font-medium text-[#374151]">
-                <MoveDiagonal2 className="h-4 w-4 text-[#4b5563]" />
+              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f6f7f6] px-2.5 text-[13px] font-medium text-[#374151]">
+                <MoveDiagonal2 className="h-4 w-4 text-[#111827]" />
                 {cardArea}
               </div>
             </div>

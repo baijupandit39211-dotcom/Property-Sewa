@@ -1012,13 +1012,13 @@ function SearchPropertiesPageContent() {
         )}
 
         {!error && !loading && items.length > 0 && (
-          <section className="ps-fade-up rounded-3xl border border-[#E5E7EB] bg-white shadow-sm">
+          <section className="ps-fade-up rounded-3xl border border-[#e5ece7] bg-[#f8faf8] shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#618975]">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600">
                   Navigation
                 </p>
-                <p className="mt-1 text-sm text-[#618975]">
+                <p className="mt-1 text-sm text-neutral-600">
                   Total results <span className="font-bold text-[#0D1C12]">{total}</span>
                 </p>
               </div>
@@ -1028,12 +1028,12 @@ function SearchPropertiesPageContent() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="inline-flex items-center justify-center rounded-xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-sm font-semibold text-[#0D1C12] shadow-sm transition hover:bg-[#EEF8EB] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-sm font-semibold text-neutral-600 shadow-sm transition hover:bg-[#EEF8EB] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Previous
                 </button>
 
-                <div className="rounded-2xl bg-[#EEF8EB] px-3.5 py-2 text-sm font-semibold text-[#0D1C12] ring-1 ring-[#D1D5DB]">
+                <div className="rounded-2xl bg-white px-3.5 py-2 text-sm font-semibold text-neutral-600 ring-1 ring-[#D1D5DB]">
                   Page {page} of {totalPages}
                 </div>
 
