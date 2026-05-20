@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import {
@@ -38,6 +38,14 @@ export default function BuyerMessagesPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const sortedLeads = useMemo(
+    () =>
+      [...leads].sort(
+        (left, right) =>
+          new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+      ),
+    [leads]
+  );
 
   useEffect(() => {
     const fetchInquiries = async () => {
@@ -261,7 +269,7 @@ export default function BuyerMessagesPage() {
             </div>
           ) : (
             <div className="space-y-4 px-6 py-6">
-              {leads.map((lead) => {
+              {sortedLeads.map((lead) => {
                 const displayStatus = getDisplayStatus(lead);
                 return (
                   <button
@@ -301,9 +309,13 @@ export default function BuyerMessagesPage() {
                         </div>
 
                         <div className="flex flex-col items-start gap-3 lg:items-end">
-                          <div className="inline-flex items-center gap-2 rounded-full bg-[#E8F2EB] px-3 py-1.5 text-xs font-semibold text-[#618975]">
+                          <div className="inline-flex items-center gap-2 rounded-full bg-[#EEF8EB] px-3 py-1.5 text-xs font-semibold text-[#316249] ring-1 ring-[#D1D5DB]">
                             <Calendar className="h-3.5 w-3.5" />
-                            {new Date(lead.createdAt).toLocaleDateString()}
+                            Last activity {new Date(lead.createdAt).toLocaleDateString()}{" "}
+                            {new Date(lead.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </div>
                           <div className="inline-flex items-center gap-2 text-sm font-semibold text-[#316249]">
                             Open thread

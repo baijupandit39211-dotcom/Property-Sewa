@@ -11,8 +11,10 @@ import { typography } from "../../lib/typography";
 import type { Property } from "../../lib/property.types";
 import { useBuyerAuth } from "@/app/buyer/BuyerAuthContext";
 import {
+  addWishlistIdToCache,
   BUYER_CACHE_KEYS,
   readFreshBuyerCache,
+  removeWishlistIdFromCache,
   writeBuyerCache,
 } from "@/app/buyer/prefetchCache";
 import {
@@ -24,11 +26,11 @@ import {
   PageSearchBar,
   RecentSearchesCard,
   SectionHeading,
-  Toast,
   UpcomingVisitsCard,
   firstName,
 } from "./dashboard-ui";
 import PropertyCard from "@/components/property/PropertyCard";
+import BuyerToast, { showBuyerToast, type BuyerToastState } from "@/app/buyer/_components/BuyerToast";
 
 
 type ListResponse = {
@@ -36,7 +38,6 @@ type ListResponse = {
   items: Property[];
 };
 
-type ToastState = { show: boolean; text: string };
 type DashboardMessageItem = { sender: string; body: string; time: string };
 
 const BRAND = "#316249";
@@ -95,7 +96,7 @@ export default function BuyerDashboardPage() {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [messageItems, setMessageItems] = useState<DashboardMessageItem[]>([]);
   const [searchText, setSearchText] = useState("");
-  const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
+  const [toast, setToast] = useState<BuyerToastState>({ show: false, text: "", tone: "success" });
   const [wishPopIds, setWishPopIds] = useState<Record<string, boolean>>({});
   const [comparePopIds, setComparePopIds] = useState<Record<string, boolean>>({});
   const toastTimer = useRef<number | null>(null);
@@ -264,8 +265,9 @@ export default function BuyerDashboardPage() {
   const wishlistSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const compareSet = useMemo(() => new Set(compareIds), [compareIds]);
 
-  function showToast(text: string) {
-    setToast({ show: true, text });
+  function showToast(text: string, tone: BuyerToastState["tone"] = "success") {
+    const next = showBuyerToast({ tone, fallbackText: text });
+    setToast({ show: true, text: next.text, tone: next.tone });
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => {
       setToast((current) => ({ ...current, show: false }));
@@ -294,6 +296,7 @@ export default function BuyerDashboardPage() {
         await apiFetch(`/wishlist/${id}`, { method: "DELETE" });
         const next = wishlistIds.filter((x) => x !== id);
         setWishlistIds(next);
+        removeWishlistIdFromCache(id);
         showToast("Removed from wishlist");
         return;
       }
@@ -305,6 +308,7 @@ export default function BuyerDashboardPage() {
 
       const next = [id, ...wishlistIds];
       setWishlistIds(next);
+      addWishlistIdToCache(id);
       showToast("Saved to wishlist");
       pop(id, setWishPopIds);
     } catch (error) {
@@ -324,7 +328,7 @@ export default function BuyerDashboardPage() {
     }
 
     if (compareIds.length >= MAX_COMPARE) {
-      showToast(`Compare is full (${MAX_COMPARE}/${MAX_COMPARE})`);
+      showToast(`Compare is full (${MAX_COMPARE}/${MAX_COMPARE})`, "warning");
       return;
     }
 
@@ -405,7 +409,7 @@ export default function BuyerDashboardPage() {
 
   return (
     <motion.main initial="hidden" animate="show" variants={pageEnter} className={`min-w-0 ${PAGE_BG}`}>
-      <Toast show={toast.show} text={toast.text} />
+      <BuyerToast show={toast.show} text={toast.text} tone={toast.tone} />
 
       <div className="mx-auto max-w-7xl rounded-[28px] border border-[#E5E7EB] bg-white/70 px-4 py-4 shadow-[0_20px_50px_rgba(13,28,18,0.06)] backdrop-blur-[1px] sm:px-6 lg:px-8 lg:py-7">
         <PageSearchBar

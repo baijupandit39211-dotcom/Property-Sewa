@@ -81,6 +81,15 @@ function getDiscountBadgeLabel(property: Property) {
   return "";
 }
 
+/**
+ * PropertyCard visual contract (single source of truth):
+ * - Variants are density-only (`default` | `compact` | `featured`), never alternate designs.
+ * - Shared hierarchy: image -> title -> price pill -> location -> feature pills.
+ * - Compact rules: max 2 badges, smaller action buttons/pill sizes, shorter image, tighter feature row.
+ * - Contrast tokens:
+ *   primary text #111827, secondary #374151/#4B5563, muted metadata #6B7280/neutral-600.
+ * Keep interaction semantics unchanged: button stopPropagation/preventDefault + parent link navigation.
+ */
 export default function PropertyCard({
   property,
   saved = false,
@@ -132,6 +141,7 @@ export default function PropertyCard({
           className={[
             `absolute ${isCompact ? "right-[4.5rem]" : "right-[5.25rem]"} top-5 z-20 inline-flex ${isCompact ? "size-10" : "size-11"} items-center justify-center rounded-full bg-white/90 text-[#1f2937] shadow-[0_4px_14px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-200 active:scale-95`,
             compareOn ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249] focus-visible:ring-offset-2",
             comparePulse ? "scale-105" : "",
           ].join(" ")}
           aria-label={compareOn ? "Remove from compare" : "Add to compare"}
@@ -150,6 +160,7 @@ export default function PropertyCard({
           className={[
             `absolute right-5 top-5 z-20 grid ${isCompact ? "size-10" : "size-11"} place-items-center rounded-full bg-white/90 text-[#1f2937] shadow-[0_4px_14px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-200 active:scale-95`,
             saved ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249] focus-visible:ring-offset-2",
             heartPop ? "scale-110" : "",
           ].join(" ")}
           aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
@@ -164,7 +175,10 @@ export default function PropertyCard({
           />
         </button>
 
-        <Link href={href || `/buyer/property/${property._id}`} className="block">
+        <Link
+          href={href || `/buyer/property/${property._id}`}
+          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249] focus-visible:ring-offset-2"
+        >
           <div className="relative aspect-[16/10] overflow-hidden rounded-t-[28px]">
             <img
               src={getPrimaryImage(property)}

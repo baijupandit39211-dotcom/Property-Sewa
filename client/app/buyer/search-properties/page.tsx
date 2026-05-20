@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
+  Bell,
+  BookmarkPlus,
   ChevronDown,
   Search,
   SlidersHorizontal,
@@ -14,6 +16,7 @@ import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
 import PropertyCard from "@/components/property/PropertyCard";
 import { addWishlistIdToCache, removeWishlistIdFromCache } from "@/app/buyer/prefetchCache";
+import BuyerToast, { showBuyerToast, type BuyerToastState } from "@/app/buyer/_components/BuyerToast";
 
 type ListResponse = {
   items: Property[];
@@ -41,6 +44,23 @@ function isOfferActive(property: Property) {
 
 const COMPARE_KEY = "property-sewa:compare:v1";
 const MAX_COMPARE = 2;
+const SAVED_SEARCHES_KEY = "buyer_saved_searches_v1";
+
+type SavedSearch = {
+  id: string;
+  name: string;
+  filters: {
+    search: string;
+    location: string;
+    listingType: string;
+    minPrice: string;
+    maxPrice: string;
+    sort: string;
+    showOnlyOffers: boolean;
+  };
+  alertsEnabled: boolean;
+  updatedAt: string;
+};
 
 function readIds(key: string): string[] {
   try {
@@ -58,22 +78,6 @@ function writeIds(key: string, ids: string[]) {
   localStorage.setItem(key, JSON.stringify({ ids }));
 }
 
-type ToastState = { show: boolean; text: string };
-
-function Toast({ show, text }: { show: boolean; text: string }) {
-  return (
-    <div
-      className={[
-        "fixed right-4 top-4 z-[9999] transition-all duration-200 sm:right-6 sm:top-6",
-        show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
-      ].join(" ")}
-    >
-      <div className="rounded-2xl bg-[#316249] px-4 py-3 text-sm font-semibold text-white shadow-md ring-1 ring-white/10">
-        {text}
-      </div>
-    </div>
-  );
-}
 
 function EmptyState({ onResetFilters }: { onResetFilters: () => void }) {
   return (
@@ -300,8 +304,10 @@ function SearchPropertiesPageContent() {
 
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
+  const [savedSearchName, setSavedSearchName] = useState("");
 
-  const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
+  const [toast, setToast] = useState<BuyerToastState>({ show: false, text: "", tone: "success" });
   const toastTimer = useRef<number | null>(null);
 
   const [poppingIds, setPoppingIds] = useState<Record<string, boolean>>({});
@@ -365,6 +371,11 @@ function SearchPropertiesPageContent() {
 
   useEffect(() => {
     setCompareIds(readIds(COMPARE_KEY));
+    try {
+      const raw = localStorage.getItem(SAVED_SEARCHES_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) setSavedSearches(parsed);
+    } catch {}
 
     (async () => {
       try {
@@ -545,8 +556,9 @@ function SearchPropertiesPageContent() {
   const showInitialSkeleton = loading && items.length === 0 && !error;
   const showRefreshingSkeleton = loading && items.length > 0 && !error;
 
-  function showToast(text: string) {
-    setToast({ show: true, text });
+  function showToast(text: string, tone: BuyerToastState["tone"] = "success") {
+    const next = showBuyerToast({ tone, fallbackText: text });
+    setToast({ show: true, text: next.text, tone: next.tone });
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => {
       setToast((t) => ({ ...t, show: false }));
@@ -582,6 +594,67 @@ function SearchPropertiesPageContent() {
     setMaxPrice("");
     setSort("");
     setPage(1);
+  }
+
+  function persistSavedSearches(next: SavedSearch[]) {
+    setSavedSearches(next);
+    try {
+      localStorage.setItem(SAVED_SEARCHES_KEY, JSON.stringify(next));
+    } catch {}
+  }
+
+  function saveCurrentSearch() {
+    const currentFilters = {
+      search: search.trim(),
+      location: location.trim(),
+      listingType,
+      minPrice,
+      maxPrice,
+      sort,
+      showOnlyOffers,
+    };
+    const hasAnyFilter = Object.values(currentFilters).some((value) =>
+      typeof value === "boolean" ? value : Boolean(String(value).trim())
+    );
+
+    if (!hasAnyFilter) {
+      showToast("Apply filters before saving search");
+      return;
+    }
+
+    const nextName = savedSearchName.trim() || `Search ${savedSearches.length + 1}`;
+    const next: SavedSearch = {
+      id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      name: nextName,
+      filters: currentFilters,
+      alertsEnabled: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const merged = [next, ...savedSearches].slice(0, 8);
+    persistSavedSearches(merged);
+    setSavedSearchName("");
+    showToast("Search saved");
+  }
+
+  function applySavedSearch(saved: SavedSearch) {
+    setSearch(saved.filters.search);
+    setLocation(saved.filters.location);
+    setListingType(saved.filters.listingType);
+    setMinPrice(saved.filters.minPrice);
+    setMaxPrice(saved.filters.maxPrice);
+    setSort(saved.filters.sort);
+    setShowOnlyOffers(saved.filters.showOnlyOffers);
+    setPage(1);
+    showToast(`Applied ${saved.name}`);
+  }
+
+  function toggleSavedSearchAlert(id: string) {
+    const next = savedSearches.map((saved) =>
+      saved.id === id ? { ...saved, alertsEnabled: !saved.alertsEnabled, updatedAt: new Date().toISOString() } : saved
+    );
+    persistSavedSearches(next);
+    showToast("Saved search alert updated");
   }
 
   function removeFilter(key: ActiveFilter["key"]) {
@@ -651,7 +724,7 @@ function SearchPropertiesPageContent() {
     }
 
     if (compareIds.length >= MAX_COMPARE) {
-      showToast(`Compare is full (${MAX_COMPARE}/${MAX_COMPARE})`);
+      showToast(`Compare is full (${MAX_COMPARE}/${MAX_COMPARE})`, "warning");
       return;
     }
 
@@ -664,7 +737,7 @@ function SearchPropertiesPageContent() {
 
   return (
     <main className="min-h-screen w-full min-w-0 bg-[#F7FCFA] px-4 py-4 [text-rendering:optimizeLegibility] sm:px-6 sm:py-6">
-      <Toast show={toast.show} text={toast.text} />
+      <BuyerToast show={toast.show} text={toast.text} tone={toast.tone} />
 
       <div className="mx-auto max-w-7xl space-y-4">
         <section className="ps-fade-up overflow-hidden rounded-[32px] border border-[#D1D5DB]/80 bg-[linear-gradient(115deg,#0d2f29_0%,#165537_38%,#5f966f_72%,#c9ddd2_100%)] px-6 py-6 text-white shadow-[0_22px_56px_rgba(13,28,18,0.10)] sm:px-8 sm:py-7">
@@ -852,6 +925,50 @@ function SearchPropertiesPageContent() {
                   ) : (
                     <span className="text-sm text-[#618975]">No active filters</span>
                   )}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white px-2 py-1 ring-1 ring-[#D1D5DB]">
+                    <input
+                      value={savedSearchName}
+                      onChange={(event) => setSavedSearchName(event.target.value)}
+                      placeholder="Saved search name"
+                      className="w-36 bg-transparent px-2 text-xs text-[#0D1C12] outline-none placeholder:text-[#618975]"
+                    />
+                    <button
+                      type="button"
+                      onClick={saveCurrentSearch}
+                      className="inline-flex items-center gap-1 rounded-full bg-[#316249] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#28513D]"
+                    >
+                      <BookmarkPlus className="h-3.5 w-3.5" />
+                      Save
+                    </button>
+                  </div>
+
+                  {savedSearches.map((saved) => (
+                    <div key={saved.id} className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 ring-1 ring-[#D1D5DB]">
+                      <button
+                        type="button"
+                        onClick={() => applySavedSearch(saved)}
+                        className="rounded-full px-2 py-1 text-xs font-semibold text-[#316249] transition hover:bg-[#EEF8EB]"
+                        title={`Apply ${saved.name}`}
+                      >
+                        {saved.name}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSavedSearchAlert(saved.id)}
+                        className={[
+                          "inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold transition",
+                          saved.alertsEnabled ? "bg-[#EEF8EB] text-[#316249]" : "text-[#618975] hover:bg-[#F7FCFA]",
+                        ].join(" ")}
+                        title={saved.alertsEnabled ? "Alerts enabled" : "Alerts disabled"}
+                      >
+                        <Bell className="mr-1 h-3.5 w-3.5" />
+                        {saved.alertsEnabled ? "On" : "Off"}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 

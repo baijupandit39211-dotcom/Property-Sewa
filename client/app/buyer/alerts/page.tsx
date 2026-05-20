@@ -20,6 +20,7 @@ import {
 
 import { apiFetch } from "../../lib/api";
 import type { Property } from "../../lib/property.types";
+import BuyerToast, { showBuyerToast, type BuyerToastState } from "@/app/buyer/_components/BuyerToast";
 
 /** =========================
  * Types
@@ -42,7 +43,20 @@ type AlertRule = {
   createdAt: number;
 };
 
-type ToastState = { show: boolean; text: string };
+type SavedSearchAlert = {
+  id: string;
+  name: string;
+  alertsEnabled?: boolean;
+  filters?: {
+    search?: string;
+    location?: string;
+    listingType?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    sort?: string;
+    showOnlyOffers?: boolean;
+  };
+};
 
 type TabKey = "all" | "alerts" | "visits" | "offers";
 
@@ -63,6 +77,7 @@ type NotificationItem = {
 const ALERTS_KEY = "property-sewa:alerts:v1";
 const LAST_SEEN_KEY = "property-sewa:alerts:lastSeen:v1"; // per-alert seen property IDs
 const NOTIF_SEEN_KEY = "property-sewa:notifs:seen:v1"; // notification ids read/unread
+const SAVED_SEARCHES_KEY = "buyer_saved_searches_v1";
 
 /** =========================
  * Utils
@@ -157,21 +172,6 @@ function matchesAlert(p: Property, a: AlertRule) {
 /** =========================
  * UI bits
  * ========================= */
-function Toast({ show, text }: { show: boolean; text: string }) {
-  return (
-    <div
-      className={[
-        "fixed right-6 top-6 z-[9999] transition-all duration-200",
-        show ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none",
-      ].join(" ")}
-    >
-      <div className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-white/10">
-        {text}
-      </div>
-    </div>
-  );
-}
-
 function Modal({
   open,
   title,
@@ -235,8 +235,9 @@ export default function BuyerAlertsPage() {
 
   // UI state
   const [tab, setTab] = useState<TabKey>("all");
-  const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
+  const [toast, setToast] = useState<BuyerToastState>({ show: false, text: "", tone: "success" });
   const toastTimer = useRef<number | null>(null);
+  const [savedSearchAlerts, setSavedSearchAlerts] = useState<SavedSearchAlert[]>([]);
 
   // modals
   const [openCreate, setOpenCreate] = useState(false);
@@ -250,8 +251,9 @@ export default function BuyerAlertsPage() {
   const [minBaths, setMinBaths] = useState<number | "">("");
   const [minSqft, setMinSqft] = useState<number | "">("");
 
-  function showToast(text: string) {
-    setToast({ show: true, text });
+  function showToast(text: string, tone: BuyerToastState["tone"] = "success") {
+    const next = showBuyerToast({ tone, fallbackText: text });
+    setToast({ show: true, text: next.text, tone: next.tone });
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => {
       setToast((t) => ({ ...t, show: false }));
@@ -278,6 +280,13 @@ export default function BuyerAlertsPage() {
 
   useEffect(() => {
     refresh();
+    try {
+      const raw = localStorage.getItem(SAVED_SEARCHES_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) setSavedSearchAlerts(parsed);
+    } catch {
+      setSavedSearchAlerts([]);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -460,7 +469,7 @@ export default function BuyerAlertsPage() {
 
   return (
     <main className="w-full min-w-0 px-10 py-8">
-      <Toast show={toast.show} text={toast.text} />
+      <BuyerToast show={toast.show} text={toast.text} tone={toast.tone} />
 
       {/* Top actions row (small, modern) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -519,6 +528,39 @@ export default function BuyerAlertsPage() {
       </div>
 
       {/* Tabs (Figma-like) */}
+      {savedSearchAlerts.length ? (
+        <div className="mt-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
+          <div className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Saved Search Alerts
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {savedSearchAlerts.map((saved) => {
+              const params = new URLSearchParams();
+              if (saved.filters?.search) params.set("search", saved.filters.search);
+              if (saved.filters?.location) params.set("location", saved.filters.location);
+              if (saved.filters?.listingType) params.set("listingType", saved.filters.listingType);
+              if (saved.filters?.minPrice) params.set("minPrice", saved.filters.minPrice);
+              if (saved.filters?.maxPrice) params.set("maxPrice", saved.filters.maxPrice);
+              if (saved.filters?.sort) params.set("sort", saved.filters.sort);
+              if (saved.filters?.showOnlyOffers) params.set("offersOnly", "true");
+              const href = `/buyer/search-properties${params.toString() ? `?${params.toString()}` : ""}`;
+              return (
+                <a
+                  key={saved.id}
+                  href={href}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#EEF8EB] px-3 py-1.5 text-xs font-semibold text-[#316249] ring-1 ring-[#D1D5DB] transition hover:bg-[#E8F2EB]"
+                >
+                  {saved.name}
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#316249] ring-1 ring-[#D1D5DB]">
+                    {saved.alertsEnabled ? "Alert On" : "Alert Off"}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-6 border-b border-slate-200">
         <div className="flex flex-wrap items-end gap-6">
           <TabButton active={tab === "all"} onClick={() => setTab("all")}>

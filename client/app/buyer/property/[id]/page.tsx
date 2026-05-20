@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import { addWishlistIdToCache, removeWishlistIdFromCache } from "@/app/buyer/prefetchCache";
+import BuyerToast, { type BuyerToastState } from "@/app/buyer/_components/BuyerToast";
 import {
   getReservationExpiresAt,
   getReservationOwnerId,
@@ -185,7 +186,7 @@ function isOfferActive(value: any) {
   return value === true || String(value).toLowerCase() === "true";
 }
 
-type ToastState = { show: boolean; text: string };
+type ToastState = BuyerToastState;
 type PropertyVisitStatus = {
   _id: string;
   status: "requested" | "confirmed" | "rescheduled" | "rejected" | "cancelled" | "completed" | "no_show";
@@ -195,21 +196,6 @@ type PropertyVisitStatus = {
   actualTime?: string;
   sellerNote?: string;
 };
-
-function Toast({ show, text }: ToastState) {
-  return (
-    <div
-      className={[
-        "fixed right-6 top-6 z-[9999] transition-all duration-200",
-        show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
-      ].join(" ")}
-    >
-      <div className="rounded-2xl bg-emerald-600/95 px-4 py-3 text-base font-bold text-white shadow-lg ring-1 ring-emerald-300/50">
-        {text}
-      </div>
-    </div>
-  );
-}
 
 function BuyerPropertyDetailsView({
   property,
@@ -779,7 +765,7 @@ function BuyerPropertyDetailsView({
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] px-4 py-5 sm:px-6 lg:px-8">
-      <Toast show={toast.show} text={toast.text} />
+      <BuyerToast show={toast.show} text={toast.text} tone={toast.tone} />
       <div className="mx-auto max-w-7xl">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-slate-800">

@@ -22,8 +22,8 @@ import {
   readFreshBuyerCache,
   writeBuyerCache,
 } from "@/app/buyer/prefetchCache";
+import BuyerToast, { showBuyerToast, type BuyerToastState } from "@/app/buyer/_components/BuyerToast";
 
-type ToastState = { show: boolean; text: string };
 type WishlistItem = { propertyId: Property | null };
 type ListResponse = { items: WishlistItem[] };
 
@@ -58,24 +58,6 @@ function readCompareIds(): string[] {
 function writeCompareIds(ids: string[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(COMPARE_KEY, JSON.stringify({ ids: ids.slice(0, MAX_COMPARE) }));
-}
-
-function Toast({ show, text }: { show: boolean; text: string }) {
-  return (
-    <div
-      className={[
-        "fixed right-5 top-5 z-[9999] transition-all duration-200 sm:right-6 sm:top-6",
-        show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
-      ].join(" ")}
-    >
-      <div
-        className="rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-xl"
-        style={{ backgroundColor: THEME.primary }}
-      >
-        {text}
-      </div>
-    </div>
-  );
 }
 
 function EmptyState() {
@@ -119,16 +101,21 @@ export default function BuyerWishlistPage() {
   const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"latest" | "price_asc" | "price_desc">("latest");
+  const [listingFilter, setListingFilter] = useState<"all" | "sale" | "rent">("all");
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
+  const [toast, setToast] = useState<BuyerToastState>({ show: false, text: "", tone: "success" });
 
   const toastTimer = useRef<number | null>(null);
 
   const wishlistSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const compareSet = useMemo(() => new Set(compareIds), [compareIds]);
 
-  function showToast(text: string) {
-    setToast({ show: true, text });
+  function showToast(text: string, tone: BuyerToastState["tone"] = "success") {
+    const next = showBuyerToast({ tone, fallbackText: text });
+    setToast({ show: true, text: next.text, tone: next.tone });
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => {
       setToast((current) => ({ ...current, show: false }));
@@ -192,26 +179,78 @@ export default function BuyerWishlistPage() {
 
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return savedItems;
+    let base = savedItems;
 
-    return savedItems.filter((property) => {
-      const haystack = [
-        property.title,
-        property.address,
-        property.location,
-        property.currency,
-        String(property.price ?? ""),
-        String(property.beds ?? ""),
-        String(property.baths ?? ""),
-        String(property.sqft ?? ""),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+    if (listingFilter !== "all") {
+      base = base.filter((property) => {
+        const type = String((property as any).listingType || "").toLowerCase();
+        if (listingFilter === "sale") return type === "buy" || type === "sale";
+        return type === "rent";
+      });
+    }
 
-      return haystack.includes(query);
+    let searched = base;
+    if (query) {
+      searched = base.filter((property) => {
+        const haystack = [
+          property.title,
+          property.address,
+          property.location,
+          property.currency,
+          String(property.price ?? ""),
+          String(property.beds ?? ""),
+          String(property.baths ?? ""),
+          String(property.sqft ?? ""),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(query);
+      });
+    }
+
+    const sorted = [...searched].sort((left, right) => {
+      if (sortBy === "price_asc") return Number(left.price || 0) - Number(right.price || 0);
+      if (sortBy === "price_desc") return Number(right.price || 0) - Number(left.price || 0);
+      return 0;
     });
-  }, [savedItems, searchQuery]);
+
+    return sorted;
+  }, [savedItems, searchQuery, sortBy, listingFilter]);
+
+  async function removeSelected() {
+    if (!selectedIds.length) {
+      showToast("Select properties to remove", "warning");
+      return;
+    }
+
+    const prevIds = wishlistIds;
+    const prevProperties = allProperties;
+    const removeSet = new Set(selectedIds);
+    const nextIds = wishlistIds.filter((id) => !removeSet.has(id));
+    const nextProperties = allProperties.filter((property) => !removeSet.has(property._id));
+
+    setWishlistIds(nextIds);
+    setAllProperties(nextProperties);
+    setSelectedIds([]);
+    showToast("Removing selected...");
+
+    try {
+      await Promise.all(selectedIds.map((id) => apiFetch(`/wishlist/${id}`, { method: "DELETE" })));
+      selectedIds.forEach((id) => removeWishlistIdFromCache(id));
+      showToast("Selected removed");
+    } catch (e) {
+      console.error(e);
+      setWishlistIds(prevIds);
+      setAllProperties(prevProperties);
+      showToast("Failed to remove selected", "error");
+    }
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]));
+  }
 
   async function removeOne(id: string) {
     try {
@@ -243,7 +282,7 @@ export default function BuyerWishlistPage() {
     }
 
     if (compareIds.length >= MAX_COMPARE) {
-      showToast(`Compare is full (${MAX_COMPARE}/${MAX_COMPARE})`);
+      showToast(`Compare is full (${MAX_COMPARE}/${MAX_COMPARE})`, "warning");
       return;
     }
 
@@ -261,7 +300,7 @@ export default function BuyerWishlistPage() {
           "radial-gradient(circle at top left, rgba(49,98,73,0.12), transparent 24%), radial-gradient(circle at top right, rgba(49,98,73,0.06), transparent 22%), linear-gradient(180deg, #F7FCFA 0%, #EEF8EB 100%)",
       }}
     >
-      <Toast show={toast.show} text={toast.text} />
+      <BuyerToast show={toast.show} text={toast.text} tone={toast.tone} />
 
       <div className="mx-auto max-w-7xl">
         <div
@@ -349,6 +388,47 @@ export default function BuyerWishlistPage() {
                 >
                   Compare {compareIds.length}/{MAX_COMPARE}
                 </div>
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value as "latest" | "price_asc" | "price_desc")}
+                  className="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-semibold outline-none"
+                  style={{ color: THEME.text }}
+                >
+                  <option value="latest">Latest</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                </select>
+                <select
+                  value={listingFilter}
+                  onChange={(event) => setListingFilter(event.target.value as "all" | "sale" | "rent")}
+                  className="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-semibold outline-none"
+                  style={{ color: THEME.text }}
+                >
+                  <option value="all">All Types</option>
+                  <option value="sale">For Sale</option>
+                  <option value="rent">For Rent</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkMode((current) => !current);
+                    setSelectedIds([]);
+                  }}
+                  className="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-semibold transition hover:bg-[#EEF8EB]"
+                  style={{ color: THEME.text }}
+                >
+                  {bulkMode ? "Exit Bulk" : "Bulk Remove"}
+                </button>
+                {bulkMode ? (
+                  <button
+                    type="button"
+                    onClick={removeSelected}
+                    className="rounded-full px-4 py-2 text-sm font-semibold text-white transition"
+                    style={{ backgroundColor: THEME.primary }}
+                  >
+                    Remove Selected ({selectedIds.length})
+                  </button>
+                ) : null}
               </div>
             </div>
 
@@ -491,14 +571,27 @@ export default function BuyerWishlistPage() {
                         transition={{ duration: 0.18 }}
                         className="h-full"
                       >
-                        <PropertyCard
-                          property={property}
-                          variant="default"
-                          saved={wishlistSet.has(property._id)}
-                          onToggleWishlist={removeOne}
-                          compareOn={compareOn}
-                          onToggleCompare={toggleCompare}
-                        />
+                        <div className="relative">
+                          {bulkMode ? (
+                            <label className="absolute left-3 top-3 z-30 inline-flex items-center gap-2 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#0D1C12] ring-1 ring-[#D1D5DB]">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.includes(property._id)}
+                                onChange={() => toggleSelect(property._id)}
+                                className="h-3.5 w-3.5 accent-[#316249]"
+                              />
+                              Select
+                            </label>
+                          ) : null}
+                          <PropertyCard
+                            property={property}
+                            variant="default"
+                            saved={wishlistSet.has(property._id)}
+                            onToggleWishlist={removeOne}
+                            compareOn={compareOn}
+                            onToggleCompare={toggleCompare}
+                          />
+                        </div>
                       </motion.div>
                     );
                   })}
@@ -528,14 +621,27 @@ export default function BuyerWishlistPage() {
                           transition={{ duration: 0.18 }}
                           className="h-full"
                         >
-                          <PropertyCard
-                            property={property}
-                            variant="default"
-                            saved={wishlistSet.has(property._id)}
-                            onToggleWishlist={removeOne}
-                            compareOn={compareOn}
-                            onToggleCompare={toggleCompare}
-                          />
+                          <div className="relative">
+                            {bulkMode ? (
+                              <label className="absolute left-3 top-3 z-30 inline-flex items-center gap-2 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#0D1C12] ring-1 ring-[#D1D5DB]">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.includes(property._id)}
+                                  onChange={() => toggleSelect(property._id)}
+                                  className="h-3.5 w-3.5 accent-[#316249]"
+                                />
+                                Select
+                              </label>
+                            ) : null}
+                            <PropertyCard
+                              property={property}
+                              variant="default"
+                              saved={wishlistSet.has(property._id)}
+                              onToggleWishlist={removeOne}
+                              compareOn={compareOn}
+                              onToggleCompare={toggleCompare}
+                            />
+                          </div>
                         </motion.div>
                       );
                     })}

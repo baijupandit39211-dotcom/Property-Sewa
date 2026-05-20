@@ -26,6 +26,7 @@ import {
   readFreshBuyerCache,
   writeBuyerCache,
 } from "@/app/buyer/prefetchCache";
+import BuyerToast, { showBuyerToast, type BuyerToastState } from "@/app/buyer/_components/BuyerToast";
 
 type PropertyListResponse = { items: Property[] };
 type WishlistResponse = { items: Array<{ propertyId?: string | { _id?: string } }> };
@@ -159,25 +160,6 @@ function getMessageHref(propertyId: string, leadId?: string) {
   return leadId ? `/buyer/messages/${leadId}` : `/buyer/property/${propertyId}`;
 }
 
-type ToastState = { show: boolean; text: string };
-
-function Toast({ show, text }: { show: boolean; text: string }) {
-  return (
-    <div
-      className={[
-        "fixed right-5 top-5 z-[9999] transition-all duration-200 sm:right-6 sm:top-6",
-        show ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
-      ].join(" ")}
-    >
-      <div
-        className="rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-xl"
-        style={{ backgroundColor: THEME.primary }}
-      >
-        {text}
-      </div>
-    </div>
-  );
-}
 
 function EmptyState() {
   return (
@@ -227,13 +209,14 @@ export default function BuyerComparePage() {
   const [showDifferencesOnly, setShowDifferencesOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
+  const [toast, setToast] = useState<BuyerToastState>({ show: false, text: "", tone: "success" });
 
   const toastTimer = useRef<number | null>(null);
   const wishlistSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
 
-  function showToast(text: string) {
-    setToast({ show: true, text });
+  function showToast(text: string, tone: BuyerToastState["tone"] = "success") {
+    const next = showBuyerToast({ tone, fallbackText: text });
+    setToast({ show: true, text: next.text, tone: next.tone });
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => {
       setToast((current) => ({ ...current, show: false }));
@@ -368,7 +351,7 @@ export default function BuyerComparePage() {
       showToast("Saved to wishlist");
     } catch (err) {
       console.error(err);
-      showToast("Failed to save");
+      showToast("Failed to save", "error");
     }
   }
 
@@ -399,7 +382,7 @@ export default function BuyerComparePage() {
       showToast("Compared properties saved");
     } catch (err) {
       console.error(err);
-      showToast("Failed to save all");
+      showToast("Failed to save all", "error");
     }
   }
 
@@ -479,7 +462,7 @@ export default function BuyerComparePage() {
           "radial-gradient(circle at top left, rgba(49,98,73,0.12), transparent 18%), linear-gradient(180deg, #F7FCFA 0%, #EEF8EB 100%)",
       }}
     >
-      <Toast show={toast.show} text={toast.text} />
+      <BuyerToast show={toast.show} text={toast.text} tone={toast.tone} />
 
       <div className="mx-auto max-w-[1450px]">
         <div
