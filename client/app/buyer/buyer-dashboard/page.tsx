@@ -341,7 +341,7 @@ export default function BuyerDashboardPage() {
   }, [offerProperties, properties]);
 
   const savedProperties = useMemo(
-    () => properties.filter((property) => wishlistSet.has(property._id)).slice(0, 4),
+    () => properties.filter((property) => wishlistSet.has(property._id)).slice(0, 6),
     [properties, wishlistSet]
   );
 
@@ -477,7 +477,7 @@ export default function BuyerDashboardPage() {
                 actionText="See all"
               />
 
-              <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
+              <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                 {recommendedListings.length ? (
                   recommendedListings.map((property) => (
                     <PropertyCard
@@ -507,7 +507,7 @@ export default function BuyerDashboardPage() {
                   actionText="See all"
                 />
 
-                <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
+                <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                   {savedProperties.length ? (
                     savedProperties.map((property) => (
                       <PropertyCard

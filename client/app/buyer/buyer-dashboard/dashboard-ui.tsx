@@ -134,14 +134,14 @@ export function OverviewCard({
     <motion.div
       whileHover={{ y: -4 }}
       transition={{ duration: 0.18 }}
-      className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-[0_10px_22px_rgba(13,28,18,0.05)]"
+      className="rounded-[22px] border border-[#E5E7EB] bg-white px-4 py-3.5 shadow-[0_8px_18px_rgba(13,28,18,0.05)]"
     >
-      <div className="grid h-12 w-12 place-items-center rounded-2xl" style={{ backgroundColor: accent }}>
+      <div className="grid h-9 w-9 place-items-center rounded-lg" style={{ backgroundColor: accent }}>
         {icon}
       </div>
-      <p className={`mt-5 ${typography.cardTitle}`}>{label}</p>
-      <div className={`mt-2 ${typography.statValue}`}>{value}</div>
-      <p className={`mt-1 ${typography.helperText}`}>{meta}</p>
+      <p className="mt-3 text-[1.85rem] font-semibold leading-none tracking-tight text-[#0D1C12]">{value}</p>
+      <p className={`mt-1.5 ${typography.cardTitle}`}>{label}</p>
+      <p className={`mt-0.5 text-[13px] ${typography.helperText}`}>{meta}</p>
     </motion.div>
   );
 }
