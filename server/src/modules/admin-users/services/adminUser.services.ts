@@ -5,6 +5,8 @@ import User from "../../../models/User.model";
 import AuditLog from "../../../models/AuditLog.model";
 import { logDevTiming, nowMs } from "../../../utils/devTiming";
 import { invalidateAdminDashboardCache } from "../../admin-overview/services/adminOverview.services";
+import { deleteByPattern, getJsonCache, makeCacheKey, setJsonCache } from "../../../utils/cache";
+import { recordAdminUsersCacheResult } from "../../../utils/metrics";
 
 const ALLOWED_STATUSES = ["active", "archived", "suspended"] as const;
 const ALLOWED_ROLES = ["buyer", "seller", "agent", "admin", "superadmin"] as const;
@@ -70,6 +72,19 @@ function sanitizeString(value: any, max = MAX_LEN) {
   return text.slice(0, max);
 }
 
+function getAdminUsersCacheTtlSeconds() {
+  const raw = Number(process.env.ADMIN_USERS_CACHE_TTL_SECONDS || 60);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 60;
+}
+
+async function invalidateAdminUsersReadCache() {
+  await Promise.all([
+    deleteByPattern("*:adminUsers:list:*"),
+    deleteByPattern("*:adminUsers:stats:*"),
+    deleteByPattern("*:adminUsers:byId:*"),
+  ]);
+}
+
 function normalizeEmail(value: any) {
   if (value === undefined || value === null) return undefined;
   const text = String(value).trim().toLowerCase();
@@ -83,6 +98,19 @@ export async function listUsers(params: {
   page?: number;
   limit?: number;
 }) {
+  const started = nowMs();
+  const cacheKey = makeCacheKey("adminUsers:list", { params });
+  const cached = await getJsonCache<any>(cacheKey);
+  if (cached) {
+    recordAdminUsersCacheResult("adminUsersList", "hit");
+    logDevTiming("cache adminUsers:list", {
+      hit: true,
+      totalMs: Number((nowMs() - started).toFixed(2)),
+      total: cached?.total ?? 0,
+    });
+    return cached;
+  }
+
   const { search, role, status } = params;
   const page = Math.max(1, Number(params.page || 1));
   const limit = Math.min(100, Math.max(1, Number(params.limit || 20)));
@@ -126,7 +154,7 @@ export async function listUsers(params: {
     total,
   });
 
-  return {
+  const result = {
     items: items.map((item) => toSafeUser(item)),
     total,
     page,
@@ -138,9 +166,30 @@ export async function listUsers(params: {
       suspended,
     },
   };
+  await setJsonCache(cacheKey, result, getAdminUsersCacheTtlSeconds());
+  recordAdminUsersCacheResult("adminUsersList", "miss");
+  logDevTiming("cache adminUsers:list", {
+    hit: false,
+    totalMs: Number((nowMs() - started).toFixed(2)),
+    total,
+  });
+  return result;
 }
 
 export async function getUserStats() {
+  const started = nowMs();
+  const cacheKey = makeCacheKey("adminUsers:stats", { scope: "summary" });
+  const cached = await getJsonCache<any>(cacheKey);
+  if (cached) {
+    recordAdminUsersCacheResult("adminUsersStats", "hit");
+    logDevTiming("cache adminUsers:stats", {
+      hit: true,
+      totalMs: Number((nowMs() - started).toFixed(2)),
+      total: cached?.total ?? 0,
+    });
+    return cached;
+  }
+
   const dbStarted = nowMs();
   const [total, active, archived, suspended, owners, verified] = await Promise.all([
     User.countDocuments({}),
@@ -155,7 +204,7 @@ export async function getUserStats() {
     total,
   });
 
-  return {
+  const result = {
     total,
     active,
     archived,
@@ -163,12 +212,39 @@ export async function getUserStats() {
     owners,
     verified,
   };
+  await setJsonCache(cacheKey, result, getAdminUsersCacheTtlSeconds());
+  recordAdminUsersCacheResult("adminUsersStats", "miss");
+  logDevTiming("cache adminUsers:stats", {
+    hit: false,
+    totalMs: Number((nowMs() - started).toFixed(2)),
+    total,
+  });
+  return result;
 }
 
 export async function getUserById(id: string) {
+  const started = nowMs();
+  const cacheKey = makeCacheKey("adminUsers:byId", { id });
+  const cached = await getJsonCache<any>(cacheKey);
+  if (cached) {
+    recordAdminUsersCacheResult("adminUserById", "hit");
+    logDevTiming("cache adminUsers:byId", {
+      hit: true,
+      totalMs: Number((nowMs() - started).toFixed(2)),
+    });
+    return cached;
+  }
+
   const user = await User.findById(id).select(SAFE_USER_FIELDS).lean();
   if (!user) throw new ApiError(404, "User not found");
-  return toSafeUser(user);
+  const result = toSafeUser(user);
+  await setJsonCache(cacheKey, result, getAdminUsersCacheTtlSeconds());
+  recordAdminUsersCacheResult("adminUserById", "miss");
+  logDevTiming("cache adminUsers:byId", {
+    hit: false,
+    totalMs: Number((nowMs() - started).toFixed(2)),
+  });
+  return result;
 }
 
 export async function createUser(params: {
@@ -230,6 +306,7 @@ export async function createUser(params: {
     userAgent: params.userAgent || "",
   });
 
+  await invalidateAdminUsersReadCache();
   await invalidateAdminDashboardCache();
 
   return toSafeUser(user);
@@ -288,6 +365,7 @@ export async function updateStatus(params: {
     userAgent: params.userAgent || "",
   });
 
+  await invalidateAdminUsersReadCache();
   await invalidateAdminDashboardCache();
 
   return toSafeUser(user);
@@ -335,6 +413,7 @@ export async function updateRole(params: {
     userAgent: params.userAgent || "",
   });
 
+  await invalidateAdminUsersReadCache();
   await invalidateAdminDashboardCache();
 
   return toSafeUser(user);
@@ -408,6 +487,7 @@ export async function updateUserDetails(params: {
     userAgent: params.userAgent || "",
   });
 
+  await invalidateAdminUsersReadCache();
   await invalidateAdminDashboardCache();
 
   return toSafeUser(user);
