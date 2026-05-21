@@ -251,21 +251,21 @@ export default function PropertyCard({
 
           <div className={`grid grid-cols-3 gap-2.5 border-t border-[#e5e7eb] bg-white ${isCompact ? "mt-3 px-5 pb-4 pt-3" : "px-5 pb-4 pt-4"}`}>
             <div>
-              <div className={`flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-[#f6f7f6] text-[#374151] ${isCompact ? "h-8 px-2.5 text-[12.5px]" : "h-9 px-2 text-[13px]"} font-medium`}>
+              <div className={`flex min-w-0 items-center justify-center gap-1.5 rounded-xl bg-[#f6f7f6] text-[#374151] ${isCompact ? "h-8 px-2.5 text-[12.5px]" : "h-9 px-2 text-[13px]"} font-medium`}>
                 <BedDouble className={`${isCompact ? "h-[15px] w-[15px]" : "h-4 w-4"} text-[#111827]`} />
                 {property.beds || 0} bd
               </div>
             </div>
             <div>
-              <div className={`flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-[#f6f7f6] text-[#374151] ${isCompact ? "h-8 px-2.5 text-[12.5px]" : "h-9 px-2 text-[13px]"} font-medium`}>
+              <div className={`flex min-w-0 items-center justify-center gap-1.5 rounded-xl bg-[#f6f7f6] text-[#374151] ${isCompact ? "h-8 px-2.5 text-[12.5px]" : "h-9 px-2 text-[13px]"} font-medium`}>
                 <Bath className={`${isCompact ? "h-[15px] w-[15px]" : "h-4 w-4"} text-[#111827]`} />
                 {property.baths || 0} ba
               </div>
             </div>
             <div>
-              <div className={`flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-[#f6f7f6] text-[#374151] ${isCompact ? "h-8 px-2.5 text-[12.5px]" : "h-9 px-2 text-[13px]"} font-medium`}>
+              <div className={`flex min-w-0 items-center justify-center gap-1.5 rounded-xl bg-[#f6f7f6] text-[#374151] ${isCompact ? "h-8 px-2.5 text-[12.5px]" : "h-9 px-2 text-[13px]"} font-medium`}>
                 <MoveDiagonal2 className={`${isCompact ? "h-[15px] w-[15px]" : "h-4 w-4"} text-[#111827]`} />
-                {cardArea}
+                <span className="truncate">{cardArea}</span>
               </div>
             </div>
           </div>

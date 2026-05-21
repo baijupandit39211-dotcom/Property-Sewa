@@ -278,6 +278,7 @@ function SearchPropertiesPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const requestSeq = useRef(0);
+  const lastFetchQueryRef = useRef("");
   const filterSyncReadyRef = useRef(false);
   const [items, setItems] = useState<Property[]>([]);
   const [showOnlyOffers, setShowOnlyOffers] = useState(false);
@@ -428,6 +429,9 @@ function SearchPropertiesPageContent() {
     if (sort) params.set("sort", sort);
     if (showOnlyOffers) params.set("offersOnly", "true");
     params.set("excludeReserved", "true");
+    const fetchQuery = params.toString();
+    if (fetchQuery === lastFetchQueryRef.current && retryNonce === 0) return;
+    lastFetchQueryRef.current = fetchQuery;
 
     const reqId = ++requestSeq.current;
     const controller = new AbortController();
@@ -438,7 +442,7 @@ function SearchPropertiesPageContent() {
     setLoading(true);
     setError("");
 
-    apiFetch<ListResponse>(`/properties${params.toString() ? `?${params.toString()}` : ""}`, {
+    apiFetch<ListResponse>(`/properties${fetchQuery ? `?${fetchQuery}` : ""}`, {
       signal: controller.signal,
     })
       .then((res) => {
@@ -594,6 +598,7 @@ function SearchPropertiesPageContent() {
     setMaxPrice("");
     setSort("");
     setPage(1);
+    lastFetchQueryRef.current = "";
   }
 
   function persistSavedSearches(next: SavedSearch[]) {
@@ -747,7 +752,7 @@ function SearchPropertiesPageContent() {
                 Properties
               </span>
               <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Properties</h1>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-white/90/90 sm:text-base">
+              <p className="mt-3 max-w-xl text-sm leading-6 text-white/90 sm:text-base">
                 Search active listings, narrow by price and location, compare top options, and
                 save promising properties to revisit later.
               </p>
@@ -919,7 +924,7 @@ function SearchPropertiesPageContent() {
                         title="Remove filter"
                       >
                         {formatFilterChipLabel(filter.label)}
-                        <span className="text-[11px] font-bold">×</span>
+                        <span className="text-[11px] font-bold">x</span>
                       </button>
                     ))
                   ) : (
@@ -1007,7 +1012,7 @@ function SearchPropertiesPageContent() {
                 Advanced filters
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-[0.16em] text-[#618975]">
                     Keyword
@@ -1056,6 +1061,7 @@ function SearchPropertiesPageContent() {
                   <input
                     type="number"
                     min="0"
+                    inputMode="numeric"
                     value={minPrice}
                     onChange={(e) => updateTextFilter(setMinPrice, e.target.value)}
                     placeholder="0"
@@ -1070,6 +1076,7 @@ function SearchPropertiesPageContent() {
                   <input
                     type="number"
                     min="0"
+                    inputMode="numeric"
                     value={maxPrice}
                     onChange={(e) => updateTextFilter(setMaxPrice, e.target.value)}
                     placeholder="1000000"
