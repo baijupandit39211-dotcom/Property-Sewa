@@ -76,3 +76,40 @@ property-sewa/
 - `pnpm run db:push`: Push schema changes to database
 - `pnpm run db:studio`: Open database studio UI
 - `pnpm run check`: Run Biome formatting and linting
+
+## Production Env Template (Backend)
+
+Use placeholder values and set real secrets in your hosting platform environment settings.
+
+```env
+NODE_ENV=production
+PORT=5000
+MONGODB_URI=<your-mongodb-uri>
+JWT_SECRET=<your-jwt-secret>
+CORS_ORIGIN=<your-frontend-origin>
+COOKIE_DOMAIN=<your-cookie-domain>
+
+# Redis (production: use managed Redis with TLS, e.g. rediss://...)
+REDIS_URL=<your-redis-url>
+PROPERTY_CACHE_TTL_SECONDS=60
+PROPERTY_CACHE_NAMESPACE=property:v1
+RECENTLY_VIEWED_MAX_ITEMS=10
+RECENTLY_VIEWED_TTL_SECONDS=2592000
+
+# Rate limiting
+RATE_LIMIT_LOGIN_WINDOW_SECONDS=900
+RATE_LIMIT_LOGIN_MAX_REQUESTS=10
+RATE_LIMIT_REGISTER_WINDOW_SECONDS=3600
+RATE_LIMIT_REGISTER_MAX_REQUESTS=5
+RATE_LIMIT_FORGOT_PASSWORD_WINDOW_SECONDS=3600
+RATE_LIMIT_FORGOT_PASSWORD_MAX_REQUESTS=5
+RATE_LIMIT_RESET_PASSWORD_WINDOW_SECONDS=3600
+RATE_LIMIT_RESET_PASSWORD_MAX_REQUESTS=10
+RATE_LIMIT_CONTACT_WINDOW_SECONDS=3600
+RATE_LIMIT_CONTACT_MAX_REQUESTS=20
+RATE_LIMIT_INQUIRY_WINDOW_SECONDS=3600
+RATE_LIMIT_INQUIRY_MAX_REQUESTS=30
+```
+
+For local development, Redis can run in Docker (`redis://localhost:6379`).  
+For production, use a managed provider such as Upstash Redis, Redis Cloud, or Render Redis.
