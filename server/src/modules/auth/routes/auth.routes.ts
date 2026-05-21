@@ -1,8 +1,46 @@
 import { Router } from "express";
 import * as authController from "../controllers/auth.controller";
 import { requireUserAuth, requireAdminAuth } from "../middleware/auth.middleware";
+import { createRateLimit } from "../../../middleware/rateLimit.middleware";
 
 const router = Router();
+
+function envInt(name: string, fallback: number) {
+  const parsed = Number(process.env[name] || fallback);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+}
+
+const loginRateLimit = createRateLimit({
+  action: "auth_login",
+  windowSeconds: envInt("RATE_LIMIT_LOGIN_WINDOW_SECONDS", 900),
+  maxRequests: envInt("RATE_LIMIT_LOGIN_MAX_REQUESTS", 10),
+  message: "Too many login attempts. Please try again later.",
+  keyGenerator: (req) => String(req.body?.email || req.ip || "").trim().toLowerCase(),
+});
+
+const registerRateLimit = createRateLimit({
+  action: "auth_register",
+  windowSeconds: envInt("RATE_LIMIT_REGISTER_WINDOW_SECONDS", 3600),
+  maxRequests: envInt("RATE_LIMIT_REGISTER_MAX_REQUESTS", 5),
+  message: "Too many registration attempts. Please try again later.",
+  keyGenerator: (req) => String(req.body?.email || req.ip || "").trim().toLowerCase(),
+});
+
+const forgotPasswordRateLimit = createRateLimit({
+  action: "auth_forgot_password",
+  windowSeconds: envInt("RATE_LIMIT_FORGOT_PASSWORD_WINDOW_SECONDS", 3600),
+  maxRequests: envInt("RATE_LIMIT_FORGOT_PASSWORD_MAX_REQUESTS", 5),
+  message: "Too many forgot password requests. Please try again later.",
+  keyGenerator: (req) => String(req.body?.email || req.ip || "").trim().toLowerCase(),
+});
+
+const resetPasswordRateLimit = createRateLimit({
+  action: "auth_reset_password",
+  windowSeconds: envInt("RATE_LIMIT_RESET_PASSWORD_WINDOW_SECONDS", 3600),
+  maxRequests: envInt("RATE_LIMIT_RESET_PASSWORD_MAX_REQUESTS", 10),
+  message: "Too many password reset attempts. Please try again later.",
+  keyGenerator: (req) => String(req.body?.token || req.ip || "").trim().toLowerCase(),
+});
 
 /**
  * @swagger
@@ -40,7 +78,7 @@ const router = Router();
  *     responses:
  *       201: { description: Registered successfully }
  */
-router.post("/register", authController.register);
+router.post("/register", registerRateLimit, authController.register);
 
 /**
  * @swagger
@@ -62,7 +100,7 @@ router.post("/register", authController.register);
  *       200: { description: Logged in successfully }
  *       400: { description: Invalid email or password }
  */
-router.post("/login", authController.login);
+router.post("/login", loginRateLimit, authController.login);
 
 /**
  * ✅ Admin login (sets adminToken cookie)
@@ -86,7 +124,7 @@ router.post("/login", authController.login);
  *       200: { description: Admin logged in successfully }
  *       403: { description: Access denied }
  */
-router.post("/admin/login", authController.adminLogin);
+router.post("/admin/login", loginRateLimit, authController.adminLogin);
 
 /**
  * @swagger
@@ -212,7 +250,7 @@ router.patch("/admin/change-password", requireAdminAuth, authController.changePa
  *     responses:
  *       200: { description: OK }
  */
-router.post("/forgot-password", authController.forgotPassword);
+router.post("/forgot-password", forgotPasswordRateLimit, authController.forgotPassword);
 
 /**
  * ✅ Reset password (using token from email)
@@ -236,6 +274,6 @@ router.post("/forgot-password", authController.forgotPassword);
  *       200: { description: Password updated }
  *       400: { description: Token invalid/expired }
  */
-router.post("/reset-password", authController.resetPassword);
+router.post("/reset-password", resetPasswordRateLimit, authController.resetPassword);
 
 export default router;
