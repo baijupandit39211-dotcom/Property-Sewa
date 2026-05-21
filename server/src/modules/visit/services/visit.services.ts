@@ -3,6 +3,7 @@ import Message from "../../../models/Message.model";
 import Property from "../../../models/Property.model";
 import Visit from "../../../models/Visit.model";
 import { ApiError } from "../../../utils/apiError";
+import { invalidateAdminDashboardCache } from "../../admin-overview/services/adminOverview.services";
 
 type VisitStatus =
   | "requested"
@@ -114,6 +115,8 @@ async function createVisit(input: CreateVisitInput) {
     { path: "leadId", select: "_id status" },
   ]);
 
+  await invalidateAdminDashboardCache();
+
   return visit;
 }
 
@@ -208,6 +211,7 @@ async function buyerCancelVisit(id: string, buyerId: string) {
   visit.sellerResponse = "Cancelled by buyer";
   visit.sellerNote = "Cancelled by buyer";
   await visit.save();
+  await invalidateAdminDashboardCache();
   return getVisitByIdForUser(id, buyerId);
 }
 
@@ -224,6 +228,7 @@ async function buyerRequestReschedule(id: string, buyerId: string, note?: string
     visit.message = note;
   }
   await visit.save();
+  await invalidateAdminDashboardCache();
   return getVisitByIdForUser(id, buyerId);
 }
 
@@ -273,6 +278,7 @@ async function sellerUpdateVisit(id: string, sellerId: string, input: SellerVisi
   visit.preferredTime = visit.preferredTimeSlot;
 
   await visit.save();
+  await invalidateAdminDashboardCache();
 
   if (visit.leadId) {
     await Lead.findByIdAndUpdate(visit.leadId, { status: statusToLeadStatus(nextStatus) }).catch(() => null);

@@ -11,11 +11,25 @@ export const propertyCacheRequestsTotal = new Counter({
   registers: [register],
 });
 
+export const adminDashboardCacheRequestsTotal = new Counter({
+  name: "property_sewa_admin_dashboard_cache_requests_total",
+  help: "Total cache result events for admin dashboard endpoints",
+  labelNames: ["endpoint", "result"] as const,
+  registers: [register],
+});
+
 export function recordPropertyCacheResult(
   endpoint: "listApproved" | "listSuggestions" | "getApprovedById",
   result: "hit" | "miss"
 ) {
   propertyCacheRequestsTotal.inc({ endpoint, result });
+}
+
+export function recordAdminDashboardCacheResult(
+  endpoint: "adminOverview" | "adminActivity",
+  result: "hit" | "miss"
+) {
+  adminDashboardCacheRequestsTotal.inc({ endpoint, result });
 }
 
 export function getMetricsRegistry() {

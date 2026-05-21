@@ -4,6 +4,7 @@ import Visit from "../../../models/Visit.model";
 import Message from "../../../models/Message.model";
 import { ApiError } from "../../../utils/apiError";
 import { Types } from "mongoose";
+import { invalidateAdminDashboardCache } from "../../admin-overview/services/adminOverview.services";
 
 export interface CreateLeadInput {
   propertyId: string;
@@ -136,7 +137,8 @@ async function createLead(input: CreateLeadInput) {
   });
 
   await lead.save();
-  
+  await invalidateAdminDashboardCache();
+
   // Populate property info for response
   await lead.populate({
     path: "propertyId",
@@ -255,6 +257,7 @@ async function updateLeadStatus(input: UpdateLeadStatusInput) {
 
   lead.status = input.status;
   await lead.save();
+  await invalidateAdminDashboardCache();
 
   return getLeadById(String(lead._id), input.sellerId);
 }
@@ -266,3 +269,4 @@ export default {
   getLeadById,
   updateLeadStatus,
 };
+

@@ -6,6 +6,8 @@ import User from "../../../models/User.model";
 import AuditLog from "../../../models/AuditLog.model";
 import Report from "../../reports/report.model";
 import { logDevTiming, nowMs } from "../../../utils/devTiming";
+import { deleteByPattern, getJsonCache, makeCacheKey, setJsonCache } from "../../../utils/cache";
+import { recordAdminDashboardCacheResult } from "../../../utils/metrics";
 
 function monthBuckets(count = 6) {
   const now = new Date();
@@ -135,6 +137,18 @@ function buildActivityStats(items: ActivityItem[]) {
 
 function toActivityItem(input: ActivityItem): ActivityItem {
   return input;
+}
+
+function getAdminDashboardCacheTtlSeconds() {
+  const raw = Number(process.env.ADMIN_DASHBOARD_CACHE_TTL_SECONDS || 60);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 60;
+}
+
+export async function invalidateAdminDashboardCache() {
+  await Promise.all([
+    deleteByPattern("*:adminDashboard:overview:*"),
+    deleteByPattern("*:adminDashboard:activity:*"),
+  ]);
 }
 
 function mapAuditLog(log: any): ActivityItem {
@@ -295,6 +309,18 @@ function mapReservation(reservation: any): ActivityItem {
 }
 
 export async function getAdminOverview() {
+  const started = nowMs();
+  const cacheKey = makeCacheKey("adminDashboard:overview", { scope: "summary" });
+  const cached = await getJsonCache<any>(cacheKey);
+  if (cached) {
+    recordAdminDashboardCacheResult("adminOverview", "hit");
+    logDevTiming("cache adminOverview", {
+      hit: true,
+      totalMs: Number((nowMs() - started).toFixed(2)),
+    });
+    return cached;
+  }
+
   const buckets = monthBuckets(6);
   const rangeStart = buckets[0]?.start || new Date();
   const last30Days = new Date();
@@ -474,7 +500,7 @@ export async function getAdminOverview() {
     };
   });
 
-  return {
+  const result = {
     stats: {
       properties: {
         total: totalProperties,
@@ -591,9 +617,29 @@ export async function getAdminOverview() {
       })),
     },
   };
+
+  await setJsonCache(cacheKey, result, getAdminDashboardCacheTtlSeconds());
+  recordAdminDashboardCacheResult("adminOverview", "miss");
+  logDevTiming("cache adminOverview", {
+    hit: false,
+    totalMs: Number((nowMs() - started).toFixed(2)),
+  });
+  return result;
 }
 
 export async function getAdminActivity(query: any = {}) {
+  const started = nowMs();
+  const cacheKey = makeCacheKey("adminDashboard:activity", { query });
+  const cached = await getJsonCache<any>(cacheKey);
+  if (cached) {
+    recordAdminDashboardCacheResult("adminActivity", "hit");
+    logDevTiming("cache adminActivity", {
+      hit: true,
+      totalMs: Number((nowMs() - started).toFixed(2)),
+    });
+    return cached;
+  }
+
   const page = normalizePage(query?.page);
   const limit = normalizeLimit(query?.limit);
   const sourceFilter = normalizeText(query?.source);
@@ -665,7 +711,7 @@ export async function getAdminActivity(query: any = {}) {
   const items = filtered.slice(start, start + limit);
   const stats = buildActivityStats(filtered);
 
-  return {
+  const result = {
     items,
     total,
     page: safePage,
@@ -681,4 +727,12 @@ export async function getAdminActivity(query: any = {}) {
       search: String(query?.search || ""),
     },
   };
+
+  await setJsonCache(cacheKey, result, getAdminDashboardCacheTtlSeconds());
+  recordAdminDashboardCacheResult("adminActivity", "miss");
+  logDevTiming("cache adminActivity", {
+    hit: false,
+    totalMs: Number((nowMs() - started).toFixed(2)),
+  });
+  return result;
 }

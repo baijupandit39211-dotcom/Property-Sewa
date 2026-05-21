@@ -4,6 +4,7 @@ import { ApiError } from "../../../utils/apiError";
 import User from "../../../models/User.model";
 import AuditLog from "../../../models/AuditLog.model";
 import { logDevTiming, nowMs } from "../../../utils/devTiming";
+import { invalidateAdminDashboardCache } from "../../admin-overview/services/adminOverview.services";
 
 const ALLOWED_STATUSES = ["active", "archived", "suspended"] as const;
 const ALLOWED_ROLES = ["buyer", "seller", "agent", "admin", "superadmin"] as const;
@@ -229,6 +230,8 @@ export async function createUser(params: {
     userAgent: params.userAgent || "",
   });
 
+  await invalidateAdminDashboardCache();
+
   return toSafeUser(user);
 }
 
@@ -285,6 +288,8 @@ export async function updateStatus(params: {
     userAgent: params.userAgent || "",
   });
 
+  await invalidateAdminDashboardCache();
+
   return toSafeUser(user);
 }
 
@@ -329,6 +334,8 @@ export async function updateRole(params: {
     ip: params.ip || "",
     userAgent: params.userAgent || "",
   });
+
+  await invalidateAdminDashboardCache();
 
   return toSafeUser(user);
 }
@@ -400,6 +407,8 @@ export async function updateUserDetails(params: {
     ip: params.ip || "",
     userAgent: params.userAgent || "",
   });
+
+  await invalidateAdminDashboardCache();
 
   return toSafeUser(user);
 }

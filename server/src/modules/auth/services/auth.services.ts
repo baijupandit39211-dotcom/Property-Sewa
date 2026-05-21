@@ -7,6 +7,7 @@ import User from "../../../models/User.model";
 import { ApiError } from "../../../utils/apiError";
 import type { RegisterInput, LoginInput } from "../types/auth.types";
 import { logDevTiming, nowMs } from "../../../utils/devTiming";
+import { invalidateAdminDashboardCache } from "../../admin-overview/services/adminOverview.services";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -83,6 +84,8 @@ async function register({
     provider: "local",
   });
 
+  await invalidateAdminDashboardCache();
+
   return { token: signToken(user), user: safeUser(user) };
 }
 
@@ -153,6 +156,7 @@ async function googleLogin(input: any) {
       googleId,
       avatar,
     });
+    await invalidateAdminDashboardCache();
   } else {
     assertUserIsActive(user);
     if (user.role === "buyer" && validRole !== "buyer") {

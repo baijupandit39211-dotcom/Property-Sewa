@@ -11,6 +11,7 @@ import { logDevTiming, nowMs } from "../../../utils/devTiming";
 import { deleteByPattern, getJsonCache, makeCacheKey, setJsonCache } from "../../../utils/cache";
 import { recordPropertyCacheResult } from "../../../utils/metrics";
 import { getRedisClient, isRedisReady } from "../../../config/redis";
+import { invalidateAdminDashboardCache } from "../../admin-overview/services/adminOverview.services";
 
 type ViewerContext =
   | {
@@ -148,6 +149,7 @@ async function invalidatePropertyReadCaches() {
     deleteByPattern("*:property:suggestions:*"),
     deleteByPattern("*:property:approvedById:*"),
   ]);
+  await invalidateAdminDashboardCache();
 }
 
 export function isPropertyVisibleToViewer(property: any, viewer?: ViewerContext, now = new Date()) {
