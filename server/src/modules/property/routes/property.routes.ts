@@ -16,6 +16,10 @@ router.get("/mine", requireUserAuth, propertyController.getMyProperties);
 // seller: get my property by id (MUST be before "/:id")
 router.get("/mine/:id", requireUserAuth, propertyController.getMyPropertyById);
 
+// buyer: recently viewed
+router.get("/recently-viewed", requireUserAuth, propertyController.getRecentlyViewed);
+router.delete("/recently-viewed", requireUserAuth, propertyController.clearRecentlyViewed);
+
 // ✅ PREVIEW route (seller can view pending in buyer-style page if needed)
 router.get("/preview/:id", requireUserAuth, propertyController.previewById);
 

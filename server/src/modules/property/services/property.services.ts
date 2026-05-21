@@ -10,6 +10,7 @@ import {
 import { logDevTiming, nowMs } from "../../../utils/devTiming";
 import { deleteByPattern, getJsonCache, makeCacheKey, setJsonCache } from "../../../utils/cache";
 import { recordPropertyCacheResult } from "../../../utils/metrics";
+import { getRedisClient, isRedisReady } from "../../../config/redis";
 
 type ViewerContext =
   | {
@@ -98,6 +99,47 @@ function getViewerCacheContext(viewer?: ViewerContext) {
     userId: String(viewer?.userId || ""),
     role: String(viewer?.role || ""),
   };
+}
+
+function isBuyerViewer(viewer?: ViewerContext) {
+  return String(viewer?.role || "").trim().toLowerCase() === "buyer" && Boolean(viewer?.userId);
+}
+
+function recentlyViewedKey(userId: string) {
+  return `recently_viewed:buyer:${String(userId).trim()}`;
+}
+
+function getRecentlyViewedLimit() {
+  const raw = Number(process.env.RECENTLY_VIEWED_MAX_ITEMS || 10);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 10;
+}
+
+function getRecentlyViewedTtlSeconds() {
+  const raw = Number(process.env.RECENTLY_VIEWED_TTL_SECONDS || 30 * 24 * 60 * 60);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 30 * 24 * 60 * 60;
+}
+
+async function trackRecentlyViewedProperty(viewer: ViewerContext, propertyId: string) {
+  if (!isBuyerViewer(viewer)) return;
+  if (!isRedisReady()) return;
+  const client = getRedisClient();
+  if (!client) return;
+
+  const userId = String(viewer?.userId || "").trim();
+  if (!userId || !propertyId) return;
+
+  const key = recentlyViewedKey(userId);
+  const maxItems = getRecentlyViewedLimit();
+  const ttlSeconds = getRecentlyViewedTtlSeconds();
+
+  try {
+    await client.lRem(key, 0, propertyId);
+    await client.lPush(key, propertyId);
+    await client.lTrim(key, 0, maxItems - 1);
+    await client.expire(key, ttlSeconds);
+  } catch {
+    // fail-safe: ignore tracking errors
+  }
 }
 
 async function invalidatePropertyReadCaches() {
@@ -468,6 +510,7 @@ async function getApprovedById(id: string, viewer?: ViewerContext) {
   });
   const cached = await getJsonCache<any>(cacheKey);
   if (cached) {
+    await trackRecentlyViewedProperty(viewer, String(cached?._id || id));
     recordPropertyCacheResult("getApprovedById", "hit");
     logDevTiming("cache property:approvedById", {
       hit: true,
@@ -489,12 +532,70 @@ async function getApprovedById(id: string, viewer?: ViewerContext) {
 
   if (!p) throw new ApiError(404, "Property not found");
   await setJsonCache(cacheKey, p);
+  await trackRecentlyViewedProperty(viewer, String(p._id));
   recordPropertyCacheResult("getApprovedById", "miss");
   logDevTiming("cache property:approvedById", {
     hit: false,
     totalMs: Number((nowMs() - started).toFixed(2)),
   });
   return p;
+}
+
+async function getRecentlyViewedByBuyer(userId: string, viewer?: ViewerContext) {
+  if (!isBuyerViewer(viewer) || String(viewer?.userId || "") !== String(userId)) {
+    throw new ApiError(403, "Only buyers can access recently viewed properties");
+  }
+
+  if (!isRedisReady()) {
+    return { items: [] as any[] };
+  }
+
+  const client = getRedisClient();
+  if (!client) {
+    return { items: [] as any[] };
+  }
+
+  const key = recentlyViewedKey(userId);
+  let ids: string[] = [];
+  try {
+    ids = (await client.lRange(key, 0, getRecentlyViewedLimit() - 1)).map((v) => String(v));
+  } catch {
+    return { items: [] as any[] };
+  }
+
+  const validIds = ids.filter((id) => Types.ObjectId.isValid(id));
+  if (validIds.length === 0) {
+    return { items: [] as any[] };
+  }
+
+  const now = new Date();
+  const docs = await Property.find({
+    _id: { $in: validIds.map((id) => new Types.ObjectId(id)) },
+    ...buildApprovedVisibilityQuery(),
+    ...buildReservationVisibilityQuery(viewer, now),
+  })
+    .populate("createdBy", "name phone email role")
+    .lean();
+
+  const byId = new Map(docs.map((doc: any) => [String(doc._id), doc]));
+  const ordered = validIds.map((id) => byId.get(id)).filter(Boolean);
+  return { items: ordered };
+}
+
+async function clearRecentlyViewedByBuyer(userId: string, viewer?: ViewerContext) {
+  if (!isBuyerViewer(viewer) || String(viewer?.userId || "") !== String(userId)) {
+    throw new ApiError(403, "Only buyers can clear recently viewed properties");
+  }
+
+  if (!isRedisReady()) return;
+  const client = getRedisClient();
+  if (!client) return;
+
+  try {
+    await client.del(recentlyViewedKey(userId));
+  } catch {
+    // fail-safe
+  }
 }
 
 // ✅ NEW: preview any status if owner (or admin in middleware can call too)
@@ -830,6 +931,8 @@ export default {
   listApproved,
   listSuggestions,
   getApprovedById,
+  getRecentlyViewedByBuyer,
+  clearRecentlyViewedByBuyer,
   previewById,
   listPending,
   listAllForAdmin,

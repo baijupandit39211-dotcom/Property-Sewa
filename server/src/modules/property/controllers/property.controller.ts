@@ -257,6 +257,38 @@ export async function getApprovedById(req: Request, res: Response, next: NextFun
   }
 }
 
+// GET /properties/recently-viewed
+export async function getRecentlyViewed(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+    if (String(req.user?.role || "").toLowerCase() !== "buyer") {
+      throw new ApiError(403, "Only buyers can access recently viewed properties");
+    }
+
+    const result = await propertyService.getRecentlyViewedByBuyer(userId, req.user);
+    return res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// DELETE /properties/recently-viewed
+export async function clearRecentlyViewed(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+    if (String(req.user?.role || "").toLowerCase() !== "buyer") {
+      throw new ApiError(403, "Only buyers can clear recently viewed properties");
+    }
+
+    await propertyService.clearRecentlyViewedByBuyer(userId, req.user);
+    return res.status(200).json({ success: true, message: "Recently viewed properties cleared." });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 // ADMIN
 export async function listPending(req: Request, res: Response, next: NextFunction) {
   const started = nowMs();
