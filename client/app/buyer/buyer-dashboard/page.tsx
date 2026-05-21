@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import Link from "next/link";
-import { Bell, CalendarDays, Eye, Heart, Search } from "lucide-react";
+import { Bell, CalendarDays, Eye, Heart, Loader2, Search, Trash2 } from "lucide-react";
 import { Sparkles } from "lucide-react";
 
 import { apiFetch } from "../../lib/api";
@@ -95,6 +95,10 @@ export default function BuyerDashboardPage() {
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [messageItems, setMessageItems] = useState<DashboardMessageItem[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<Property[]>([]);
+  const [recentlyViewedLoading, setRecentlyViewedLoading] = useState(true);
+  const [recentlyViewedError, setRecentlyViewedError] = useState("");
+  const [clearingRecentlyViewed, setClearingRecentlyViewed] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [toast, setToast] = useState<BuyerToastState>({ show: false, text: "", tone: "success" });
   const [wishPopIds, setWishPopIds] = useState<Record<string, boolean>>({});
@@ -170,6 +174,35 @@ export default function BuyerDashboardPage() {
       } else {
         console.error(offersResult.reason);
         setOfferProperties([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+
+    (async () => {
+      setRecentlyViewedLoading(true);
+      setRecentlyViewedError("");
+      try {
+        const result = await apiFetch<ListResponse>("/properties/recently-viewed", {
+          signal: controller.signal,
+        });
+        if (cancelled) return;
+        setRecentlyViewed(result.items || []);
+      } catch (error) {
+        if (cancelled) return;
+        console.error(error);
+        setRecentlyViewed([]);
+        setRecentlyViewedError("Unable to load recently viewed properties right now.");
+      } finally {
+        if (!cancelled) setRecentlyViewedLoading(false);
       }
     })();
 
@@ -339,6 +372,25 @@ export default function BuyerDashboardPage() {
     pop(id, setComparePopIds);
   }
 
+  async function clearRecentlyViewed() {
+    if (clearingRecentlyViewed) return;
+    setClearingRecentlyViewed(true);
+    try {
+      await apiFetch<{ success: boolean; message?: string }>("/properties/recently-viewed", {
+        method: "DELETE",
+      });
+      setRecentlyViewed([]);
+      setRecentlyViewedError("");
+      showToast("Recently viewed properties cleared");
+    } catch (error) {
+      console.error(error);
+      setRecentlyViewedError("Could not clear recently viewed properties.");
+      showToast("Unable to clear recently viewed properties", "error");
+    } finally {
+      setClearingRecentlyViewed(false);
+    }
+  }
+
   const recommendedListings = useMemo(() => {
     const source = offerProperties.length ? offerProperties : properties;
     return dedupeProperties(source).slice(0, 4);
@@ -472,6 +524,50 @@ export default function BuyerDashboardPage() {
                 meta="Active alerts"
                 accent="#fff4dc"
               />
+            </section>
+
+            <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-6 shadow-[0_10px_24px_rgba(13,28,18,0.05)] sm:p-7">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className={typography.sectionTitle}>Recently Viewed Properties</h2>
+                <button
+                  type="button"
+                  onClick={clearRecentlyViewed}
+                  disabled={clearingRecentlyViewed || recentlyViewedLoading || recentlyViewed.length === 0}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D1D5DB] bg-white px-4 text-sm font-semibold text-[#0D1C12] transition hover:border-[#316249] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {clearingRecentlyViewed ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Clear
+                </button>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+                {recentlyViewedLoading ? (
+                  <EmptyState message="Loading recently viewed properties..." />
+                ) : recentlyViewedError ? (
+                  <EmptyState message={recentlyViewedError} />
+                ) : recentlyViewed.length ? (
+                  recentlyViewed.map((property) => (
+                    <PropertyCard
+                      key={property._id}
+                      property={property}
+                      variant="compact"
+                      saved={wishlistSet.has(property._id)}
+                      compareOn={compareSet.has(property._id)}
+                      heartPop={!!wishPopIds[property._id]}
+                      comparePop={!!comparePopIds[property._id]}
+                      onToggleWishlist={toggleWishlist}
+                      onToggleCompare={() => toggleCompare(property._id)}
+                      isOfferActive={() => false}
+                    />
+                  ))
+                ) : (
+                  <EmptyState message="No recently viewed properties yet. View any property to see it here." />
+                )}
+              </div>
             </section>
 
             <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-6 shadow-[0_10px_24px_rgba(13,28,18,0.05)] sm:p-7">
