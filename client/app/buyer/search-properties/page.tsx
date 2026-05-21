@@ -278,7 +278,6 @@ function SearchPropertiesPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const requestSeq = useRef(0);
-  const lastFetchQueryRef = useRef("");
   const filterSyncReadyRef = useRef(false);
   const [items, setItems] = useState<Property[]>([]);
   const [showOnlyOffers, setShowOnlyOffers] = useState(false);
@@ -430,8 +429,6 @@ function SearchPropertiesPageContent() {
     if (showOnlyOffers) params.set("offersOnly", "true");
     params.set("excludeReserved", "true");
     const fetchQuery = params.toString();
-    if (fetchQuery === lastFetchQueryRef.current && retryNonce === 0) return;
-    lastFetchQueryRef.current = fetchQuery;
 
     const reqId = ++requestSeq.current;
     const controller = new AbortController();
@@ -453,7 +450,11 @@ function SearchPropertiesPageContent() {
       .catch((err: any) => {
         if (reqId !== requestSeq.current) return;
         if (controller.signal.aborted) {
-          if (err?.name === "AbortError" || String(err?.message || "").includes("aborted")) {
+          const abortReason = String((controller.signal as AbortSignal & { reason?: unknown }).reason || "");
+          if (abortReason && abortReason !== "timeout") {
+            return;
+          }
+          if (err?.name === "AbortError" || String(err?.message || "").toLowerCase().includes("aborted")) {
             return;
           }
           setError("Loading timed out. Please retry.");
@@ -598,7 +599,6 @@ function SearchPropertiesPageContent() {
     setMaxPrice("");
     setSort("");
     setPage(1);
-    lastFetchQueryRef.current = "";
   }
 
   function persistSavedSearches(next: SavedSearch[]) {
