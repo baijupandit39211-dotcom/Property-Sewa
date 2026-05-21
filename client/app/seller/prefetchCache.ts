@@ -14,7 +14,12 @@ export const SELLER_CACHE_KEYS = {
   myProperties30d: "seller_my_properties_cache_30d_v1",
   notificationsList: "seller_notifications_list_cache_v1",
   notificationsUnread: "seller_notifications_unread_cache_v1",
+  dashboardAnalyticsPrefix: "seller_dashboard_analytics_v1",
 } as const;
+
+export function sellerDashboardAnalyticsCacheKey(range: "7d" | "30d" | "90d") {
+  return `${SELLER_CACHE_KEYS.dashboardAnalyticsPrefix}:${range}`;
+}
 
 export function readFreshCache<T>(key: string, ttlMs = SELLER_CACHE_TTL_MS): T | null {
   try {
@@ -35,4 +40,3 @@ export function writeCache<T>(key: string, data: T): void {
     window.sessionStorage.setItem(key, JSON.stringify(payload));
   } catch {}
 }
-

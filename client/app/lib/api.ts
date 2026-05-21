@@ -6,10 +6,17 @@ export type ApiError = {
 };
 
 /**
- * Force localhost:5000 for development
- * (Keep your setup as-is)
+ * API base URL resolution:
+ * 1) NEXT_PUBLIC_API_BASE_URL
+ * 2) NEXT_PUBLIC_API_URL
+ * 3) NEXT_PUBLIC_SERVER_URL
+ * 4) localhost fallback for local development
  */
-export const API_BASE = "http://localhost:5000";
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_SERVER_URL ||
+  "http://localhost:5000";
 
 /**
  * Parse helper: tries JSON first, otherwise returns null

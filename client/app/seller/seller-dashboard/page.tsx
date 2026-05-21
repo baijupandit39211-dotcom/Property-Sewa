@@ -23,6 +23,7 @@ import {
 import { apiFetch } from "@/app/lib/api";
 import { useSellerAuth } from "@/app/seller/SellerAuthContext";
 import { typography } from "@/app/lib/typography";
+import { readFreshCache, sellerDashboardAnalyticsCacheKey, writeCache } from "@/app/seller/prefetchCache";
 import {
   CARD,
   DEFER,
@@ -152,7 +153,18 @@ export default function SellerDashboardPage() {
   const [error, setError] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState("");
 
-  async function loadDashboard(signal?: AbortSignal) {
+  async function loadDashboard(signal?: AbortSignal, force = false) {
+    const cacheKey = sellerDashboardAnalyticsCacheKey(range);
+    if (!force) {
+      const cached = readFreshCache<Analytics>(cacheKey, 60 * 1000);
+      if (cached) {
+        setAnalytics(cached);
+        setLastUpdatedAt(new Date().toISOString());
+        setError("");
+        return;
+      }
+    }
+
     const res = await apiFetch<{ data: Analytics }>(
       `/analytics/seller?range=${range}`,
       signal ? { signal } : undefined
@@ -161,6 +173,7 @@ export default function SellerDashboardPage() {
     if (signal?.aborted) return;
 
     setAnalytics(res.data);
+    writeCache(cacheKey, res.data);
     setLastUpdatedAt(new Date().toISOString());
     setError("");
   }
@@ -216,7 +229,7 @@ export default function SellerDashboardPage() {
     if (refreshing) return;
     setRefreshing(true);
     try {
-      await loadDashboard();
+      await loadDashboard(undefined, true);
     } catch (err: any) {
       setError(err?.message || "Failed to refresh dashboard");
     } finally {
@@ -350,7 +363,13 @@ export default function SellerDashboardPage() {
                       </Link>
                     ))}
                   </div>
-                ) : null}
+                ) : (
+                  <div className="mt-4">
+                    <div className="rounded-2xl border border-dashed border-[#d9e2dc] bg-[#fafcfb] px-5 py-8 text-center text-sm text-slate-500">
+                      No buyer activity matched your search.
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
           ) : null}
