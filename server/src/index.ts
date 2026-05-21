@@ -3,6 +3,7 @@ import "dotenv/config";
 import http from "http";
 import app from "./app";
 import { connectDB } from "./config/database";
+import { connectRedis, disconnectRedis } from "./config/redis";
 import { startReservationJobs } from "./jobs/reservation.job";
 import { initNotificationSocket } from "./realtime/notification.socket";
 import { logger } from "./utils/logger";
@@ -26,7 +27,11 @@ function shutdown(signal: NodeJS.Signals) {
       return;
     }
 
-    process.exit(0);
+    disconnectRedis()
+      .catch(() => undefined)
+      .finally(() => {
+        process.exit(0);
+      });
   });
 }
 
@@ -37,6 +42,7 @@ export async function start() {
 
   startPromise = (async () => {
     await connectDB();
+    await connectRedis();
 
     if (!jobsStarted) {
       startReservationJobs();

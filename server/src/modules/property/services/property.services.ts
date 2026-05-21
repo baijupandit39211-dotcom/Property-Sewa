@@ -8,6 +8,7 @@ import {
   getReservationStatus,
 } from "../utils/reservation.utils";
 import { logDevTiming, nowMs } from "../../../utils/devTiming";
+import { deleteByPattern, getJsonCache, makeCacheKey, setJsonCache } from "../../../utils/cache";
 
 type ViewerContext =
   | {
@@ -89,6 +90,21 @@ function buildApprovedVisibilityQuery() {
 function isAdminViewer(viewer?: ViewerContext) {
   const role = String(viewer?.role || "").trim().toLowerCase();
   return role === "admin" || role === "superadmin";
+}
+
+function getViewerCacheContext(viewer?: ViewerContext) {
+  return {
+    userId: String(viewer?.userId || ""),
+    role: String(viewer?.role || ""),
+  };
+}
+
+async function invalidatePropertyReadCaches() {
+  await Promise.all([
+    deleteByPattern("property:listApproved:*"),
+    deleteByPattern("property:suggestions:*"),
+    deleteByPattern("property:approvedById:*"),
+  ]);
 }
 
 export function isPropertyVisibleToViewer(property: any, viewer?: ViewerContext, now = new Date()) {
@@ -216,6 +232,7 @@ async function createProperty(input: CreatePropertyInput) {
     status: "pending",
   });
 
+  await invalidatePropertyReadCaches();
   return p;
 }
 
@@ -261,10 +278,18 @@ async function deleteProperty(propertyId: string, userId: string) {
     throw new ApiError(403, "You can only delete your own properties");
 
   await Property.findByIdAndDelete(propertyId);
+  await invalidatePropertyReadCaches();
   return property;
 }
 
 async function listApproved(query: any, viewer?: ViewerContext) {
+  const cacheKey = makeCacheKey("property:listApproved", {
+    query,
+    viewer: getViewerCacheContext(viewer),
+  });
+  const cached = await getJsonCache<{ items: any[]; total: number; page: number; limit: number }>(cacheKey);
+  if (cached) return cached;
+
   await expireStalePropertyReservations();
 
   const q: any = { ...buildApprovedVisibilityQuery() };
@@ -343,7 +368,9 @@ async function listApproved(query: any, viewer?: ViewerContext) {
     Property.countDocuments(q),
   ]);
 
-  return { items, total, page, limit };
+  const result = { items, total, page, limit };
+  await setJsonCache(cacheKey, result);
+  return result;
 }
 
 async function listSuggestions(queryText: string, limitRaw?: number) {
@@ -354,6 +381,11 @@ async function listSuggestions(queryText: string, limitRaw?: number) {
 
   const safeQuery = escapeRegex(query);
   const limit = Math.min(10, Math.max(1, Number(limitRaw || 8)));
+  const cacheKey = makeCacheKey("property:suggestions", { query, limit });
+  const cached = await getJsonCache<Array<{ label: string; type: "title" | "location" | "address" }>>(
+    cacheKey
+  );
+  if (cached) return cached;
 
   const items = await Property.find({
     ...buildApprovedVisibilityQuery(),
@@ -393,10 +425,19 @@ async function listSuggestions(queryText: string, limitRaw?: number) {
     if (suggestions.length >= limit) break;
   }
 
-  return suggestions.slice(0, limit);
+  const result = suggestions.slice(0, limit);
+  await setJsonCache(cacheKey, result);
+  return result;
 }
 
 async function getApprovedById(id: string, viewer?: ViewerContext) {
+  const cacheKey = makeCacheKey("property:approvedById", {
+    id,
+    viewer: getViewerCacheContext(viewer),
+  });
+  const cached = await getJsonCache<any>(cacheKey);
+  if (cached) return cached;
+
   await expireStalePropertyReservations();
 
   const p = await Property.findOne({
@@ -409,6 +450,7 @@ async function getApprovedById(id: string, viewer?: ViewerContext) {
   );
 
   if (!p) throw new ApiError(404, "Property not found");
+  await setJsonCache(cacheKey, p);
   return p;
 }
 
@@ -586,6 +628,7 @@ async function approveProperty(id: string, adminUserId: string) {
   p.status = "active";
   p.approvedBy = adminUserId as any;
   await p.save();
+  await invalidatePropertyReadCaches();
   return p;
 }
 
@@ -596,6 +639,7 @@ async function rejectProperty(id: string, adminUserId: string) {
   p.status = "rejected";
   p.approvedBy = adminUserId as any;
   await p.save();
+  await invalidatePropertyReadCaches();
   return p;
 }
 
@@ -606,6 +650,7 @@ async function restoreProperty(id: string, adminUserId: string) {
   p.status = "active";
   p.approvedBy = adminUserId as any;
   await p.save();
+  await invalidatePropertyReadCaches();
   return p;
 }
 
@@ -614,6 +659,7 @@ async function adminDeleteProperty(id: string) {
   if (!property) throw new ApiError(404, "Property not found");
 
   await Property.findByIdAndDelete(id);
+  await invalidatePropertyReadCaches();
   return property;
 }
 
@@ -629,6 +675,7 @@ async function adminUpdateStatus(id: string, status: string, adminUserId: string
   property.status = normalized as any;
   property.approvedBy = normalized === "draft" ? (null as any) : (adminUserId as any);
   await property.save();
+  await invalidatePropertyReadCaches();
   return property;
 }
 
@@ -719,6 +766,7 @@ async function updateProperty(id: string, userId: string, updates: any) {
   property.approvedBy = null as any;
 
   await property.save();
+  await invalidatePropertyReadCaches();
   return property;
 }
 
