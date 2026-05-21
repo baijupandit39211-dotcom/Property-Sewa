@@ -18,6 +18,13 @@ export const adminDashboardCacheRequestsTotal = new Counter({
   registers: [register],
 });
 
+export const adminPendingPropertiesCacheRequestsTotal = new Counter({
+  name: "property_sewa_admin_pending_properties_cache_requests_total",
+  help: "Total cache result events for admin pending properties endpoint",
+  labelNames: ["endpoint", "result"] as const,
+  registers: [register],
+});
+
 export function recordPropertyCacheResult(
   endpoint: "listApproved" | "listSuggestions" | "getApprovedById",
   result: "hit" | "miss"
@@ -30,6 +37,13 @@ export function recordAdminDashboardCacheResult(
   result: "hit" | "miss"
 ) {
   adminDashboardCacheRequestsTotal.inc({ endpoint, result });
+}
+
+export function recordAdminPendingPropertiesCacheResult(
+  endpoint: "adminPendingProperties",
+  result: "hit" | "miss"
+) {
+  adminPendingPropertiesCacheRequestsTotal.inc({ endpoint, result });
 }
 
 export function getMetricsRegistry() {

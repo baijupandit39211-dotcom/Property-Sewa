@@ -12,6 +12,7 @@ import { deleteByPattern, getJsonCache, makeCacheKey, setJsonCache } from "../..
 import { recordPropertyCacheResult } from "../../../utils/metrics";
 import { getRedisClient, isRedisReady } from "../../../config/redis";
 import { invalidateAdminDashboardCache } from "../../admin-overview/services/adminOverview.services";
+import { recordAdminPendingPropertiesCacheResult } from "../../../utils/metrics";
 
 type ViewerContext =
   | {
@@ -148,8 +149,14 @@ async function invalidatePropertyReadCaches() {
     deleteByPattern("*:property:listApproved:*"),
     deleteByPattern("*:property:suggestions:*"),
     deleteByPattern("*:property:approvedById:*"),
+    deleteByPattern("*:property:adminPending:*"),
   ]);
   await invalidateAdminDashboardCache();
+}
+
+function getAdminPendingPropertiesCacheTtlSeconds() {
+  const raw = Number(process.env.ADMIN_PENDING_PROPERTIES_CACHE_TTL_SECONDS || 30);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 30;
 }
 
 export function isPropertyVisibleToViewer(property: any, viewer?: ViewerContext, now = new Date()) {
@@ -627,6 +634,20 @@ function buildPendingSort(sort?: string): Record<string, SortOrder> {
 }
 
 async function listPending(query: any = {}) {
+  const started = nowMs();
+  const cacheKey = makeCacheKey("property:adminPending", { query });
+  const cached = await getJsonCache<any>(cacheKey);
+  if (cached) {
+    recordAdminPendingPropertiesCacheResult("adminPendingProperties", "hit");
+    logDevTiming("cache property:adminPending", {
+      hit: true,
+      totalMs: Number((nowMs() - started).toFixed(2)),
+      resultCount: cached?.items?.length ?? 0,
+      total: cached?.total ?? 0,
+    });
+    return cached;
+  }
+
   const page = Math.max(1, Number(query?.page || 1));
   const limit = Math.min(50, Math.max(1, Number(query?.limit || 12)));
   const skip = (page - 1) * limit;
@@ -683,7 +704,7 @@ async function listPending(query: any = {}) {
     byTypeCount: byTypeRaw.length,
   });
 
-  return {
+  const result = {
     items,
     total,
     page,
@@ -701,6 +722,15 @@ async function listPending(query: any = {}) {
       })),
     },
   };
+  await setJsonCache(cacheKey, result, getAdminPendingPropertiesCacheTtlSeconds());
+  recordAdminPendingPropertiesCacheResult("adminPendingProperties", "miss");
+  logDevTiming("cache property:adminPending", {
+    hit: false,
+    totalMs: Number((nowMs() - started).toFixed(2)),
+    resultCount: items.length,
+    total,
+  });
+  return result;
 }
 
 async function listAllForAdmin(query: any = {}) {
