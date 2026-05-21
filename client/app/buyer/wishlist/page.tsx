@@ -60,6 +60,20 @@ function writeCompareIds(ids: string[]) {
   window.localStorage.setItem(COMPARE_KEY, JSON.stringify({ ids: ids.slice(0, MAX_COMPARE) }));
 }
 
+function normalizeWishlistProperties(items: WishlistItem[] | undefined): Property[] {
+  return (items || [])
+    .map((item: any) => item?.propertyId)
+    .filter((property: any): property is Property => {
+      if (!property || typeof property !== "object") return false;
+      if (typeof property._id !== "string" || !property._id.trim()) return false;
+      // Guard against stale/minimal cache payloads that cause card fallback placeholders.
+      const hasMeaningfulText = Boolean(
+        String(property.title || property.location || property.address || "").trim()
+      );
+      return hasMeaningfulText;
+    });
+}
+
 function EmptyState() {
   return (
     <div
@@ -106,9 +120,12 @@ export default function BuyerWishlistPage() {
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [toast, setToast] = useState<BuyerToastState>({ show: false, text: "", tone: "success" });
 
   const toastTimer = useRef<number | null>(null);
+  const initialLoadStartedRef = useRef(false);
+  const refreshSeqRef = useRef(0);
 
   const wishlistSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const compareSet = useMemo(() => new Set(compareIds), [compareIds]);
@@ -123,27 +140,29 @@ export default function BuyerWishlistPage() {
   }
 
   async function refresh(showRefreshToast = true) {
+    const reqId = ++refreshSeqRef.current;
     setLoading(true);
+    setError("");
     try {
       const cached = readFreshBuyerCache<ListResponse>(BUYER_CACHE_KEYS.wishlist);
       if (cached?.items?.length) {
-        const cachedProperties = (cached.items || [])
-          .map((item) => item.propertyId)
-          .filter((item): item is Property => Boolean(item));
-        setAllProperties(cachedProperties);
-        setWishlistIds(cachedProperties.map((item) => item._id));
-        if (!showRefreshToast) {
-          setLoading(false);
-          return;
+        const cachedProperties = normalizeWishlistProperties(cached.items);
+        if (reqId !== refreshSeqRef.current) return;
+        if (cachedProperties.length > 0) {
+          setAllProperties(cachedProperties);
+          setWishlistIds(cachedProperties.map((item) => item._id));
+          if (!showRefreshToast) {
+            setLoading(false);
+            return;
+          }
         }
       }
 
       const res = await apiFetch<ListResponse>("/wishlist");
       writeBuyerCache(BUYER_CACHE_KEYS.wishlist, res);
-      const properties = (res.items || [])
-        .map((item) => item.propertyId)
-        .filter((item): item is Property => Boolean(item));
+      const properties = normalizeWishlistProperties(res.items);
 
+      if (reqId !== refreshSeqRef.current) return;
       setAllProperties(properties);
       setWishlistIds(properties.map((item) => item._id));
       setCompareIds(readCompareIds());
@@ -151,12 +170,18 @@ export default function BuyerWishlistPage() {
       if (showRefreshToast) showToast("Refreshed");
     } catch (e) {
       console.error(e);
+      if (reqId !== refreshSeqRef.current) return;
+      setError("Failed to load wishlist. Please retry.");
+      showToast("Failed to refresh wishlist", "error");
     } finally {
+      if (reqId !== refreshSeqRef.current) return;
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    if (initialLoadStartedRef.current) return;
+    initialLoadStartedRef.current = true;
     refresh(false);
 
     const handleStorage = (event: StorageEvent) => {
@@ -253,16 +278,24 @@ export default function BuyerWishlistPage() {
   }
 
   async function removeOne(id: string) {
+    const prevIds = wishlistIds;
+    const prevProperties = allProperties;
+    const nextIds = wishlistIds.filter((x) => x !== id);
+    const nextProperties = allProperties.filter((property) => property._id !== id);
+
+    setWishlistIds(nextIds);
+    setAllProperties(nextProperties);
+    setSelectedIds((current) => current.filter((selectedId) => selectedId !== id));
+
     try {
       await apiFetch(`/wishlist/${id}`, { method: "DELETE" });
-
-      const next = wishlistIds.filter((x) => x !== id);
-      setWishlistIds(next);
       removeWishlistIdFromCache(id);
-      setAllProperties((prev) => prev.filter((property) => property._id !== id));
       showToast("Removed from wishlist");
     } catch (e) {
       console.error(e);
+      setWishlistIds(prevIds);
+      setAllProperties(prevProperties);
+      showToast("Failed to remove from wishlist", "error");
     }
   }
 
@@ -484,7 +517,27 @@ export default function BuyerWishlistPage() {
               </div>
             </div>
 
-            {loading ? (
+            {error && !loading ? (
+              <div
+                className="mt-6 rounded-[30px] border p-8 text-center shadow-sm"
+                style={{ backgroundColor: "#ffffff", borderColor: "#FECACA" }}
+              >
+                <div className="text-lg font-bold tracking-tight text-rose-700">
+                  {error}
+                </div>
+                <p className="mt-2 text-sm leading-6" style={{ color: THEME.textSoft }}>
+                  We could not sync your latest saved properties.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refresh(false)}
+                  className="mt-5 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition"
+                  style={{ backgroundColor: THEME.primary }}
+                >
+                  Retry <RefreshCcw className="h-4 w-4" />
+                </button>
+              </div>
+            ) : loading ? (
               <div
                 className="mt-6 rounded-[30px] border p-10 shadow-sm"
                 style={{ backgroundColor: "#ffffff", borderColor: THEME.primaryBorder }}
@@ -561,12 +614,12 @@ export default function BuyerWishlistPage() {
             ) : (
               <>
                 <section className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                  {filteredItems.slice(0, 3).map((property) => {
+                  {filteredItems.slice(0, 3).map((property, index) => {
                     const compareOn = compareSet.has(property._id);
 
                     return (
                       <motion.div
-                        key={property._id}
+                        key={`${property._id}-${index}`}
                         whileHover={{ y: -6 }}
                         transition={{ duration: 0.18 }}
                         className="h-full"
@@ -611,12 +664,12 @@ export default function BuyerWishlistPage() {
 
                 {filteredItems.length > 3 ? (
                   <section className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {filteredItems.slice(3).map((property) => {
+                    {filteredItems.slice(3).map((property, index) => {
                       const compareOn = compareSet.has(property._id);
 
                       return (
                         <motion.div
-                          key={property._id}
+                          key={`${property._id}-rest-${index}`}
                           whileHover={{ y: -6 }}
                           transition={{ duration: 0.18 }}
                           className="h-full"

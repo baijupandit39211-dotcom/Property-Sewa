@@ -328,11 +328,15 @@ function BuyerPropertyDetailsView({
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
     (async () => {
       try {
         const list = await apiFetch<{ success: boolean; items: any[] }>(
-          "/properties?limit=12"
+          "/properties?limit=12",
+          { signal: controller.signal }
         );
+        if (!active) return;
         if (list?.success) {
           const items = (list.items || []).filter(
             (p) => String(p?._id) !== String(paramsId)
@@ -343,10 +347,21 @@ function BuyerPropertyDetailsView({
 
           setSimilar([...withImages, ...withoutImages].slice(0, 4));
         }
-      } catch {
+      } catch (err: any) {
+        if (
+          controller.signal.aborted ||
+          err?.name === "AbortError" ||
+          String(err?.message || "").toLowerCase().includes("aborted")
+        ) {
+          return;
+        }
         //
       }
     })();
+    return () => {
+      active = false;
+      controller.abort("property-change");
+    };
   }, [paramsId]);
 
   useEffect(() => {
@@ -876,7 +891,7 @@ function BuyerPropertyDetailsView({
 
           <div
             id="property-thumbnails"
-            className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5"
+            className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0 lg:grid-cols-5"
           >
             {images.slice(0, 5).map((url, idx) => (
               <button
@@ -887,7 +902,7 @@ function BuyerPropertyDetailsView({
                   setActiveIndex(idx);
                 }}
                 className={[
-                  "overflow-hidden rounded-lg border bg-white transition",
+                  "w-[44%] shrink-0 snap-start overflow-hidden rounded-lg border bg-white transition sm:w-auto sm:shrink",
                   url === activeImg
                     ? "border-blue-500 ring-2 ring-blue-200"
                     : "border-slate-200 hover:border-slate-300",
@@ -938,7 +953,7 @@ function BuyerPropertyDetailsView({
           <button
             type="button"
             onClick={toggleWishlist}
-            className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:w-auto sm:min-w-[150px]"
           >
             <Heart
               className={[
@@ -952,7 +967,7 @@ function BuyerPropertyDetailsView({
           <button
             type="button"
             onClick={handleShare}
-            className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:w-auto sm:min-w-[150px]"
           >
             <Share2 className="h-5 w-5 text-emerald-700" />
             Share
@@ -961,7 +976,7 @@ function BuyerPropertyDetailsView({
           <button
             type="button"
             onClick={handleCompare}
-            className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:w-auto sm:min-w-[150px]"
           >
             <Scale className="h-5 w-5 text-slate-700" />
             Compare
@@ -1719,7 +1734,7 @@ function BuyerPropertyDetailsView({
                 </div>
               </div>
 
-              <div className="mt-5 flex gap-3">
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => setOpenSchedule(false)}
@@ -1768,7 +1783,7 @@ function BuyerPropertyDetailsView({
                   onFocus={(event) => event.currentTarget.select()}
                 />
               </div>
-              <div className="mt-5 flex gap-3">
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => setOpenShareFallback(false)}
@@ -1841,9 +1856,11 @@ function PropertyDetailsPageContent() {
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     const fetchData = async () => {
       const timeoutId = window.setTimeout(() => {
         if (!active) return;
+        controller.abort("timeout");
         setFatalError("Loading is taking too long. Please retry.");
         setProperty(null);
         setLoading(false);
@@ -1855,7 +1872,8 @@ function PropertyDetailsPageContent() {
 
         const qs = preview ? "?preview=1" : "";
         const propertyResponse = await apiFetch<any>(
-          `/properties/${params.id}${qs}`
+          `/properties/${params.id}${qs}`,
+          { signal: controller.signal }
         );
 
         const p =
@@ -1886,6 +1904,12 @@ function PropertyDetailsPageContent() {
       } catch (err: any) {
         window.clearTimeout(timeoutId);
         if (!active) return;
+        if (
+          controller.signal.aborted &&
+          String((controller.signal as AbortSignal & { reason?: unknown }).reason || "") !== "timeout"
+        ) {
+          return;
+        }
         setFatalError(err?.message || "Failed to load data");
         setProperty(null);
       } finally {
@@ -1898,6 +1922,7 @@ function PropertyDetailsPageContent() {
     if (params?.id) fetchData();
     return () => {
       active = false;
+      controller.abort("route-change");
     };
   }, [params?.id, preview, reloadKey]);
 
