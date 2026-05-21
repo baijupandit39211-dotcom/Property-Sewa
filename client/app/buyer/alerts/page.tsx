@@ -232,12 +232,16 @@ export default function BuyerAlertsPage() {
   // local rules
   const [alerts, setAlerts] = useState<AlertRule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // UI state
   const [tab, setTab] = useState<TabKey>("all");
   const [toast, setToast] = useState<BuyerToastState>({ show: false, text: "", tone: "success" });
   const toastTimer = useRef<number | null>(null);
   const [savedSearchAlerts, setSavedSearchAlerts] = useState<SavedSearchAlert[]>([]);
+  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const initialLoadStartedRef = useRef(false);
+  const refreshSeqRef = useRef(0);
 
   // modals
   const [openCreate, setOpenCreate] = useState(false);
@@ -260,26 +264,37 @@ export default function BuyerAlertsPage() {
     }, 1400);
   }
 
-  async function refresh() {
+  async function refresh(showRefreshToast = true) {
+    const reqId = ++refreshSeqRef.current;
     setLoading(true);
+    setError("");
     try {
       const stored = readJson<{ alerts: AlertRule[] }>(ALERTS_KEY, { alerts: [] });
+      if (reqId !== refreshSeqRef.current) return;
       setAlerts(stored.alerts || []);
 
       const res = await apiFetch<ListResponse>("/properties");
+      if (reqId !== refreshSeqRef.current) return;
       setAllProperties(res.items || []);
 
-      showToast("Refreshed");
+      if (showRefreshToast) showToast("Refreshed");
     } catch (e) {
+      if (reqId !== refreshSeqRef.current) return;
       console.error(e);
-      showToast("Failed to load");
+      setError("Failed to load notifications feed.");
+      if (showRefreshToast) showToast("Failed to load", "error");
     } finally {
+      if (reqId !== refreshSeqRef.current) return;
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    refresh();
+    if (initialLoadStartedRef.current) return;
+    initialLoadStartedRef.current = true;
+    refresh(false);
+    const storedSeen = readJson<{ ids: string[] }>(NOTIF_SEEN_KEY, { ids: [] });
+    setSeenIds(new Set(storedSeen.ids || []));
     try {
       const raw = localStorage.getItem(SAVED_SEARCHES_KEY);
       const parsed = raw ? JSON.parse(raw) : [];
@@ -287,7 +302,6 @@ export default function BuyerAlertsPage() {
     } catch {
       setSavedSearchAlerts([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function persist(next: AlertRule[]) {
@@ -423,26 +437,23 @@ export default function BuyerAlertsPage() {
   /** -------------------------
    * Read/unread
    * ------------------------- */
-  const seenNotifIds = useMemo(() => {
-    const stored = readJson<{ ids: string[] }>(NOTIF_SEEN_KEY, { ids: [] });
-    return new Set(stored.ids || []);
-  }, [loading]); // re-evaluate after refresh
-
   const unreadCount = useMemo(() => {
     let c = 0;
-    for (const n of notifications) if (!seenNotifIds.has(n.id)) c++;
+    for (const n of notifications) if (!seenIds.has(n.id)) c++;
     return c;
-  }, [notifications, seenNotifIds]);
+  }, [notifications, seenIds]);
 
   function markSeen(id: string) {
-    const stored = readJson<{ ids: string[] }>(NOTIF_SEEN_KEY, { ids: [] });
-    const s = new Set(stored.ids || []);
+    const s = new Set(seenIds);
     s.add(id);
     writeJson(NOTIF_SEEN_KEY, { ids: Array.from(s) });
+    setSeenIds(s);
   }
 
   function markAllRead() {
-    writeJson(NOTIF_SEEN_KEY, { ids: notifications.map((n) => n.id) });
+    const next = new Set(notifications.map((n) => n.id));
+    writeJson(NOTIF_SEEN_KEY, { ids: Array.from(next) });
+    setSeenIds(next);
     showToast("Marked all as read");
   }
 
@@ -464,11 +475,11 @@ export default function BuyerAlertsPage() {
    * NEW tag logic (simple)
    * ------------------------- */
   function isNewNotif(id: string) {
-    return !seenNotifIds.has(id);
+    return !seenIds.has(id);
   }
 
   return (
-    <main className="w-full min-w-0 px-10 py-8">
+    <main className="w-full min-w-0 px-4 py-8 sm:px-6 lg:px-10">
       <BuyerToast show={toast.show} text={toast.text} tone={toast.tone} />
 
       {/* Top actions row (small, modern) */}
@@ -501,7 +512,7 @@ export default function BuyerAlertsPage() {
 
           <button
             type="button"
-            onClick={refresh}
+            onClick={() => refresh()}
             className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50"
             title="Refresh"
           >
@@ -579,7 +590,11 @@ export default function BuyerAlertsPage() {
       </div>
 
       {/* Feed */}
-      {loading ? (
+      {error && !loading ? (
+        <div className="mt-6 rounded-3xl bg-white p-6 text-sm font-semibold text-rose-700 ring-1 ring-rose-200/70">
+          {error}
+        </div>
+      ) : loading ? (
         <div className="mt-6 rounded-3xl bg-white p-10 text-sm font-semibold text-slate-600 ring-1 ring-slate-200/70">
           Loading notifications...
         </div>
@@ -639,8 +654,8 @@ export default function BuyerAlertsPage() {
                       <span className="text-xs font-semibold text-slate-500">{timeAgo(n.createdAt)}</span>
                     </div>
 
-                    <div className="mt-2 text-lg font-extrabold text-slate-900">{n.title}</div>
-                    <p className="mt-1 text-sm font-semibold text-emerald-700/90">
+                    <div className="mt-2 break-words text-lg font-extrabold text-slate-900">{n.title}</div>
+                    <p className="mt-1 break-words text-sm font-semibold text-emerald-700/90">
                       {n.message}
                     </p>
 

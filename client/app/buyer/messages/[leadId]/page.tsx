@@ -320,16 +320,20 @@ export default function BuyerMessageDetailPage() {
   });
 
   useEffect(() => {
+    let active = true;
     const fetchData = async () => {
       try {
+        setLoadError("");
         // Fetch lead details
         const leadResponse = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/my-inquiries");
+        if (!active) return;
         if (leadResponse.success) {
           const leadData = leadResponse.items.find(l => l._id === params.leadId);
           if (leadData) {
             // Try to fetch visit for this lead's property
             try {
               const visitResponse = await apiFetch<{ success: boolean; items: Visit[] }>(`/visits/my-visits?propertyId=${leadData.propertyId._id}`);
+              if (!active) return;
               if (visitResponse.success && visitResponse.items.length > 0) {
                 // Find the most recent visit for this property
                 const visit = visitResponse.items
@@ -340,6 +344,7 @@ export default function BuyerMessageDetailPage() {
                 setLead(leadData);
               }
             } catch (err) {
+              if (!active) return;
               // If visit fetch fails, just set lead without visit
               setLead(leadData);
             }
@@ -348,6 +353,7 @@ export default function BuyerMessageDetailPage() {
 
         // Fetch messages
         const messageResponse = await apiFetch<{ success: boolean; items: Message[] }>(`/messages/${params.leadId}`);
+        if (!active) return;
         if (messageResponse.success) {
           const thread = messageResponse.items || [];
           setMessages(thread);
@@ -355,8 +361,10 @@ export default function BuyerMessageDetailPage() {
           acknowledgeSeen(currentLeadId, thread);
         }
       } catch (err: any) {
+        if (!active) return;
         setLoadError(err.message || "Failed to load data");
       } finally {
+        if (!active) return;
         setLoading(false);
       }
     };
@@ -364,6 +372,9 @@ export default function BuyerMessageDetailPage() {
     if (currentLeadId) {
       fetchData();
     }
+    return () => {
+      active = false;
+    };
   }, [currentLeadId]);
 
   useEffect(() => {
@@ -802,7 +813,7 @@ export default function BuyerMessageDetailPage() {
 
           {/* Messages */}
           <div className="lg:col-span-2">
-            <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 h-[600px] flex flex-col">
+            <div className="flex min-h-[560px] max-h-[calc(100vh-180px)] flex-col rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
               <div className="p-4 border-b border-slate-200">
                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                   <MessageCircle className="h-5 w-5" />
@@ -973,7 +984,7 @@ export default function BuyerMessageDetailPage() {
                       className={`flex ${message.senderRole === "buyer" ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-xs rounded-lg px-4 py-2 ${
+                        className={`max-w-[88%] break-words rounded-lg px-4 py-2 sm:max-w-[76%] ${
                           message.senderRole === "buyer"
                             ? "bg-emerald-600 text-white"
                             : "bg-slate-100 text-slate-900"

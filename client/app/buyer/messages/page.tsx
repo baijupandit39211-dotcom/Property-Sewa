@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/app/lib/api";
 import {
@@ -38,6 +38,8 @@ export default function BuyerMessagesPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const initialLoadStartedRef = useRef(false);
+  const loadSeqRef = useRef(0);
   const sortedLeads = useMemo(
     () =>
       [...leads].sort(
@@ -48,22 +50,26 @@ export default function BuyerMessagesPage() {
   );
 
   useEffect(() => {
+    if (initialLoadStartedRef.current) return;
+    initialLoadStartedRef.current = true;
     const fetchInquiries = async () => {
+      const reqId = ++loadSeqRef.current;
       try {
+        setError("");
         const cached = readFreshBuyerCache<{ success: boolean; items: Lead[] }>(BUYER_CACHE_KEYS.leads);
-        if (cached?.items) setLeads(cached.items || []);
-        if (cached?.items?.length) {
-          setLoading(false);
-          return;
-        }
+        if (cached?.items && reqId === loadSeqRef.current) setLeads(cached.items || []);
+        if (cached?.items?.length && reqId === loadSeqRef.current) setLoading(false);
         const response = await apiFetch<{ success: boolean; items: Lead[] }>("/leads/my-inquiries");
+        if (reqId !== loadSeqRef.current) return;
         if (response.success) {
           setLeads(response.items || []);
           writeBuyerCache(BUYER_CACHE_KEYS.leads, response);
         }
       } catch (err: any) {
+        if (reqId !== loadSeqRef.current) return;
         setError(err.message || "Failed to fetch inquiries");
       } finally {
+        if (reqId !== loadSeqRef.current) return;
         setLoading(false);
       }
     };

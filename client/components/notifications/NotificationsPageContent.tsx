@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -81,6 +81,8 @@ export default function NotificationsPageContent({
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
   const [activeFilter, setActiveFilter] = useState<LocalFilter>("all");
+  const initialLoadStartedRef = useRef(false);
+  const fetchSeqRef = useRef(0);
   const [data, setData] = useState<NotificationListResponse>({
     success: true,
     items: [],
@@ -100,20 +102,26 @@ export default function NotificationsPageContent({
   const fetcher = authMode === "admin" ? apiFetchAdmin : apiFetch;
 
   const fetchNotifications = async (nextPage: number) => {
+    const reqId = ++fetchSeqRef.current;
     try {
       setLoading(true);
       const response = await fetcher<NotificationListResponse>(
         `${endpointBase}?page=${nextPage}&limit=10`
       );
+      if (reqId !== fetchSeqRef.current) return;
       setData(response);
     } catch {
+      if (reqId !== fetchSeqRef.current) return;
       setData((prev) => ({ ...prev, items: [] }));
     } finally {
+      if (reqId !== fetchSeqRef.current) return;
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (initialLoadStartedRef.current && page === 1) return;
+    initialLoadStartedRef.current = true;
     fetchNotifications(page);
   }, [page]);
 

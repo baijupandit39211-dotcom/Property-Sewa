@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, CheckCircle2, Clock3, MapPin, XCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarClock, CheckCircle2, Clock3, Mail, MapPin, Phone, XCircle } from "lucide-react";
 import { apiFetch } from "@/app/lib/api";
 
 type VisitStatus =
@@ -43,12 +43,24 @@ function visitTypeLabel(type?: Visit["visitType"]) {
   return "Physical Visit";
 }
 
+function statusLabel(status: VisitStatus) {
+  return status.replaceAll("_", " ").replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
 function formatVisitDateTime(value: string, time: string) {
-  const dateText = new Date(value).toLocaleDateString("en-GB", {
+  const dateObj = new Date(value);
+  const validDate = !Number.isNaN(dateObj.getTime());
+  const dateText = validDate
+    ? dateObj.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  });
+      })
+    : "Date pending";
+
+  if (!time || !String(time).includes(":")) {
+    return `${dateText} at Time pending`;
+  }
   const [hoursRaw = "0", minutesRaw = "0"] = String(time || "").split(":");
   const clock = new Date();
   clock.setHours(Number(hoursRaw), Number(minutesRaw), 0, 0);
@@ -64,20 +76,30 @@ export default function BuyerScheduledVisitsPage() {
   const [items, setItems] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actioningId, setActioningId] = useState("");
+  const initialLoadStartedRef = useRef(false);
+  const loadSeqRef = useRef(0);
 
   async function load() {
+    const reqId = ++loadSeqRef.current;
     try {
       setLoading(true);
+      setError("");
       const res = await apiFetch<{ success: boolean; items: Visit[] }>("/api/visits/my?limit=50");
+      if (reqId !== loadSeqRef.current) return;
       setItems(res.items || []);
     } catch (err: any) {
+      if (reqId !== loadSeqRef.current) return;
       setError(err?.message || "Failed to load visits");
     } finally {
+      if (reqId !== loadSeqRef.current) return;
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    if (initialLoadStartedRef.current) return;
+    initialLoadStartedRef.current = true;
     load();
   }, []);
 
@@ -88,19 +110,25 @@ export default function BuyerScheduledVisitsPage() {
 
   const handleCancel = async (id: string) => {
     try {
+      setActioningId(id);
       await apiFetch(`/api/visits/${id}/cancel`, { method: "PATCH" });
       await load();
-    } catch {}
+    } catch {} finally {
+      setActioningId("");
+    }
   };
 
   const handleReschedule = async (id: string) => {
     try {
+      setActioningId(id);
       await apiFetch(`/api/visits/${id}/request-reschedule`, {
         method: "PATCH",
         body: JSON.stringify({ buyerMessage: "Please suggest an alternate time." }),
       });
       await load();
-    } catch {}
+    } catch {} finally {
+      setActioningId("");
+    }
   };
 
   return (
@@ -131,6 +159,7 @@ export default function BuyerScheduledVisitsPage() {
               const propertyHref = visit.propertyId?._id ? `/buyer/property/${visit.propertyId._id}` : "/buyer/search-properties";
               const messageHref = visit.leadId?._id ? `/buyer/messages/${visit.leadId._id}` : "/buyer/messages";
               const imageUrl = visit.propertyId?.images?.[0]?.url || "";
+              const isActioning = actioningId === visit._id;
               return (
                 <article
                   key={visit._id}
@@ -162,9 +191,11 @@ export default function BuyerScheduledVisitsPage() {
 
                     <div>
                       <div className="flex flex-wrap items-start justify-between gap-3">
-                        <h3 className="text-lg font-semibold text-[#0D1C12]">{visit.propertyId?.title || "Property"}</h3>
+                        <h3 className="min-w-0 break-words text-lg font-semibold text-[#0D1C12]">
+                          {visit.propertyId?.title || "Property"}
+                        </h3>
                         <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase ${tone(visit.status)}`}>
-                          {visit.status}
+                          {statusLabel(visit.status)}
                         </span>
                       </div>
 
@@ -175,16 +206,28 @@ export default function BuyerScheduledVisitsPage() {
                         </div>
                         <div>
                           <span className="font-semibold text-[#618975]">Seller/Agent:</span>{" "}
-                          <span className="font-semibold text-[#0D1C12]">{visit.sellerId?.name || "Seller"}</span>
+                          <span className="break-words font-semibold text-[#0D1C12]">{visit.sellerId?.name || "Seller"}</span>
                         </div>
-                        <div className="inline-flex items-center gap-2">
+                        <div className="inline-flex min-w-0 items-start gap-2">
                           <MapPin className="h-4 w-4 text-[#618975]" />
                           <span className="font-semibold text-[#618975]">Location:</span>{" "}
-                          <span className="font-semibold text-[#0D1C12]">{visit.propertyId?.location || "Location not set"}</span>
+                          <span className="min-w-0 break-words font-semibold text-[#0D1C12]">{visit.propertyId?.location || "Location not set"}</span>
                         </div>
                         <div className="inline-flex items-center gap-2">
                           <Clock3 className="h-4 w-4 text-[#618975]" />
                           <span className="font-semibold text-[#0D1C12]">{formatVisitDateTime(date, time)}</span>
+                        </div>
+                        <div className="inline-flex min-w-0 items-center gap-2">
+                          <Mail className="h-4 w-4 text-[#618975]" />
+                          <span className="min-w-0 truncate font-semibold text-[#0D1C12]">
+                            {visit.sellerId?.email || "Email not available"}
+                          </span>
+                        </div>
+                        <div className="inline-flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-[#618975]" />
+                          <span className="font-semibold text-[#0D1C12]">
+                            {visit.sellerId?.phone || "Phone not available"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -214,16 +257,18 @@ export default function BuyerScheduledVisitsPage() {
                         <button
                           type="button"
                           onClick={() => handleReschedule(visit._id)}
-                          className="rounded-lg border border-[#316249] px-3 py-2 text-sm font-semibold text-[#316249] hover:bg-[#EEF8EB]"
+                          disabled={isActioning}
+                          className="rounded-lg border border-[#316249] px-3 py-2 text-sm font-semibold text-[#316249] hover:bg-[#EEF8EB] disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          Request Reschedule
+                          {isActioning ? "Updating..." : "Request Reschedule"}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleCancel(visit._id)}
-                          className="rounded-lg border border-[#E5E7EB] bg-[#F7FCFA] px-3 py-2 text-sm font-semibold text-[#618975]"
+                          disabled={isActioning}
+                          className="rounded-lg border border-[#E5E7EB] bg-[#F7FCFA] px-3 py-2 text-sm font-semibold text-[#618975] disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          Cancel
+                          {isActioning ? "Updating..." : "Cancel"}
                         </button>
                       </>
                     )}
