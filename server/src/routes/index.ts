@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { isRedisEnabled, isRedisReady } from "../config/redis";
+import { getMetricsRegistry } from "../utils/metrics";
 
 import authRoutes from "../modules/auth/routes/auth.routes";
 import initSuperAdminRoutes from "../modules/auth/routes/init-superadmin.routes";
@@ -24,7 +26,27 @@ import adminContactRoutes from "../modules/contact/routes/adminContact.routes";
 
 const router = Router();
 
-router.get("/health", (_req, res) => res.send("OK"));
+router.get("/health", (_req, res) =>
+  res.status(200).json({
+    ok: true,
+    service: "property-sewa-backend",
+    redis: {
+      enabled: isRedisEnabled(),
+      ready: isRedisReady(),
+    },
+    timestamp: new Date().toISOString(),
+  })
+);
+
+router.get("/metrics", async (_req, res, next) => {
+  try {
+    const registry = getMetricsRegistry();
+    res.set("Content-Type", registry.contentType);
+    res.status(200).send(await registry.metrics());
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.use("/auth", authRoutes);
 router.use("/auth", initSuperAdminRoutes);

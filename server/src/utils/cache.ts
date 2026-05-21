@@ -1,10 +1,16 @@
 import { getRedisClient, isRedisReady } from "../config/redis";
 
 const DEFAULT_TTL_SECONDS = 60;
+const DEFAULT_CACHE_NAMESPACE = "property:v1";
 
 function getCacheTtlSeconds() {
   const raw = Number(process.env.PROPERTY_CACHE_TTL_SECONDS || DEFAULT_TTL_SECONDS);
   return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : DEFAULT_TTL_SECONDS;
+}
+
+function getCacheNamespace() {
+  const value = String(process.env.PROPERTY_CACHE_NAMESPACE || DEFAULT_CACHE_NAMESPACE).trim();
+  return value || DEFAULT_CACHE_NAMESPACE;
 }
 
 function stableStringify(value: unknown): string {
@@ -26,7 +32,7 @@ function stableStringify(value: unknown): string {
 }
 
 export function makeCacheKey(prefix: string, payload: unknown) {
-  return `${prefix}:${stableStringify(payload)}`;
+  return `${getCacheNamespace()}:${prefix}:${stableStringify(payload)}`;
 }
 
 export async function getJsonCache<T>(key: string): Promise<T | null> {

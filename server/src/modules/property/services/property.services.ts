@@ -9,6 +9,7 @@ import {
 } from "../utils/reservation.utils";
 import { logDevTiming, nowMs } from "../../../utils/devTiming";
 import { deleteByPattern, getJsonCache, makeCacheKey, setJsonCache } from "../../../utils/cache";
+import { recordPropertyCacheResult } from "../../../utils/metrics";
 
 type ViewerContext =
   | {
@@ -101,9 +102,9 @@ function getViewerCacheContext(viewer?: ViewerContext) {
 
 async function invalidatePropertyReadCaches() {
   await Promise.all([
-    deleteByPattern("property:listApproved:*"),
-    deleteByPattern("property:suggestions:*"),
-    deleteByPattern("property:approvedById:*"),
+    deleteByPattern("*:property:listApproved:*"),
+    deleteByPattern("*:property:suggestions:*"),
+    deleteByPattern("*:property:approvedById:*"),
   ]);
 }
 
@@ -283,12 +284,20 @@ async function deleteProperty(propertyId: string, userId: string) {
 }
 
 async function listApproved(query: any, viewer?: ViewerContext) {
+  const started = nowMs();
   const cacheKey = makeCacheKey("property:listApproved", {
     query,
     viewer: getViewerCacheContext(viewer),
   });
   const cached = await getJsonCache<{ items: any[]; total: number; page: number; limit: number }>(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    recordPropertyCacheResult("listApproved", "hit");
+    logDevTiming("cache property:listApproved", {
+      hit: true,
+      totalMs: Number((nowMs() - started).toFixed(2)),
+    });
+    return cached;
+  }
 
   await expireStalePropertyReservations();
 
@@ -370,10 +379,17 @@ async function listApproved(query: any, viewer?: ViewerContext) {
 
   const result = { items, total, page, limit };
   await setJsonCache(cacheKey, result);
+  recordPropertyCacheResult("listApproved", "miss");
+  logDevTiming("cache property:listApproved", {
+    hit: false,
+    totalMs: Number((nowMs() - started).toFixed(2)),
+    resultCount: items.length,
+  });
   return result;
 }
 
 async function listSuggestions(queryText: string, limitRaw?: number) {
+  const started = nowMs();
   const query = String(queryText || "").trim();
   if (query.length < 2) {
     return [];
@@ -385,7 +401,15 @@ async function listSuggestions(queryText: string, limitRaw?: number) {
   const cached = await getJsonCache<Array<{ label: string; type: "title" | "location" | "address" }>>(
     cacheKey
   );
-  if (cached) return cached;
+  if (cached) {
+    recordPropertyCacheResult("listSuggestions", "hit");
+    logDevTiming("cache property:suggestions", {
+      hit: true,
+      totalMs: Number((nowMs() - started).toFixed(2)),
+      resultCount: cached.length,
+    });
+    return cached;
+  }
 
   const items = await Property.find({
     ...buildApprovedVisibilityQuery(),
@@ -427,16 +451,30 @@ async function listSuggestions(queryText: string, limitRaw?: number) {
 
   const result = suggestions.slice(0, limit);
   await setJsonCache(cacheKey, result);
+  recordPropertyCacheResult("listSuggestions", "miss");
+  logDevTiming("cache property:suggestions", {
+    hit: false,
+    totalMs: Number((nowMs() - started).toFixed(2)),
+    resultCount: result.length,
+  });
   return result;
 }
 
 async function getApprovedById(id: string, viewer?: ViewerContext) {
+  const started = nowMs();
   const cacheKey = makeCacheKey("property:approvedById", {
     id,
     viewer: getViewerCacheContext(viewer),
   });
   const cached = await getJsonCache<any>(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    recordPropertyCacheResult("getApprovedById", "hit");
+    logDevTiming("cache property:approvedById", {
+      hit: true,
+      totalMs: Number((nowMs() - started).toFixed(2)),
+    });
+    return cached;
+  }
 
   await expireStalePropertyReservations();
 
@@ -451,6 +489,11 @@ async function getApprovedById(id: string, viewer?: ViewerContext) {
 
   if (!p) throw new ApiError(404, "Property not found");
   await setJsonCache(cacheKey, p);
+  recordPropertyCacheResult("getApprovedById", "miss");
+  logDevTiming("cache property:approvedById", {
+    hit: false,
+    totalMs: Number((nowMs() - started).toFixed(2)),
+  });
   return p;
 }
 
