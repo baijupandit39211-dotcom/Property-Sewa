@@ -31,15 +31,22 @@ export default function SellerViewPropertyPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let isActive = true;
+
     const fetchProperty = async () => {
       try {
         const response = await apiFetch<{ success: boolean; property: Property }>(`/properties/mine/${params.id}`);
+        if (!isActive) return;
         if (response.success) {
           setProperty(response.property);
+        } else {
+          setError("Failed to load property");
         }
       } catch (err: any) {
+        if (!isActive) return;
         setError(err.message || "Failed to load property");
       } finally {
+        if (!isActive) return;
         setLoading(false);
       }
     };
@@ -47,6 +54,10 @@ export default function SellerViewPropertyPage() {
     if (params.id) {
       fetchProperty();
     }
+
+    return () => {
+      isActive = false;
+    };
   }, [params.id]);
 
   if (loading) {
@@ -122,7 +133,7 @@ export default function SellerViewPropertyPage() {
           {/* Content */}
           <div className="p-6">
             {/* Title and Status */}
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">{property.title}</h1>
                 <div className="flex items-center gap-2 mt-2 text-slate-600">
@@ -130,7 +141,7 @@ export default function SellerViewPropertyPage() {
                   <span>{property.location}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className={`px-3 py-1 text-xs font-medium rounded-full border ${
                   property.status === "active" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
                   property.status === "pending" ? "bg-amber-100 text-amber-800 border-amber-200" :
@@ -160,7 +171,7 @@ export default function SellerViewPropertyPage() {
             </div>
 
             {/* Property Details */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
                 <Bed className="h-4 w-4 text-slate-600" />
                 <div>
@@ -193,7 +204,7 @@ export default function SellerViewPropertyPage() {
             </div>
 
             {/* Additional Details */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <p className="text-sm text-slate-600">Property Type</p>
                 <p className="font-medium text-slate-900 capitalize">{property.propertyType}</p>

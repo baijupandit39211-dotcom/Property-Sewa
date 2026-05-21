@@ -39,9 +39,9 @@ function Badge({ children, tone = "emerald" }: { children: React.ReactNode; tone
 }
 
 const formatDate = (d?: string) => {
-  if (!d) return "—";
+  if (!d) return "-";
   const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? "—" : dt.toLocaleString();
+  return Number.isNaN(dt.getTime()) ? "-" : dt.toLocaleString();
 };
 
 export default function SellerProfilePage() {
@@ -64,6 +64,8 @@ export default function SellerProfilePage() {
   const [saveSuccess, setSaveSuccess] = useState("");
 
   useEffect(() => {
+    let isActive = true;
+
     if (contextUser) {
       setUser((prev) => prev || (contextUser as MeResponse["user"]));
       setForm((prev) => ({
@@ -79,6 +81,7 @@ export default function SellerProfilePage() {
         if (res?.success === false || !res?.user) {
           throw new Error(res?.message || "Failed to load profile");
         }
+        if (!isActive) return;
         setUser(res.user);
         setForm({
           name: res.user?.name || "",
@@ -88,11 +91,17 @@ export default function SellerProfilePage() {
           bio: res.user?.bio || "",
         });
       } catch (e: any) {
+        if (!isActive) return;
         setError(e?.message || "Failed to load profile");
       } finally {
+        if (!isActive) return;
         setLoading(false);
       }
     })();
+
+    return () => {
+      isActive = false;
+    };
   }, [contextUser]);
 
   const initials = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
@@ -204,7 +213,7 @@ export default function SellerProfilePage() {
       {/* Edit modal */}
       {editOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+          <div className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900">Edit Profile</h3>
             <p className="mt-2 text-sm text-slate-600">Update your contact details.</p>
             <div className="mt-4 grid gap-3">
@@ -308,7 +317,7 @@ export default function SellerProfilePage() {
 }
 
 function Field({ label, value, multiline }: { label: string; value?: string | null; multiline?: boolean }) {
-  if (!value) value = "—";
+  if (!value) value = "-";
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
       <div className="text-xs font-semibold uppercase text-slate-500">{label}</div>
@@ -385,4 +394,3 @@ function LabeledTextArea({
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
-
