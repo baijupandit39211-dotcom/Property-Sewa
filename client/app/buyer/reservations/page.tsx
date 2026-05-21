@@ -91,7 +91,7 @@ export default function BuyerReservationsPage() {
           </p>
         </div>
         <button
-          onClick={() => router.push("/buyer")}
+          onClick={() => router.push("/buyer/buyer-dashboard")}
           className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
         >
           Back to Dashboard

@@ -29,7 +29,7 @@ const links = [
 ];
 
 const bottomLinks = [
-  { label: "Help", href: "/buyer/help", icon: HelpCircle },
+  { label: "Help", href: "/faq", icon: HelpCircle },
   { label: "Feedback", href: "/contact", icon: Flag },
 ];
 
