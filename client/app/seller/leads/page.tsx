@@ -731,13 +731,6 @@ function SellerLeadsPageContent() {
     }
   });
 
-  const scrollCrmGridToTop = useEffectEvent(() => {
-    crmGridRef.current?.scrollIntoView({
-      behavior: "auto",
-      block: "start",
-    });
-  });
-
   const acknowledgeDelivered = useEffectEvent((leadId: string, thread: Message[]) => {
     if (!leadId || !thread.some((message) => message.senderRole === "buyer" && !message.deliveredAt)) return;
     emitChatDelivered(leadId);
@@ -826,7 +819,6 @@ function SellerLeadsPageContent() {
 
       if (!silent) {
         requestAnimationFrame(() => {
-          scrollCrmGridToTop();
           scrollMessageThreadToTop();
         });
       }
@@ -983,6 +975,7 @@ function SellerLeadsPageContent() {
 
   useEffect(() => {
     const interval = window.setInterval(async () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
       try {
         await loadInbox();
         if (selectedId) await loadThread(selectedId, true);
@@ -1923,7 +1916,7 @@ function SellerLeadsPageContent() {
                               <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
                                 <div
                                   className={cn(
-                                    "min-w-0 max-w-[68%] rounded-2xl px-4 py-3 text-sm leading-relaxed break-words",
+                                    "min-w-0 max-w-[90%] sm:max-w-[78%] xl:max-w-[68%] rounded-2xl px-4 py-3 text-sm leading-relaxed break-words",
                                     mine
                                       ? "rounded-br-md bg-[#316249] text-white shadow-[0_16px_30px_rgba(49,98,73,0.18)]"
                                       : "rounded-bl-md bg-slate-100 text-slate-800"

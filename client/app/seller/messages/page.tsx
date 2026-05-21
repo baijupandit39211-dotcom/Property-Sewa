@@ -343,6 +343,11 @@ export default function SellerMessagesPage() {
       acknowledgeSeen(leadId, thread);
       shouldAutoScrollRef.current = true;
       requestAnimationFrame(() => scrollToBottom("auto"));
+      if (!silent) setError("");
+    } catch (err: any) {
+      if (!silent) {
+        setError(err?.message || "Failed to load conversation");
+      }
     } finally {
       if (!silent) setThreadLoading(false);
     }
@@ -382,6 +387,7 @@ export default function SellerMessagesPage() {
 
   useEffect(() => {
     const interval = window.setInterval(async () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
       try {
         await loadInbox(true);
         if (selectedId) await loadThread(selectedId, true);
@@ -930,7 +936,7 @@ export default function SellerMessagesPage() {
                   ) : (
                     <div className="space-y-3">
                       <div className="flex justify-start">
-                        <div className="max-w-[80%] rounded-xl rounded-tl-md bg-slate-100 px-4 py-3 text-slate-800 shadow-[0_8px_20px_rgba(15,23,42,0.05)] transition-transform duration-200 ease-out hover:-translate-y-0.5">
+                        <div className="max-w-[92%] sm:max-w-[84%] xl:max-w-[80%] rounded-xl rounded-tl-md bg-slate-100 px-4 py-3 text-slate-800 shadow-[0_8px_20px_rgba(15,23,42,0.05)] transition-transform duration-200 ease-out hover:-translate-y-0.5">
                           <div className="text-sm leading-6">{selectedConversation.message}</div>
                           <div className="mt-2 text-xs text-slate-500">Original inquiry | {formatDateTime(selectedConversation.createdAt)}</div>
                         </div>
@@ -939,7 +945,7 @@ export default function SellerMessagesPage() {
                           const mine = message.senderRole === "seller";
                           return (
                             <div key={message._id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
-                              <div className={cn("max-w-[80%] rounded-xl px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.05)] transition-transform duration-200 ease-out hover:-translate-y-0.5", mine ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_12px_24px_rgba(5,150,105,0.16)]" : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200")}>
+                              <div className={cn("max-w-[92%] sm:max-w-[84%] xl:max-w-[80%] rounded-xl px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.05)] transition-transform duration-200 ease-out hover:-translate-y-0.5", mine ? "rounded-tr-md bg-emerald-600 text-white shadow-[0_12px_24px_rgba(5,150,105,0.16)]" : "rounded-tl-md bg-white text-slate-800 ring-1 ring-slate-200")}>
                                 {message.isDeleted ? (
                                   <div className={cn("text-sm italic", mine ? "text-white/80" : "text-slate-500")}>
                                     This message was deleted
