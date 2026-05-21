@@ -212,6 +212,8 @@ export default function BuyerComparePage() {
   const [toast, setToast] = useState<BuyerToastState>({ show: false, text: "", tone: "success" });
 
   const toastTimer = useRef<number | null>(null);
+  const initialLoadStartedRef = useRef(false);
+  const refreshSeqRef = useRef(0);
   const wishlistSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
 
   function showToast(text: string, tone: BuyerToastState["tone"] = "success") {
@@ -224,37 +226,22 @@ export default function BuyerComparePage() {
   }
 
   async function refresh(showRefreshToast = true) {
+    const reqId = ++refreshSeqRef.current;
     setLoading(true);
     setError("");
 
     try {
       const nextCompareIds = readCompareIds();
+      if (reqId !== refreshSeqRef.current) return;
       setCompareIds(nextCompareIds);
 
       const cachedWishlist = readFreshBuyerCache<WishlistResponse>(BUYER_CACHE_KEYS.wishlist);
       const cachedLeads = readFreshBuyerCache<InquiryResponse>(BUYER_CACHE_KEYS.leads);
-      if (cachedWishlist && cachedLeads && !showRefreshToast) {
-        const nextWishlistIds = (cachedWishlist.items || [])
-          .map((item) =>
-            typeof item.propertyId === "string" ? item.propertyId : item.propertyId?._id
-          )
-          .filter((id): id is string => Boolean(id));
-        setWishlistIds(nextWishlistIds);
-        const leadMap = (cachedLeads.items || []).reduce<Record<string, string>>((acc, lead) => {
-          const propertyId =
-            typeof lead.propertyId === "string" ? lead.propertyId : lead.propertyId?._id;
-          if (propertyId && !acc[propertyId]) acc[propertyId] = lead._id;
-          return acc;
-        }, {});
-        setLeadIdsByProperty(leadMap);
-        setLoading(false);
-        return;
-      }
-
       const [wishlistResponse, inquiryResponse] = await Promise.all([
         (cachedWishlist ? Promise.resolve(cachedWishlist) : apiFetch<WishlistResponse>("/wishlist")).catch(() => ({ items: [] })),
         (cachedLeads ? Promise.resolve(cachedLeads) : apiFetch<InquiryResponse>("/leads/my-inquiries")).catch(() => ({ success: false, items: [] })),
       ]);
+      if (reqId !== refreshSeqRef.current) return;
       writeBuyerCache(BUYER_CACHE_KEYS.wishlist, wishlistResponse);
       writeBuyerCache(BUYER_CACHE_KEYS.leads, inquiryResponse);
 
@@ -282,18 +269,27 @@ export default function BuyerComparePage() {
       const response = await apiFetch<PropertyListResponse>(
         `/properties?ids=${nextCompareIds.join(",")}`
       );
-      setProperties(response.items || []);
+      if (reqId !== refreshSeqRef.current) return;
+      const propertyMap = new Map((response.items || []).map((item) => [item._id, item]));
+      const orderedItems = nextCompareIds
+        .map((id) => propertyMap.get(id))
+        .filter(Boolean) as Property[];
+      setProperties(orderedItems);
 
       if (showRefreshToast) showToast("Comparison refreshed");
     } catch (err) {
+      if (reqId !== refreshSeqRef.current) return;
       console.error(err);
       setError("Failed to load compare data");
     } finally {
+      if (reqId !== refreshSeqRef.current) return;
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    if (initialLoadStartedRef.current) return;
+    initialLoadStartedRef.current = true;
     refresh(false);
 
     const handleStorage = (event: StorageEvent) => {
@@ -386,8 +382,8 @@ export default function BuyerComparePage() {
     }
   }
 
-  const rows = useMemo<CompareRow[]>(() => {
-    const nextRows: CompareRow[] = [
+  const baseRows = useMemo<CompareRow[]>(() => {
+    return [
       {
         label: "Price",
         left: formatPrice(left),
@@ -443,11 +439,13 @@ export default function BuyerComparePage() {
         different: !sameValue(!!left?.images?.length, !!right?.images?.length),
       },
     ];
+  }, [left, right]);
 
-    return showDifferencesOnly ? nextRows.filter((row) => row.different) : nextRows;
-  }, [left, right, showDifferencesOnly]);
+  const rows = useMemo<CompareRow[]>(() => {
+    return showDifferencesOnly ? baseRows.filter((row) => row.different) : baseRows;
+  }, [baseRows, showDifferencesOnly]);
 
-  const differenceCount = rows.filter((row) => row.different).length;
+  const differenceCount = baseRows.filter((row) => row.different).length;
   const missingCount = MAX_COMPARE - compareItems.length;
   const primaryProperty = compareItems[0];
   const primaryMessageHref = primaryProperty
@@ -742,25 +740,42 @@ export default function BuyerComparePage() {
                           {rows.map((row, index) => (
                             <tr
                               key={row.label}
-                              style={{ backgroundColor: index % 2 === 0 ? "#ffffff" : "#F7FCFA" }}
+                              style={{
+                                backgroundColor: row.different
+                                  ? "rgba(238,248,235,0.65)"
+                                  : index % 2 === 0
+                                  ? "#ffffff"
+                                  : "#F7FCFA",
+                              }}
                             >
                               <td
                                 className="w-[220px] border-b px-5 py-4 text-sm font-medium"
                                 style={{ borderColor: "#E5E7EB", color: THEME.textSoft }}
                               >
-                                {row.label}
+                                <span className="inline-flex items-center gap-2">
+                                  {row.label}
+                                  {row.different ? (
+                                    <span className="rounded-full bg-[#316249] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
+                                      Diff
+                                    </span>
+                                  ) : null}
+                                </span>
                               </td>
                               <td
                                 className="w-1/2 border-b px-5 py-4 text-sm font-semibold"
                                 style={{ borderColor: "#E5E7EB", color: THEME.text }}
                               >
-                                {row.left}
+                                <div className="max-w-full break-words whitespace-normal">
+                                  {row.left}
+                                </div>
                               </td>
                               <td
                                 className="w-1/2 border-b px-5 py-4 text-sm font-semibold"
                                 style={{ borderColor: "#E5E7EB", color: THEME.text }}
                               >
-                                {row.right}
+                                <div className="max-w-full break-words whitespace-normal">
+                                  {row.right}
+                                </div>
                               </td>
                             </tr>
                           ))}
