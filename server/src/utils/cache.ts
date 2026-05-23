@@ -40,7 +40,13 @@ export async function getJsonCache<T>(key: string): Promise<T | null> {
   const client = getRedisClient();
   if (!client) return null;
 
-  const raw = await client.get(key);
+  let raw: string | null = null;
+  try {
+    raw = await client.get(key);
+  } catch (error) {
+    console.warn("[cache] redis get failed", { key, error });
+    return null;
+  }
   if (!raw) return null;
 
   try {
@@ -55,7 +61,11 @@ export async function setJsonCache<T>(key: string, value: T, ttlSeconds = getCac
   const client = getRedisClient();
   if (!client) return;
 
-  await client.set(key, JSON.stringify(value), { EX: ttlSeconds });
+  try {
+    await client.set(key, JSON.stringify(value), { EX: ttlSeconds });
+  } catch (error) {
+    console.warn("[cache] redis set failed", { key, ttlSeconds, error });
+  }
 }
 
 export async function deleteByPattern(pattern: string) {
@@ -63,12 +73,16 @@ export async function deleteByPattern(pattern: string) {
   const client = getRedisClient();
   if (!client) return;
 
-  const keys: string[] = [];
-  for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
-    keys.push(String(key));
-  }
+  try {
+    const keys: string[] = [];
+    for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+      keys.push(String(key));
+    }
 
-  if (keys.length > 0) {
-    await client.del(keys);
+    if (keys.length > 0) {
+      await client.del(keys);
+    }
+  } catch (error) {
+    console.warn("[cache] redis deleteByPattern failed", { pattern, error });
   }
 }

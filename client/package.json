@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack --port 3000",
+    "check-types": "next build --webpack",
     "build": "next build --webpack",
     "start": "next start"
   },

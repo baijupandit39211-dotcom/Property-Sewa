@@ -23,6 +23,8 @@ import adminNotificationRoutes from "../modules/notifications/routes/adminNotifi
 import wishlistRoutes from "../modules/wishlist/routes/wishlist.routes";
 import contactRoutes from "../modules/contact/routes/contact.routes";
 import adminContactRoutes from "../modules/contact/routes/adminContact.routes";
+import feedbackRoutes, { adminFeedbackRouter } from "../modules/feedback/routes/feedback.routes";
+import buyerAlertsRoutes from "../modules/buyer-alerts/routes/buyerAlerts.routes";
 
 const router = Router();
 
@@ -92,5 +94,10 @@ router.use("/contact", contactRoutes);
 router.use("/api/contact", contactRoutes);
 router.use("/admin/contact-messages", adminContactRoutes);
 router.use("/api/admin/contact-messages", adminContactRoutes);
+router.use("/feedback", feedbackRoutes);
+router.use("/admin/feedback", adminFeedbackRouter);
+router.use("/api/admin/feedback", adminFeedbackRouter);
+router.use("/buyer/alerts", buyerAlertsRoutes);
+router.use("/api/buyer/alerts", buyerAlertsRoutes);
 
 export default router;

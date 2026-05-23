@@ -6,6 +6,7 @@ import * as messageController from "../controllers/message.controller";
 const router = Router();
 
 // GET /messages/:leadId (requireUserAuth)
+router.get("/unread-count", requireUserAuth, messageController.getUnreadCount);
 router.get("/:leadId/suggestions", requireUserAuth, messageController.getSellerReplySuggestions);
 router.get("/:leadId", requireUserAuth, messageController.getMessagesByLead);
 

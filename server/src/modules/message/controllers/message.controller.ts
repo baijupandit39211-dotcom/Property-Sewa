@@ -66,6 +66,17 @@ export async function getMessagesByLead(req: Request, res: Response, next: NextF
   }
 }
 
+export async function getUnreadCount(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId as string;
+    if (!userId) throw new ApiError(401, "Unauthorized");
+    const count = await messageService.getUnreadCount(userId);
+    return res.status(200).json({ success: true, count });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 // GET /messages/:leadId/suggestions (requireUserAuth)
 export async function getSellerReplySuggestions(req: Request, res: Response, next: NextFunction) {
   try {

@@ -15,6 +15,7 @@ import {
   PhoneIncoming,
 } from "lucide-react";
 import { subscribeToChatSocket } from "@/app/lib/chatSocket";
+import { apiFetchSafe } from "@/app/lib/api";
 
 const links = [
   { label: "Dashboard", href: "/seller/seller-dashboard", icon: Home },
@@ -43,8 +44,14 @@ export default function SellerSidebar({
   const seenMessageIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
-    // TODO: Connect to a backend unread count endpoint when available (e.g. GET /messages/unread-count).
-    // For now we start at 0 and update in real-time using existing chat socket events.
+    let mounted = true;
+    apiFetchSafe<{ success: boolean; count: number }>("/messages/unread-count").then((res) => {
+      if (!mounted) return;
+      if (typeof res?.count === "number" && res.count >= 0) {
+        setUnreadMessages(res.count);
+      }
+    });
+
     const unsubscribe = subscribeToChatSocket({
       onNewMessage: ({ message }) => {
         const messageId = String(message?._id || "").trim();
@@ -62,7 +69,10 @@ export default function SellerSidebar({
       },
     });
 
-    return () => unsubscribe();
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, [pathname]);
 
   const unreadLabel = unreadMessages > 99 ? "99+" : String(unreadMessages);

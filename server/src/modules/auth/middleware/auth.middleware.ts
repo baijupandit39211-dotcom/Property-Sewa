@@ -91,6 +91,10 @@ export async function requireAdminAuth(req: Request, res: Response, next: NextFu
     if (!auth.user) {
       return res.status(401).json({ success: false, message: "Admin authentication required" });
     }
+    const role = String(auth.user.role || "").toLowerCase();
+    if (role !== "admin" && role !== "superadmin") {
+      return res.status(403).json({ success: false, message: "Admin access denied" });
+    }
     req.user = auth.user;
 
     return next();

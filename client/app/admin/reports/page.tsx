@@ -13,6 +13,7 @@ import {
   ShieldAlert,
   XCircle,
 } from "lucide-react";
+import { apiFetchAdmin } from "../../lib/api";
 
 type ReportProperty = {
   _id: string;
@@ -191,27 +192,6 @@ function StatCard({
   );
 }
 
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    credentials: "include",
-    headers: {
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...(init?.headers || {}),
-    },
-  });
-
-  const text = await response.text();
-  let data: any = {};
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = {};
-  }
-  if (!response.ok) throw new Error(data?.message || "Request failed");
-  return data as T;
-}
-
 export default function AdminReportsPage() {
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [stats, setStats] = useState<ReportStats>(EMPTY_STATS);
@@ -220,12 +200,7 @@ export default function AdminReportsPage() {
   const [error, setError] = useState("");
   const [processingKey, setProcessingKey] = useState("");
 
-  const baseUrl = useMemo(() => {
-    const raw = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
-    if (raw.endsWith("/api")) return `${raw}/admin/reports`;
-    if (raw) return `${raw}/api/admin/reports`;
-    return "/api/admin/reports";
-  }, []);
+  const basePath = useMemo(() => "/api/admin/reports", []);
 
   async function load(nextStatus = status) {
     setLoading(true);
@@ -233,8 +208,8 @@ export default function AdminReportsPage() {
     try {
       const qs = nextStatus === "all" ? "" : `?status=${nextStatus}`;
       const [reportResponse, statsResponse] = await Promise.all([
-        requestJson<{ items?: ReportItem[] }>(`${baseUrl}${qs}`),
-        requestJson<{ stats?: ReportStats }>(`${baseUrl}/stats`),
+        apiFetchAdmin<{ items?: ReportItem[] }>(`${basePath}${qs}`),
+        apiFetchAdmin<{ stats?: ReportStats }>(`${basePath}/stats`),
       ]);
       setReports(reportResponse.items || []);
       setStats(statsResponse.stats || EMPTY_STATS);
@@ -254,7 +229,7 @@ export default function AdminReportsPage() {
     setProcessingKey(`${id}:${actionKey}`);
     setError("");
     try {
-      await requestJson(`${baseUrl}/${id}`, {
+      await apiFetchAdmin(`${basePath}/${id}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
@@ -270,7 +245,7 @@ export default function AdminReportsPage() {
     setProcessingKey(`${id}:remove`);
     setError("");
     try {
-      await requestJson(`${baseUrl}/${id}/remove-property`, {
+      await apiFetchAdmin(`${basePath}/${id}/remove-property`, {
         method: "PATCH",
         body: JSON.stringify({}),
       });
@@ -286,7 +261,7 @@ export default function AdminReportsPage() {
     setProcessingKey(`${id}:restore`);
     setError("");
     try {
-      await requestJson(`${baseUrl}/${id}/restore-property`, {
+      await apiFetchAdmin(`${basePath}/${id}/restore-property`, {
         method: "PATCH",
         body: JSON.stringify({}),
       });

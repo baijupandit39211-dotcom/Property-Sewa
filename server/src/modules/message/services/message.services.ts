@@ -1,5 +1,6 @@
 import Lead from "../../../models/Lead.model";
 import Message from "../../../models/Message.model";
+import Notification from "../../notifications/notification.model";
 import { emitChatMessageDeleted, emitChatNewMessage } from "../../../realtime/notification.socket";
 import { ApiError } from "../../../utils/apiError";
 
@@ -239,9 +240,19 @@ async function deleteMessage(leadId: string, messageId: string, userId: string) 
   return message;
 }
 
+async function getUnreadCount(userId: string) {
+  const count = await Notification.countDocuments({
+    recipientId: userId,
+    category: "message",
+    isRead: false,
+  });
+  return count;
+}
+
 export default {
   getMessagesByLead,
   createMessage,
   deleteMessage,
   getSellerReplySuggestions,
+  getUnreadCount,
 };
