@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { AlertCircle, CheckCircle2, Flag, MoreVertical, Share2 } from "lucide-react";
 import ReportAdModal from "./ReportAdModal";
 
@@ -27,7 +28,11 @@ export default function AdActionsMenu({
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [reportOpen, setReportOpen] = React.useState(false);
   const [banner, setBanner] = React.useState<Banner>(null);
+  const [mounted, setMounted] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
+  const buttonRef = React.useRef<HTMLButtonElement | null>(null);
+  const panelRef = React.useRef<HTMLDivElement | null>(null);
+  const [menuPos, setMenuPos] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const fallbackUrl = React.useMemo(
     () => (adId ? `/buyer/property/${adId}` : ""),
@@ -35,8 +40,44 @@ export default function AdActionsMenu({
   );
 
   React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  React.useEffect(() => {
+    const updatePosition = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      const width = 208;
+      const viewportPadding = 8;
+      const top = rect.bottom + 8;
+      const left = Math.max(
+        viewportPadding,
+        Math.min(rect.right - width, window.innerWidth - width - viewportPadding)
+      );
+      setMenuPos({ top, left });
+    };
+
+    if (menuOpen) {
+      updatePosition();
+      window.addEventListener("resize", updatePosition);
+      window.addEventListener("scroll", updatePosition, true);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [menuOpen]);
+
+  React.useEffect(() => {
     const handler = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(target) &&
+        panelRef.current &&
+        !panelRef.current.contains(target)
+      ) {
         setMenuOpen(false);
       }
     };
@@ -88,8 +129,10 @@ export default function AdActionsMenu({
   return (
     <div className="relative" ref={menuRef}>
       <button
+        ref={buttonRef}
         type="button"
         onClick={(event) => {
+          event.preventDefault();
           event.stopPropagation();
           setMenuOpen((current) => !current);
         }}
@@ -106,40 +149,47 @@ export default function AdActionsMenu({
         {variant === "button" ? "Actions" : null}
       </button>
 
-      {menuOpen ? (
-        <div
-          className="absolute right-0 z-40 mt-2 w-52 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/10"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              void shareListing();
-            }}
-            className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-emerald-50"
-          >
-            <Share2 className="h-4 w-4 text-emerald-700" />
-            Share listing
-          </button>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (onReport) {
-                onReport({ adId, title, location });
-              } else {
-                setReportOpen(true);
-              }
-              setMenuOpen(false);
-            }}
-            className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-rose-50"
-          >
-            <Flag className="h-4 w-4 text-rose-600" />
-            Report listing
-          </button>
-        </div>
-      ) : null}
+      {menuOpen && mounted
+        ? createPortal(
+            <div
+              ref={panelRef}
+              className="fixed z-[10010] w-52 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/10"
+              style={{ top: `${menuPos.top}px`, left: `${menuPos.left}px` }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void shareListing();
+                }}
+                className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-emerald-50"
+              >
+                <Share2 className="h-4 w-4 text-emerald-700" />
+                Share property
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (onReport) {
+                    onReport({ adId, title, location });
+                  } else {
+                    setReportOpen(true);
+                  }
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-rose-50"
+              >
+                <Flag className="h-4 w-4 text-rose-600" />
+                Report property
+              </button>
+            </div>,
+            document.body
+          )
+        : null}
 
       {banner ? (
         <div

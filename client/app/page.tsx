@@ -56,6 +56,25 @@ type SessionUser = {
   avatar?: string;
 };
 
+const COMPARE_KEY = "property-sewa:compare:v1";
+const MAX_COMPARE = 2;
+
+function readIds(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const ids = parsed?.ids;
+    return Array.isArray(ids) ? ids : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeIds(key: string, ids: string[]) {
+  localStorage.setItem(key, JSON.stringify({ ids }));
+}
+
 function cn(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
 }
@@ -75,6 +94,8 @@ export default function DashboardLandingLike() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [allProperties, setAllProperties] = React.useState<Property[]>([]);
   const [user, setUser] = React.useState<SessionUser | null>(null);
+  const [wishlistIds, setWishlistIds] = React.useState<string[]>([]);
+  const [compareIds, setCompareIds] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     apiFetch<PropertyListResponse>("/properties?limit=48")
@@ -100,6 +121,58 @@ export default function DashboardLandingLike() {
       })
       .catch(() => setAllProperties([]));
   }, []);
+
+  React.useEffect(() => {
+    setCompareIds(readIds(COMPARE_KEY));
+    (async () => {
+      try {
+        const res = await apiFetchSafe<{ items: Array<{ propertyId?: string | { _id?: string } }> }>("/wishlist");
+        if (!res?.items) {
+          setWishlistIds([]);
+          return;
+        }
+        const ids = (res.items || [])
+          .map((item) => (typeof item.propertyId === "string" ? item.propertyId : item.propertyId?._id))
+          .filter((id): id is string => Boolean(id));
+        setWishlistIds(ids);
+      } catch {
+        setWishlistIds([]);
+      }
+    })();
+  }, []);
+
+  const wishlistSet = React.useMemo(() => new Set(wishlistIds), [wishlistIds]);
+  const compareSet = React.useMemo(() => new Set(compareIds), [compareIds]);
+
+  async function toggleWishlist(id: string) {
+    const has = wishlistSet.has(id);
+    try {
+      if (has) {
+        await apiFetch(`/wishlist/${id}`, { method: "DELETE" });
+        setWishlistIds((prev) => prev.filter((x) => x !== id));
+        return;
+      }
+      await apiFetch("/wishlist", {
+        method: "POST",
+        body: JSON.stringify({ propertyId: id }),
+      });
+      setWishlistIds((prev) => [id, ...prev]);
+    } catch {}
+  }
+
+  function toggleCompare(id: string) {
+    const has = compareSet.has(id);
+    if (has) {
+      const next = compareIds.filter((x) => x !== id);
+      setCompareIds(next);
+      writeIds(COMPARE_KEY, next);
+      return;
+    }
+    if (compareIds.length >= MAX_COMPARE) return;
+    const next = [id, ...compareIds];
+    setCompareIds(next);
+    writeIds(COMPARE_KEY, next);
+  }
 
   React.useEffect(() => {
     let active = true;
@@ -440,8 +513,10 @@ export default function DashboardLandingLike() {
                     property={p}
                     variant="featured"
                     href={p._id ? `/buyer/property/${p._id}` : "/properties"}
-                    onToggleWishlist={() => {}}
-                    onToggleCompare={() => {}}
+                    saved={wishlistSet.has(p._id)}
+                    compareOn={compareSet.has(p._id)}
+                    onToggleWishlist={toggleWishlist}
+                    onToggleCompare={toggleCompare}
                     showFeaturedBadge
                     viewLabel="View Listing"
                   />
@@ -457,6 +532,10 @@ export default function DashboardLandingLike() {
         description="Seasonal picks curated from active Dashain promotions."
         href="/properties?offersOnly=true&category=dashain"
         items={dashainOffers}
+        wishlistSet={wishlistSet}
+        compareSet={compareSet}
+        onToggleWishlist={toggleWishlist}
+        onToggleCompare={toggleCompare}
       />
 
       <OfferSection
@@ -465,6 +544,10 @@ export default function DashboardLandingLike() {
         href="/properties?offersOnly=true&category=hot"
         items={hotDeals}
         tinted
+        wishlistSet={wishlistSet}
+        compareSet={compareSet}
+        onToggleWishlist={toggleWishlist}
+        onToggleCompare={toggleCompare}
       />
 
       <OfferSection
@@ -472,6 +555,10 @@ export default function DashboardLandingLike() {
         description="Freshly promoted properties with active deal tags."
         href="/properties?offersOnly=true&category=latest"
         items={latestDeals}
+        wishlistSet={wishlistSet}
+        compareSet={compareSet}
+        onToggleWishlist={toggleWishlist}
+        onToggleCompare={toggleCompare}
       />
 
       <OfferSection
@@ -480,6 +567,10 @@ export default function DashboardLandingLike() {
         href="/properties?offersOnly=true&category=limited_time"
         items={limitedTimeOffers}
         tinted
+        wishlistSet={wishlistSet}
+        compareSet={compareSet}
+        onToggleWishlist={toggleWishlist}
+        onToggleCompare={toggleCompare}
       />
 
       <section className="bg-[#EEF8EB] py-14 sm:py-16">
@@ -611,12 +702,20 @@ function OfferSection({
   href,
   items,
   tinted = false,
+  wishlistSet,
+  compareSet,
+  onToggleWishlist,
+  onToggleCompare,
 }: {
   title: string;
   description: string;
   href: string;
   items: Property[];
   tinted?: boolean;
+  wishlistSet: Set<string>;
+  compareSet: Set<string>;
+  onToggleWishlist: (id: string) => void;
+  onToggleCompare: (id: string) => void;
 }) {
   if (items.length === 0) return null;
 
@@ -652,8 +751,10 @@ function OfferSection({
                 property={p}
                 variant="featured"
                 href={p._id ? `/buyer/property/${p._id}` : "/properties"}
-                onToggleWishlist={() => {}}
-                onToggleCompare={() => {}}
+                saved={wishlistSet.has(p._id)}
+                compareOn={compareSet.has(p._id)}
+                onToggleWishlist={onToggleWishlist}
+                onToggleCompare={onToggleCompare}
                 showFeaturedBadge
                 viewLabel="View Listing"
               />

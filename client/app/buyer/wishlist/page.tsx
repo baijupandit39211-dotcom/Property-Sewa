@@ -151,10 +151,6 @@ export default function BuyerWishlistPage() {
         if (cachedProperties.length > 0) {
           setAllProperties(cachedProperties);
           setWishlistIds(cachedProperties.map((item) => item._id));
-          if (!showRefreshToast) {
-            setLoading(false);
-            return;
-          }
         }
       }
 

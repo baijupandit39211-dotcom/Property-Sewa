@@ -1128,6 +1128,7 @@ function SearchPropertiesPageContent() {
                   onToggleWishlist={toggleWishlist}
                   onToggleCompare={toggleCompare}
                   showFeaturedBadge={getStatusBadgeLabel(p) === "Featured"}
+                  showAdActionsMenu
                 />
               );
             })}

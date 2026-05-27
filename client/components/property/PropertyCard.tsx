@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bath, BedDouble, Heart, MapPin, MoveDiagonal2, Scale } from "lucide-react";
 import type { Property } from "@/app/lib/property.types";
 import OfferBadge from "@/components/offers/OfferBadge";
+import AdActionsMenu from "@/app/property/[id]/_components/AdActionsMenu";
 
 export type PropertyCardOfferExpiry = {
   text: string;
@@ -33,6 +34,7 @@ type Props = {
     icon?: React.ReactNode;
   };
   viewLabel?: string;
+  showAdActionsMenu?: boolean;
 };
 
 function getPrimaryImage(property: Property) {
@@ -106,6 +108,7 @@ export default function PropertyCard({
   href,
   variant = "default",
   showFeaturedBadge = true,
+  showAdActionsMenu = true,
 }: Props) {
   const isCompact = variant === "compact";
   const isFeatured = variant === "featured";
@@ -128,58 +131,72 @@ export default function PropertyCard({
   const displayPrice = formatNpr(Number(property.price || 0)).replace("NPR", "").trim();
   const showDiscountBadge = Boolean(discountBadgeLabel) && !isCompact;
   const showListingBadge = !(showFeaturedBadge && listingBadgeLabel === "Featured");
+  const actionButtonSize = isCompact ? "size-10" : "size-11";
 
   return (
-    <article className={`group mx-auto w-full overflow-hidden rounded-[26px] border border-[#e7ece8] bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(15,23,42,0.14)] ${isFeatured ? "h-[356px] max-w-[328px]" : isCompact ? "max-w-[420px]" : "max-w-[440px]"}`}>
+    <article className={`group relative mx-auto w-full overflow-hidden rounded-[26px] border border-[#e7ece8] bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(15,23,42,0.14)] ${isFeatured ? "h-[356px] max-w-[328px]" : isCompact ? "max-w-[420px]" : "max-w-[440px]"}`}>
+      <div className="absolute right-5 top-5 z-[70] flex flex-col items-center gap-3">
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            handleCompareToggle();
+          }}
+          className={[
+            `inline-flex ${actionButtonSize} items-center justify-center rounded-full bg-white/90 text-[#1f2937] shadow-[0_4px_14px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-200 active:scale-95`,
+            compareOn ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249] focus-visible:ring-offset-2",
+            comparePulse ? "scale-105" : "",
+          ].join(" ")}
+          aria-label={compareOn ? "Remove from compare" : "Add to compare"}
+          title={compareOn ? "Remove from compare" : "Add to compare"}
+        >
+          <Scale className={["h-[18px] w-[18px] transition-transform duration-200", comparePulse ? "scale-110" : ""].join(" ")} />
+        </button>
+
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            handleWishlistToggle();
+          }}
+          className={[
+            `grid ${actionButtonSize} place-items-center rounded-full bg-white/90 text-[#1f2937] shadow-[0_4px_14px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-200 active:scale-95`,
+            saved ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249] focus-visible:ring-offset-2",
+            heartPop ? "scale-110" : "",
+          ].join(" ")}
+          aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+          title={saved ? "Saved" : "Save"}
+        >
+          <Heart
+            className={[
+              "h-[18px] w-[18px] transition-transform duration-200",
+              saved ? "fill-current" : "",
+              heartPop ? "scale-110" : "",
+            ].join(" ")}
+          />
+        </button>
+
+        {showAdActionsMenu ? (
+          <div className={`grid ${actionButtonSize} place-items-center rounded-full bg-white/90 text-[#1f2937] shadow-[0_4px_14px_rgba(0,0,0,0.12)] backdrop-blur-md`}>
+            <AdActionsMenu
+              adId={property._id}
+              title={property.title || "Property"}
+              location={property.address || property.location || ""}
+              variant="icon"
+            />
+          </div>
+        ) : null}
+      </div>
+
       <Link
         href={href || `/buyer/property/${property._id}`}
         className="flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249] focus-visible:ring-offset-2"
       >
         <div className="relative aspect-[16/10] overflow-hidden rounded-t-[26px]">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              handleCompareToggle();
-            }}
-            className={[
-              `absolute ${isCompact ? "right-[4.5rem]" : "right-[5.25rem]"} top-5 z-20 inline-flex ${isCompact ? "size-10" : "size-11"} items-center justify-center rounded-full bg-white/90 text-[#1f2937] shadow-[0_4px_14px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-200 active:scale-95`,
-              compareOn ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249] focus-visible:ring-offset-2",
-              comparePulse ? "scale-105" : "",
-            ].join(" ")}
-            aria-label={compareOn ? "Remove from compare" : "Add to compare"}
-            title={compareOn ? "Remove from compare" : "Add to compare"}
-          >
-            <Scale className={["h-[18px] w-[18px] transition-transform duration-200", comparePulse ? "scale-110" : ""].join(" ")} />
-          </button>
-
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              handleWishlistToggle();
-            }}
-            className={[
-              `absolute right-5 top-5 z-20 grid ${isCompact ? "size-10" : "size-11"} place-items-center rounded-full bg-white/90 text-[#1f2937] shadow-[0_4px_14px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-200 active:scale-95`,
-              saved ? "bg-[#316249] text-white" : "hover:bg-[#316249] hover:text-white",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#316249] focus-visible:ring-offset-2",
-              heartPop ? "scale-110" : "",
-            ].join(" ")}
-            aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
-            title={saved ? "Saved" : "Save"}
-          >
-            <Heart
-              className={[
-                "h-[18px] w-[18px] transition-transform duration-200",
-                saved ? "fill-current" : "",
-                heartPop ? "scale-110" : "",
-              ].join(" ")}
-            />
-          </button>
-
             <img
               src={getPrimaryImage(property)}
               alt={property.title ?? "Property image"}
