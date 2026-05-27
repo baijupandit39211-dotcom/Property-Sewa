@@ -6,9 +6,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
 import PublicSiteHeader from "@/components/public/PublicSiteHeader";
+import PublicSiteFooter from "@/components/public/PublicSiteFooter";
 import SharedPropertyCard from "@/components/property/PropertyCard";
 import { apiFetch, apiFetchSafe } from "@/app/lib/api";
-import { getDashboardPath } from "@/app/lib/auth";
 import type { Property as ListingProperty } from "@/app/lib/property.types";
 import {
   Home,
@@ -144,15 +144,6 @@ export default function DashboardLandingLike() {
     params.set("type", mode === "rent" ? "rent" : "sale");
     if (searchQuery.trim()) params.set("search", searchQuery.trim());
     router.push(`/properties?${params.toString()}`);
-  };
-
-  const handleAlertsClick = () => {
-    if (user?.role === "buyer") {
-      router.push("/buyer/alerts");
-      return;
-    }
-
-    router.push("/login");
   };
 
   const featuredProperties = React.useMemo(() => allProperties.slice(0, 4), [allProperties]);
@@ -436,7 +427,7 @@ export default function DashboardLandingLike() {
               </div>
             </div>
 
-            <div className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-7 grid justify-items-center gap-y-5 gap-x-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-6 lg:gap-x-5">
               {featuredProperties.map((p, i) => (
                 <motion.div
                   key={p._id || p.id}
@@ -545,103 +536,7 @@ export default function DashboardLandingLike() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-gradient-to-r from-[#F7FCFA] via-[#EEF8EB] to-[#DCEFD9] py-12 sm:py-14">
-        <div
-          className="absolute inset-0 opacity-[0.1]"
-          style={{
-            backgroundImage: "radial-gradient(rgba(49,98,73,0.14) 0.8px, transparent 0.8px)",
-            backgroundSize: "18px 18px",
-          }}
-        />
-
-        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
-          <div>
-            <h3 className="text-3xl font-bold tracking-tight text-[#102219]">
-              Get Property Alerts
-            </h3>
-            <p className="mt-2 text-sm text-[#102219]/70">
-              Be the first to know about new listings that match your criteria.
-            </p>
-
-            <div className="mt-6 flex max-w-xl flex-col gap-3 sm:flex-row">
-              <input
-                className="h-12 flex-1 rounded-2xl bg-white px-4 text-sm text-[#0D1C12] outline-none ring-1 ring-[#D1D5DB] placeholder:text-[#618975]"
-                placeholder="Enter your email address"
-              />
-              <button
-                type="button"
-                onClick={handleAlertsClick}
-                className="h-12 rounded-2xl bg-[#316249] px-5 text-sm font-semibold text-white transition hover:bg-[#24472E] active:scale-[0.98]"
-              >
-                Get Alerts
-              </button>
-            </div>
-
-            <p className="mt-2 text-xs text-[#102219]/60">No spam. Unsubscribe anytime.</p>
-          </div>
-
-          <div className="relative mx-auto aspect-[1.3/1] w-full max-w-[380px]">
-            <motion.div
-              whileHover={{ y: -6 }}
-              transition={{ type: "spring", stiffness: 220, damping: 18 }}
-              className="relative h-full w-full"
-            >
-              <Image
-                src="/house-3d.png"
-                alt="House"
-                fill
-                className="object-contain drop-shadow-[0_18px_18px_rgba(13,28,18,0.18)]"
-              />
-            </motion.div>
-          </div>
-        </div>
-
-        <div className="relative mx-auto mt-12 max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-8 border-t border-[#102219]/15 pt-10 md:grid-cols-5">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-2">
-                <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#102219]/10 ring-1 ring-[#102219]/15">
-                  <Home className="h-5 w-5 text-[#102219]" />
-                </div>
-                <span className="text-sm font-bold text-[#102219]">Property Sewa</span>
-              </div>
-              <p className="mt-3 text-sm text-[#102219]/70">
-                The modern way to find, buy, and sell your home.
-              </p>
-              <p className="mt-8 text-xs text-[#102219]/60">
-                Â© {new Date().getFullYear()} Property Sewa. All rights reserved.
-              </p>
-            </div>
-
-            <FooterCol
-              title="Company"
-              links={[
-                { label: "Home", href: "/" },
-                { label: "Login", href: "/login" },
-                { label: "Register", href: "/register" },
-                { label: "Dashboard", href: user ? getDashboardPath(user.role) : "/login" },
-              ]}
-            />
-            <FooterCol
-              title="Explore"
-              links={[
-                { label: "Buy", href: "/properties?type=sale" },
-                { label: "Rent", href: "/properties?type=rent" },
-                { label: "Sell", href: addPropertyHref },
-                { label: "Offers", href: "/properties?offersOnly=true" },
-              ]}
-            />
-            <FooterCol
-              title="Support"
-              links={[
-                { label: "Search Properties", href: "/properties" },
-                { label: "Forgot Password", href: "/forgot-password" },
-                { label: "Dashboard", href: user ? getDashboardPath(user.role) : "/login" },
-              ]}
-            />
-          </div>
-        </div>
-      </section>
+      <PublicSiteFooter />
     </div>
   );
 }
@@ -744,7 +639,7 @@ function OfferSection({
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-8 grid justify-items-center gap-y-5 gap-x-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-6 lg:gap-x-5">
           {items.slice(0, 4).map((p, i) => (
             <motion.div
               key={p._id || p.id || `${title}-${i}`}
@@ -794,26 +689,4 @@ function FeatureItem({
   );
 }
 
-function FooterCol({
-  title,
-  links,
-}: {
-  title: string;
-  links: Array<{ label: string; href: string }>;
-}) {
-  return (
-    <div>
-      <p className="text-sm font-extrabold text-[#102219]">{title}</p>
-      <ul className="mt-3 space-y-2 text-sm text-[#102219]/70">
-        {links.map((l) => (
-          <li key={l.label}>
-            <Link className="transition hover:text-[#102219]" href={l.href} prefetch={true}>
-              {l.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
